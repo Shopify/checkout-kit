@@ -7,14 +7,22 @@ extension StorefrontAPI {
     /// Create a new cart
     /// - Parameters:
     ///   - items: Array of product variant IDs to add to the cart
+    ///   - sellingPlanID: Optional selling plan ID to apply to each cart line
     ///   - customer: Optional customer information to associate with the cart
     /// - Returns: The created cart
     func cartCreate(
         with items: [GraphQLScalars.ID] = [],
+        sellingPlanID: GraphQLScalars.ID? = nil,
         customer: ShopifyAcceleratedCheckouts.Customer? = nil
     ) async throws -> Cart {
         var input: [String: Any] = [
-            "lines": items.map { ["merchandiseId": $0.rawValue] }
+            "lines": items.map { item in
+                var line = ["merchandiseId": item.rawValue]
+                if let sellingPlanID {
+                    line["sellingPlanId"] = sellingPlanID.rawValue
+                }
+                return line
+            }
         ]
 
         if let customer {

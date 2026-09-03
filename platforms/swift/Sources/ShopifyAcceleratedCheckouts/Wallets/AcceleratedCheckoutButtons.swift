@@ -60,6 +60,27 @@ public struct AcceleratedCheckoutButtons: View {
         }
     }
 
+    /// Initializes accelerated checkout buttons with a subscription variant ID
+    /// - Parameters:
+    ///  - variantID: The variant ID to checkout (must start with gid://shopify/ProductVariant/)
+    ///  - quantity: The quantity of the variant to checkout
+    ///  - sellingPlanID: The optional selling plan ID to apply (must start with gid://shopify/SellingPlan/)
+    public init(variantID: String, quantity: Int, sellingPlanID: String?) {
+        identifier = if let sellingPlanID {
+            CheckoutIdentifier.subscriptionVariant(
+                variantID: variantID,
+                quantity: quantity,
+                sellingPlanID: sellingPlanID
+            ).parse()
+        } else {
+            CheckoutIdentifier.variant(variantID: variantID, quantity: quantity).parse()
+        }
+        if case let .invariant(reason) = identifier {
+            _currentRenderState = State(initialValue: .error(reason: reason))
+            ShopifyAcceleratedCheckouts.logger.error(reason)
+        }
+    }
+
     public var body: some View {
         VStack {
             if let shopSettings {

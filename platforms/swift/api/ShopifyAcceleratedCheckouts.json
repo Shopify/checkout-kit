@@ -1856,6 +1856,54 @@
             "init_kind": "Designated"
           },
           {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(variantID:quantity:sellingPlanID:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "AcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.AcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int",
+                "printedName": "Swift.Int",
+                "usr": "s:Si"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.String?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV9variantID8quantity011sellingPlanG0ACSS_SiSSSgtcfc",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0B15CheckoutButtonsV9variantID8quantity011sellingPlanG0ACSS_SiSSSgtcfc",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "init_kind": "Designated"
+          },
+          {
             "kind": "Var",
             "name": "body",
             "printedName": "body",

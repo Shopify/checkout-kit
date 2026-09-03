@@ -131,6 +131,21 @@ class CheckoutIdentifierTests: XCTestCase {
         }
     }
 
+    func test_subscriptionVariantInit_preservesIdentifiersAndQuantity() {
+        let identifier = CheckoutIdentifier.subscriptionVariant(
+            variantID: "gid://shopify/ProductVariant/test-id",
+            quantity: 2,
+            sellingPlanID: "gid://shopify/SellingPlan/test-id"
+        )
+
+        guard case let .subscriptionVariant(variantID, quantity, sellingPlanID) = identifier else {
+            return XCTFail("Expected subscriptionVariant case, got \(identifier)")
+        }
+        XCTAssertEqual(variantID, "gid://shopify/ProductVariant/test-id")
+        XCTAssertEqual(quantity, 2)
+        XCTAssertEqual(sellingPlanID, "gid://shopify/SellingPlan/test-id")
+    }
+
     func test_invariantInit_whenReasonProvided_createsInvariantCase() {
         let reason = "Test error reason"
         let identifier = CheckoutIdentifier.invariant(reason: reason)
@@ -258,6 +273,37 @@ class CheckoutIdentifierTests: XCTestCase {
                 XCTFail("Invalid quantity \(invalidQuantity) should return invariant with reason, got \(parsed)")
             }
         }
+    }
+
+    func test_parse_whenSubscriptionVariantIsValid_returnsSelf() {
+        let identifier = CheckoutIdentifier.subscriptionVariant(
+            variantID: "gid://shopify/ProductVariant/test-id",
+            quantity: 2,
+            sellingPlanID: "gid://shopify/SellingPlan/test-id"
+        )
+
+        guard case let .subscriptionVariant(variantID, quantity, sellingPlanID) = identifier.parse() else {
+            return XCTFail("Expected valid subscription variant")
+        }
+        XCTAssertEqual(variantID, "gid://shopify/ProductVariant/test-id")
+        XCTAssertEqual(quantity, 2)
+        XCTAssertEqual(sellingPlanID, "gid://shopify/SellingPlan/test-id")
+    }
+
+    func test_parse_whenSellingPlanIDIsInvalid_returnsInvariantWithReason() {
+        let identifier = CheckoutIdentifier.subscriptionVariant(
+            variantID: "gid://shopify/ProductVariant/test-id",
+            quantity: 1,
+            sellingPlanID: "invalid-selling-plan-id"
+        )
+
+        guard case let .invariant(reason) = identifier.parse() else {
+            return XCTFail("Expected invalid selling plan ID to return an invariant")
+        }
+        XCTAssertEqual(
+            reason,
+            "[invariant_violation] Invalid 'sellingPlanID' format. Expected to start with 'gid://Shopify/SellingPlan/', received: 'invalid-selling-plan-id'"
+        )
     }
 
     func test_parse_whenVariantValidQuantity_returnsSelf() {

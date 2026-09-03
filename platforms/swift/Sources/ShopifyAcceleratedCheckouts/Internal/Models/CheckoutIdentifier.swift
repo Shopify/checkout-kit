@@ -3,15 +3,20 @@
 /// Type of identifier used for checkout
 enum CheckoutIdentifier {
     case variant(variantID: String, quantity: Int)
+    case subscriptionVariant(variantID: String, quantity: Int, sellingPlanID: String)
     case cart(cartID: String)
     case invariant(reason: String)
 
     var prefix: String {
         switch self {
         case .cart: "gid://Shopify/Cart/"
-        case .variant: "gid://Shopify/ProductVariant/"
+        case .variant, .subscriptionVariant: "gid://Shopify/ProductVariant/"
         default: "invariant"
         }
+    }
+
+    private var sellingPlanPrefix: String {
+        "gid://Shopify/SellingPlan/"
     }
 
     /// Extracts the final portion of the cartID or variantID
@@ -25,6 +30,8 @@ enum CheckoutIdentifier {
         case let .cart(cartID):
             return cartID.components(separatedBy: "/").last ?? ""
         case let .variant(variantID, _):
+            return variantID.components(separatedBy: "/").last ?? ""
+        case let .subscriptionVariant(variantID, _, _):
             return variantID.components(separatedBy: "/").last ?? ""
         case .invariant:
             return ""
@@ -53,21 +60,38 @@ enum CheckoutIdentifier {
             return self
 
         case let .variant(variantID, quantity):
-            guard variantID.lowercased().hasPrefix(prefix.lowercased()) else {
-                return .invariant(
-                    reason:
-                    "[invariant_violation] Invalid 'variantID' format. Expected to start with '\(prefix)', received: '\(variantID)'"
-                )
+            return validateVariant(variantID: variantID, quantity: quantity)
+
+        case let .subscriptionVariant(variantID, quantity, sellingPlanID):
+            let validatedVariant = validateVariant(variantID: variantID, quantity: quantity)
+            if case .invariant = validatedVariant {
+                return validatedVariant
             }
-            guard quantity > 0 else {
+            guard sellingPlanID.lowercased().hasPrefix(sellingPlanPrefix.lowercased()) else {
                 return .invariant(
                     reason:
-                    "[invariant_violation] Quantity must be greater than 0, received: \(quantity)"
+                    "[invariant_violation] Invalid 'sellingPlanID' format. Expected to start with '\(sellingPlanPrefix)', received: '\(sellingPlanID)'"
                 )
             }
             return self
 
         default: return self
         }
+    }
+
+    private func validateVariant(variantID: String, quantity: Int) -> CheckoutIdentifier {
+        guard variantID.lowercased().hasPrefix(prefix.lowercased()) else {
+            return .invariant(
+                reason:
+                "[invariant_violation] Invalid 'variantID' format. Expected to start with '\(prefix)', received: '\(variantID)'"
+            )
+        }
+        guard quantity > 0 else {
+            return .invariant(
+                reason:
+                "[invariant_violation] Quantity must be greater than 0, received: \(quantity)"
+            )
+        }
+        return self
     }
 }

@@ -102,6 +102,31 @@ final class WalletControllerTests: XCTestCase {
 
         let result = try await controller.fetchCartByCheckoutIdentifier()
         XCTAssertEqual(result.id, expectedCart.id)
+        XCTAssertNil(mockStorefront.cartCreateSellingPlanID)
+    }
+
+    func test_fetchCartByCheckoutIdentifier_withSubscriptionVariant_forwardsSellingPlanID() async throws {
+        let expectedCart = StorefrontAPI.Cart.testCart
+        mockStorefront.cartCreateResult = .success(expectedCart)
+
+        controller = MockWalletController(
+            identifier: .subscriptionVariant(
+                variantID: "gid://Shopify/ProductVariant/test-variant-id",
+                quantity: 2,
+                sellingPlanID: "gid://Shopify/SellingPlan/test-selling-plan-id"
+            ),
+            storefront: mockStorefront,
+            configuration: .testConfiguration
+        )
+
+        let result = try await controller.fetchCartByCheckoutIdentifier()
+
+        XCTAssertEqual(result.id, expectedCart.id)
+        XCTAssertEqual(mockStorefront.cartCreateItems?.count, 2)
+        XCTAssertEqual(
+            mockStorefront.cartCreateSellingPlanID?.rawValue,
+            "gid://Shopify/SellingPlan/test-selling-plan-id"
+        )
     }
 
     func test_fetchCartByCheckoutIdentifier_withVariantIdentifierZeroQuantity_shouldSucceed() async throws {

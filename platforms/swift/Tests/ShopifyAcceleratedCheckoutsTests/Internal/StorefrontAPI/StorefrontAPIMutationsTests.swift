@@ -199,7 +199,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
         )
     }
 
-    func testCartCreateRequestValidation() async throws {
+    func testCartCreateRequestValidationWithSellingPlan() async throws {
         let json = """
         {
             "data": {
@@ -231,7 +231,10 @@ final class StorefrontAPIMutationsTests: XCTestCase {
             GraphQLScalars.ID("gid://shopify/ProductVariant/1"),
             GraphQLScalars.ID("gid://shopify/ProductVariant/2")
         ]
-        _ = try await storefrontAPI.cartCreate(with: variantIds)
+        _ = try await storefrontAPI.cartCreate(
+            with: variantIds,
+            sellingPlanID: GraphQLScalars.ID("gid://shopify/SellingPlan/1")
+        )
 
         XCTAssertNotNil(MockURLProtocol.capturedRequestBody)
 
@@ -247,7 +250,9 @@ final class StorefrontAPIMutationsTests: XCTestCase {
 
         XCTAssertEqual(lines?.count, 2)
         XCTAssertEqual(lines?[0]["merchandiseId"] as? String, "gid://shopify/ProductVariant/1")
+        XCTAssertEqual(lines?[0]["sellingPlanId"] as? String, "gid://shopify/SellingPlan/1")
         XCTAssertEqual(lines?[1]["merchandiseId"] as? String, "gid://shopify/ProductVariant/2")
+        XCTAssertEqual(lines?[1]["sellingPlanId"] as? String, "gid://shopify/SellingPlan/1")
     }
 
     func testCartCreateWithBuyerIdentityData() async throws {

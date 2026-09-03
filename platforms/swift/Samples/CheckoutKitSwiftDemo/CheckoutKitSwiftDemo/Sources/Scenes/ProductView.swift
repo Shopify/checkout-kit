@@ -160,7 +160,7 @@ struct ProductView: View {
                         .cornerRadius(DesignSystem.cornerRadius)
                         .disabled(!canPurchase(variant) || loading)
 
-                        if canPurchase(variant), selectedSellingPlanID == nil {
+                        if canPurchase(variant) {
                             if #available(iOS 16, *) {
                                 acceleratedCheckoutButton(for: variant)
                             }
@@ -203,30 +203,34 @@ struct ProductView: View {
     private func acceleratedCheckoutButton(
         for variant: Product.Variants.Node
     ) -> some View {
-        AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
-            .wallets([.applePay])
-            .applePayButtonStyle(applePayStyle.style)
-            .onFail { error in
-                addToCartError = "We couldn't start accelerated checkout. Please try again."
-                print("[AcceleratedCheckout] Failed: \(error)")
-            }
-            .onDismiss {
-                print("[AcceleratedCheckout] Dismissed")
-            }
-            .environment(
-                \.shopifyAcceleratedCheckoutsConfiguration,
-                ShopifyAcceleratedCheckouts.Configuration(
-                    storefrontDomain: InfoDictionary.shared.domain,
-                    storefrontAccessToken: InfoDictionary.shared.accessToken
-                )
+        AcceleratedCheckoutButtons(
+            variantID: variant.id,
+            quantity: 1,
+            sellingPlanID: selectedSellingPlanID
+        )
+        .wallets([.applePay])
+        .applePayButtonStyle(applePayStyle.style)
+        .onFail { error in
+            addToCartError = "We couldn't start accelerated checkout. Please try again."
+            print("[AcceleratedCheckout] Failed: \(error)")
+        }
+        .onDismiss {
+            print("[AcceleratedCheckout] Dismissed")
+        }
+        .environment(
+            \.shopifyAcceleratedCheckoutsConfiguration,
+            ShopifyAcceleratedCheckouts.Configuration(
+                storefrontDomain: InfoDictionary.shared.domain,
+                storefrontAccessToken: InfoDictionary.shared.accessToken
             )
-            .environment(
-                \.shopifyApplePayConfiguration,
-                ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-                    merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-                    contactFields: [.email, .phone]
-                )
+        )
+        .environment(
+            \.shopifyApplePayConfiguration,
+            ShopifyAcceleratedCheckouts.ApplePayConfiguration(
+                merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
+                contactFields: [.email, .phone]
             )
+        )
     }
 
     private func addToCart() {
