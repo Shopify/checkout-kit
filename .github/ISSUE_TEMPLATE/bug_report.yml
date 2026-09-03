@@ -17,7 +17,6 @@ body:
         - Storefront API
         - Multipass
         - Lifecycle methods
-        - Web Pixels
         - Other / I don't know
     validations:
       required: true
