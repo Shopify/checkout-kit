@@ -14,19 +14,18 @@ public object ShopifyCheckoutKit {
     internal val log = LogWrapper()
 
     /**
-     * The presentation currently tracked as on screen, so repeat [present] calls can be refused.
+     * A presentation currently tracked as on screen, so repeat [present] calls can be refused.
      */
     private class LivePresentation(
         private val sheet: CheckoutBottomSheet,
-        private val activity: ComponentActivity,
         val handle: CheckoutHandle,
     ) {
-        fun isShowingFor(context: ComponentActivity): Boolean = activity === context && sheet.isShowing
+        fun isShowing(): Boolean = sheet.isShowing
 
         fun tracks(other: CheckoutBottomSheet): Boolean = sheet === other
     }
 
-    private var livePresentation: LivePresentation? = null
+    private val livePresentations = mutableMapOf<ComponentActivity, LivePresentation>()
 
     /**
      * Returns the current version of ShopifyCheckoutKit.
@@ -218,7 +217,7 @@ public object ShopifyCheckoutKit {
             return null
         }
 
-        val alreadyPresented = livePresentation?.takeIf { it.isShowingFor(context) }
+        val alreadyPresented = livePresentations[context]?.takeIf { it.isShowing() }
         if (alreadyPresented != null) {
             log.w("ShopifyCheckoutKit", "A checkout is already presented, ignoring this presentation.")
         }
@@ -268,11 +267,11 @@ public object ShopifyCheckoutKit {
         }
 
         val handle = CheckoutHandle { checkout.dismiss() }
-        livePresentation = LivePresentation(sheet = checkout, activity = context, handle = handle)
+        livePresentations[context] = LivePresentation(sheet = checkout, handle = handle)
         checkout.onDismissFinalized = {
             context.lifecycle.removeObserver(lifecycleObserver)
-            if (livePresentation?.tracks(checkout) == true) {
-                livePresentation = null
+            if (livePresentations[context]?.tracks(checkout) == true) {
+                livePresentations.remove(context)
             }
         }
         return handle

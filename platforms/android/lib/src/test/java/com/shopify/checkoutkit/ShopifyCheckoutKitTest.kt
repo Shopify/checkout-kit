@@ -101,6 +101,23 @@ class ShopifyCheckoutKitTest {
     }
 
     @Test
+    fun `present tracks active checkouts independently for each activity`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { firstActivityController ->
+            Robolectric.buildActivity(ComponentActivity::class.java).setup().use { secondActivityController ->
+                val firstActivity = firstActivityController.get()
+                val secondActivity = secondActivityController.get()
+
+                val first = presentCheckout(firstActivity)
+                presentCheckout(secondActivity)
+                val repeatedFirst = presentCheckout(firstActivity)
+
+                assertThat(ShadowDialog.getShownDialogs()).hasSize(2)
+                assertThat(repeatedFirst).isSameAs(first)
+            }
+        }
+    }
+
+    @Test
     fun `present shows a new checkout after the previous one is dismissed`() {
         Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
             val activity = activityController.get()
