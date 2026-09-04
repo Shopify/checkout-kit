@@ -248,9 +248,11 @@ resolve_test_file() {
 append_selected_test_file() {
   local candidate="$1"
   local selected
-  for selected in "${RESOLVED_TEST_FILES[@]}"; do
-    [ "$selected" = "$candidate" ] && return
-  done
+  if [ "${#RESOLVED_TEST_FILES[@]}" -gt 0 ]; then
+    for selected in "${RESOLVED_TEST_FILES[@]}"; do
+      [ "$selected" = "$candidate" ] && return
+    done
+  fi
   RESOLVED_TEST_FILES+=("$candidate")
 }
 
@@ -273,10 +275,12 @@ select_test_files() {
     done
   fi
 
-  for requested in "${TEST_FILES[@]}"; do
-    resolved="$(resolve_test_file "$requested")" || return
-    append_selected_test_file "$resolved"
-  done
+  if [ "${#TEST_FILES[@]}" -gt 0 ]; then
+    for requested in "${TEST_FILES[@]}"; do
+      resolved="$(resolve_test_file "$requested")" || return
+      append_selected_test_file "$resolved"
+    done
+  fi
 
   if [ "${#RESOLVED_TEST_FILES[@]}" -eq 0 ]; then
     echo "No enabled E2E tests matched the requested selection for $TARGET" >&2
