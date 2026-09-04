@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutSheetPreset
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,6 +23,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class PreferencesManagerTest {
