@@ -20,6 +20,11 @@ struct ProductGridView: View {
                             .onTapGesture {
                                 selectProductAndShowSheet(for: product)
                             }
+                            .task(id: product.id == products.last?.id) {
+                                if product.id == products.last?.id {
+                                    await productCache.fetchNextCollectionPage()
+                                }
+                            }
                     }
                 } else {
                     Text("Loading products...")
@@ -28,11 +33,19 @@ struct ProductGridView: View {
             }
             .padding(.horizontal, 5)
             .padding(.top, 10)
-        }
-        .onAppear {
-            if productCache.collection == nil {
-                productCache.fetchCollection()
+
+            if productCache.isFetching, productCache.collection != nil {
+                ProgressView()
+                    .padding()
             }
+        }
+        .task {
+            if productCache.collection == nil {
+                await productCache.fetchCollection()
+            }
+        }
+        .refreshable {
+            await productCache.refreshCollection()
         }
         .sheet(isPresented: $showProductSheet) {
             ProductSheetView(product: $selectedProduct, isPresented: $showProductSheet)
