@@ -8,11 +8,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 usage() {
   if [ -n "${DEV_COMMAND:-}" ]; then
     cat <<EOF >&2
-Usage: $DEV_COMMAND [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
+Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
 
-Runs the shared and $TARGET_DESCRIPTION-specific Maestro tests. Coverage tags select
-the primary behavior under test. Cost tier tags are smoke and full, and flaky and
-wip quarantine tests from normal runs.
+Runs the Maestro tests enabled for $TARGET in e2e/config/matrix.yml. Coverage tags
+select enabled behaviors. Positional test files directly select exact flows.
 
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
@@ -21,7 +20,7 @@ EOF
     return
   fi
 
-  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
+  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
 }
 
 configure_target() {
@@ -77,7 +76,7 @@ configure_target() {
   esac
 }
 
-parse_maestro_tag_args() {
+parse_arguments() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --tags)
@@ -87,10 +86,12 @@ parse_maestro_tag_args() {
           echo "--tags needs a comma separated tag list" >&2
           exit 1
         fi
+        HAS_EXPLICIT_TAGS=true
         shift 2
         ;;
       --tags=*)
         INCLUDE_TAGS="${1#--tags=}"
+        HAS_EXPLICIT_TAGS=true
         shift
         ;;
       --exclude-tags)
@@ -110,13 +111,177 @@ parse_maestro_tag_args() {
         usage
         exit 0
         ;;
-      *)
+      --*)
         usage
         echo "Unknown option: $1" >&2
         exit 1
         ;;
+      *)
+        TEST_FILES+=("$1")
+        shift
+        ;;
     esac
   done
+}
+
+load_application_tags() {
+  local application
+  application="$(ruby "$REPO_ROOT/e2e/scripts/e2e_matrix_to_browserstack_run_plan" application --application "$TARGET")"
+  MATRIX_INCLUDE_TAGS="$(printf '%s' "$application" | jq -r '.include_tags | join(",")')"
+  MATRIX_EXCLUDE_TAGS="$(printf '%s' "$application" | jq -r '.exclude_tags | join(",")')"
+
+  if [ "$HAS_EXPLICIT_TAGS" = false ]; then
+    INCLUDE_TAGS="$MATRIX_INCLUDE_TAGS"
+  fi
+}
+
+test_file_tags() {
+  ruby -ryaml -e 'puts Array(YAML.safe_load(File.read(ARGV.fetch(0)).split("\n---\n").first)["tags"]).join(",")' "$REPO_ROOT/e2e/$1"
+}
+
+tag_lists_intersect() {
+  local tags=",${1},"
+  local selectors="$2"
+  local selector
+
+  while IFS= read -r selector; do
+    case "$tags" in
+      *",${selector},"*) return 0 ;;
+    esac
+  done < <(printf '%s\n' "$selectors" | tr ',' '\n')
+  return 1
+}
+
+load_candidate_test_files() {
+  CANDIDATE_TEST_FILES=()
+  local directories=("$REPO_ROOT/e2e/tests/shared")
+  [ -d "$REPO_ROOT/e2e/tests/$TEST_NAMESPACE" ] && directories+=("$REPO_ROOT/e2e/tests/$TEST_NAMESPACE")
+
+  while IFS= read -r test_file; do
+    CANDIDATE_TEST_FILES+=("${test_file#"$REPO_ROOT/e2e/"}")
+  done < <(find "${directories[@]}" -type f -name "*.yaml" | sort)
+}
+
+load_eligible_test_files() {
+  load_candidate_test_files
+  ELIGIBLE_TEST_FILES=()
+  local test_file
+  local tags
+
+  for test_file in "${CANDIDATE_TEST_FILES[@]}"; do
+    tags="$(test_file_tags "$test_file")"
+    if tag_lists_intersect "$tags" "$MATRIX_INCLUDE_TAGS" &&
+      ! tag_lists_intersect "$tags" "$MATRIX_EXCLUDE_TAGS"; then
+      ELIGIBLE_TEST_FILES+=("$test_file")
+    fi
+  done
+}
+
+load_enabled_tags() {
+  ENABLED_TAGS=""
+  local tag
+  local test_file
+
+  while IFS= read -r tag; do
+    if ! tag_lists_intersect "$MATRIX_EXCLUDE_TAGS" "$tag"; then
+      ENABLED_TAGS="${ENABLED_TAGS:+${ENABLED_TAGS},}${tag}"
+    fi
+  done < <(
+    for test_file in "${ELIGIBLE_TEST_FILES[@]}"; do
+      test_file_tags "$test_file" | tr ',' '\n'
+    done | awk 'NF && !seen[$0]++'
+  )
+}
+
+validate_explicit_tags() {
+  [ "$HAS_EXPLICIT_TAGS" = true ] || return 0
+  local tag
+
+  while IFS= read -r tag; do
+    case ",${ENABLED_TAGS}," in
+      *",${tag},"*) ;;
+      *)
+        echo "$tag is not enabled for $TARGET" >&2
+        echo "Enabled tags: $ENABLED_TAGS" >&2
+        return 1
+        ;;
+    esac
+  done < <(printf '%s\n' "$INCLUDE_TAGS" | tr ',' '\n')
+}
+
+resolve_test_file() {
+  local requested="$1"
+  local normalized="${requested#e2e/}"
+  local filename="$normalized"
+  local matches=()
+  local test_file
+
+  case "$filename" in
+    */*) ;;
+    *.yaml) ;;
+    *) filename="${filename}.yaml" ;;
+  esac
+
+  for test_file in "${CANDIDATE_TEST_FILES[@]}"; do
+    if [ "$test_file" = "$normalized" ] || [ "${test_file##*/}" = "$filename" ]; then
+      matches+=("$test_file")
+    fi
+  done
+
+  if [ "${#matches[@]}" -eq 0 ]; then
+    echo "Unknown E2E test file: $requested" >&2
+    echo "Known E2E test files:" >&2
+    if [ "${#CANDIDATE_TEST_FILES[@]}" -gt 0 ]; then
+      printf '  %s\n' "${CANDIDATE_TEST_FILES[@]}" >&2
+    fi
+    return 1
+  fi
+  if [ "${#matches[@]}" -gt 1 ]; then
+    echo "Ambiguous E2E test file: $requested" >&2
+    printf '  %s\n' "${matches[@]}" >&2
+    return 1
+  fi
+
+  printf '%s\n' "${matches[0]}"
+}
+
+append_selected_test_file() {
+  local candidate="$1"
+  local selected
+  for selected in "${RESOLVED_TEST_FILES[@]}"; do
+    [ "$selected" = "$candidate" ] && return
+  done
+  RESOLVED_TEST_FILES+=("$candidate")
+}
+
+select_test_files() {
+  RESOLVED_TEST_FILES=()
+  local test_file
+  local requested
+  local resolved
+
+  if [ "$HAS_EXPLICIT_TAGS" = false ] && [ "${#TEST_FILES[@]}" -eq 0 ]; then
+    RESOLVED_TEST_FILES=("${ELIGIBLE_TEST_FILES[@]}")
+    return
+  fi
+
+  if [ "$HAS_EXPLICIT_TAGS" = true ]; then
+    for test_file in "${ELIGIBLE_TEST_FILES[@]}"; do
+      if tag_lists_intersect "$(test_file_tags "$test_file")" "$INCLUDE_TAGS"; then
+        append_selected_test_file "$test_file"
+      fi
+    done
+  fi
+
+  for requested in "${TEST_FILES[@]}"; do
+    resolved="$(resolve_test_file "$requested")" || return
+    append_selected_test_file "$resolved"
+  done
+
+  if [ "${#RESOLVED_TEST_FILES[@]}" -eq 0 ]; then
+    echo "No enabled E2E tests matched the requested selection for $TARGET" >&2
+    return 1
+  fi
 }
 
 metro_running() {
@@ -245,10 +410,21 @@ main() {
 
   INCLUDE_TAGS=""
   EXCLUDE_TAGS=""
+  HAS_EXPLICIT_TAGS=false
+  TEST_FILES=()
+  CANDIDATE_TEST_FILES=()
+  ELIGIBLE_TEST_FILES=()
+  ENABLED_TAGS=""
+  RESOLVED_TEST_FILES=()
   METRO_PID=""
   E2E_ENV_FILE=""
 
-  parse_maestro_tag_args "$@"
+  parse_arguments "$@"
+  load_application_tags
+  load_eligible_test_files
+  load_enabled_tags
+  validate_explicit_tags
+  select_test_files
 
   "$REPO_ROOT/e2e/scripts/maestro_bin" >/dev/null
   trap cleanup EXIT
@@ -259,7 +435,8 @@ main() {
 
   E2E_DEVICE_ID="$DEVICE_ID" \
     "$REPO_ROOT/e2e/scripts/run_maestro" \
-    "$PLATFORM" "$APP_ID" "$READY_MARKER" "$INCLUDE_TAGS" "$EXCLUDE_TAGS" "$TEST_NAMESPACE"
+    "$PLATFORM" "$APP_ID" "$READY_MARKER" "" "$EXCLUDE_TAGS" "$TEST_NAMESPACE" \
+    "${RESOLVED_TEST_FILES[@]}"
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then

@@ -11,9 +11,10 @@ options = {
 }
 
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: e2e/scripts/e2e_matrix_to_browserstack_run_plan validate|expand|count|bitrise-env|assert-pipeline-coverage [options]"
+  opts.banner = "Usage: e2e/scripts/e2e_matrix_to_browserstack_run_plan validate|expand|application|count|bitrise-env|assert-pipeline-coverage [options]"
   opts.on("--config PATH") { |path| options[:config] = path }
   opts.on("--index INDEX", Integer) { |index| options[:index] = index }
+  opts.on("--application ID") { |application| options[:application] = application }
   opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
   opts.on("--changed-file PATH") { |path| (options[:changed_files] ||= []) << path }
   opts.on("--pipeline-config PATH") { |path| options[:pipeline_config] = path }
@@ -22,7 +23,7 @@ end
 command = ARGV.shift
 parser.parse!(ARGV)
 
-unless ["validate", "expand", "count", "bitrise-env", "assert-pipeline-coverage"].include?(command)
+unless ["validate", "expand", "application", "count", "bitrise-env", "assert-pipeline-coverage"].include?(command)
   warn parser
   CliOutput.die("Unknown command #{command.inspect}")
 end
@@ -55,6 +56,9 @@ when "expand"
   end
 
   puts JSON.pretty_generate(output)
+when "application"
+  application_id = options.fetch(:application) { CliOutput.die("--application ID is required") }
+  puts JSON.generate(run_plan.application_config(application_id))
 when "count"
   errors = run_plan.validation_errors
   unless errors.empty?
