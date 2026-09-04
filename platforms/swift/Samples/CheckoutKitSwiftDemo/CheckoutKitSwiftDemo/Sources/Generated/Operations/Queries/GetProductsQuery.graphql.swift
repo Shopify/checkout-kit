@@ -9,7 +9,7 @@ extension Storefront {
     static let operationName: String = "GetProducts"
     static let operationDocument: ApolloAPI.OperationDocument = .init(
       definition: .init(
-        #"query GetProducts($first: Int = 50, $after: String, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) { __typename nodes { __typename id title handle description vendor requiresSellingPlan featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale sellingPlanAllocations(first: 10) { __typename nodes { __typename sellingPlan { __typename id name } } } price { __typename amount currencyCode } } } } pageInfo { __typename endCursor hasNextPage } } }"#
+        #"query GetProducts($first: Int = 50, $after: String, $country: CountryCode!, $language: LanguageCode!) @inContext(country: $country, language: $language) { products(first: $first, after: $after) { __typename nodes { __typename id title handle description vendor requiresSellingPlan featuredImage { __typename url } collections(first: 1) { __typename nodes { __typename id title } } variants(first: 1) { __typename nodes { __typename id title availableForSale sellingPlanAllocations(first: 10) { __typename nodes { __typename sellingPlan { __typename id name } } } price { __typename amount currencyCode } } } } pageInfo { __typename endCursor hasNextPage } } }"#
       ))
 
     public var first: GraphQLNullable<Int32>
@@ -44,9 +44,7 @@ extension Storefront {
       static var __selections: [ApolloAPI.Selection] { [
         .field("products", Products.self, arguments: [
           "first": .variable("first"),
-          "after": .variable("after"),
-          "sortKey": "CREATED_AT",
-          "reverse": true
+          "after": .variable("after")
         ]),
       ] }
       static var __fulfilledFragments: [any ApolloAPI.SelectionSet.Type] { [
