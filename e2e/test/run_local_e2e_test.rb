@@ -125,6 +125,20 @@ class RunLocalE2ETest < Minitest::Test
     assert_equal ["tests/swift/preload.yaml", "tests/shared/presentation.yaml"], output.lines.map(&:chomp)
   end
 
+  def test_positional_selection_supports_system_bash
+    output, error, status = local_selection("completion", shell: "/bin/bash")
+
+    assert status.success?, error
+    assert_equal ["tests/shared/completion.yaml"], output.lines.map(&:chomp)
+  end
+
+  def test_tag_selection_supports_system_bash
+    output, error, status = local_selection("--tags", "smoke", shell: "/bin/bash")
+
+    assert status.success?, error
+    assert_equal ["tests/shared/presentation.yaml", "tests/swift/preload.yaml"], output.lines.map(&:chomp)
+  end
+
   def test_secondary_tags_select_matching_eligible_tests
     output, error, status = local_selection("--tags", "smoke")
 
@@ -199,9 +213,9 @@ class RunLocalE2ETest < Minitest::Test
 
   private
 
-  def local_selection(*arguments)
+  def local_selection(*arguments, shell: "bash")
     Open3.capture3(
-      "bash",
+      shell,
       "-c",
       <<~'SH',
         source "$1"
