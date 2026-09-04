@@ -1,18 +1,23 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
 import type { CheckoutProtocolMessageMap, ErrorResponse, Message } from "./checkout.types";
 import "./checkout-web-component";
 import type { ShopifyCheckout } from "./checkout";
+import { mockTelemetry } from "./telemetry.test-helpers";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 
 describe("<shopify-checkout>", () => {
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
+  });
+
   afterEach(() => {
-    vi.restoreAllMocks();
     // Disconnect elements so their global message listeners do not leak
     // into tests in this file or another concurrently running suite.
     document.body.innerHTML = "";
+    vi.restoreAllMocks();
   });
 
   describe("it subscribes to checkout-protocol events", () => {
@@ -206,6 +211,33 @@ describe("<shopify-checkout>", () => {
         expect(checkout.checkout).toEqual(decodeCheckout(payload));
         expect(onStartSpy).toHaveBeenCalledOnce();
       });
+
+      it("measures navigation from before the checkout window opens", async () => {
+        let now = 100;
+        vi.spyOn(performance, "now").mockImplementation(() => now);
+        const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
+        const checkout = renderCheckout({ target: "popup" });
+        const mockCheckoutWindow = createMockWindow();
+        vi.spyOn(window, "open").mockImplementation(() => {
+          now = 200;
+          return mockCheckoutWindow;
+        });
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+        checkout.open();
+        now = 300;
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: mockCheckoutWindow,
+        });
+        await flushProtocolDispatch();
+
+        expect(durationSpy).toHaveBeenCalledWith({
+          milliseconds: 200,
+          result: "success",
+          preloaded: false,
+        });
+      });
     });
 
     describe("ec.complete", () => {
@@ -227,6 +259,9 @@ describe("<shopify-checkout>", () => {
 
     describe("ec.error", () => {
       it("updates the error property and dispatches an ec.error event", async () => {
+        const telemetry = mockTelemetry();
+        const telemetrySpy = vi.spyOn(telemetry, "recordError");
+        const durationSpy = vi.spyOn(telemetry, "recordNavigationDuration");
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
         const listenForEvent = waitForEvent(checkout, "ec.error", onErrorSpy);
@@ -239,6 +274,18 @@ describe("<shopify-checkout>", () => {
 
         expect(checkout.error).toEqual(decodeError(errorParams));
         expect(onErrorSpy).toHaveBeenCalledOnce();
+        expect(telemetrySpy).toHaveBeenCalledWith({
+          category: "protocol",
+          stage: "message",
+          code: "unknown",
+          retryable: false,
+          isRetry: false,
+        });
+        expect(durationSpy).toHaveBeenCalledWith({
+          milliseconds: expect.any(Number),
+          result: "failure",
+          preloaded: false,
+        });
       });
 
       it("ignores the old ec.error shape with ucp and messages directly in params", async () => {
@@ -264,45 +311,37 @@ describe("<shopify-checkout>", () => {
         expect(onErrorSpy).not.toHaveBeenCalled();
       });
 
-      it("auto-closes when any message has severity 'unrecoverable'", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const errorOrder: string[] = [];
-        checkout.addEventListener("ec.error", () => errorOrder.push("error"));
-        checkout.addEventListener("ec.close", () => errorOrder.push("close"));
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.error",
-          makeErrorParams({ severity: "unrecoverable" }),
-          { source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expect(errorOrder).toStrictEqual(["error", "close"]);
-      });
-
-      const NON_FATAL_SEVERITIES: ReadonlyArray<Message["severity"]> = [
+      const ERROR_SEVERITIES: ReadonlyArray<Message["severity"]> = [
+        "unrecoverable",
         "recoverable",
         "requires_buyer_input",
         "requires_buyer_review",
       ];
-      it.each(NON_FATAL_SEVERITIES)(
-        "does not auto-close when severity is %s",
+      it.each(ERROR_SEVERITIES)(
+        "auto-closes when message severity is %s",
         async (severity: Message["severity"]) => {
+          const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
           const { checkout, mockCheckoutWindow } = openPopupCheckout();
-          const closeSpy = vi.fn();
-          checkout.addEventListener("ec.close", closeSpy);
+          const errorOrder: string[] = [];
+          checkout.addEventListener("ec.error", () => errorOrder.push("error"));
+          checkout.addEventListener("ec.close", () => errorOrder.push("close"));
 
           simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams({ severity }), {
             source: mockCheckoutWindow,
           });
           await flushProtocolDispatch();
 
-          expect(closeSpy).not.toHaveBeenCalled();
+          expect(errorOrder).toStrictEqual(["error", "close"]);
+          expect(durationSpy).toHaveBeenCalledWith({
+            milliseconds: expect.any(Number),
+            result: "failure",
+            preloaded: false,
+          });
         },
       );
 
       it("does not crash when ec.error messages is not an array", async () => {
+        const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
         const closeSpy = vi.fn();
@@ -341,7 +380,12 @@ describe("<shopify-checkout>", () => {
 
         expect(rejections).toEqual([]);
         expect(onErrorSpy).toHaveBeenCalledOnce();
-        expect(closeSpy).not.toHaveBeenCalled();
+        expect(closeSpy).toHaveBeenCalledOnce();
+        expect(durationSpy).toHaveBeenCalledWith({
+          milliseconds: expect.any(Number),
+          result: "failure",
+          preloaded: false,
+        });
       });
     });
 
@@ -1216,6 +1260,7 @@ describe("<shopify-checkout>", () => {
     });
 
     it("drops non-serializable messages without throwing", async () => {
+      const telemetrySpy = vi.spyOn(mockTelemetry(), "recordProtocolDecodeError");
       const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const circularMessage: Record<string, unknown> = {
@@ -1235,6 +1280,31 @@ describe("<shopify-checkout>", () => {
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining("Dropped message because it could not be serialized"),
       );
+      expect(telemetrySpy).toHaveBeenCalledWith({
+        method: "unknown",
+        failureType: "serialization",
+      });
+    });
+
+    it("does not record decode errors when telemetry is disabled", async () => {
+      const { checkout, mockCheckoutWindow } = openPopupCheckout({
+        "log-level": "warn",
+        "telemetry-enabled": "false",
+      });
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const telemetrySpy = vi.spyOn(mockTelemetry(), "recordProtocolDecodeError");
+      const circularMessage: Record<string, unknown> = {};
+      circularMessage.self = circularMessage;
+
+      simulateRawMessageEvent(checkout, circularMessage, {
+        source: mockCheckoutWindow,
+      });
+      await flushProtocolDispatch();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Dropped message because it could not be serialized"),
+      );
+      expect(telemetrySpy).not.toHaveBeenCalled();
     });
   });
 

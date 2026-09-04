@@ -34,6 +34,7 @@ export interface CheckoutAttributes {
   target?: CheckoutTarget | string;
   appearance?: CheckoutAppearance | string;
   "log-level"?: LogLevel;
+  "telemetry-enabled"?: "true" | "false";
   /**
    * Space/comma-separated list of extra trusted message origin patterns. Each
    * entry may be an exact origin (`https://example.com`), a wildcard subdomain
@@ -111,6 +112,14 @@ export interface CheckoutProperties {
    * ```
    */
   logLevel?: LogLevel;
+
+  /**
+   * Controls anonymous diagnostic metrics sent by Checkout Kit. Defaults to `true`.
+   *
+   * This property is reflected to the `telemetry-enabled` attribute. Set it to
+   * `false` before opening checkout to opt out.
+   */
+  telemetryEnabled?: boolean;
 
   /**
    * Extra origins allowed to post incoming checkout-protocol messages, on top
