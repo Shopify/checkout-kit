@@ -18,31 +18,6 @@ class PreloadCacheTest {
     }
 
     @Test
-    fun `retaining after presentation schedules expiry for the remaining ttl`() {
-        var now = 1_000L
-        val scheduler = FakePreloadExpiryScheduler()
-        val cache = PreloadCache(scheduler).also {
-            it.clock = object : PreloadCache.Clock() {
-                override fun elapsedRealtime(): Long = now
-            }
-        }
-        val view = mock<CheckoutWebView>()
-        val key = PreloadKey("https://checkout.shopify.com/cart/123")
-
-        cache.store(key, view, activity())
-        now += TimeUnit.MINUTES.toMillis(1)
-        assertThat(cache.take(key)).isSameAs(view)
-
-        assertThat(cache.retainAfterPresentation(view)).isTrue()
-        assertThat(scheduler.scheduledDelayMillis).isEqualTo(TimeUnit.MINUTES.toMillis(4))
-
-        now += TimeUnit.MINUTES.toMillis(4)
-        scheduler.fire()
-
-        assertThat(cache.hasEntry).isFalse()
-    }
-
-    @Test
     fun `expiry timer rearms while entry is fresh`() {
         val now = 1_000L
         val scheduler = FakePreloadExpiryScheduler()
@@ -100,7 +75,7 @@ class PreloadCacheTest {
     }
 
     @Test
-    fun `discard cancels scheduled expiry`() {
+    fun `discard clears consumed preload`() {
         val scheduler = FakePreloadExpiryScheduler()
         val cache = PreloadCache(scheduler)
         val view = mock<CheckoutWebView>()
@@ -108,8 +83,7 @@ class PreloadCacheTest {
 
         cache.store(key, view, activity())
         assertThat(cache.take(key)).isSameAs(view)
-        assertThat(cache.retainAfterPresentation(view)).isTrue()
-        assertThat(scheduler.isScheduled).isTrue()
+        assertThat(cache.hasEntry).isTrue()
 
         cache.discard(view)
 

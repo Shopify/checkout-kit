@@ -128,28 +128,6 @@ internal class PreloadCache(
         }
     }
 
-    /**
-     * Retains a dismissed view when it is still the cached preload and within its time-to-live.
-     *
-     * @return `true` when the view remains cached; otherwise `false` so the caller can destroy it.
-     */
-    fun retainAfterPresentation(view: CheckoutWebView): Boolean {
-        view.markDismissed()
-        val cached = entry
-        return when {
-            cached?.view !== view -> false
-            !cached.isFresh(clock.elapsedRealtime()) -> {
-                ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding expired preloaded WebView after dismissal.")
-                clearEntry()
-                false
-            }
-            else -> {
-                scheduleExpiry(cached)
-                true
-            }
-        }
-    }
-
     fun discard(view: CheckoutWebView) {
         view.markDismissed()
         val cached = entry
