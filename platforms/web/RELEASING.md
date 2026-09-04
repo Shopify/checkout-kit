@@ -2,10 +2,8 @@
 
 This guide covers how to publish a new version of the web package to npm.
 
-The release flow mirrors the existing Android (`android-publish.yml`) and
-Swift (`swift-publish.yml`) workflows: a maintainer drafts a GitHub Release
-with a platform-prefixed tag, a workflow runs in a protected environment, and
-the package is published to npm with SLSA provenance.
+The `Release package` workflow creates a platform-prefixed GitHub Release, then
+publishes the package in a protected environment with SLSA provenance.
 
 ## Day-to-day: publishing a release
 
@@ -23,32 +21,32 @@ Use a [semver](https://semver.org/) string. Examples:
 - `4.0.0-rc.1` — release candidate
 - `4.0.0` — stable
 
-`--no-git-tag-version` is intentional — the tag is created by the GitHub
-Release UI in step 2, not by `pnpm version`.
+`--no-git-tag-version` is intentional — the tag is created by the release
+workflow in step 2, not by `pnpm version`.
 
 Open a PR titled like `chore(web): bump to 4.0.0-alpha.3`. Get it reviewed
 and merged into `main`. Wait for CI to be green on `main`.
 
 ### 2. Draft a GitHub Release
 
-Go to <https://github.com/Shopify/checkout-kit/releases/new>:
+Run the [Release package workflow](../../actions/workflows/release.yml):
 
-- **Tag**: `web/<version>` — e.g. `web/4.0.0-alpha.3`. Create the tag from `main`.
-- **Title**: `Web <version>` — e.g. `Web 4.0.0-alpha.3`.
-- **Notes**: click _Generate release notes_ and edit as needed. Highlight
-  any breaking changes at the top.
-- **Set as a pre-release**: ✅ check this box for any version containing
-  `-alpha`, `-beta`, or `-rc`. Leave unchecked for stable releases.
-- **Set as the latest release**: ✅ check for stable releases only. Don't
-  check for prereleases.
+1. Select `Web` as the platform.
+2. Enter the expected version. The workflow reads the version from
+   `platforms/web/package.json` and fails if the typed version does not match.
+3. Select `Dry run` first to review the release plan.
+4. From the dry-run summary, run the generated GitHub CLI command to create a
+   draft release without retyping the validated version.
+5. Review the generated notes, then publish the draft release.
 
-Click _Publish release_.
+The workflow creates a `web/<version>` tag and marks versions containing a
+prerelease identifier such as `-alpha`, `-beta`, or `-rc` as prereleases.
 
 ### 3. Approve the publish
 
-The release event triggers `.github/workflows/web-publish.yml`. The job uses
-the `npm-web` environment, which requires a maintainer to approve before the
-publish actually runs.
+Publishing the draft triggers the Web publish job in
+`.github/workflows/release.yml`. The job uses the `npm-web` environment, which
+requires a maintainer to approve before the publish actually runs.
 
 You'll see a banner on the workflow run page: _Review pending deployments_.
 Click through and approve.
@@ -81,28 +79,10 @@ run that built it.
 | --- | --- | --- | --- |
 | Stable | `web/4.0.0` | `latest` | `npm i @shopify/checkout-kit` |
 | Alpha / beta / rc | `web/4.0.0-alpha.3` | `next` | `npm i @shopify/checkout-kit@next` |
-| Manual override | any | whatever you pass to `workflow_dispatch` | depends on tag |
 
-The dist-tag is computed from three layered signals, in priority order:
-
-1. **Explicit override** — if you set the `tag` input on `workflow_dispatch`,
-   that value wins (`latest`, `next`, `beta`, etc.).
-2. **GitHub Release's pre-release flag** — if you checked "Set as a
-   pre-release" in the Releases UI, the workflow uses `next`.
-3. **Defensive fallback from `package.json` version** — if the version
-   contains a `-` (a semver prerelease identifier like `4.0.0-alpha.1`),
-   the workflow uses `next` regardless of the release flag. This catches:
-   - `workflow_dispatch` runs (where there's no release event so the
-     prerelease flag is empty)
-   - Release events where the maintainer forgot to check the
-     "pre-release" box for an obviously-prerelease version.
-
-If none of the above applies (stable version, no override, not flagged as
-pre-release), the workflow publishes under `latest`.
-
-If you ever genuinely want to publish a `-alpha.X` version under `latest`
-(rare — usually a mistake), use the `tag` `workflow_dispatch` input to
-explicitly override.
+The dist-tag is derived from the checked-in package version. Versions with a
+prerelease identifier publish under `next`; stable versions publish under
+`latest`.
 
 The `web/` tag prefix is required so the publish workflow knows the release
 is for the web platform. Other platforms have their own prefixes:
@@ -110,29 +90,23 @@ is for the web platform. Other platforms have their own prefixes:
 - Web: `web/X.Y.Z`
 - Android: `android/X.Y.Z`
 - Swift: bare `X.Y.Z`
-- React Native: TBD
+- React Native: `react-native/X.Y.Z`
 
 ## Manual / emergency publish
 
-You can trigger the workflow directly without creating a GitHub Release:
+Use `Production release` mode in the `Release package` workflow to create the
+GitHub Release and run the protected Web publish job in the same workflow. Use
+`Dry run` first to validate the package version and inspect the release plan.
 
-1. Go to _Actions → Web — Publish to npm → Run workflow_
-2. Choose the branch (usually `main`)
-3. Optionally:
-   - **Override dist-tag** — e.g. `latest`, `next`, `beta`, `experimental`
-   - **Dry run** — runs everything except the final `npm publish`. Use this
-     to sanity-check the pipeline before a real publish, or to verify a
-     misconfigured release.
+## Required npm configuration
 
-The tag-vs-package.json validation is skipped on `workflow_dispatch` runs
-(since there's no tag to validate against). Make sure `package.json`'s
-version is correct before running.
+> [!IMPORTANT]
+> Before the first Web release using `.github/workflows/release.yml`, update
+> the npm Trusted Publisher to use `release.yml`. npm binds trusted publishing
+> to the exact workflow filename; leaving it configured for the removed
+> `web-publish.yml` workflow will cause publishing to fail.
 
-## One-time setup (already done — for reference)
-
-These are the one-time admin tasks required to enable Trusted Publishing.
-Documented here so this guide remains complete if the configuration ever
-needs to be re-created.
+These are the admin settings required to enable Trusted Publishing.
 
 ### npm Trusted Publisher
 
@@ -143,11 +117,12 @@ On <https://www.npmjs.com/package/@shopify/checkout-kit>:
    - **Provider**: GitHub Actions
    - **Owner**: `Shopify`
    - **Repository**: `checkout-kit`
-   - **Workflow filename**: `web-publish.yml`
+   - **Workflow filename**: `release.yml`
    - **Environment name**: `npm-web`
 
 This tells npm to accept publishes that present an OIDC token from this exact
-workflow file in this environment. No long-lived `NPM_TOKEN` is needed.
+workflow file in this environment. No long-lived `NPM_TOKEN` is needed. Verify
+this setting after merging any workflow rename and before publishing.
 
 ### GitHub environment
 
@@ -155,7 +130,7 @@ In the repo's _Settings → Environments → New environment_:
 
 - **Name**: `npm-web`
 - **Required reviewers**: 1+ maintainers from the package owners list
-- **Deployment branches**: restrict to `main`
+- **Deployment branches and tags**: allow `main` and tags matching `web/*`
 
 The required-reviewer rule means every publish requires explicit human
 approval, even if the workflow somehow ran without authorization.
@@ -197,7 +172,7 @@ Check that:
 - The job is running on a public GitHub-hosted runner (not self-hosted
   without OIDC support)
 - The Trusted Publisher on npm is for the **same workflow file path** —
-  npm matches `web-publish.yml` exactly
+  npm matches `release.yml` exactly
 
 ## What gets published
 
@@ -223,7 +198,8 @@ pnpm pack --dry-run
 
 ## Related
 
-- Workflow: [`.github/workflows/web-publish.yml`](../../.github/workflows/web-publish.yml)
+- Workflow: [`.github/workflows/release.yml`](../../.github/workflows/release.yml)
+- Release validator: [`.github/scripts/validate-release-version`](../../.github/scripts/validate-release-version)
 - Pattern reference: [`.github/workflows/android-publish.yml`](../../.github/workflows/android-publish.yml),
   [`.github/workflows/swift-publish.yml`](../../.github/workflows/swift-publish.yml)
 - npm Trusted Publishers docs: <https://docs.npmjs.com/trusted-publishers>
