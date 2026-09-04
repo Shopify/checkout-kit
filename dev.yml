@@ -327,6 +327,9 @@ commands:
           platforms/android/gradlew -p platforms/android clean test --console=plain
           platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
         subcommands:
+          samples:
+            desc: Run JVM tests for the Checkout Kit Android sample app
+            run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
           specific:
             desc: Run specific test class
             syntax: <TestClassName> (e.g. CheckoutBridgeTest)

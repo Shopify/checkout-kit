@@ -90,6 +90,8 @@ jobs:
             platforms/android/**/build/reports/tests/
             platforms/android/**/build/test-results/
             platforms/android/**/build/reports/problems/
+            platforms/android/samples/CheckoutKitAndroidDemo/**/build/reports/tests/
+            platforms/android/samples/CheckoutKitAndroidDemo/**/build/test-results/
             protocol/languages/kotlin/**/build/reports/tests/
             protocol/languages/kotlin/**/build/test-results/
             protocol/languages/kotlin/**/build/reports/problems/
@@ -118,8 +120,8 @@ jobs:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
 
-      - name: Build Sample App
-        run: ./gradlew assembleDebug
+      - name: Test and Build Sample App
+        run: ./gradlew :app:testDebugUnitTest assembleDebug --console=plain
         working-directory: platforms/android/samples/CheckoutKitAndroidDemo
 
   lint:

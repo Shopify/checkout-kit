@@ -58,7 +58,9 @@ fun setupDI(application: Application) {
 
 val appModules = module {
     // App-wide components
-    singleOf(::PreferencesManager)
+    // Koin resolves every constructor parameter used by `singleOf`, including Kotlin parameters
+    // with defaults. Create this explicitly so PreferencesManager uses its Context DataStore.
+    single { PreferencesManager(context = androidApplication().applicationContext) }
 
     // Serialization
     single { Json { ignoreUnknownKeys = true } }
