@@ -1,2 +1,3 @@
 APPLE_PAY_MERCHANT_IDENTIFIER =
+OTHER_LDFLAGS = $(inherited) -framework CoreMotion
 #include? "Storefront.xcconfig"

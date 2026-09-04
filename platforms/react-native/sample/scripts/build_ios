@@ -3,22 +3,8 @@
 set -ex
 set -eo pipefail
 
-# Add sccache for faster compilation outside of CI environments
-# Can be disabled with SCCACHE=false for debugging or matching CI behavior locally
-if [ "$CI" = "true" ] || [ "$SCCACHE" = "false" ]; then
-    # CI detected or sccache explicitly disabled - skipping sccache for clean builds
-    if command -v sccache >/dev/null 2>&1; then
-        sccache --stop-server 2>/dev/null || true
-    fi
-else
-    if command -v sccache >/dev/null 2>&1; then
-        export RUSTC_WRAPPER=sccache
-        export CC="sccache clang"
-        export CXX="sccache clang++"
-    fi
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/ios_sccache"
 source "$SCRIPT_DIR/simulator"
 dest="$(get_sim_destination)"
 
@@ -39,7 +25,8 @@ run_xcodebuild() {
         -disableAutomaticPackageResolution \
         GCC_PRECOMPILE_PREFIX_HEADER=YES \
         ASSETCATALOG_COMPILER_OPTIMIZATION=time \
-        COMPILER_INDEX_STORE_ENABLE=NO
+        COMPILER_INDEX_STORE_ENABLE=NO \
+        "${IOS_SCCACHE_XCODEBUILD_ARGS[@]}"
 }
 
 if command -v xcbeautify >/dev/null 2>&1; then

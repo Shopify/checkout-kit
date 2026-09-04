@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+IOS_SCCACHE_XCODEBUILD_ARGS=()
+
+if [ "${SCCACHE_ENABLED:-0}" = "1" ]; then
+    if ! SCCACHE_BINARY="$(command -v sccache)"; then
+        echo "sccache is required when SCCACHE_ENABLED=1" >&2
+        exit 1
+    fi
+
+    if ! sccache --start-server 2>/dev/null; then
+        sccache --show-stats >/dev/null
+    fi
+
+    IOS_SCCACHE_XCODEBUILD_ARGS=(
+        "C_COMPILER_LAUNCHER=$SCCACHE_BINARY"
+        "CLANG_ENABLE_MODULES=NO"
+        "CLANG_USE_RESPONSE_FILE=NO"
+    )
+fi
