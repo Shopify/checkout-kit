@@ -34,9 +34,12 @@ class ProductViewModel(
         if (state is ProductUIState.Loaded) {
             val quantity = state.addQuantityAmount
             setIsAddingToCart(true)
-            cartViewModel.addToCart(state.selectedVariant.id, quantity) {
-                setIsAddingToCart(false)
-            }
+            cartViewModel.addToCart(
+                variantId = state.selectedVariant.id,
+                quantity = quantity,
+                onComplete = { setIsAddingToCart(false) },
+                sellingPlanId = state.selectedSellingPlanId,
+            )
         }
     }
 
@@ -64,6 +67,7 @@ class ProductViewModel(
         _uiState.value = ProductUIState.Loaded(
             product = product,
             selectedVariant = selectedVariant,
+            selectedSellingPlanId = selectedSellingPlanId(product, selectedVariant, currentState?.selectedSellingPlanId),
             availableOptions = buildAvailableOptions(product, selectedVariant),
             isAddingToCart = currentState?.isAddingToCart ?: false,
             addQuantityAmount = currentState?.addQuantityAmount ?: 1
@@ -80,12 +84,33 @@ class ProductViewModel(
             matchingVariant.let {
                 _uiState.value = state.copy(
                     selectedVariant = it,
+                    selectedSellingPlanId = selectedSellingPlanId(state.product, it, null),
                     availableOptions = buildAvailableOptions(
                         product = state.product,
                         selectedVariant = it
                     )
                 )
             }
+        }
+    }
+
+    fun selectSellingPlan(sellingPlanId: String?) {
+        val state = _uiState.value
+        if (state is ProductUIState.Loaded) {
+            _uiState.value = state.copy(selectedSellingPlanId = sellingPlanId)
+        }
+    }
+
+    private fun selectedSellingPlanId(
+        product: Product,
+        variant: ProductVariant,
+        currentSellingPlanId: String?,
+    ): String? {
+        val hasCurrentPlan = variant.sellingPlanAllocations.any { it.id == currentSellingPlanId }
+        return when {
+            hasCurrentPlan -> currentSellingPlanId
+            product.requiresSellingPlan -> variant.sellingPlanAllocations.firstOrNull()?.id
+            else -> null
         }
     }
 
@@ -147,6 +172,7 @@ sealed class ProductUIState {
     data class Loaded(
         val product: Product,
         val selectedVariant: ProductVariant,
+        val selectedSellingPlanId: String?,
         val availableOptions: Map<String, List<ProductVariantOptionDetails>>,
         val isAddingToCart: Boolean,
         val addQuantityAmount: Int

@@ -17,10 +17,11 @@ class CartRepository(
     suspend fun createCart(
         variantId: ID,
         quantity: Int,
+        sellingPlanId: String?,
         demoBuyerIdentityEnabled: Boolean,
         customerAccessToken: String?,
     ): CartState.Cart {
-        val input = cartInput(variantId, quantity, demoBuyerIdentityEnabled, customerAccessToken)
+        val input = cartInput(variantId, quantity, sellingPlanId, demoBuyerIdentityEnabled, customerAccessToken)
 
         val data = storefrontApiClient.createCart(input)
         val cartCreate = data.cartCreate
@@ -35,11 +36,13 @@ class CartRepository(
         return cart.cartFragment.toLocal()
     }
 
-    suspend fun addCartLine(cartId: ID, variantId: ID, quantity: Int): CartState.Cart {
-        val line = CartLineInput(
-            merchandiseId = variantId.id,
-            quantity = Optional.present(quantity),
-        )
+    suspend fun addCartLine(
+        cartId: ID,
+        variantId: ID,
+        quantity: Int,
+        sellingPlanId: String?,
+    ): CartState.Cart {
+        val line = cartLineInput(variantId, quantity, sellingPlanId)
 
         val data = storefrontApiClient.cartLinesAdd(cartId = cartId.id, lines = listOf(line))
         val cart = data.cartLinesAdd?.cart
@@ -70,20 +73,25 @@ class CartRepository(
         internal fun cartInput(
             variantId: ID,
             quantity: Int,
+            sellingPlanId: String?,
             demoBuyerIdentityEnabled: Boolean,
             customerAccessToken: String?,
         ) = CartInput(
             lines = Optional.present(
                 listOf(
-                    CartLineInput(
-                        merchandiseId = variantId.id,
-                        quantity = Optional.present(quantity),
-                    )
+                    cartLineInput(variantId, quantity, sellingPlanId)
                 )
             ),
             buyerIdentity = buyerIdentity(demoBuyerIdentityEnabled, customerAccessToken),
             delivery = delivery(demoBuyerIdentityEnabled, customerAccessToken),
         )
+
+        private fun cartLineInput(variantId: ID, quantity: Int, sellingPlanId: String?): CartLineInput =
+            CartLineInput(
+                merchandiseId = variantId.id,
+                quantity = Optional.present(quantity),
+                sellingPlanId = if (sellingPlanId == null) Optional.Absent else Optional.present(sellingPlanId),
+            )
 
         // A guest carries nothing, so the cart takes the market of the shop. A country here
         // would pick the market instead, and the market decides the currency, the address

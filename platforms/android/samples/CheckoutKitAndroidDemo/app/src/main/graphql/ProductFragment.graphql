@@ -3,6 +3,7 @@ fragment ProductFragment on Product {
   title
   description
   vendor
+  requiresSellingPlan
   featuredImage {
     url
     width

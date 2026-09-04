@@ -2,6 +2,14 @@ fragment ProductVariantFragment on ProductVariant {
   id
   title
   availableForSale
+  sellingPlanAllocations(first: 10) {
+    nodes {
+      sellingPlan {
+        id
+        name
+      }
+    }
+  }
   price {
     amount
     currencyCode

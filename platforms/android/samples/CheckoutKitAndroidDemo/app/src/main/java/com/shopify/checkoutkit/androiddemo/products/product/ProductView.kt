@@ -90,12 +90,12 @@ fun ProductView(
                             .padding(horizontal = horizontalPadding, vertical = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(15.dp)
                     ) {
+                        val variant = productUIState.selectedVariant
                         Header2(
                             text = product.title
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            val variant = productUIState.selectedVariant
                             MoneyText(variant.price.currencyCode, variant.price.amount)
                         }
 
@@ -110,8 +110,26 @@ fun ProductView(
                             productViewModel.setAddQuantityAmount(quantity)
                         }
 
+                        if (variant.sellingPlanAllocations.isNotEmpty()) {
+                            PurchaseOptionSelector(
+                                sellingPlanAllocations = variant.sellingPlanAllocations,
+                                requiresSellingPlan = product.requiresSellingPlan,
+                                selectedSellingPlanId = productUIState.selectedSellingPlanId,
+                                onSelected = productViewModel::selectSellingPlan,
+                            )
+                        }
+
+                        val requiresUnavailableSellingPlan = product.requiresSellingPlan &&
+                            productUIState.selectedSellingPlanId == null
+                        if (requiresUnavailableSellingPlan) {
+                            Text(
+                                text = stringResource(R.string.product_subscription_unavailable),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+
                         AddToCartButton(
-                            enabled = productUIState.selectedVariant.availableForSale,
+                            enabled = productUIState.selectedVariant.availableForSale && !requiresUnavailableSellingPlan,
                             loading = productUIState.isAddingToCart,
                             modifier = Modifier.fillMaxWidth()
                         ) {
