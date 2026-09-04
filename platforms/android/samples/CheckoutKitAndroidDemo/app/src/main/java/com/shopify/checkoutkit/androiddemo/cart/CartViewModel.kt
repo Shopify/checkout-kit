@@ -118,11 +118,16 @@ class CartViewModel(
         }
     }
 
-    fun addToCart(variantId: ID, quantity: Int, onComplete: OnComplete) {
+    fun addToCart(
+        variantId: ID,
+        quantity: Int,
+        sellingPlanId: String? = null,
+        onComplete: OnComplete,
+    ) {
         Timber.i("Adding variant: $variantId to cart with quantity: $quantity")
         when (val state = _cartState.value) {
-            is CartState.Empty -> performCartCreate(variantId, quantity, onComplete)
-            is CartState.Cart -> performCartLinesAdd(state.cartID, variantId, quantity, onComplete)
+            is CartState.Empty -> performCartCreate(variantId, quantity, sellingPlanId, onComplete)
+            is CartState.Cart -> performCartLinesAdd(state.cartID, variantId, quantity, sellingPlanId, onComplete)
         }
     }
 
@@ -365,10 +370,16 @@ class CartViewModel(
         }
     }
 
-    private fun performCartLinesAdd(cartId: ID, variantId: ID, quantity: Int, onComplete: OnComplete) = viewModelScope.launch {
+    private fun performCartLinesAdd(
+        cartId: ID,
+        variantId: ID,
+        quantity: Int,
+        sellingPlanId: String?,
+        onComplete: OnComplete,
+    ) = viewModelScope.launch {
         Timber.i("Adding cart lines to existing cart: $cartId, variant: $variantId, and $quantity")
         try {
-            val cart = cartRepository.addCartLine(cartId, variantId, quantity)
+            val cart = cartRepository.addCartLine(cartId, variantId, quantity, sellingPlanId)
             _cartState.value = cart
             onComplete(Result.success(cart))
         } catch (e: Exception) {
@@ -378,13 +389,19 @@ class CartViewModel(
         }
     }
 
-    private fun performCartCreate(variantId: ID, quantity: Int, onComplete: OnComplete) = viewModelScope.launch {
+    private fun performCartCreate(
+        variantId: ID,
+        quantity: Int,
+        sellingPlanId: String?,
+        onComplete: OnComplete,
+    ) = viewModelScope.launch {
         Timber.i("No existing cart, creating a new one")
         val customerAccessToken = customerRepository.getCustomerAccessToken()?.accessToken
         try {
             val cart = cartRepository.createCart(
                 variantId,
                 quantity,
+                sellingPlanId,
                 demoBuyerIdentityEnabled,
                 customerAccessToken,
             )

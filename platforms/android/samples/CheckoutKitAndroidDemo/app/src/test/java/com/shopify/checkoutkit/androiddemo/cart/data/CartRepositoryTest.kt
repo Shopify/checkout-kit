@@ -7,6 +7,21 @@ import org.junit.Test
 class CartRepositoryTest {
 
     @Test
+    fun `cart line includes selling plan`() {
+        val input = cartInput(sellingPlanId = "gid://shopify/SellingPlan/2")
+
+        assertThat(requireNotNull(input.lines.getOrThrow()).single().sellingPlanId.getOrThrow())
+            .isEqualTo("gid://shopify/SellingPlan/2")
+    }
+
+    @Test
+    fun `cart line omits selling plan for a one-time purchase`() {
+        val input = cartInput()
+
+        assertThat(requireNotNull(input.lines.getOrThrow()).single().sellingPlanId.getOrNull()).isNull()
+    }
+
+    @Test
     fun `demo buyer identity supplies the delivery address`() {
         val input = cartInput(demoBuyerIdentityEnabled = true, customerAccessToken = null)
 
@@ -38,11 +53,15 @@ class CartRepositoryTest {
         assertThat(input.delivery.getOrNull()).isNull()
     }
 
-    private fun cartInput(demoBuyerIdentityEnabled: Boolean, customerAccessToken: String?) =
-        CartRepository.cartInput(
-            variantId = ID("gid://shopify/ProductVariant/1"),
-            quantity = 1,
-            demoBuyerIdentityEnabled = demoBuyerIdentityEnabled,
-            customerAccessToken = customerAccessToken,
-        )
+    private fun cartInput(
+        demoBuyerIdentityEnabled: Boolean = false,
+        customerAccessToken: String? = null,
+        sellingPlanId: String? = null,
+    ) = CartRepository.cartInput(
+        variantId = ID("gid://shopify/ProductVariant/1"),
+        quantity = 1,
+        sellingPlanId = sellingPlanId,
+        demoBuyerIdentityEnabled = demoBuyerIdentityEnabled,
+        customerAccessToken = customerAccessToken,
+    )
 }

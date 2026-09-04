@@ -96,6 +96,9 @@
 
     <string name="product_add_to_cart" translatable="false">Add to cart</string>
     <string name="product_alt_text_default" translatable="false">Product image</string>
+    <string name="product_purchase_option" translatable="false">Purchase option</string>
+    <string name="product_one_time_purchase" translatable="false">One-time purchase</string>
+    <string name="product_subscription_unavailable" translatable="false">This subscription doesn\'t have an available purchase option.</string>
 
     <string name="free" translatable="false">Free</string>
 

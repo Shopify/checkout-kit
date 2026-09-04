@@ -27,6 +27,7 @@ fun ProductFragment.toLocal(variants: List<ProductVariant> = emptyList()): Produ
                 amount = priceRange.maxVariantPrice.amount.toString().toDouble(),
             ),
         ),
+        requiresSellingPlan = requiresSellingPlan,
         variants = variants,
     )
 }
@@ -42,6 +43,12 @@ fun ProductVariantFragment.toLocal(): ProductVariant {
         availableForSale = availableForSale,
         selectedOptions = selectedOptions.map { option ->
             ProductVariantSelectedOption(option.name, option.value)
+        },
+        sellingPlanAllocations = sellingPlanAllocations.nodes.map { allocation ->
+            SellingPlanAllocation(
+                id = allocation.sellingPlan.id,
+                name = allocation.sellingPlan.name,
+            )
         },
     )
 }
