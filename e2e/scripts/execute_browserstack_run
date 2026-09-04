@@ -157,6 +157,7 @@ class BrowserStackRunExecutor
   end
 
   def start_build(run, app_url, test_suite_url, device)
+    platform = run.fetch("platform")
     body = {
       app: app_url,
       testSuite: test_suite_url,
@@ -176,7 +177,8 @@ class BrowserStackRunExecutor
         E2E_CONTROL_LINK: run.fetch("control_link")
       }
     }
-    response = @client.start_build(run.fetch("platform"), body)
+    body[:enableApplePay] = true if platform == "ios"
+    response = @client.start_build(platform, body)
     write_json("build-start.json", response)
     response
   end
