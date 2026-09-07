@@ -72,6 +72,7 @@ extension Storefront {
       "Mutation": Storefront.Objects.Mutation,
       "Order": Storefront.Objects.Order,
       "Page": Storefront.Objects.Page,
+      "PageInfo": Storefront.Objects.PageInfo,
       "Product": Storefront.Objects.Product,
       "ProductConnection": Storefront.Objects.ProductConnection,
       "ProductOption": Storefront.Objects.ProductOption,

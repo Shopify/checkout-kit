@@ -17,6 +17,7 @@ struct E2ESampleAppTarget: E2ECommandTarget {
 
         let query = Storefront.GetProductsQuery(
             first: .some(Int32(index + 1)),
+            after: .none,
             country: network.countryCode,
             language: network.languageCode
         )
