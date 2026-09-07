@@ -13,6 +13,7 @@ query FetchProducts($numProducts: Int!, $numVariants: Int!, $cursor: String) {
     pageInfo {
       startCursor
       endCursor
+      hasNextPage
     }
   }
 }
