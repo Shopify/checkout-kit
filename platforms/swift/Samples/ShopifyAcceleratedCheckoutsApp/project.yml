@@ -80,6 +80,7 @@ targets:
         STOREFRONT_DOMAIN: $(STOREFRONT_DOMAIN)
         API_VERSION: $(API_VERSION)
         ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
     entitlements:
       path: ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.entitlements
       properties: {}
