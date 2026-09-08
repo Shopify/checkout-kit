@@ -69,6 +69,19 @@ class ShopifyCheckoutTests: XCTestCase {
         XCTAssertNotNil(sheet.onUpdateAction)
         XCTAssertNotNil(sheet.onCompleteAction)
     }
+
+    func testOnLinkClick() throws {
+        let expectedLink = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.com/policy")))
+        var receivedLink: CheckoutLink?
+
+        let sheet = shopifyCheckout.onLinkClick { link in
+            receivedLink = link
+            return .handled
+        }
+
+        XCTAssertEqual(sheet.onLinkClickAction?(expectedLink), .handled)
+        XCTAssertEqual(receivedLink, expectedLink)
+    }
 }
 
 @MainActor

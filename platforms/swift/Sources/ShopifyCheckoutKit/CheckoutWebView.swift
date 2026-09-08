@@ -318,6 +318,7 @@ class CheckoutWebView: WKWebView {
 
     var client: (any CheckoutCommunicationProtocol)?
     var externalURLHandler: any ExternalURLHandling = UIApplicationExternalURLHandler()
+    var linkActionProvider: ((CheckoutLink) -> CheckoutLinkAction)?
 
     /// Resolves whether a navigation targets the main frame. Overridable in tests.
     var navigationIsMainFrame: (WKNavigationAction) -> Bool = { $0.targetFrame?.isMainFrame == true }
@@ -341,9 +342,9 @@ class CheckoutWebView: WKWebView {
     ///     ready result carries only the UCP envelope and the kit simply answers the
     ///     delegated calls it supports. It is abstracted from consumers and cannot be
     ///     overridden by a merchant-supplied client.
-    ///   - `window.open` - opens web URLs in `SFSafariViewController` so buyers stay in an
-    ///     in-app browser surface, and routes non-web URLs through `externalURLHandler`
-    ///     (consumers may still override via their own client).
+    ///   - `window.open` - consults the public link action handler, then by default opens web
+    ///     URLs in `SFSafariViewController` so buyers stay in an in-app browser surface and
+    ///     routes non-web URLs through `externalURLHandler`.
     lazy var defaultsClient: CheckoutProtocol.Client = .init()
         .onDecodeError { [entryPoint] method, error, params in
             OSLogger.shared.error("Failed to decode \(method) payload: \(error)")
@@ -377,9 +378,18 @@ class CheckoutWebView: WKWebView {
             guard cacheContainsCompletedView || cacheContainsItsReplacement else { return }
             CheckoutWebView.preloadCache.evict(with: .idle)
         }
-        .on(CheckoutProtocol.windowOpen) { [externalURLHandler] request in
+        .on(CheckoutProtocol.windowOpen) { [weak self, externalURLHandler] request in
             guard let target = request.parsedURL else {
                 return .rejected(reason: "failed to open URL")
+            }
+
+            switch self?.linkActionProvider?(CheckoutLink(url: target)) ?? .open {
+            case .handled:
+                return .success()
+            case .cancel:
+                return .rejected(reason: "link opening canceled")
+            case .open:
+                break
             }
 
             let scheme = target.scheme?.lowercased()
