@@ -152,7 +152,8 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `apollo-codegen-config.json` | Apollo code generation configuration. |
 | `CheckoutKitSwiftDemo/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |
 | `CheckoutKitSwiftDemo/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
-| `CheckoutKitSwiftDemo/Sources/App/AcceleratedCheckoutsConfiguredView.swift` | Accelerated checkout and Apple Pay settings. |
+| `CheckoutKitSwiftDemo/Sources/App/AcceleratedCheckoutsConfiguredView.swift` | Injects accelerated checkout and Apple Pay configuration into app flows. |
+| `CheckoutKitSwiftDemo/Sources/Scenes/AcceleratedCheckoutsSettingsView.swift` | Dedicated accelerated checkout and Apple Pay settings screen. |
 | `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
 | `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
 | `CheckoutKitSwiftDemo/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
