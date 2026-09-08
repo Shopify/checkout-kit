@@ -24,10 +24,12 @@ public enum CheckoutProtocol {
     /// ``CheckoutDelegate/checkoutDidFail(error:)``. It is for advanced protocol diagnostics;
     /// use ``CheckoutError/code`` for normal lifecycle recovery.
     public static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }
+    public static let buyerChange = EmbeddedCheckoutProtocol.Event.buyerChange.map { $0.params.checkout }
     public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange.map { $0.params.checkout }
     public static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange.map { $0.params.checkout }
     /// Delivers in-checkout messages and warnings as state updates.
     public static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange.map { $0.params.checkout }
+    public static let paymentChange = EmbeddedCheckoutProtocol.Event.paymentChange.map { $0.params.checkout }
     public static let start = EmbeddedCheckoutProtocol.Event.start.map { $0.params.checkout }
     public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange.map { $0.params.checkout }
     public static let windowOpen = EmbeddedCheckoutProtocol.Event.windowOpen.map { $0.params }
@@ -37,9 +39,11 @@ public enum CheckoutProtocol {
         start.method,
         complete.method,
         error.method,
+        buyerChange.method,
         fulfillmentChange.method,
         lineItemsChange.method,
         messagesChange.method,
+        paymentChange.method,
         totalsChange.method,
         windowOpen.method
     ]

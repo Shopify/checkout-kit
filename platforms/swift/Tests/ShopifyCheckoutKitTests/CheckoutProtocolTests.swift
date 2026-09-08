@@ -17,9 +17,11 @@ struct CheckoutProtocolTests {
             "ec.start",
             "ec.complete",
             "ec.error",
+            "ec.buyer.change",
             "ec.fulfillment.change",
             "ec.line_items.change",
             "ec.messages.change",
+            "ec.payment.change",
             "ec.totals.change",
             "ec.window.open_request"
         ])

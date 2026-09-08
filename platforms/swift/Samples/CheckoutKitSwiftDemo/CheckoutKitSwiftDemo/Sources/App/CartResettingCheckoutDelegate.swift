@@ -4,8 +4,11 @@ import ShopifyCheckoutKit
 final class CartResettingCheckoutDelegate: CheckoutDelegate {
     private var completed = false
 
-    func markCompleted() {
-        completed = true
+    nonisolated func checkoutDidComplete(_ checkout: Checkout) {
+        MainActor.assumeIsolated {
+            print("[CheckoutKit] Checkout completed: \(checkout.order?.id ?? "unknown")")
+            completed = true
+        }
     }
 
     nonisolated func checkoutDidDismiss() {
