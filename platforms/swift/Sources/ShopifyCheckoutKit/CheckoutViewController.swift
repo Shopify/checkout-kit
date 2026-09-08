@@ -6,8 +6,8 @@ import UIKit
 
 @MainActor
 public class CheckoutViewController: UINavigationController {
-    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
+    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil) {
+        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -40,7 +40,9 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
-    var client: (any CheckoutCommunicationProtocol)?
+    var onStartAction: ((Checkout) -> Void)?
+    var onUpdateAction: ((Checkout) -> Void)?
+    var onCompleteAction: ((Checkout) -> Void)?
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
@@ -53,7 +55,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
+        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL)
         configureWebViewController(viewController)
         return viewController
     }
@@ -72,15 +74,28 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
             return
         }
 
-        webViewController.client = client
-        webViewController.checkoutView?.client = client
+        webViewController.onStart = onStartAction
+        webViewController.onUpdate = onUpdateAction
+        webViewController.onComplete = onCompleteAction
         webViewController.onDismiss = onDismissAction
         webViewController.onFail = onFailAction
     }
 
-    @discardableResult public func connect(_ handler: any CheckoutCommunicationProtocol) -> Self {
+    @discardableResult public func onStart(_ action: @escaping (Checkout) -> Void) -> Self {
         var copy = self
-        copy.client = handler
+        copy.onStartAction = action
+        return copy
+    }
+
+    @discardableResult public func onUpdate(_ action: @escaping (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.onUpdateAction = action
+        return copy
+    }
+
+    @discardableResult public func onComplete(_ action: @escaping (Checkout) -> Void) -> Self {
+        var copy = self
+        copy.onCompleteAction = action
         return copy
     }
 

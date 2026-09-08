@@ -11,8 +11,23 @@ struct MockBridgeClient: CheckoutCommunicationProtocol {
 }
 
 final class MockCheckoutDelegate: CheckoutDelegate {
+    private(set) var didStartCheckouts: [Checkout] = []
+    private(set) var didUpdateCheckouts: [Checkout] = []
+    private(set) var didCompleteCheckouts: [Checkout] = []
     private(set) var didDismissCount = 0
     private(set) var didFailErrors: [CheckoutError] = []
+
+    func checkoutDidStart(_ checkout: Checkout) {
+        didStartCheckouts.append(checkout)
+    }
+
+    func checkoutDidUpdate(_ checkout: Checkout) {
+        didUpdateCheckouts.append(checkout)
+    }
+
+    func checkoutDidComplete(_ checkout: Checkout) {
+        didCompleteCheckouts.append(checkout)
+    }
 
     func checkoutDidDismiss() {
         didDismissCount += 1

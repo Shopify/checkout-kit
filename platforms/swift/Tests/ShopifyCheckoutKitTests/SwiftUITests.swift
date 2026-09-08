@@ -59,10 +59,15 @@ class ShopifyCheckoutTests: XCTestCase {
         XCTAssertNotNil(actionData)
     }
 
-    func testConnect() {
-        let client = MockBridgeClient()
-        let sheet = shopifyCheckout.connect(client)
-        XCTAssertNotNil(sheet.client)
+    func testLifecycleModifiers() {
+        let sheet = shopifyCheckout
+            .onStart { _ in }
+            .onUpdate { _ in }
+            .onComplete { _ in }
+
+        XCTAssertNotNil(sheet.onStartAction)
+        XCTAssertNotNil(sheet.onUpdateAction)
+        XCTAssertNotNil(sheet.onCompleteAction)
     }
 }
 
