@@ -132,9 +132,9 @@ RCT_EXPORT_VIEW_PROPERTY(applePayStyle, NSString*)
 RCT_EXPORT_VIEW_PROPERTY(onFail, RCTBubblingEventBlock)
 
 /**
- * Emitted when checkout is cancelled by the buyer.
+ * Emitted when checkout is dismissed by the buyer.
  */
-RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onDismiss, RCTDirectEventBlock)
 
 /**
  * Emitted when the native render state changes. Values: "loading", "rendered", "error".
