@@ -73,6 +73,26 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertTrue(didDismiss)
     }
 
+    func testLifecycleEventsInvokeDelegate() {
+        let delegate = MockCheckoutDelegate()
+        let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL, delegate: delegate)
+        let checkout = Checkout(
+            id: "checkout-1",
+            status: .incomplete,
+            currency: "USD",
+            lineItems: CheckoutLineItems([]),
+            totals: []
+        )
+
+        controller.checkoutDidStart(checkout)
+        controller.checkoutDidUpdate(checkout)
+        controller.checkoutDidComplete(checkout)
+
+        XCTAssertEqual(delegate.didStartCheckouts, [checkout])
+        XCTAssertEqual(delegate.didUpdateCheckouts, [checkout])
+        XCTAssertEqual(delegate.didCompleteCheckouts, [checkout])
+    }
+
     func testPresentationControllerDidDismissInvokesDismissDelegate() throws {
         var didDismiss = false
         viewController.onDismiss = {

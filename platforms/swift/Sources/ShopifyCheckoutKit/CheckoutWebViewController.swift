@@ -7,10 +7,12 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     /// Keep this value in sync with the checkout close selector used by E2E flows.
     private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
 
+    var onStart: ((Checkout) -> Void)?
+    var onUpdate: ((Checkout) -> Void)?
+    var onComplete: ((Checkout) -> Void)?
     var onDismiss: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
-    var client: (any CheckoutCommunicationProtocol)?
 
     var checkoutView: CheckoutWebView?
 
@@ -65,16 +67,16 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     public init(checkoutURL url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
         self.delegate = delegate
-        self.client = client
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
         checkoutView.isPresented = true
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
-        checkoutView.client = client
         self.checkoutView = checkoutView
 
         super.init(nibName: nil, bundle: nil)
+
+        checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
         title = ShopifyCheckoutKit.configuration.title
 
@@ -190,6 +192,23 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         }
 
         checkoutView = nil
+    }
+}
+
+extension CheckoutWebViewController: CheckoutEventSink {
+    func checkoutDidStart(_ checkout: Checkout) {
+        onStart?(checkout)
+        delegate?.checkoutDidStart(checkout)
+    }
+
+    func checkoutDidUpdate(_ checkout: Checkout) {
+        onUpdate?(checkout)
+        delegate?.checkoutDidUpdate(checkout)
+    }
+
+    func checkoutDidComplete(_ checkout: Checkout) {
+        onComplete?(checkout)
+        delegate?.checkoutDidComplete(checkout)
     }
 }
 
