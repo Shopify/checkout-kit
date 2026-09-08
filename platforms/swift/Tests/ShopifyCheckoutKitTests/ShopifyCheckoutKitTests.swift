@@ -73,23 +73,20 @@ class ShopifyCheckoutKitTests: XCTestCase {
         )
     }
 
-    func test_present_propagatesDelegateAndClientToWebViewController() throws {
+    func test_present_propagatesDelegateAndInstallsInternalEventClient() throws {
         let delegate = MockCheckoutDelegate()
-        let client = MockBridgeClient()
         let presenter = UIViewController()
 
         let viewController = ShopifyCheckoutKit.present(
             checkout: checkoutURL,
             from: presenter,
-            delegate: delegate,
-            client: client
+            delegate: delegate
         )
 
         let webViewController = try XCTUnwrap(
             viewController.viewControllers.compactMap { $0 as? CheckoutWebViewController }.first
         )
         XCTAssertTrue(webViewController.delegate === delegate)
-        XCTAssertNotNil(webViewController.client)
         XCTAssertNotNil(webViewController.checkoutView?.client)
     }
 
