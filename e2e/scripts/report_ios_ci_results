@@ -4,6 +4,7 @@
 require "json"
 require "optparse"
 require_relative "../lib/bitrise_pipeline_stages"
+require_relative "../lib/github_token"
 require_relative "../lib/ios_ci_reporter"
 require_relative "../lib/ios_ci_run_plan"
 
@@ -12,7 +13,7 @@ options = {
   repository: ENV["GITHUB_REPOSITORY"] || "Shopify/checkout-kit",
   sha: ENV["BITRISE_GIT_COMMIT"],
   pr_number: ENV["BITRISE_PULL_REQUEST"],
-  token: ENV["GITHUB_TOKEN"],
+  token: GitHubToken.resolve,
   selected_jobs: ENV["CI_IOS_SELECTED_JOBS"],
   finished_workflows: ENV["BITRISEIO_FINISHED_WORKFLOWS"],
   pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]

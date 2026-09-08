@@ -67,9 +67,9 @@ e2e_export_github_token() {
   fi
 
   e2e_log "Checking GitHub reporting configuration"
-  if [ -z "${GITHUB_TOKEN:-}" ]; then
-    : "${GIT_HTTP_PASSWORD:?GITHUB_TOKEN or Bitrise GitHub App GIT_HTTP_PASSWORD is required. Enable Project settings > Repository > Extend GitHub App permissions to builds.}"
-    export GITHUB_TOKEN="$GIT_HTTP_PASSWORD"
+  if [ -z "${OVERRIDE_GITHUB_TOKEN:-}" ]; then
+    : "${GIT_HTTP_PASSWORD:?OVERRIDE_GITHUB_TOKEN or Bitrise GitHub App GIT_HTTP_PASSWORD is required. Enable Project settings > Repository > Extend GitHub App permissions to builds.}"
+    export OVERRIDE_GITHUB_TOKEN="$GIT_HTTP_PASSWORD"
   fi
 }
 
