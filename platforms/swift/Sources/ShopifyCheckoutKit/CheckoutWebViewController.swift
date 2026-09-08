@@ -10,6 +10,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var onStart: ((Checkout) -> Void)?
     var onUpdate: ((Checkout) -> Void)?
     var onComplete: ((Checkout) -> Void)?
+    var onLinkClick: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismiss: (() -> Void)?
     var onFail: ((CheckoutError) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
@@ -75,6 +76,11 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         self.checkoutView = checkoutView
 
         super.init(nibName: nil, bundle: nil)
+
+        checkoutView.linkActionProvider = { [weak self] link in
+            guard let self else { return .open }
+            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .open
+        }
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
@@ -186,6 +192,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
             checkoutView.viewDelegate = nil
             checkoutView.client = nil
+            checkoutView.linkActionProvider = nil
             checkoutView.removeFromSuperview()
         } else {
             checkoutView?.cleanUpForDismissal()

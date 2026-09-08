@@ -12,6 +12,9 @@ public protocol CheckoutDelegate: AnyObject {
     /// Tells the delegate that checkout completed.
     func checkoutDidComplete(_ checkout: Checkout)
 
+    /// Asks the delegate how to handle a link clicked in checkout.
+    func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction
+
     /// Tells the delegate that the buyer dismissed checkout.
     func checkoutDidDismiss()
 
@@ -25,6 +28,10 @@ extension CheckoutDelegate {
     public func checkoutDidStart(_: Checkout) {}
     public func checkoutDidUpdate(_: Checkout) {}
     public func checkoutDidComplete(_: Checkout) {}
+    public func checkoutAction(for _: CheckoutLink) -> CheckoutLinkAction {
+        .open
+    }
+
     public func checkoutDidDismiss() {}
     public func checkoutDidFail(error _: CheckoutError) {}
 }
