@@ -10,6 +10,7 @@ struct MockBridgeClient: CheckoutCommunicationProtocol {
     }
 }
 
+@MainActor
 final class MockCheckoutDelegate: CheckoutDelegate {
     private(set) var didStartCheckouts: [Checkout] = []
     private(set) var didUpdateCheckouts: [Checkout] = []

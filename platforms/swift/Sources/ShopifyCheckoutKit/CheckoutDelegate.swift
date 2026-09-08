@@ -1,6 +1,7 @@
 import Foundation
 
 /// A delegate protocol for managing checkout lifecycle events.
+@MainActor
 public protocol CheckoutDelegate: AnyObject {
     /// Tells the delegate that the buyer started checkout.
     func checkoutDidStart(_ checkout: Checkout)

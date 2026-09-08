@@ -5691,6 +5691,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5717,6 +5720,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5743,6 +5749,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5763,6 +5772,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5789,6 +5801,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5814,6 +5829,9 @@
             "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE16checkoutDidStartyyAA0B0VF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
+            "declAttributes": [
+              "Custom"
+            ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5839,6 +5857,9 @@
             "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE17checkoutDidUpdateyyAA0B0VF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
+            "declAttributes": [
+              "Custom"
+            ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5864,6 +5885,9 @@
             "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE19checkoutDidCompleteyyAA0B0VF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
+            "declAttributes": [
+              "Custom"
+            ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5883,6 +5907,9 @@
             "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE18checkoutDidDismissyyF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
+            "declAttributes": [
+              "Custom"
+            ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
@@ -5908,6 +5935,9 @@
             "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE15checkoutDidFail5erroryAA0B5ErrorV_tF",
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
+            "declAttributes": [
+              "Custom"
+            ],
             "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           }
@@ -5917,6 +5947,9 @@
         "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP",
         "moduleName": "ShopifyCheckoutKit",
         "genericSig": "<Self : AnyObject>",
+        "declAttributes": [
+          "Custom"
+        ],
         "conformances": [
           {
             "kind": "Conformance",
