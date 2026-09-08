@@ -1,5 +1,6 @@
 import Foundation
 import PassKit
+import React
 @testable import RNShopifyCheckoutKit
 @testable import ShopifyCheckoutKit
 import SwiftUI
@@ -58,6 +59,15 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
             applyPayContactFields: contactFields,
             supportedShippingCountries: supportedShippingCountries
         ).boolValue
+    }
+
+    func testDismissIsRegisteredAsDirectEvent() throws {
+        let viewConfig = RCTComponentData.viewConfig(forViewMangerClass: RCTAcceleratedCheckoutButtonsManager.self)
+        let directEvents = try XCTUnwrap(viewConfig["directEvents"] as? [String])
+        let bubblingEvents = try XCTUnwrap(viewConfig["bubblingEvents"] as? [String])
+
+        XCTAssertTrue(directEvents.contains("topDismiss"))
+        XCTAssertFalse(bubblingEvents.contains("topDismiss"))
     }
 
     func testConfigureAcceleratedCheckoutsSetsSharedConfigsOnIOS16() {

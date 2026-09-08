@@ -52,7 +52,7 @@ function CartScreen(): React.JSX.Element {
   const {queries} = useShopify();
   const {appConfig} = useConfig();
   // Separate handler instances so debug logs are labelled with the actual
-  // surface that emitted the event. Otherwise an `onClose` from the
+  // surface that emitted the event. Otherwise an `onDismiss` from the
   // `ShopifyCheckout.present()` sheet would log under the
   // `AcceleratedCheckoutButtons` namespace and confuse anyone debugging.
   const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
@@ -128,8 +128,8 @@ function CartScreen(): React.JSX.Element {
       present(
         checkoutURL,
         {
-          onClose: () => {
-            sheetEventHandlers.onCancel?.();
+          onDismiss: () => {
+            sheetEventHandlers.onDismiss?.();
           },
           onFail: error => {
             sheetEventHandlers.onFail?.(error);

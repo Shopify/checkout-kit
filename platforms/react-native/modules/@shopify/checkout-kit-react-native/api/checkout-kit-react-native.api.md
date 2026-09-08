@@ -286,7 +286,7 @@ export type PreloadState =
 
 // @public
 export interface PresentCallbacks {
-    onClose?: () => void;
+    onDismiss?: () => void;
     onFail?: (error: CheckoutException) => void;
     onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }
