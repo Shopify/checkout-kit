@@ -15,6 +15,8 @@ final class MockCheckoutDelegate: CheckoutDelegate {
     private(set) var didStartCheckouts: [Checkout] = []
     private(set) var didUpdateCheckouts: [Checkout] = []
     private(set) var didCompleteCheckouts: [Checkout] = []
+    private(set) var clickedLinks: [CheckoutLink] = []
+    var linkAction: CheckoutLinkAction = .open
     private(set) var didDismissCount = 0
     private(set) var didFailErrors: [CheckoutError] = []
 
@@ -28,6 +30,11 @@ final class MockCheckoutDelegate: CheckoutDelegate {
 
     func checkoutDidComplete(_ checkout: Checkout) {
         didCompleteCheckouts.append(checkout)
+    }
+
+    func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
+        clickedLinks.append(link)
+        return linkAction
     }
 
     func checkoutDidDismiss() {

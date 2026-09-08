@@ -43,6 +43,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     var onStartAction: ((Checkout) -> Void)?
     var onUpdateAction: ((Checkout) -> Void)?
     var onCompleteAction: ((Checkout) -> Void)?
+    var onLinkClickAction: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
 
@@ -77,6 +78,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         webViewController.onStart = onStartAction
         webViewController.onUpdate = onUpdateAction
         webViewController.onComplete = onCompleteAction
+        webViewController.onLinkClick = onLinkClickAction
         webViewController.onDismiss = onDismissAction
         webViewController.onFail = onFailAction
     }
@@ -96,6 +98,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     @discardableResult public func onComplete(_ action: @escaping (Checkout) -> Void) -> Self {
         var copy = self
         copy.onCompleteAction = action
+        return copy
+    }
+
+    /// Registers a handler for links clicked in checkout.
+    ///
+    /// Return ``CheckoutLinkAction/open`` to use Checkout Kit's default behavior,
+    /// ``CheckoutLinkAction/handled`` when your app handled the link, or
+    /// ``CheckoutLinkAction/cancel`` to reject it.
+    @discardableResult public func onLinkClick(
+        _ action: @escaping (CheckoutLink) -> CheckoutLinkAction
+    ) -> Self {
+        var copy = self
+        copy.onLinkClickAction = action
         return copy
     }
 
