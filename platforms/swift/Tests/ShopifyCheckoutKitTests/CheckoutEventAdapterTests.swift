@@ -56,7 +56,7 @@ final class CheckoutEventAdapterTests: XCTestCase {
         XCTAssertEqual(sink.completed.count, 1)
     }
 
-    func testOutOfStockMessageIsDerivedInsteadOfExposed() async throws {
+    func testProtocolMessagesDoNotAddDerivedLineItemState() async throws {
         let sink = RecordingCheckoutEventSink()
         let adapter = CheckoutEventAdapter(sink: sink)
 
@@ -67,7 +67,6 @@ final class CheckoutEventAdapterTests: XCTestCase {
 
         let checkout = try XCTUnwrap(sink.updated.first)
         XCTAssertTrue(checkout.lineItems.isEmpty)
-        XCTAssertTrue(checkout.lineItems.allOutOfStock)
     }
 
     private func message(

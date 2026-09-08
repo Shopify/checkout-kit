@@ -80,7 +80,7 @@ class CheckoutViewDelegateTests: XCTestCase {
             id: "checkout-1",
             status: .incomplete,
             currency: "USD",
-            lineItems: CheckoutLineItems([]),
+            lineItems: [],
             totals: []
         )
 
