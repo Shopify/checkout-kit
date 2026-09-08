@@ -12,4 +12,3 @@
 --exclude Sources/ShopifyCheckoutKit/Models.swift
 --exclude Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated
 --exclude Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/Sources/Generated
---exclude Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/Generated

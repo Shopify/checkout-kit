@@ -1,5 +1,6 @@
 import Combine
 import PassKit
+import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import SwiftUI
 import WebKit
@@ -11,6 +12,12 @@ enum AppStorageKeys: String {
     case preloadObservabilityEnabled
     case buyerIdentityMode
     case applePayStyle
+    case requireEmail
+    case requirePhone
+    case locale
+    case email
+    case phone
+    case supportedCountries
     case windowOpenHandler
 }
 
@@ -38,8 +45,33 @@ struct SettingsView: View {
         }
     }
 
+    @AppStorage(AppStorageKeys.acceleratedCheckoutsLogLevel.rawValue)
+    var acceleratedCheckoutsLogLevel: LogLevel = .debug {
+        didSet {
+            ShopifyAcceleratedCheckouts.logLevel = acceleratedCheckoutsLogLevel
+        }
+    }
+
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
+
+    @AppStorage(AppStorageKeys.requireEmail.rawValue)
+    private var requireEmail = true
+
+    @AppStorage(AppStorageKeys.requirePhone.rawValue)
+    private var requirePhone = true
+
+    @AppStorage(AppStorageKeys.locale.rawValue)
+    private var locale = "en"
+
+    @AppStorage(AppStorageKeys.email.rawValue)
+    private var email = ""
+
+    @AppStorage(AppStorageKeys.phone.rawValue)
+    private var phone = ""
+
+    @AppStorage(AppStorageKeys.supportedCountries.rawValue)
+    private var supportedCountriesString = ""
 
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
@@ -51,6 +83,21 @@ struct SettingsView: View {
     @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
     @State private var isResettingSession = false
     @State private var showingSessionReset = false
+
+    private let availableLocales: [(name: String, isoCode: String)] = [
+        ("English", "en"),
+        ("English (US)", "en-US"),
+        ("French", "fr-FR")
+    ]
+
+    private var selectedCountries: Set<String> {
+        Set(
+            supportedCountriesString
+                .split(separator: ",")
+                .map(String.init)
+                .filter { !$0.isEmpty }
+        )
+    }
 
     var body: some View {
         NavigationView {
@@ -139,7 +186,7 @@ struct SettingsView: View {
                 }
 
                 Section(
-                    header: Text("Apple Pay"),
+                    header: Text("Apple Pay Button"),
                     footer: Text("Configures the visual style of the Apple Pay button.")
                 ) {
                     ForEach(ApplePayStyleOption.allCases, id: \.self) { option in
@@ -158,12 +205,78 @@ struct SettingsView: View {
                     }
                 }
 
+                Section(
+                    header: Text("Accelerated Checkout Language"),
+                    footer: Text("Configures the locale inherited by accelerated checkout controls.")
+                ) {
+                    Picker("Language", selection: $locale) {
+                        ForEach(availableLocales, id: \.isoCode) { localeOption in
+                            Text(localeOption.name).tag(localeOption.isoCode)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Section(
+                    header: Text("Apple Pay Contact Fields"),
+                    footer: Text(
+                        "Prefilled values override the cart buyer identity for accelerated checkout. When a value is present, Apple Pay does not request that field again."
+                    )
+                ) {
+                    Toggle("Require Email from Apple Pay", isOn: $requireEmail)
+
+                    TextField("Prefill Email (Optional)", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .accessibilityLabel("Prefill Email")
+
+                    Toggle("Require Phone from Apple Pay", isOn: $requirePhone)
+
+                    TextField("Prefill Phone (Optional)", text: $phone)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
+                        .accessibilityLabel("Prefill Phone")
+                }
+
+                Section(
+                    header: Text("Apple Pay Shipping Countries"),
+                    footer: Text("Leave the selection empty to allow all shipping countries.")
+                ) {
+                    if !selectedCountries.isEmpty {
+                        Text("Selected: \(selectedCountries.sorted().joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    NavigationLink("Select Countries (\(selectedCountries.count) selected)") {
+                        CountrySelectionView(
+                            supportedCountriesString: $supportedCountriesString
+                        )
+                    }
+                }
+
                 Section(header: Text("Logging")) {
                     Picker(
                         "Checkout Kit",
                         selection: Binding(
                             get: { checkoutKitLogLevel },
                             set: { checkoutKitLogLevel = $0 }
+                        )
+                    ) {
+                        ForEach(LogLevel.allCases, id: \.self) { level in
+                            Text(
+                                level.rawValue.capitalized(with: Locale.current)
+                            ).tag(level)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Picker(
+                        "Accelerated Checkouts",
+                        selection: Binding(
+                            get: { acceleratedCheckoutsLogLevel },
+                            set: { acceleratedCheckoutsLogLevel = $0 }
                         )
                     ) {
                         ForEach(LogLevel.allCases, id: \.self) { level in
@@ -229,6 +342,83 @@ struct SettingsView: View {
 
     private func currentVersion() -> String {
         return "\(InfoDictionary.shared.version) (\(InfoDictionary.shared.buildNumber))"
+    }
+}
+
+struct CountrySelectionView: View {
+    @Binding var supportedCountriesString: String
+    @State private var searchText = ""
+
+    private static let allCountries: [(code: String, name: String)] = {
+        let locale = Locale(identifier: "en_US")
+
+        return NSLocale.isoCountryCodes.compactMap { code in
+            locale.localizedString(forRegionCode: code).map { (code: code, name: $0) }
+        }.sorted { $0.name < $1.name }
+    }()
+
+    private var selectedCountries: Set<String> {
+        Set(
+            supportedCountriesString
+                .split(separator: ",")
+                .map(String.init)
+                .filter { !$0.isEmpty }
+        )
+    }
+
+    private var filteredCountries: [(code: String, name: String)] {
+        guard !searchText.isEmpty else { return Self.allCountries }
+
+        return Self.allCountries.filter { country in
+            country.name.localizedCaseInsensitiveContains(searchText) ||
+                country.code.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                if selectedCountries.isEmpty {
+                    Text("No countries selected - All countries allowed")
+                        .font(.body.italic())
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Clear All", role: .destructive) {
+                        supportedCountriesString = ""
+                    }
+                }
+            }
+
+            Section("Countries") {
+                ForEach(filteredCountries, id: \.code) { country in
+                    Button {
+                        toggleCountry(country.code)
+                    } label: {
+                        HStack {
+                            Text("\(country.name) (\(country.code))")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if selectedCountries.contains(country.code) {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .searchable(text: $searchText, prompt: "Search countries")
+        .navigationTitle("Select Countries")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func toggleCountry(_ code: String) {
+        var countries = selectedCountries
+        if countries.contains(code) {
+            countries.remove(code)
+        } else {
+            countries.insert(code)
+        }
+        supportedCountriesString = countries.sorted().joined(separator: ",")
     }
 }
 

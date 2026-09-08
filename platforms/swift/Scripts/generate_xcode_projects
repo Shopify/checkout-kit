@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWIFT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SWIFT_MINT="$SWIFT_DIR/../../scripts/swift_mint"
+SAMPLE_PACKAGE_RESOLVED="Samples/CheckoutKitSwiftDemo/Package.resolved"
+SAMPLE_GENERATED_PACKAGE_RESOLVED="Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 
 mode="generate"
 selected_specs=()
@@ -44,17 +46,14 @@ done
 
 xcodegen_specs=(
     "Samples/CheckoutKitSwiftDemo/project.yml"
-    "Samples/ShopifyAcceleratedCheckoutsApp/project.yml"
     "../react-native/test/rct-integration-app/project.yml"
 )
 
 required_outputs=(
     "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj/project.pbxproj"
+    "$SAMPLE_GENERATED_PACKAGE_RESOLVED"
     "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/Info.plist"
     "Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.entitlements"
-    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj/project.pbxproj"
-    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/Info.plist"
-    "Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.entitlements"
     "../react-native/test/rct-integration-app/RCTIntegrationApp.xcodeproj/project.pbxproj"
     "../react-native/test/rct-integration-app/RCTIntegrationApp/Info.plist"
     "../react-native/test/rct-integration-app/RCTIntegrationAppTests/Info.plist"
@@ -78,9 +77,24 @@ check_generated_outputs() {
         fi
     done
 
+    if [[ -f "$SWIFT_DIR/$SAMPLE_GENERATED_PACKAGE_RESOLVED" ]] &&
+        ! cmp -s "$SWIFT_DIR/$SAMPLE_PACKAGE_RESOLVED" "$SWIFT_DIR/$SAMPLE_GENERATED_PACKAGE_RESOLVED"
+    then
+        echo "Generated sample Package.resolved is out of date. Regenerate the Xcode project." >&2
+        missing=1
+    fi
+
     if [[ "$missing" -ne 0 ]]; then
         exit 1
     fi
+}
+
+sync_sample_package_resolution() {
+    local source="$SWIFT_DIR/$SAMPLE_PACKAGE_RESOLVED"
+    local destination="$SWIFT_DIR/$SAMPLE_GENERATED_PACKAGE_RESOLVED"
+
+    mkdir -p "$(dirname "$destination")"
+    cp "$source" "$destination"
 }
 
 generate_projects() {
@@ -96,6 +110,10 @@ generate_projects() {
     for spec in "${specs[@]}"; do
         (cd "$SWIFT_DIR" && "$SWIFT_MINT" run xcodegen xcodegen generate --spec "$spec" --quiet)
     done
+
+    if [[ -d "$SWIFT_DIR/Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj" ]]; then
+        sync_sample_package_resolution
+    fi
 }
 
 if [[ "$mode" == "check" ]]; then
