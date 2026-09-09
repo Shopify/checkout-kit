@@ -156,7 +156,39 @@ pipelines:
         depends_on:
           - nightly-decide-should-build
 
+  nightly-android-bitrise-installs:
+    workflows:
+      nightly-decide-should-build: {}
+      nightly-distribute-kotlin-android:
+        run_if:
+          expression: '{{ enveq "NIGHTLY_SHOULD_BUILD" "true" }}'
+        depends_on:
+          - nightly-decide-should-build
+      nightly-distribute-react-native-android:
+        run_if:
+          expression: '{{ enveq "NIGHTLY_SHOULD_BUILD" "true" }}'
+        depends_on:
+          - nightly-decide-should-build
+
 step_bundles:
+  notify-nightly-android-install:
+    steps:
+      - slack@4.3.0:
+          inputs:
+            - author_name:
+            - title:
+            - pretext: 'Nightly build for $NIGHTLY_ANDROID_APP_NAME :android:'
+            - message: Snapshot succeeded
+            - from_username: Bitrise Bot
+            - fields:
+            - buttons: |
+                Install|${BITRISE_ARTIFACT_DETAILS_PAGE_URL}
+                View Pipeline Build|${BITRISEIO_PIPELINE_BUILD_URL}
+                View Workflow Build|${BITRISE_BUILD_URL}
+            - is_debug_mode: "no"
+            - api_token: $SLACK_AUTH_TOKEN
+            - channel: C069N25R7EH
+          is_always_run: false
   install-node-modules:
     steps:
       - restore-cache@3:
@@ -769,3 +801,70 @@ workflows:
             - ipa_path: $NIGHTLY_REACT_NATIVE_IOS_IPA_PATH
       - deploy-to-bitrise-io@2:
           is_always_run: false
+
+  nightly-distribute-kotlin-android:
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    envs:
+      - NIGHTLY_ANDROID_APP_NAME: CheckoutKitAndroidDemo
+    steps:
+      - git-clone@8: {}
+      - restore-cache@3:
+          inputs:
+            - key: *kotlin_gradle_cache_key
+      - script@1:
+          title: Build the Kotlin Android installable APK
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_kotlin_android
+      - save-cache@1:
+          inputs:
+            - key: *kotlin_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: $E2E_KOTLIN_ANDROID_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
+      - bundle::notify-nightly-android-install: {}
+
+  nightly-distribute-react-native-android:
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    envs:
+      - NIGHTLY_ANDROID_APP_NAME: CheckoutKitReactNativeDemo
+    steps:
+      - git-clone@8: {}
+      - bundle::install-node-modules: {}
+      - restore-cache@3:
+          inputs:
+            - key: *rn_gradle_cache_key
+      - script@1:
+          title: Build the React Native Android installable APK
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                e2e/scripts/build_react_native_android
+      - save-cache@1:
+          inputs:
+            - key: *rn_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: $E2E_REACT_NATIVE_ANDROID_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
+      - bundle::notify-nightly-android-install: {}
