@@ -57,17 +57,17 @@ def customerAccountRedirectScheme = customerAccountRedirect?.scheme ?: "invalid-
 def customerAccountRedirectHost = customerAccountRedirect?.host ?: "callback"
 
 // Demo buyer identity (prefill toggle in Settings)
-def prefillEmail = properties.getProperty("EMAIL", properties.getProperty("PREFILL_EMAIL", "test.buyer@example.com"))
-def prefillPhone = properties.getProperty("PHONE", properties.getProperty("PREFILL_PHONE", "+14165550100"))
-def prefillFirstName = propertyOrDefault("FIRST_NAME", "Evelyn")
-def prefillLastName = propertyOrDefault("LAST_NAME", "Hartley")
-def prefillAddress1 = propertyOrDefault("ADDRESS_1", "650 King Street")
-def prefillAddress2 = propertyOrDefault("ADDRESS_2", "Shopify HQ")
-def prefillCompany = propertyOrDefault("COMPANY", "Shopify")
-def prefillCity = propertyOrDefault("CITY", "Toronto")
-def prefillProvince = propertyOrDefault("PROVINCE", "ON")
-def prefillZip = propertyOrDefault("ZIP", "M5V 1M7")
-def prefillCountry = propertyOrDefault("COUNTRY", "CA")
+def prefillEmail = properties.getProperty("EMAIL")
+def prefillPhone = properties.getProperty("PHONE")
+def prefillFirstName = properties.getProperty("FIRST_NAME")
+def prefillLastName = properties.getProperty("LAST_NAME")
+def prefillAddress1 = properties.getProperty("ADDRESS_1")
+def prefillAddress2 = properties.getProperty("ADDRESS_2")
+def prefillCompany = properties.getProperty("COMPANY")
+def prefillCity = properties.getProperty("CITY")
+def prefillProvince = properties.getProperty("PROVINCE")
+def prefillZip = properties.getProperty("ZIP")
+def prefillCountry = properties.getProperty("COUNTRY")
 
 if (!storefrontDomain || !accessToken) {
     println("**** Please add a .env file with STOREFRONT_DOMAIN and STOREFRONT_ACCESS_TOKEN set *****")
