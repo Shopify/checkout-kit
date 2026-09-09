@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repository_root="$(cd "$script_directory/../.." && pwd)"
+module_directory="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codeql-react-native-ios-modules"
+module_cache_directory="$module_directory/clang-module-cache"
+sdk_path="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+target="arm64-apple-ios16.6-simulator"
+
+mkdir -p "$module_cache_directory"
+
+if [[ ! -f "$module_directory/React.swiftmodule" ]]; then
+    xcrun swiftc \
+        -emit-module \
+        -parse-as-library \
+        -module-name React \
+        -target "$target" \
+        -sdk "$sdk_path" \
+        -module-cache-path "$module_cache_directory" \
+        "$script_directory/ReactCodeQLShim.swift" \
+        -emit-module-path "$module_directory/React.swiftmodule"
+fi
+
+shopify_checkout_kit_products="$repository_root/platforms/react-native/test/rct-integration-app/build/Debug-iphonesimulator/ShopifyCheckoutKit"
+shopify_checkout_kit_module_map="$shopify_checkout_kit_products/ShopifyCheckoutKit.modulemap"
+
+if [[ ! -f "$shopify_checkout_kit_module_map" ]]; then
+    echo "ShopifyCheckoutKit module map was not built at $shopify_checkout_kit_module_map" >&2
+    exit 1
+fi
+
+wrapper_sources=(
+    "$repository_root"/platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/*.swift
+)
+
+if [[ "${#wrapper_sources[@]}" -eq 0 ]]; then
+    echo "No React Native iOS Swift sources were found" >&2
+    exit 1
+fi
+
+xcrun swiftc \
+    -emit-module \
+    -parse-as-library \
+    -module-name RNShopifyCheckoutKit \
+    -target "$target" \
+    -sdk "$sdk_path" \
+    -module-cache-path "$module_cache_directory" \
+    -I "$module_directory" \
+    -I "$shopify_checkout_kit_products" \
+    -Xcc -fmodule-map-file="$shopify_checkout_kit_module_map" \
+    -Xcc -I \
+    -Xcc "$shopify_checkout_kit_products" \
+    -D COCOAPODS \
+    "${wrapper_sources[@]}" \
+    -emit-module-path "$module_directory/RNShopifyCheckoutKit.swiftmodule"
