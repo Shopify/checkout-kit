@@ -9,6 +9,10 @@ class WalletController: ObservableObject {
     @Published var checkoutViewController: CheckoutViewController?
     @Published var configuration: ShopifyAcceleratedCheckouts.Configuration
 
+    var checkoutDelegate: (any CheckoutDelegate)? {
+        nil
+    }
+
     init(identifier: CheckoutIdentifier, storefront: StorefrontAPIProtocol, configuration: ShopifyAcceleratedCheckouts.Configuration) {
         self.identifier = identifier
         self.storefront = storefront
@@ -43,6 +47,7 @@ class WalletController: ObservableObject {
             checkout: url,
             from: topViewController,
             entryPoint: .acceleratedCheckouts,
+            delegate: checkoutDelegate,
             client: client
         )
     }

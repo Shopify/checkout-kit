@@ -198,6 +198,10 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         case let .cartSubmittedForCompletion(redirectURL):
             try await transition(to: .presentingCheckoutKit(url: redirectURL))
 
+        case .appleSheetPresented:
+            controller.onCheckoutDismiss?()
+            try await transition(to: .reset)
+
         default:
             try await transition(to: .reset)
         }

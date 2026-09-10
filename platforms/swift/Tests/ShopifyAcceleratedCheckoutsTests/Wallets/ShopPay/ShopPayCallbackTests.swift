@@ -7,11 +7,19 @@ import XCTest
 final class ShopPayCallbackTests: XCTestCase {
     // MARK: - Properties
 
-    var viewController: ShopPayViewController!
+    var viewController: MockShopPayViewController!
     var mockConfiguration: ShopifyAcceleratedCheckouts.Configuration!
     var mockIdentifier: CheckoutIdentifier!
     var errorExpectation: XCTestExpectation!
     var dismissExpectation: XCTestExpectation!
+
+    final class MockShopPayViewController: ShopPayViewController {
+        let mockTopViewController = UIViewController()
+
+        override func getTopViewController() -> UIViewController? {
+            mockTopViewController
+        }
+    }
 
     // MARK: - Setup
 
@@ -25,7 +33,7 @@ final class ShopPayCallbackTests: XCTestCase {
 
         mockIdentifier = .cart(cartID: "gid://Shopify/Cart/test-cart-id")
 
-        viewController = ShopPayViewController(
+        viewController = MockShopPayViewController(
             identifier: mockIdentifier,
             configuration: mockConfiguration
         )
@@ -94,6 +102,24 @@ final class ShopPayCallbackTests: XCTestCase {
         viewController.eventHandlers.checkoutDidDismiss?() // Should not crash
 
         XCTAssertTrue(true, "Should not crash when callback is nil")
+    }
+
+    func testDismissCallbackInvokedWhenPresentedCheckoutDismisses() async throws {
+        let dismissExpectation = expectation(description: "Dismiss callback should be invoked")
+        viewController.eventHandlers = EventHandlers(
+            checkoutDidDismiss: { dismissExpectation.fulfill() }
+        )
+
+        let checkoutURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
+        try await viewController.present(url: checkoutURL, client: nil)
+
+        let checkoutViewController = try XCTUnwrap(viewController.checkoutViewController)
+        let webViewController = try XCTUnwrap(
+            checkoutViewController.viewControllers.first as? CheckoutWebViewController
+        )
+        webViewController.close()
+
+        await fulfillment(of: [dismissExpectation], timeout: 1.0)
     }
 
     // MARK: - Delegate Tests
