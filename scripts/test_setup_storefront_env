@@ -110,15 +110,15 @@ CUSTOMER_ACCOUNT_API_CLIENT_ID=synthetic-client
 CUSTOMER_ACCOUNT_API_SHOP_ID=synthetic-shop
 CUSTOMER_ACCOUNT_API_VERSION=2026-04
 EMAIL=checkout-kit@example.com
-ADDRESS_1=650 King Street
-ADDRESS_2=Shopify HQ
-CITY=Toronto
-COMPANY=Shopify
-COUNTRY=CA
-FIRST_NAME=Evelyn
-LAST_NAME=Hartley
-PROVINCE=ON
-ZIP=M5V 1M7
+ADDRESS_1=100 Example Road
+ADDRESS_2=Unit 200
+CITY=Example City
+COMPANY=Example Company
+COUNTRY=US
+FIRST_NAME=Test
+LAST_NAME=Buyer
+PROVINCE=NY
+ZIP=10001
 PHONE=+14165550100
 EOF
 }
@@ -128,6 +128,20 @@ assert_file_is_unchanged() {
   local expected="$2"
 
   cmp -s "$path" "$expected" || fail "file was rewritten but must stay byte-identical: $path"
+}
+
+assert_android_buyer_identity_values() {
+  local path="$1"
+
+  assert_contains "$path" "ADDRESS_1=100 Example Road"
+  assert_contains "$path" "ADDRESS_2=Unit 200"
+  assert_contains "$path" "CITY=Example City"
+  assert_contains "$path" "COMPANY=Example Company"
+  assert_contains "$path" "COUNTRY=US"
+  assert_contains "$path" "FIRST_NAME=Test"
+  assert_contains "$path" "LAST_NAME=Buyer"
+  assert_contains "$path" "PROVINCE=NY"
+  assert_contains "$path" "ZIP=10001"
 }
 
 assert_output_is_sanitized() {
@@ -239,6 +253,8 @@ test_sync_and_check() {
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
   assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "EMAIL"
+
+  assert_android_buyer_identity_values "$(android_env_of "$fixture")"
 
   "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1
   assert_output_is_sanitized "$output"
