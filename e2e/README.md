@@ -43,8 +43,9 @@ on. Then run the matching command from the repo root.
 | React Native Android | `dev rn e2e android` |
 
 Each command runs the tests enabled for its application in `config/matrix.yml`.
-With no selectors, it runs all enabled tests. Narrow a run with enabled tags or
-positional YAML files:
+With no selectors, an interactive terminal opens an `fzf` picker for all enabled
+tests, tag groups, or exact files. A noninteractive run selects all enabled tests.
+Explicit tags or positional YAML files bypass the picker:
 
 ```bash
 dev swift e2e --tags checkout-presentation

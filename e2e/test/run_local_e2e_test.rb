@@ -163,6 +163,39 @@ class RunLocalE2ETest < Minitest::Test
     assert_equal ["tests/shared/quarantined.yaml"], output.lines.map(&:chomp)
   end
 
+  def test_picker_entries_have_compact_selectable_labels
+    output, error, status = picker_script("picker_entries")
+
+    assert status.success?, error
+    assert_equal(
+      [
+        "all\tall\tALL       Run all enabled tests",
+        "tag\tpresentation\tTAG       presentation",
+        "tag\tsmoke\tTAG       smoke",
+        "tag\tpreload\tTAG       preload",
+        "file\ttests/shared/presentation.yaml\tFILE      tests/shared/presentation.yaml",
+        "file\ttests/swift/preload.yaml\tFILE      tests/swift/preload.yaml"
+      ],
+      output.lines.map(&:chomp)
+    )
+  end
+
+  def test_picker_translates_tags_and_files_into_selectors
+    command = <<~'SH'
+      fzf() {
+        command cat >/dev/null
+        printf 'tag\tpreload\tTAG       preload\n'
+        printf 'file\ttests/shared/presentation.yaml\tFILE      tests/shared/presentation.yaml\n'
+      }
+      run_picker >/dev/null
+      printf '%s\n%s\n%s\n' "$HAS_EXPLICIT_TAGS" "$INCLUDE_TAGS" "${TEST_FILES[*]}"
+    SH
+    output, error, status = picker_script(command)
+
+    assert status.success?, error
+    assert_equal ["true", "preload", "tests/shared/presentation.yaml"], output.lines.map(&:chomp)
+  end
+
   def test_maestro_runs_shared_and_target_specific_test_files
     react_native_arguments = maestro_arguments("react-native")
     swift_arguments = maestro_arguments("swift")
@@ -198,6 +231,26 @@ class RunLocalE2ETest < Minitest::Test
   end
 
   private
+
+  def picker_script(command)
+    Open3.capture3(
+      "bash",
+      "-c",
+      <<~SH,
+        source "$1"
+        configure_target swift-ios
+        MATRIX_INCLUDE_TAGS="presentation,preload"
+        ENABLED_TAGS="presentation,smoke,preload"
+        ELIGIBLE_TEST_FILES=(tests/shared/presentation.yaml tests/swift/preload.yaml)
+        INCLUDE_TAGS=""
+        HAS_EXPLICIT_TAGS=false
+        TEST_FILES=()
+        #{command}
+      SH
+      "run-local-e2e-test",
+      RUNNER
+    )
+  end
 
   def local_selection(*arguments)
     Open3.capture3(
