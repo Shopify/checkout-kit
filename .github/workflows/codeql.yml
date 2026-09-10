@@ -19,19 +19,6 @@ on:
       - 'scripts/test_ruby'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
-    paths-ignore:
-      - '**/Tests/**'
-      - '**/tests/**'
-      - '**/test/**'
-      - '**/Samples/**'
-      - '**/samples/**'
-      - '**/sample/**'
-      - '**/*.test.*'
-      - '**/*.spec.*'
-      - '**/Fixtures/**'
-      - '**/fixtures/**'
-      - 'scripts/test/**'
-      - 'scripts/test_ruby'
   schedule:
     - cron: '17 8 * * 1'
   workflow_dispatch:
@@ -267,6 +254,8 @@ jobs:
     if: needs.native-changes.outputs.swift == 'true'
     runs-on: ${{ vars.MACOS_RUNNER }}
     timeout-minutes: 45
+    env:
+      DERIVED_DATA_PATH: ${{ github.workspace }}/../codeql-swift-derived-data
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -280,6 +269,9 @@ jobs:
           CURRENT_SIMULATOR_UUID=$(xcrun simctl create CodeQL 'iPhone 17 Pro')
           echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
 
+      - name: Prepare Swift modules
+        run: .github/codeql/prepare_swift_modules
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
@@ -287,9 +279,8 @@ jobs:
           build-mode: manual
           config-file: ./.github/codeql/codeql-config.yml
 
-      - name: Build Swift SDK and protocol
-        working-directory: platforms/swift
-        run: ./Scripts/xcode_run build ShopifyCheckoutKit-Package
+      - name: Type-check Swift modules for CodeQL
+        run: .github/codeql/build_swift --typecheck
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
