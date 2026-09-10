@@ -3,12 +3,7 @@
 require_relative "../../scripts/lib/json_http_client"
 require_relative "bitrise_pipeline_stages"
 
-# Publishes the macOS CI pipeline outcome to GitHub as one check run.
-#
-# Bitrise's own commit status covers the whole pipeline, which is the wrong shape for a
-# merge gate: a job the change does not need is skipped, and a skipped Bitrise workflow
-# is indistinguishable from one the pipeline never reached. Only the gate's own selection
-# separates the two, so the pipeline reports its own check instead.
+# Publishes the selected macOS CI pipeline outcome to GitHub as a diagnostic check run.
 class IOSCIReporter
   CHECK_NAME = "Checkout Kit iOS"
   PLAN_STAGE_NAME = "ci-ios-plan"
@@ -24,8 +19,20 @@ class IOSCIReporter
     @pipeline_url = pipeline_url
   end
 
+  # Returns false when there was nothing to report. A change that selects no macOS job
+  # has no iOS verdict, and the pipeline's own successful status already satisfies the
+  # required ci/bitrise/ci-ios/pr check, so a green "nothing ran" check run is noise on
+  # an unrelated pull request. A plan that failed or never ran still reports: an empty
+  # selection is then a symptom rather than a decision.
   def publish!
+    return false if nothing_to_report?
+
     client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
+    true
+  end
+
+  def nothing_to_report?
+    @selected_job_ids.empty? && problem_stages.empty?
   end
 
   def check_run_payload
@@ -51,7 +58,7 @@ class IOSCIReporter
     lines.concat(@job_ids.empty? ? [] : job_table)
     if @selected_job_ids.empty?
       lines << ""
-      lines << "No iOS job ran for this change."
+      lines << "No iOS job was selected for this change."
     end
     lines.concat(pipeline_link_lines)
     lines.join("\n")

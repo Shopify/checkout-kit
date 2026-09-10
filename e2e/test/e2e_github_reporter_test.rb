@@ -72,6 +72,24 @@ class E2EGitHubReporterTest < Minitest::Test
     {"target" => target, "application_id" => target, "passed" => true, "execute" => "."}
   end
 
+  def test_complete_green_report_is_successful
+    report = reporter(results: [result("swift")], expected: 1)
+
+    assert_predicate report, :successful?
+  end
+
+  def test_failed_result_is_not_successful
+    report = reporter(results: [result("swift").merge("passed" => false)], expected: 1)
+
+    refute_predicate report, :successful?
+  end
+
+  def test_missing_result_is_not_successful
+    report = reporter(results: [], expected: 1)
+
+    refute_predicate report, :successful?
+  end
+
   def test_install_table_lists_every_produced_target
     body = reporter(results: [result("react-native"), result("swift"), result("kotlin")]).comment_body
 

@@ -37,9 +37,9 @@ tools:
 
 pipelines:
   e2e:
-    # The required ci/bitrise/e2e/pr check must report for every ready PR.
-    # Select applications in the run plan so unrelated changes still finish
-    # the pipeline successfully without starting builds or BrowserStack runs.
+    # Deliberately unfiltered: the required ci/bitrise/e2e/pr status must report for
+    # every ready PR. The Linux run plan selects applications at runtime, so an
+    # unrelated change finishes with no app builds, no BrowserStack runs, and no report.
     triggers:
       pull_request:
         - source_branch: "*"
@@ -81,6 +81,10 @@ pipelines:
           - e2e-build-kotlin-android
           - e2e-build-swift-ios
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
+      # Gated with the execute stage: an empty run plan has nothing to publish, and the
+      # pipeline's own successful status is what satisfies the required check. When runs
+      # are planned this workflow owns the verdict and exits non-zero on a failed or
+      # missing result, which is what turns ci/bitrise/e2e/pr red.
       e2e-report:
         run_if:
           expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
@@ -93,8 +97,8 @@ pipelines:
   ci-ios:
     # Deliberately unfiltered. ci-ios is a required check, and a required check that
     # never posts leaves a pull request permanently unmergeable. The cheap Linux
-    # ci-ios-plan workflow decides which macOS jobs run, and ci-ios-report always posts
-    # — including for a change that needs no macOS job at all.
+    # ci-ios-plan workflow decides which macOS jobs run, and ci-ios-report owns the
+    # verdict whenever a job was selected.
     triggers:
       pull_request:
         - source_branch: "*"
@@ -122,8 +126,8 @@ pipelines:
           expression: '{{ enveq "CI_IOS_REACT_NATIVE_TEST_IOS" "true" }}'
         depends_on:
           - ci-ios-plan
-      # No run_if: this workflow is the required check, so it posts on every build,
-      # including one where ci-ios-plan selected nothing and every job was skipped.
+      # No run_if: this workflow runs on every build. It posts when a job was selected
+      # or ci-ios-plan failed or never ran, but not when a successful plan selected no job.
       ci-ios-report:
         depends_on:
           - ci-ios-swift-package-tests
