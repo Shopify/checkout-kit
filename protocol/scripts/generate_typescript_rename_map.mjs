@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROTOCOL_DIR = path.resolve(__dirname, "..");
@@ -32,14 +32,12 @@ function r(name) {
   return {ref: name};
 }
 
-async function loadTypeMap() {
-  const source = await fs.readFile(MODELS, "utf8");
-  const marker = "export const typeMap: any = {";
-  const start = source.indexOf(marker);
-  if (start === -1) {
-    throw new Error("typeMap literal not found in Models.ts");
+export function parseTypeMap(source) {
+  const declaration = /^(?:export\s+)?const\s+typeMap\s*:\s*any\s*=\s*\{/m.exec(source);
+  if (!declaration) {
+    throw new Error("Expected quicktype const or export const typeMap object in Models.ts");
   }
-  const literal = source.slice(start + marker.length - 1).replace(/;\s*$/, "");
+  const literal = source.slice(declaration.index + declaration[0].length - 1).replace(/;\s*$/, "");
   // eslint-disable-next-line no-new-func
   const factory = new Function(
     "l",
@@ -154,7 +152,7 @@ function buildRenameMap(typeMap, contains) {
 }
 
 async function main() {
-  const typeMap = await loadTypeMap();
+  const typeMap = parseTypeMap(await fs.readFile(MODELS, "utf8"));
   const contains = computeContainsRename(typeMap);
   const renameMap = buildRenameMap(typeMap, contains);
   const sorted = Object.fromEntries(
@@ -192,4 +190,6 @@ export const renameMap: Record<string, RenameEntry[]> = ${JSON.stringify(
   );
 }
 
-await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

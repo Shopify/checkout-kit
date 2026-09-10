@@ -7,6 +7,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
+// April wire payloads are retained here as older-version compatibility coverage.
 class ExtensionPreservationTest {
 
     private val json = Json { ignoreUnknownKeys = true }

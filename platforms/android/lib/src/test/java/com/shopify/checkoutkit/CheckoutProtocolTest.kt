@@ -8,7 +8,6 @@ import com.shopify.ucp.embedded.checkout.EmbeddedColorScheme
 import com.shopify.ucp.embedded.checkout.EmbeddedTransportConfig
 import com.shopify.ucp.embedded.checkout.ErrorResponse
 import com.shopify.ucp.embedded.checkout.ErrorStatus
-import com.shopify.ucp.embedded.checkout.FulfillmentMethodType
 import com.shopify.ucp.embedded.checkout.LineItemQuantity
 import com.shopify.ucp.embedded.checkout.LineItemStatus
 import com.shopify.ucp.embedded.checkout.Message
@@ -452,7 +451,7 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `checkout model decodes extension fields`() {
+    fun `April checkout model decodes extension fields`() {
         val checkout = Json.decodeFromString<Checkout>(
             """
             {
@@ -507,10 +506,10 @@ class CheckoutProtocolTest {
         assertThat(checkout.discounts?.applied?.get(0)?.allocations?.get(0)?.path)
             .isEqualTo("\$.line_items[0]")
         assertThat(checkout.fulfillment?.availableMethods?.get(0)?.type)
-            .isEqualTo(FulfillmentMethodType.Shipping)
+            .isEqualTo("shipping")
         assertThat(checkout.fulfillment?.methods?.get(0)?.id).isEqualTo("pickup-main")
         assertThat(checkout.fulfillment?.methods?.get(0)?.type)
-            .isEqualTo(FulfillmentMethodType.Pickup)
+            .isEqualTo("pickup")
     }
 
     @Test

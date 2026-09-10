@@ -783,7 +783,7 @@ export class ShopifyCheckout
    * notification/request. Handlers receive already-decoded payloads and map
    * them onto the component's cached state and DOM events.
    *
-   * @see https://ucp.dev/2026-04-08/specification/embedded-checkout/
+   * @see https://ucp.dev/2026-08-25/specification/shopping/checkout/embedded/
    */
   #buildProtocolClient(): EmbeddedCheckoutProtocol.Client {
     const { Event } = EmbeddedCheckoutProtocol;

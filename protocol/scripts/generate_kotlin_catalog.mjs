@@ -13,7 +13,7 @@ const outputPath = path.resolve(
   "languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt",
 );
 
-const specVersion = "2026-04-08";
+const {protocolVersion: specVersion} = JSON.parse(fs.readFileSync(path.join(protocolRoot, "source-lock.json"), "utf8"));
 
 const notifications = EC_METHODS.filter((entry) => entry.kind === "notification");
 const requests = EC_METHODS.filter((entry) => entry.kind === "request");
