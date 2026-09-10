@@ -291,6 +291,9 @@ jobs:
           languages: swift
           build-mode: manual
           config-file: ./.github/codeql/codeql-config.yml
+          debug: true
+          debug-artifact-name: codeql-core-swift-debug
+          debug-database-name: core-swift-database
 
       - name: Type-check Swift modules for CodeQL
         run: .github/codeql/build_swift --typecheck
