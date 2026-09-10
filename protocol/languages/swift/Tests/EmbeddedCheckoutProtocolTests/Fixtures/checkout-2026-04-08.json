@@ -1,0 +1,90 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.start",
+  "params": {
+    "checkout": {
+      "id": "checkout-compatibility",
+      "currency": "USD",
+      "line_items": [],
+      "links": [],
+      "status": "incomplete",
+      "totals": [],
+      "ucp": {
+        "version": "2026-04-08",
+        "payment_handlers": {}
+      },
+      "fulfillment": {
+        "available_methods": [
+          {
+            "type": "shipping",
+            "line_item_ids": []
+          }
+        ],
+        "methods": [
+          {
+            "id": "drone-1",
+            "type": "shipping",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "address-1",
+                "street_address": "123 Example Street",
+                "address_locality": "Example City",
+                "address_country": "US",
+                "postal_code": "10001"
+              }
+            ],
+            "groups": [
+              {
+                "id": "group-1",
+                "line_item_ids": [],
+                "options": [
+                  {
+                    "id": "option-standard",
+                    "title": "Standard Shipping",
+                    "description": "Arrives in 3-5 business days",
+                    "totals": [
+                      {
+                        "type": "fulfillment",
+                        "amount": 500
+                      }
+                    ]
+                  }
+                ],
+                "selected_option_id": "option-standard"
+              }
+            ],
+            "com.example.method_extension": {
+              "nested_value": "preserved"
+            }
+          },
+          {
+            "id": "pickup-1",
+            "type": "pickup",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "location-1",
+                "name": "Example Pickup Store",
+                "address": {
+                  "street_address": "456 Example Avenue",
+                  "extended_address": "Suite 2",
+                  "address_locality": "Example City",
+                  "address_region": "NY",
+                  "address_country": "US",
+                  "postal_code": "10002"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "com.example.device_id": "compatibility-test"
+      },
+      "com.example.extension": {
+        "nested_value": 42
+      }
+    }
+  }
+}

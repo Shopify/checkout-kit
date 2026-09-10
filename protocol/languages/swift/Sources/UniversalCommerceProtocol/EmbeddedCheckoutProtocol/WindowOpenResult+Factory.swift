@@ -18,6 +18,7 @@ extension EmbeddedCheckoutProtocol.WindowOpenResult {
         EmbeddedCheckoutProtocol.WindowOpenResult(
             ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                 capabilities: nil,
+                mapOrder: nil,
                 paymentHandlers: nil,
                 services: nil,
                 status: .error,

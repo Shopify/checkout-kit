@@ -1,0 +1,145 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.start",
+  "params": {
+    "checkout": {
+      "id": "checkout-compatibility",
+      "currency": "USD",
+      "line_items": [],
+      "links": [],
+      "status": "incomplete",
+      "totals": [],
+      "ucp": {
+        "version": "2026-08-25",
+        "payment_handlers": {
+          "com.example.wallet": [
+            {
+              "id": "example-wallet",
+              "version": "2026-08-25",
+              "available_instruments": [
+                {
+                  "type": "card",
+                  "constraints": {
+                    "required": [
+                      "credential"
+                    ],
+                    "properties": {
+                      "credential": {
+                        "required": [
+                          "type"
+                        ],
+                        "properties": {
+                          "type": {
+                            "enum": [
+                              "token"
+                            ]
+                          }
+                        }
+                      },
+                      "amount": {
+                        "const": 100
+                      }
+                    },
+                    "anyOf": [
+                      {
+                        "required": [
+                          "credential"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "map_order": {
+          "payment_handlers": [
+            "com.example.wallet"
+          ]
+        },
+        "future_metadata": {
+          "enabled": true
+        }
+      },
+      "fulfillment": {
+        "available_methods": [
+          {
+            "type": "drone_delivery",
+            "line_item_ids": []
+          }
+        ],
+        "methods": [
+          {
+            "id": "drone-1",
+            "type": "drone_delivery",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "address-1",
+                "street_address": "123 Example Street",
+                "address_locality": "Example City",
+                "address_country": "US",
+                "postal_code": "10001",
+                "type": "shipping_address"
+              }
+            ],
+            "groups": [
+              {
+                "id": "group-1",
+                "line_item_ids": [],
+                "options": [
+                  {
+                    "id": "option-standard",
+                    "title": "Standard Shipping",
+                    "description": {
+                      "plain": "Arrives in 3-5 business days",
+                      "markdown": "Arrives in **3-5 business days**",
+                      "html": "<p>Arrives in <strong>3-5 business days</strong></p>"
+                    },
+                    "totals": [
+                      {
+                        "type": "fulfillment",
+                        "amount": 500
+                      }
+                    ]
+                  }
+                ],
+                "selected_option_id": "option-standard"
+              }
+            ],
+            "com.example.method_extension": {
+              "nested_value": "preserved"
+            }
+          },
+          {
+            "id": "pickup-1",
+            "type": "pickup",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "location-1",
+                "name": "Example Pickup Store",
+                "address": {
+                  "street_address": "456 Example Avenue",
+                  "extended_address": "Suite 2",
+                  "address_locality": "Example City",
+                  "address_region": "NY",
+                  "address_country": "US",
+                  "postal_code": "10002"
+                },
+                "type": "business_location"
+              }
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "com.example.device_id": "compatibility-test"
+      },
+      "com.example.extension": {
+        "nested_value": 42
+      }
+    }
+  }
+}

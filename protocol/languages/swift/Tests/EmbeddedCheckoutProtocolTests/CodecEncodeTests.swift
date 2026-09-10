@@ -11,6 +11,7 @@ struct CodecEncodeTests {
             ),
             ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                 capabilities: nil,
+                mapOrder: nil,
                 paymentHandlers: nil,
                 services: nil,
                 status: .success,
