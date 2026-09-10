@@ -27,6 +27,9 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+  - jdk:
+      version: "17"
+      distribution: openjdk
   - custom:
       name: Check storefront secrets
       met?: ./scripts/secrets_setup --check
