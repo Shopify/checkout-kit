@@ -3,7 +3,7 @@ import type { DecodedMessage, JSONRPCID } from './codec';
 import { type Delegation as DelegationType } from './generated/ProtocolNotifications';
 import { url, type ProtocolURLOptions } from './url';
 export declare const EmbeddedCheckoutProtocol: {
-    readonly specVersion: "2026-04-08";
+    readonly specVersion: "2026-08-25";
     readonly Delegations: {
         readonly paymentInstrumentsChange: "payment.instruments_change";
         readonly paymentCredential: "payment.credential";

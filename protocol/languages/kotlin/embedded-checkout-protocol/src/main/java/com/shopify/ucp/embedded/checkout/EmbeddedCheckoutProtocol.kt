@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets
  * these wire-level names, descriptors, and generated payload models.
  */
 public object EmbeddedCheckoutProtocol {
-    public const val SPEC_VERSION: String = "2026-04-08"
+    public const val SPEC_VERSION: String = "2026-08-25"
 
     /**
      * Options controlling the query parameters appended to a checkout URL when

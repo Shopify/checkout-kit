@@ -1,0 +1,19 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.error",
+  "params": {
+    "error": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "error"
+      },
+      "messages": [
+        {
+          "type": "error",
+          "code": "checkout_unavailable",
+          "content": "Try again."
+        }
+      ]
+    }
+  }
+}

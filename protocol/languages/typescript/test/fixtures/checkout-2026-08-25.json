@@ -1,0 +1,80 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.start",
+  "params": {
+    "checkout": {
+      "id": "checkout-compatibility",
+      "currency": "USD",
+      "line_items": [],
+      "links": [],
+      "status": "incomplete",
+      "totals": [],
+      "ucp": {
+        "version": "2026-08-25",
+        "payment_handlers": {},
+        "map_order": {
+          "payment_handlers": [
+            "com.example.wallet"
+          ]
+        },
+        "future_metadata": {
+          "enabled": true
+        }
+      },
+      "fulfillment": {
+        "available_methods": [
+          {
+            "type": "drone_delivery",
+            "line_item_ids": []
+          }
+        ],
+        "methods": [
+          {
+            "id": "drone-1",
+            "type": "drone_delivery",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "address-1",
+                "street_address": "123 Example Street",
+                "address_locality": "Example City",
+                "address_country": "US",
+                "postal_code": "10001",
+                "type": "shipping_address"
+              }
+            ],
+            "com.example.method_extension": {
+              "nested_value": "preserved"
+            }
+          },
+          {
+            "id": "pickup-1",
+            "type": "pickup",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "location-1",
+                "name": "Example Pickup Store",
+                "address": {
+                  "street_address": "456 Example Avenue",
+                  "extended_address": "Suite 2",
+                  "address_locality": "Example City",
+                  "address_region": "NY",
+                  "address_country": "US",
+                  "postal_code": "10002"
+                },
+                "type": "business_location"
+              }
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "com.example.device_id": "compatibility-test"
+      },
+      "com.example.extension": {
+        "nested_value": 42
+      }
+    }
+  }
+}

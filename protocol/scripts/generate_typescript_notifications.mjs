@@ -17,7 +17,7 @@ const outputPath = path.resolve(
   'languages/typescript/src/generated/ProtocolNotifications.ts',
 );
 
-const SPEC_VERSION = '2026-04-08';
+const {protocolVersion: SPEC_VERSION} = JSON.parse(fs.readFileSync(path.join(protocolRoot, 'source-lock.json'), 'utf8'));
 
 // TypeScript-specific notification decode wiring: each payload model maps to its
 // generated codec function and the JSON-RPC params wrapper key it arrives under

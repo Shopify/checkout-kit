@@ -22,6 +22,10 @@
  * Base checkout schema. Extensions compose onto this using allOf.
  */
 export interface Checkout {
+    /**
+     * Outstanding extension-defined { [key: string]: any } for this checkout.
+     */
+    actions?:     { [key: string]: { [key: string]: any }[] };
     attribution?: { [key: string]: string };
     /**
      * Representation of the buyer.
@@ -69,9 +73,15 @@ export interface Checkout {
      */
     order?:   OrderConfirmation;
     payment?: Payment;
-    signals?: { [key: string]: any };
     /**
-     * Checkout state indicating the current phase and required action. See Checkout Status
+     * Policies (e.g., return/refund terms) that apply to the items in this checkout.
+     * `applies_to` targets are relative to the response root; when absent or empty, refer to
+     * the URLs in `links[]`.
+     */
+    policies?: Policy[];
+    signals?:  { [key: string]: any };
+    /**
+     * Checkout state indicating the current phase and required processing. See Checkout Status
      * lifecycle documentation for state transition details.
      */
     status: CheckoutStatus;
@@ -82,6 +92,15 @@ export interface Checkout {
     ucp:    UcpCheckoutResponseSchema;
     [property: string]: any;
 }
+
+/**
+ * Non-empty instances of one Action type. JSON preserves array order; the declaring
+ * extension defines whether order has processing semantics.
+ *
+ * Common fields for one outstanding Action instance are id and optional config. The
+ * extension declaring the Action type defines type-specific processing data under config.
+ * Additional properties are permitted for forward compatibility.
+ */
 
 /**
  * Representation of the buyer.
@@ -115,22 +134,25 @@ export interface Buyer {
  * data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
  * early, finer resolution as the session progresses. Higher-resolution data (shipping
  * address, billing address) supersedes context.
+ *
+ * A coarse geographic location — country, region, and postal code. A lightweight
+ * alternative to a full postal address.
  */
 export interface Context {
     /**
-     * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-     * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-     * full country name such as "Singapore" can also be used. Optional hint for market context
-     * (currency, availability, pricing)—higher-resolution data (e.g., shipping address)
-     * supersedes this value.
+     * The country, as a 2-letter ISO 3166-1 alpha-2 code (e.g. "US"). A 3-letter alpha-3 code
+     * or full country name MAY also be used.
      */
     addressCountry?: string;
     /**
-     * The region in which the locality is, and which is in the country. For example, California
-     * or another appropriate first-level Administrative division. Optional hint for progressive
-     * localization—higher-resolution data (e.g., shipping address) supersedes this value.
+     * The first-level administrative region within the country (e.g. a state or province such
+     * as California).
      */
     addressRegion?: string;
+    /**
+     * The postal code (e.g. "94043").
+     */
+    postalCode?: string;
     /**
      * Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
      * currency from context and authoritative signals; this hint MAY inform selection in
@@ -162,10 +184,34 @@ export interface Context {
      */
     language?: string;
     /**
-     * The postal code. For example, 94043. Optional hint for regional
-     * refinement—higher-resolution data (e.g., shipping address) supersedes this value.
+     * Stable, opaque identifier for a Location in the Business's namespace. This provisional,
+     * non-binding hint is distinct from the Buyer's locality. The operation specification or an
+     * active capability/extension defines its effects. A common example in retail shopping is
+     * the default home store ID selected and saved by the user when purchasing groceries.
      */
-    postalCode?: string;
+    location?: string;
+    /**
+     * Buyer-preferred payment handlers in priority order (most preferred first). Each entry
+     * names a handler advertised in the Business profile's `ucp.payment_handlers`, optionally
+     * narrowed to preferred instrument types. The Business SHOULD use it to preselect or
+     * prioritize the handler (and type, when given) and MAY ignore unavailable or ineligible
+     * entries; unrecognized values MUST be ignored without error.
+     */
+    payment?: PreferredPaymentHandler[];
+    [property: string]: any;
+}
+
+export interface PreferredPaymentHandler {
+    /**
+     * Handler registry key advertised in the Business profile's `ucp.payment_handlers`.
+     */
+    handler: string;
+    /**
+     * Optional preferred instrument types for this handler, in priority order, aligned with the
+     * handler's advertised `payment_instrument.type` values (for example `card` or `bank`).
+     * Unrecognized values MUST be ignored.
+     */
+    types?: string[];
     [property: string]: any;
 }
 
@@ -240,7 +286,8 @@ export interface DiscountAllocation {
      */
     amount: number;
     /**
-     * JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+     * RFC 9535 JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals[?@.type ==
+     * "fulfillment"]').
      */
     path: string;
     [property: string]: any;
@@ -286,25 +333,20 @@ export interface FulfillmentAvailableMethod {
      */
     lineItemIds: string[];
     /**
-     * Fulfillment method type this availability applies to.
+     * Fulfillment method type this availability applies to. Well-known values: `shipping`,
+     * `pickup`; businesses MAY use additional values.
      */
-    type: FulfillmentMethodType;
+    type: string;
     [property: string]: any;
 }
 
 /**
- * Fulfillment method type this availability applies to.
- *
- * Fulfillment method type.
- */
-export type FulfillmentMethodType = "shipping" | "pickup";
-
-/**
- * A fulfillment method (shipping or pickup) with destinations and groups.
+ * A fulfillment method with destinations and groups.
  */
 export interface FulfillmentMethod {
     /**
-     * Available destinations. For shipping: addresses. For pickup: retail locations.
+     * Available destinations for this method. In Business responses, each destination carries a
+     * `type` and `id`.
      */
     destinations?: FulfillmentDestination[];
     /**
@@ -321,30 +363,26 @@ export interface FulfillmentMethod {
      */
     lineItemIds: string[];
     /**
-     * ID of the selected destination.
+     * ID of the selected destination. Accepts any stable, Business-scoped ID the Business
+     * recognizes for this method, including Location IDs not yet enumerated in `destinations`.
      */
     selectedDestinationId?: null | string;
     /**
-     * Fulfillment method type.
+     * Fulfillment method type. Well-known values: `shipping`, `pickup`. Businesses MAY use
+     * additional values.
      */
-    type: FulfillmentMethodType;
+    type: string;
     [property: string]: any;
 }
 
 /**
  * A destination for fulfillment.
- *
- * Shipping destination.
- *
- * Physical address of the location.
- *
- * The billing address associated with this payment method.
- *
- * Delivery destination address.
- *
- * A pickup location (retail store, locker, etc.).
  */
 export interface FulfillmentDestination {
+    /**
+     * Physical address of the location.
+     */
+    address?: PostalAddress;
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -371,9 +409,17 @@ export interface FulfillmentDestination {
      */
     firstName?: string;
     /**
+     * Fulfillment destination identifier.
+     */
+    id: string;
+    /**
      * Optional. Last name of the contact associated with the address.
      */
     lastName?: string;
+    /**
+     * Buyer-facing, Business-owned display name.
+     */
+    name?: string;
     /**
      * Optional. Phone number of the contact associated with the address.
      */
@@ -387,19 +433,12 @@ export interface FulfillmentDestination {
      */
     streetAddress?: string;
     /**
-     * ID specific to this shipping destination.
-     *
-     * Unique location identifier.
+     * Destination contract discriminator. Required in Business responses and optional in
+     * Platform requests. Well-known values: `shipping_address`, `business_location`. The
+     * enclosing method contract defines request defaults and which fields the Platform may
+     * write; negotiated extensions define additional values.
      */
-    id: string;
-    /**
-     * Physical address of the location.
-     */
-    address?: PostalAddress;
-    /**
-     * Location name (e.g., store name).
-     */
-    name?: string;
+    type?: string;
     [property: string]: any;
 }
 
@@ -479,37 +518,71 @@ export interface FulfillmentGroup {
 }
 
 /**
- * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+ * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15). Extends
+ * the fulfillment option base with cost and timing.
+ *
+ * Common base for a fulfillment option: an addressable, renderable choice (e.g. Standard,
+ * Express). Catalog uses this base directly; checkout composes it with cost and timing.
  */
 export interface FulfillmentOption {
+    /**
+     * Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
+     * 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
+     */
+    description?: Description;
+    /**
+     * Unique identifier for this fulfillment option.
+     */
+    id: string;
+    /**
+     * Short label that distinguishes this option from its siblings (e.g. 'Standard', 'Express
+     * Shipping', 'Curbside Pickup').
+     */
+    title: string;
     /**
      * Carrier name (for shipping).
      */
     carrier?: string;
     /**
-     * Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
-     */
-    description?: string;
-    /**
      * Earliest fulfillment date.
      */
     earliestFulfillmentTime?: string;
-    /**
-     * Unique fulfillment option identifier.
-     */
-    id: string;
     /**
      * Latest fulfillment date.
      */
     latestFulfillmentTime?: string;
     /**
-     * Short label (e.g., 'Express Shipping', 'Curbside Pickup').
-     */
-    title: string;
-    /**
      * Fulfillment option totals breakdown.
      */
     totals: LineItemTotal[];
+    [property: string]: any;
+}
+
+/**
+ * Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
+ * 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
+ *
+ * Description content in one or more formats. At least one format must be provided.
+ *
+ * Human-readable policy summary in one or more formats (plain, markdown, html). Required on
+ * every policy so a platform can present it without understanding any type-specific fields.
+ * This is not the buyer-facing disclosure — display is compelled by a `messages[]` warning
+ * (see the Policies section).
+ */
+export interface Description {
+    /**
+     * HTML-formatted content. Security: Platforms MUST sanitize before rendering—strip scripts,
+     * event handlers, and untrusted elements. Treat all rich text as untrusted input.
+     */
+    html?: string;
+    /**
+     * Markdown-formatted content.
+     */
+    markdown?: string;
+    /**
+     * Plain text content.
+     */
+    plain?: string;
     [property: string]: any;
 }
 
@@ -542,7 +615,11 @@ export interface LineItem {
      */
     parentId?: string;
     /**
-     * Quantity of the item being purchased.
+     * Always an integer step count. On Platform requests, steps use the item's
+     * Business-authoritative sale basis; omitting `item.quantity_unit` makes no assertion and
+     * does not imply `each`. On Business responses, `item.quantity_unit` describes the basis;
+     * if absent, it encodes the `each` machine identity (`C62`, 0) and `quantity` counts whole
+     * items.
      */
     quantity: number;
     /**
@@ -553,7 +630,7 @@ export interface LineItem {
 }
 
 /**
- * Product data (id, title, price, image_url).
+ * Purchased item data, including identity, price, and sale basis.
  */
 export interface Item {
     /**
@@ -566,13 +643,183 @@ export interface Item {
      */
     imageUrl?: string;
     /**
-     * Unit price in ISO 4217 minor units.
+     * Unit price in ISO 4217 minor units. Price is the amount per one whole
+     * `quantity_unit.unit` (for example, per lb or per hour); when `quantity_unit` is absent,
+     * it is per `each`.
      */
     price: number;
+    /**
+     * Sale basis this item's `quantity` is denominated in. On an authoritative Business
+     * response, absence encodes the default `each` machine identity (`C62`, 0); the Business
+     * MUST include this descriptor for every non-`each` response. On Platform requests,
+     * omission makes no assertion: the Business interprets `quantity` using the item's
+     * authoritative sale basis. If the Platform includes this descriptor, it asserts the
+     * unit-descriptor machine identity. The Business MUST compare that machine identity
+     * (`unit`, effective `scale`), ignore `display_text` and `increment`, and resolve a
+     * mismatch by conversion surfaced as a visible line revision with a warning, or by
+     * rejection with a recoverable business outcome; silent reinterpretation is forbidden. An
+     * explicit `C62` descriptor at effective scale 0 matches an authoritative basis represented
+     * by an absent descriptor.
+     */
+    quantityUnit?: QuantityUnit;
     /**
      * Product title.
      */
     title: string;
+    /**
+     * Pricing basis for this item. On an authoritative Business response, the Business MUST
+     * include `unit_price` on every line whose pricing basis differs from its sale basis (for
+     * example, priced per pound but sold per `each`); presence on a line marks the rate as
+     * transactional rather than display-only. When the pricing basis is the sale basis,
+     * `item.price` fully denominates the charge and this field MAY be omitted.
+     */
+    unitPrice?: UnitPrice;
+    [property: string]: any;
+}
+
+/**
+ * Sale basis this item's `quantity` is denominated in. On an authoritative Business
+ * response, absence encodes the default `each` machine identity (`C62`, 0); the Business
+ * MUST include this descriptor for every non-`each` response. On Platform requests,
+ * omission makes no assertion: the Business interprets `quantity` using the item's
+ * authoritative sale basis. If the Platform includes this descriptor, it asserts the
+ * unit-descriptor machine identity. The Business MUST compare that machine identity
+ * (`unit`, effective `scale`), ignore `display_text` and `increment`, and resolve a
+ * mismatch by conversion surfaced as a visible line revision with a warning, or by
+ * rejection with a recoverable business outcome; silent reinterpretation is forbidden. An
+ * explicit `C62` descriptor at effective scale 0 matches an authoritative basis represented
+ * by an absent descriptor.
+ *
+ * Sale-basis descriptor for quantities: the shared unit descriptor plus the Business's
+ * ordering policy. Its unit-descriptor machine identity remains (`unit`, effective
+ * `scale`); `display_text` and `increment` are excluded from identity and mismatch
+ * comparison.
+ *
+ * A reusable unit descriptor for quantities and measures. Its unit-descriptor machine
+ * identity is (`unit`, effective `scale`), where effective `scale` is the provided `scale`
+ * or 0; `display_text` is excluded.
+ */
+export interface QuantityUnit {
+    /**
+     * Required printable unit label provided by the Business. The Platform MUST use it when it
+     * does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
+     * MAY substitute its own localized label. It does not participate in unit identity or
+     * mismatch comparison.
+     */
+    displayText: string;
+    /**
+     * One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
+     * 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
+     * single whole unit (10^16 steps) is no longer representable, so larger scales cannot
+     * denominate one unit of their own basis. Businesses needing finer granularity use a
+     * smaller unit.
+     */
+    scale?: number;
+    /**
+     * Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
+     * when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
+     * identifier and MUST use it consistently for the same unit. The Platform MUST treat an
+     * unrecognized identifier as opaque.
+     */
+    unit: string;
+    /**
+     * Ordering granularity, denominated in steps: the Business sells this item in integer
+     * multiples of `increment` steps. Its effective value is the provided value or 1. Advisory
+     * merchandising policy, not a representational bound: Platform-authored quantities SHOULD
+     * be integer multiples of the effective increment; the Business MAY accept, revise, or
+     * reject an off-increment request with a recoverable business outcome and MUST NOT silently
+     * reinterpret it. Business-authored quantities (checkout revisions, fulfillment events,
+     * adjustments) are bounded only by `scale`.
+     */
+    increment?: number;
+    [property: string]: any;
+}
+
+/**
+ * Pricing basis for this item. On an authoritative Business response, the Business MUST
+ * include `unit_price` on every line whose pricing basis differs from its sale basis (for
+ * example, priced per pound but sold per `each`); presence on a line marks the rate as
+ * transactional rather than display-only. When the pricing basis is the sale basis,
+ * `item.price` fully denominates the charge and this field MAY be omitted.
+ *
+ * Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+ * `unit_price.currency` MUST equal `price.currency`; the comparator MUST NOT perform
+ * currency conversion. `measure.unit` and `reference.unit` MUST be identical; cross-unit
+ * conversion is not permitted. Their scales MAY differ; each value represents `value ×
+ * 10^-scale`.
+ */
+export interface UnitPrice {
+    /**
+     * Unit price in ISO 4217 minor units. After satisfying the same-unit invariant, the
+     * Business MUST compute the comparator as `(price.amount / (measure.value ×
+     * 10^-measure.scale)) × (reference.value × 10^-reference.scale)` and round it once to ISO
+     * 4217 minor units according to its pricing rules. The returned `unit_price.amount` is
+     * authoritative; the Platform MUST NOT recompute or substitute its own result.
+     */
+    amount: number;
+    /**
+     * ISO 4217 currency code.
+     */
+    currency: string;
+    /**
+     * Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
+     * `quantity_unit`, which defines the sale basis. Its integer `value` MUST be at least 1.
+     */
+    measure: Measure;
+    /**
+     * Denominator for unit price display (for example, per 100 mL or per 1 kg). Its integer
+     * `value` MUST be at least 1.
+     */
+    reference: Measure;
+    [property: string]: any;
+}
+
+/**
+ * Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
+ * `quantity_unit`, which defines the sale basis. Its integer `value` MUST be at least 1.
+ *
+ * Denominator for unit price display (for example, per 100 mL or per 1 kg). Its integer
+ * `value` MUST be at least 1.
+ *
+ * The settled measurement this adjustment reconciles (for example, actual picked weight),
+ * present when the line's price settles by measurement. Its unit identity MUST match the
+ * line's pricing basis (`item.unit_price` measure/reference unit); no unit conversion. A
+ * pure price settlement uses `quantity: 0` together with `measure` and a totals delta.
+ *
+ * A measure composed of an integer value and a unit descriptor. Its value is the integer
+ * count of `10^-scale` units of `unit`.
+ *
+ * A reusable unit descriptor for quantities and measures. Its unit-descriptor machine
+ * identity is (`unit`, effective `scale`), where effective `scale` is the provided `scale`
+ * or 0; `display_text` is excluded.
+ */
+export interface Measure {
+    /**
+     * Required printable unit label provided by the Business. The Platform MUST use it when it
+     * does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
+     * MAY substitute its own localized label. It does not participate in unit identity or
+     * mismatch comparison.
+     */
+    displayText: string;
+    /**
+     * One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
+     * 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
+     * single whole unit (10^16 steps) is no longer representable, so larger scales cannot
+     * denominate one unit of their own basis. Businesses needing finer granularity use a
+     * smaller unit.
+     */
+    scale?: number;
+    /**
+     * Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
+     * when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
+     * identifier and MUST use it consistently for the same unit. The Platform MUST treat an
+     * unrecognized identifier as opaque.
+     */
+    unit: string;
+    /**
+     * Integer count of `10^-scale` units of `unit`.
+     */
+    value: number;
     [property: string]: any;
 }
 
@@ -611,16 +858,13 @@ export interface Message {
      */
     contentType?: ContentType;
     /**
-     * RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-     *
-     * JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-     *
-     * RFC 9535 JSONPath to the component the message refers to.
+     * RFC 9535 JSONPath to the component the message refers to (e.g., $.line_items[0]).
      */
     path?: string;
     /**
      * Reflects the resource state and recommended action. 'recoverable': platform can resolve
-     * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+     * the condition in band, for example by modifying inputs or processing a related Action,
+     * and submit a new operation when needed. 'requires_buyer_input': merchant requires
      * information their API doesn't support collecting programmatically (checkout incomplete).
      * 'requires_buyer_review': buyer must authorize before order placement due to policy,
      * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
@@ -656,7 +900,8 @@ export type ContentType = "plain" | "markdown";
 
 /**
  * Reflects the resource state and recommended action. 'recoverable': platform can resolve
- * by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+ * the condition in band, for example by modifying inputs or processing a related Action,
+ * and submit a new operation when needed. 'requires_buyer_input': merchant requires
  * information their API doesn't support collecting programmatically (checkout incomplete).
  * 'requires_buyer_review': buyer must authorize before order placement due to policy,
  * regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
@@ -724,7 +969,11 @@ export interface SelectedPaymentInstrument {
      */
     handlerId: string;
     /**
-     * A unique identifier for this instrument instance, assigned by the platform.
+     * A unique identifier for this instrument instance. Typically assigned by the platform for
+     * instruments it collects. For a business-owned saved instrument returned on an
+     * identity-linked response, this identifier is assigned by the business; the platform MUST
+     * treat it as an opaque, business-scoped reference, and the business resolves it
+     * server-side when the buyer selects it.
      */
     id: string;
     /**
@@ -752,6 +1001,48 @@ export interface PaymentCredential {
 }
 
 /**
+ * A durable business rule about the items in a response — return/refund terms, warranty,
+ * and the like — at the time of purchase. Every policy carries a `type` (an open
+ * reverse-DNS vocabulary) and a `description` so a platform can present it without
+ * understanding its type-specific fields; type-specific fields (gated by `type`) add
+ * structured context for platforms that model that type. Policies are reference data; the
+ * obligation to display a term to the buyer is carried by a `messages[]` warning whose
+ * `code` equals the policy `type` — see the Policies section of the specification.
+ */
+export interface Policy {
+    /**
+     * RFC 9535 JSONPath expressions identifying the nodes this policy applies to, relative to
+     * the embedding response root (e.g., `$.line_items[0]` in cart/checkout, `$.products[2]` in
+     * catalog). Each target covers the node it names and everything nested under it, so a
+     * target on a product also covers its variants. A singular query (RFC 9535 Section 2.3.5.1;
+     * name and index selectors only) names a single node; filters, wildcards, and slices match
+     * a set. When omitted, the policy applies to the entire response. When policies of the same
+     * `type` contest a node, the narrowest target wins and overrides the rest. See the Policies
+     * section for how specificity resolves.
+     */
+    appliesTo?: string[];
+    /**
+     * Human-readable policy summary in one or more formats (plain, markdown, html). Required on
+     * every policy so a platform can present it without understanding any type-specific fields.
+     * This is not the buyer-facing disclosure — display is compelled by a `messages[]` warning
+     * (see the Policies section).
+     */
+    description: Description;
+    /**
+     * Policy type discriminator. Open reverse-DNS vocabulary. Well-known values:
+     * `dev.ucp.shopping.policy.return` (return terms), `dev.ucp.shopping.policy.warranty`
+     * (warranty terms). Businesses MAY define custom types in their own domain (e.g.,
+     * `com.example.policy.price_match`). Platforms MUST tolerate unknown values.
+     */
+    type: string;
+    /**
+     * Optional link to the full policy document.
+     */
+    url?: string;
+    [property: string]: any;
+}
+
+/**
  * Environment data provided by the platform to support authorization and abuse prevention.
  * Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
  * observation or independently verifiable third-party attestations. All signal keys MUST
@@ -760,7 +1051,7 @@ export interface PaymentCredential {
  */
 
 /**
- * Checkout state indicating the current phase and required action. See Checkout Status
+ * Checkout state indicating the current phase and required processing. See Checkout Status
  * lifecycle documentation for state transition details.
  */
 export type CheckoutStatus = "incomplete" | "requires_escalation" | "ready_for_complete" | "complete_in_progress" | "completed" | "canceled";
@@ -816,6 +1107,11 @@ export interface UcpCheckoutResponseSchema {
      * Capability registry keyed by reverse-domain name.
      */
     capabilities?: { [key: string]: CapabilityResponseSchema[] };
+    /**
+     * Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+     * (`services`, `capabilities`, and `payment_handlers`).
+     */
+    mapOrder?: { [key: string]: string[] };
     /**
      * Payment handler registry keyed by reverse-domain name.
      */
@@ -909,16 +1205,81 @@ export interface PaymentHandlerResponseSchema {
  */
 export interface PaymentHandlerResponseSchemaAvailableInstrument {
     /**
-     * Constraints on this instrument type. Structure depends on instrument type and active
-     * capabilities.
+     * A Constraint Expression describing the instrument this entry makes available. Keys in
+     * `properties` name members of the `constraint_target` declared by the instrument schema
+     * for this `type`. Requirements on submitted request data belong in
+     * `ucp.request_constraints` instead.
      */
-    constraints?: { [key: string]: any };
+    constraints?: ConstraintsElement;
     /**
      * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
      * schema's type constant.
      */
     type: string;
     [property: string]: any;
+}
+
+/**
+ * A Constraint Expression describing the instrument this entry makes available. Keys in
+ * `properties` name members of the `constraint_target` declared by the instrument schema
+ * for this `type`. Requirements on submitted request data belong in
+ * `ucp.request_constraints` instead.
+ *
+ * A closed JSON Schema Draft 2020-12 constraint expression with Object and Value Constraint
+ * positions.
+ *
+ * A Value Constraint containing `enum`, `const`, or both.
+ */
+export interface PropertyValue {
+    /**
+     * Alternative Object Constraints. The constrained object must satisfy at least one. A
+     * branch must be non-empty: an empty branch is satisfied by every object and neutralizes
+     * the alternation.
+     */
+    anyOf?: ConstraintsElement[];
+    /**
+     * Constraints keyed by property name. Must be non-empty: an empty object applies no
+     * constraint.
+     */
+    properties?: { [key: string]: PropertyValue };
+    /**
+     * Property names required by the constrained object. Must be non-empty: an empty array
+     * applies no constraint.
+     */
+    required?: string[];
+    const?:    any;
+    /**
+     * A non-empty array of unique JSON values.
+     */
+    enum?: any[];
+}
+
+/**
+ * A Constraint Expression describing the instrument this entry makes available. Keys in
+ * `properties` name members of the `constraint_target` declared by the instrument schema
+ * for this `type`. Requirements on submitted request data belong in
+ * `ucp.request_constraints` instead.
+ *
+ * A closed JSON Schema Draft 2020-12 constraint expression with Object and Value Constraint
+ * positions.
+ */
+export interface ConstraintsElement {
+    /**
+     * Alternative Object Constraints. The constrained object must satisfy at least one. A
+     * branch must be non-empty: an empty branch is satisfied by every object and neutralizes
+     * the alternation.
+     */
+    anyOf?: ConstraintsElement[];
+    /**
+     * Constraints keyed by property name. Must be non-empty: an empty object applies no
+     * constraint.
+     */
+    properties?: { [key: string]: PropertyValue };
+    /**
+     * Property names required by the constrained object. Must be non-empty: an empty array
+     * applies no constraint.
+     */
+    required?: string[];
 }
 
 /**
@@ -1040,6 +1401,11 @@ export interface Order {
      */
     permalinkUrl: string;
     /**
+     * Snapshot of the policies that applied to the items at checkout, captured on the order as
+     * a durable record. `applies_to` targets are relative to the response root.
+     */
+    policies?: Policy[];
+    /**
      * Different totals for the order.
      */
     totals: CheckoutTotal[];
@@ -1093,8 +1459,17 @@ export interface AdjustmentLineItem {
      */
     id: string;
     /**
-     * Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
-     * returns); positive values represent additions (e.g. exchanges).
+     * The settled measurement this adjustment reconciles (for example, actual picked weight),
+     * present when the line's price settles by measurement. Its unit identity MUST match the
+     * line's pricing basis (`item.unit_price` measure/reference unit); no unit conversion. A
+     * pure price settlement uses `quantity: 0` together with `measure` and a totals delta.
+     */
+    measure?: Measure;
+    /**
+     * Signed integer count of steps of the referenced line item's `quantity_unit` (`10^-scale`
+     * × `unit`); when `quantity_unit` is absent, it counts whole items (`each`). Negative
+     * values represent reductions (e.g. returns); positive values represent additions (e.g.
+     * exchanges).
      */
     quantity: number;
     [property: string]: any;
@@ -1171,7 +1546,8 @@ export interface EventLineItem {
      */
     id: string;
     /**
-     * Quantity fulfilled in this event.
+     * Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
+     * `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
      */
     quantity: number;
     [property: string]: any;
@@ -1205,9 +1581,10 @@ export interface Expectation {
      */
     lineItems: ExpectationLineItem[];
     /**
-     * Delivery method type (shipping, pickup, digital).
+     * Delivery method type. Well-known values: `shipping`, `pickup`, `digital`; additional
+     * values MAY be used.
      */
-    methodType: MethodType;
+    methodType: string;
     [property: string]: any;
 }
 
@@ -1217,16 +1594,12 @@ export interface ExpectationLineItem {
      */
     id: string;
     /**
-     * Quantity of this item in this expectation.
+     * Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
+     * `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
      */
     quantity: number;
     [property: string]: any;
 }
-
-/**
- * Delivery method type (shipping, pickup, digital).
- */
-export type MethodType = "shipping" | "pickup" | "digital";
 
 export interface OrderLineItem {
     /**
@@ -1234,7 +1607,7 @@ export interface OrderLineItem {
      */
     id: string;
     /**
-     * Product data (id, title, price, image_url).
+     * Purchased item data, including identity, price, and sale basis.
      */
     item: Item;
     /**
@@ -1242,7 +1615,10 @@ export interface OrderLineItem {
      */
     parentId?: string;
     /**
-     * Quantity tracking for the line item.
+     * Tracks the line item's original, current active, and fulfilled quantities. All three
+     * values use the same inherited `item.quantity_unit`. When `item.quantity_unit` is absent
+     * on an authoritative order response, each step is one whole item (`each`) under the shared
+     * default.
      */
     quantity: LineItemQuantity;
     /**
@@ -1259,20 +1635,23 @@ export interface OrderLineItem {
 }
 
 /**
- * Quantity tracking for the line item.
+ * Tracks the line item's original, current active, and fulfilled quantities. All three
+ * values use the same inherited `item.quantity_unit`. When `item.quantity_unit` is absent
+ * on an authoritative order response, each step is one whole item (`each`) under the shared
+ * default.
  */
 export interface LineItemQuantity {
     /**
-     * Quantity fulfilled so far.
+     * Quantity fulfilled so far, expressed as an integer step count.
      */
     fulfilled: number;
     /**
-     * Quantity from the original checkout.
+     * Quantity from the original checkout, expressed as an integer step count.
      */
     original?: number;
     /**
-     * Current total active quantity. May differ from original due to post-order modifications
-     * (e.g., returns or cancellations).
+     * Current active quantity after returns, cancellations, or other order changes, expressed
+     * as an integer step count.
      */
     total: number;
     [property: string]: any;
@@ -1295,6 +1674,11 @@ export interface UcpOrderResponseSchema {
      * Capability registry keyed by reverse-domain name.
      */
     capabilities?: { [key: string]: CapabilityResponseSchema[] };
+    /**
+     * Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+     * (`services`, `capabilities`, and `payment_handlers`).
+     */
+    mapOrder?: { [key: string]: string[] };
     /**
      * Payment handler registry keyed by reverse-domain name.
      */
@@ -1379,6 +1763,11 @@ export interface ErrorResponseUcp {
      * Capability registry keyed by reverse-domain name.
      */
     capabilities?: { [key: string]: CapabilityResponseSchema[] };
+    /**
+     * Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+     * (`services`, `capabilities`, and `payment_handlers`).
+     */
+    mapOrder?: { [key: string]: string[] };
     /**
      * Payment handler registry keyed by reverse-domain name.
      */
@@ -1472,6 +1861,11 @@ export interface InstrumentsChangeResultUcp {
      */
     capabilities?: { [key: string]: CapabilityElement[] };
     /**
+     * Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+     * (`services`, `capabilities`, and `payment_handlers`).
+     */
+    mapOrder?: { [key: string]: string[] };
+    /**
      * Payment handler registry keyed by reverse-domain name.
      */
     paymentHandlers?: { [key: string]: PaymentHandlerElement[] };
@@ -1564,10 +1958,12 @@ export interface PaymentHandlerElement {
  */
 export interface PaymentHandlerAvailableInstrument {
     /**
-     * Constraints on this instrument type. Structure depends on instrument type and active
-     * capabilities.
+     * A Constraint Expression describing the instrument this entry makes available. Keys in
+     * `properties` name members of the `constraint_target` declared by the instrument schema
+     * for this `type`. Requirements on submitted request data belong in
+     * `ucp.request_constraints` instead.
      */
-    constraints?: { [key: string]: any };
+    constraints?: ConstraintsElement;
     /**
      * The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
      * schema's type constant.
@@ -2107,6 +2503,7 @@ function r(name: string) {
 
 const typeMap: any = {
     "Checkout": o([
+        { json: "actions", js: "actions", typ: u(undefined, m(a(m("any")))) },
         { json: "attribution", js: "attribution", typ: u(undefined, m("")) },
         { json: "buyer", js: "buyer", typ: u(undefined, r("Buyer")) },
         { json: "context", js: "context", typ: u(undefined, r("Context")) },
@@ -2121,6 +2518,7 @@ const typeMap: any = {
         { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
         { json: "order", js: "order", typ: u(undefined, r("OrderConfirmation")) },
         { json: "payment", js: "payment", typ: u(undefined, r("Payment")) },
+        { json: "policies", js: "policies", typ: u(undefined, a(r("Policy"))) },
         { json: "signals", js: "signals", typ: u(undefined, m("any")) },
         { json: "status", js: "status", typ: r("CheckoutStatus") },
         { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
@@ -2135,11 +2533,17 @@ const typeMap: any = {
     "Context": o([
         { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
         { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
+        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
         { json: "currency", js: "currency", typ: u(undefined, "") },
         { json: "eligibility", js: "eligibility", typ: u(undefined, a("")) },
         { json: "intent", js: "intent", typ: u(undefined, "") },
         { json: "language", js: "language", typ: u(undefined, "") },
-        { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
+        { json: "location", js: "location", typ: u(undefined, "") },
+        { json: "payment", js: "payment", typ: u(undefined, a(r("PreferredPaymentHandler"))) },
+    ], "any"),
+    "PreferredPaymentHandler": o([
+        { json: "handler", js: "handler", typ: "" },
+        { json: "types", js: "types", typ: u(undefined, a("")) },
     ], "any"),
     "CheckoutDiscounts": o([
         { json: "applied", js: "applied", typ: u(undefined, a(r("AppliedDiscount"))) },
@@ -2168,7 +2572,7 @@ const typeMap: any = {
         { json: "description", js: "description", typ: u(undefined, "") },
         { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, u(null, "")) },
         { json: "line_item_ids", js: "lineItemIds", typ: a("") },
-        { json: "type", js: "type", typ: r("FulfillmentMethodType") },
+        { json: "type", js: "type", typ: "" },
     ], "any"),
     "FulfillmentMethod": o([
         { json: "destinations", js: "destinations", typ: u(undefined, a(r("FulfillmentDestination"))) },
@@ -2176,21 +2580,22 @@ const typeMap: any = {
         { json: "id", js: "id", typ: "" },
         { json: "line_item_ids", js: "lineItemIds", typ: a("") },
         { json: "selected_destination_id", js: "selectedDestinationId", typ: u(undefined, u(null, "")) },
-        { json: "type", js: "type", typ: r("FulfillmentMethodType") },
+        { json: "type", js: "type", typ: "" },
     ], "any"),
     "FulfillmentDestination": o([
+        { json: "address", js: "address", typ: u(undefined, r("PostalAddress")) },
         { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
         { json: "address_locality", js: "addressLocality", typ: u(undefined, "") },
         { json: "address_region", js: "addressRegion", typ: u(undefined, "") },
         { json: "extended_address", js: "extendedAddress", typ: u(undefined, "") },
         { json: "first_name", js: "firstName", typ: u(undefined, "") },
+        { json: "id", js: "id", typ: "" },
         { json: "last_name", js: "lastName", typ: u(undefined, "") },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "phone_number", js: "phoneNumber", typ: u(undefined, "") },
         { json: "postal_code", js: "postalCode", typ: u(undefined, "") },
         { json: "street_address", js: "streetAddress", typ: u(undefined, "") },
-        { json: "id", js: "id", typ: "" },
-        { json: "address", js: "address", typ: u(undefined, r("PostalAddress")) },
-        { json: "name", js: "name", typ: u(undefined, "") },
+        { json: "type", js: "type", typ: u(undefined, "") },
     ], "any"),
     "PostalAddress": o([
         { json: "address_country", js: "addressCountry", typ: u(undefined, "") },
@@ -2210,13 +2615,18 @@ const typeMap: any = {
         { json: "selected_option_id", js: "selectedOptionId", typ: u(undefined, u(null, "")) },
     ], "any"),
     "FulfillmentOption": o([
-        { json: "carrier", js: "carrier", typ: u(undefined, "") },
-        { json: "description", js: "description", typ: u(undefined, "") },
-        { json: "earliest_fulfillment_time", js: "earliestFulfillmentTime", typ: u(undefined, "") },
+        { json: "description", js: "description", typ: u(undefined, r("Description")) },
         { json: "id", js: "id", typ: "" },
-        { json: "latest_fulfillment_time", js: "latestFulfillmentTime", typ: u(undefined, "") },
         { json: "title", js: "title", typ: "" },
+        { json: "carrier", js: "carrier", typ: u(undefined, "") },
+        { json: "earliest_fulfillment_time", js: "earliestFulfillmentTime", typ: u(undefined, "") },
+        { json: "latest_fulfillment_time", js: "latestFulfillmentTime", typ: u(undefined, "") },
         { json: "totals", js: "totals", typ: a(r("LineItemTotal")) },
+    ], "any"),
+    "Description": o([
+        { json: "html", js: "html", typ: u(undefined, "") },
+        { json: "markdown", js: "markdown", typ: u(undefined, "") },
+        { json: "plain", js: "plain", typ: u(undefined, "") },
     ], "any"),
     "LineItemTotal": o([
         { json: "amount", js: "amount", typ: 0 },
@@ -2234,7 +2644,27 @@ const typeMap: any = {
         { json: "id", js: "id", typ: "" },
         { json: "image_url", js: "imageUrl", typ: u(undefined, "") },
         { json: "price", js: "price", typ: 0 },
+        { json: "quantity_unit", js: "quantityUnit", typ: u(undefined, r("QuantityUnit")) },
         { json: "title", js: "title", typ: "" },
+        { json: "unit_price", js: "unitPrice", typ: u(undefined, r("UnitPrice")) },
+    ], "any"),
+    "QuantityUnit": o([
+        { json: "display_text", js: "displayText", typ: "" },
+        { json: "scale", js: "scale", typ: u(undefined, 0) },
+        { json: "unit", js: "unit", typ: "" },
+        { json: "increment", js: "increment", typ: u(undefined, 0) },
+    ], "any"),
+    "UnitPrice": o([
+        { json: "amount", js: "amount", typ: 0 },
+        { json: "currency", js: "currency", typ: "" },
+        { json: "measure", js: "measure", typ: r("Measure") },
+        { json: "reference", js: "reference", typ: r("Measure") },
+    ], "any"),
+    "Measure": o([
+        { json: "display_text", js: "displayText", typ: "" },
+        { json: "scale", js: "scale", typ: u(undefined, 0) },
+        { json: "unit", js: "unit", typ: "" },
+        { json: "value", js: "value", typ: 0 },
     ], "any"),
     "Link": o([
         { json: "title", js: "title", typ: u(undefined, "") },
@@ -2272,6 +2702,12 @@ const typeMap: any = {
     "PaymentCredential": o([
         { json: "type", js: "type", typ: "" },
     ], "any"),
+    "Policy": o([
+        { json: "applies_to", js: "appliesTo", typ: u(undefined, a("")) },
+        { json: "description", js: "description", typ: r("Description") },
+        { json: "type", js: "type", typ: "" },
+        { json: "url", js: "url", typ: u(undefined, "") },
+    ], "any"),
     "CheckoutTotal": o([
         { json: "amount", js: "amount", typ: 0 },
         { json: "display_text", js: "displayText", typ: u(undefined, "") },
@@ -2284,6 +2720,7 @@ const typeMap: any = {
     ], "any"),
     "UcpCheckoutResponseSchema": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
+        { json: "map_order", js: "mapOrder", typ: u(undefined, m(a(""))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: m(a(r("PaymentHandlerResponseSchema"))) },
         { json: "services", js: "services", typ: u(undefined, m(a(r("ServiceResponseSchema")))) },
         { json: "status", js: "status", typ: u(undefined, r("UcpCheckoutResponseSchemaStatus")) },
@@ -2306,9 +2743,21 @@ const typeMap: any = {
         { json: "available_instruments", js: "availableInstruments", typ: u(undefined, a(r("PaymentHandlerResponseSchemaAvailableInstrument"))) },
     ], "any"),
     "PaymentHandlerResponseSchemaAvailableInstrument": o([
-        { json: "constraints", js: "constraints", typ: u(undefined, m("any")) },
+        { json: "constraints", js: "constraints", typ: u(undefined, r("ConstraintsElement")) },
         { json: "type", js: "type", typ: "" },
     ], "any"),
+    "PropertyValue": o([
+        { json: "anyOf", js: "anyOf", typ: u(undefined, a(r("ConstraintsElement"))) },
+        { json: "properties", js: "properties", typ: u(undefined, m(r("PropertyValue"))) },
+        { json: "required", js: "required", typ: u(undefined, a("")) },
+        { json: "const", js: "const", typ: u(undefined, "any") },
+        { json: "enum", js: "enum", typ: u(undefined, a("any")) },
+    ], false),
+    "ConstraintsElement": o([
+        { json: "anyOf", js: "anyOf", typ: u(undefined, a(r("ConstraintsElement"))) },
+        { json: "properties", js: "properties", typ: u(undefined, m(r("PropertyValue"))) },
+        { json: "required", js: "required", typ: u(undefined, a("")) },
+    ], false),
     "ServiceResponseSchema": o([
         { json: "config", js: "config", typ: u(undefined, r("EmbeddedTransportConfig")) },
         { json: "id", js: "id", typ: u(undefined, "") },
@@ -2333,6 +2782,7 @@ const typeMap: any = {
         { json: "line_items", js: "lineItems", typ: a(r("OrderLineItem")) },
         { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
         { json: "permalink_url", js: "permalinkUrl", typ: "" },
+        { json: "policies", js: "policies", typ: u(undefined, a(r("Policy"))) },
         { json: "totals", js: "totals", typ: a(r("CheckoutTotal")) },
         { json: "ucp", js: "ucp", typ: r("UcpOrderResponseSchema") },
     ], "any"),
@@ -2347,6 +2797,7 @@ const typeMap: any = {
     ], "any"),
     "AdjustmentLineItem": o([
         { json: "id", js: "id", typ: "" },
+        { json: "measure", js: "measure", typ: u(undefined, r("Measure")) },
         { json: "quantity", js: "quantity", typ: 0 },
     ], "any"),
     "Fulfillment": o([
@@ -2373,7 +2824,7 @@ const typeMap: any = {
         { json: "fulfillable_on", js: "fulfillableOn", typ: u(undefined, "") },
         { json: "id", js: "id", typ: "" },
         { json: "line_items", js: "lineItems", typ: a(r("ExpectationLineItem")) },
-        { json: "method_type", js: "methodType", typ: r("MethodType") },
+        { json: "method_type", js: "methodType", typ: "" },
     ], "any"),
     "ExpectationLineItem": o([
         { json: "id", js: "id", typ: "" },
@@ -2394,6 +2845,7 @@ const typeMap: any = {
     ], "any"),
     "UcpOrderResponseSchema": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
+        { json: "map_order", js: "mapOrder", typ: u(undefined, m(a(""))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
         { json: "services", js: "services", typ: u(undefined, m(a(r("Service")))) },
         { json: "status", js: "status", typ: u(undefined, r("UcpCheckoutResponseSchemaStatus")) },
@@ -2415,6 +2867,7 @@ const typeMap: any = {
     ], false),
     "ErrorResponseUcp": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityResponseSchema")))) },
+        { json: "map_order", js: "mapOrder", typ: u(undefined, m(a(""))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerResponseSchema")))) },
         { json: "services", js: "services", typ: u(undefined, m(a(r("Service")))) },
         { json: "status", js: "status", typ: r("ErrorStatus") },
@@ -2435,6 +2888,7 @@ const typeMap: any = {
     ], "any"),
     "InstrumentsChangeResultUcp": o([
         { json: "capabilities", js: "capabilities", typ: u(undefined, m(a(r("CapabilityElement")))) },
+        { json: "map_order", js: "mapOrder", typ: u(undefined, m(a(""))) },
         { json: "payment_handlers", js: "paymentHandlers", typ: u(undefined, m(a(r("PaymentHandlerElement")))) },
         { json: "services", js: "services", typ: u(undefined, m(a(r("EmbeddedService")))) },
         { json: "status", js: "status", typ: r("UcpCheckoutResponseSchemaStatus") },
@@ -2457,7 +2911,7 @@ const typeMap: any = {
         { json: "available_instruments", js: "availableInstruments", typ: u(undefined, a(r("PaymentHandlerAvailableInstrument"))) },
     ], "any"),
     "PaymentHandlerAvailableInstrument": o([
-        { json: "constraints", js: "constraints", typ: u(undefined, m("any")) },
+        { json: "constraints", js: "constraints", typ: u(undefined, r("ConstraintsElement")) },
         { json: "type", js: "type", typ: "" },
     ], "any"),
     "EmbeddedService": o([
@@ -2538,10 +2992,6 @@ const typeMap: any = {
         "across",
         "each",
     ],
-    "FulfillmentMethodType": [
-        "pickup",
-        "shipping",
-    ],
     "ContentType": [
         "markdown",
         "plain",
@@ -2583,11 +3033,6 @@ const typeMap: any = {
         "completed",
         "failed",
         "pending",
-    ],
-    "MethodType": [
-        "digital",
-        "pickup",
-        "shipping",
     ],
     "LineItemStatus": [
         "fulfilled",

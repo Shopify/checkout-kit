@@ -353,6 +353,7 @@ struct ClientTests {
                         checkout: nil,
                         ucp: InstrumentsChangeResultUcp(
                             capabilities: nil,
+                            mapOrder: nil,
                             paymentHandlers: nil,
                             services: nil,
                             status: .success,
