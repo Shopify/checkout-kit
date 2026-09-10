@@ -2,6 +2,7 @@ import Combine
 import PassKit
 import ShopifyCheckoutKit
 import SwiftUI
+import WebKit
 
 enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
@@ -48,6 +49,8 @@ struct SettingsView: View {
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
     @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
+    @State private var isClearingCookies = false
+    @State private var showingCookiesCleared = false
 
     var body: some View {
         NavigationView {
@@ -88,6 +91,16 @@ struct SettingsView: View {
                         )
                     }
                 )
+
+                Section(
+                    header: Text("WebView"),
+                    footer: Text("Removes all cookies from the app's embedded web views.")
+                ) {
+                    Button(role: .destructive, action: clearWebViewCookies) {
+                        Text(isClearingCookies ? "Clearing cookies…" : "Clear WebView cookies")
+                    }
+                    .disabled(isClearingCookies)
+                }
 
                 Section(header: Text("Universal Links")) {
                     Toggle("Handle Checkout URLs", isOn: $config.universalLinks.checkout)
@@ -191,6 +204,26 @@ struct SettingsView: View {
         }
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
+        .alert("Cookies cleared", isPresented: $showingCookiesCleared) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("All WebView cookies have been removed.")
+        }
+    }
+
+    private func clearWebViewCookies() {
+        guard !isClearingCookies else { return }
+        isClearingCookies = true
+
+        Task {
+            ShopifyCheckoutKit.invalidate()
+            await WKWebsiteDataStore.default().removeData(
+                ofTypes: [WKWebsiteDataTypeCookies],
+                modifiedSince: .distantPast
+            )
+            isClearingCookies = false
+            showingCookiesCleared = true
+        }
     }
 
     private func currentVersion() -> String {
