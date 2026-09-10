@@ -591,9 +591,6 @@ internal class CheckoutWebView private constructor(
             invalidate()
         }
 
-        internal fun retainAfterPresentation(view: CheckoutWebView): Boolean =
-            preloadCache.retainAfterPresentation(view)
-
         internal fun discardAfterPresentation(view: CheckoutWebView) {
             preloadCache.discard(view)
         }

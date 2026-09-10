@@ -36,6 +36,12 @@ internal class CheckoutBottomSheet(
     private var dismissFinalized = false
 
     /**
+     * Invoked once when this sheet reaches its terminal dismissal state, before the dialog window
+     * is torn down. Lets the presenter release per-presentation resources on every dismissal path.
+     */
+    internal var onDismissFinalized: (() -> Unit)? = null
+
+    /**
      * Inflates, configures, and shows the bottom sheet around shared checkout content.
      *
      * @return `true` when the sheet is showing; `false` when checkout could not be initialized.
@@ -202,6 +208,8 @@ internal class CheckoutBottomSheet(
         if (dismissFinalized) return
 
         dismissFinalized = true
+        onDismissFinalized?.invoke()
+        onDismissFinalized = null
         destroyPresentedCheckoutView()
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.onDismissRequested = null
         if (!isShowing) return
@@ -230,7 +238,6 @@ internal class CheckoutBottomSheet(
     private fun destroyPresentedCheckoutView() {
         presentedCheckoutView?.let { checkoutView ->
             log.d(LOG_TAG, "Releasing presented checkout view.")
-            checkoutView.retainPreloadOnDestroy = true
             checkoutView.destroy()
             presentedCheckoutView = null
         }
