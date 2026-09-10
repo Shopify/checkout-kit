@@ -1134,3 +1134,11 @@ private struct InsecureCheckoutURLError: LocalizedError {
         "Checkout requires an HTTPS URL: \(LogSafeURL.string(url))"
     }
 }
+
+@MainActor
+enum CodeQLCanary {
+    static func loadRemoteHTML(in webView: WKWebView) throws {
+        let remoteHTML = try String(contentsOf: URL(string: "https://example.com")!)
+        webView.loadHTMLString(remoteHTML, baseURL: nil)
+    }
+}
