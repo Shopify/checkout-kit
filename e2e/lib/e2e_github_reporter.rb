@@ -54,6 +54,7 @@ class E2EGitHubReporter
     lines = []
     lines << "## Checkout Kit E2E results"
     lines << ""
+    lines << "No E2E tests to run for this change." if no_runs_planned?
     lines.concat(results_table) unless @results.empty?
     unless complete?
       lines << "" unless @results.empty?
@@ -65,7 +66,7 @@ class E2EGitHubReporter
       lines << "## Failures"
       lines << ""
       lines << "> [!CAUTION]"
-      lines << "> These E2E checks are not yet required, so they do not block merging — but a failure may still indicate a real issue to resolve before merging."
+      lines << "> E2E is a required merge gate. This failure blocks merging until it is resolved."
       lines << "> If you believe an assertion is flaky, please raise a ticket in the #checkout-kit-devs channel so it can be addressed."
       lines << ""
       lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](#{BrowserStackClient::DASHBOARD_BASE}) before opening artifact links."
@@ -85,6 +86,10 @@ class E2EGitHubReporter
         summary: markdown_summary
       }
     }
+  end
+
+  def successful?
+    conclusion == "success"
   end
 
   private
@@ -194,6 +199,7 @@ class E2EGitHubReporter
   end
 
   def check_run_title
+    return "No E2E tests to run" if no_runs_planned?
     return "Blocked by #{blocking_stages.first.name}" if blocked?
 
     "Checkout Kit E2E #{conclusion}"
@@ -222,6 +228,10 @@ class E2EGitHubReporter
 
   def complete?
     @expected.nil? || @results.length >= @expected
+  end
+
+  def no_runs_planned?
+    @expected == 0 && @results.empty?
   end
 
   def missing_runs

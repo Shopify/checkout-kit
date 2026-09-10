@@ -1,21 +1,19 @@
 # Checkout Kit E2E Runbook
 
-## Rollout behaviour
+## Merge gate behavior
 
-The E2E pipeline always runs and always reports; it never blocks PR merges on its
-own. Merge-blocking is controlled solely by whether the single **"Checkout Kit E2E"**
-GitHub Check Run is marked **required** in branch protection. Keep it non-required
-until the suite is stable, then make it required — no code change is needed to gate
-or un-gate. This single umbrella check stays stable across matrix changes, so
-requiring it never churns as applications, OS versions, or suites are added.
+The E2E pipeline starts on every non-draft pull request so the required
+`ci/bitrise/e2e/pr` status always reports. Its Linux run-plan workflow applies the
+changed-file filters after the pipeline starts. When no application matches, app builds
+and BrowserStack execution are skipped and the reporter posts a successful **No E2E tests
+to run** result.
 
-The runner never hard-fails on test or infrastructure problems: every run writes a
-`result.json` and exits `0`, so the report workflow always has data to publish. The
-report posts one **"Checkout Kit E2E"** Check Run and one sticky PR comment carrying the
-Tophat install links and the run summary; it does not post per-suite commit statuses. The
-comment is posted on every build, green or red, so the build is always installable from the
-PR, and failures add a loud Failures section (alongside one red check) while staying
-non-blocking.
+Each BrowserStack runner writes a `result.json` and exits `0` even for test or
+infrastructure failures, ensuring the report workflow always has evidence to publish. The
+report posts one diagnostic **Checkout Kit E2E** Check Run and one sticky PR comment
+carrying the Tophat install links and run summary; it does not post per-suite commit
+statuses. After publishing, a failed report exits nonzero so the required Bitrise pipeline
+status also fails and blocks merging.
 
 Failures land in `result.json` in one of two shapes:
 
