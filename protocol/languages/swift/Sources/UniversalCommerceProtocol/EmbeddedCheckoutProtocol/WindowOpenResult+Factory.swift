@@ -18,6 +18,7 @@ extension WindowOpenResult {
         WindowOpenResult(
             ucp: InstrumentsChangeResultUcp(
                 capabilities: nil,
+                mapOrder: nil,
                 paymentHandlers: nil,
                 services: nil,
                 status: .error,

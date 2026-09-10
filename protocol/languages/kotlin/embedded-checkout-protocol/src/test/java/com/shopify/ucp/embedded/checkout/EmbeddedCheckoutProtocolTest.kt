@@ -14,8 +14,8 @@ import java.nio.charset.StandardCharsets
 
 class EmbeddedCheckoutProtocolTest {
     @Test
-    fun `SPEC_VERSION is non-empty`() {
-        assertThat(EmbeddedCheckoutProtocol.SPEC_VERSION).isNotEmpty()
+    fun `SPEC_VERSION is the current negotiated revision`() {
+        assertThat(EmbeddedCheckoutProtocol.SPEC_VERSION).isEqualTo("2026-08-25")
     }
 
     @Test
@@ -122,7 +122,7 @@ class EmbeddedCheckoutProtocolTest {
 
     @Test
     fun `url replaces caller supplied protocol parameters and is idempotent`() {
-        val callerSupplied = "$BASE_URL?ec_version=override&ec_delegate=custom&ec_auth=stale&ec_color_scheme=light"
+        val callerSupplied = "$BASE_URL?ec_version=2026-04-08&ec_version=stale&ec_delegate=custom&ec_auth=stale&ec_color_scheme=light"
         val options = EmbeddedCheckoutProtocol.Options(
             delegations = listOf(EmbeddedCheckoutProtocol.Delegation.windowOpen),
             auth = "token",

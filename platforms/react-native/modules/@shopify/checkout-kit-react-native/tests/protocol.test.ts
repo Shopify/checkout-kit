@@ -1,3 +1,4 @@
+// April wire payloads are retained here as older-version compatibility coverage.
 import {
   CheckoutProtocol,
   type Checkout,

@@ -16,7 +16,7 @@ type ReadyResult = import('./Models').ReadyResult;
 type WindowOpenRequest = import('./Models').WindowOpenRequest;
 type WindowOpenResult = import('./Models').WindowOpenResult;
 
-export const SPEC_VERSION = '2026-04-08';
+export const SPEC_VERSION = '2026-08-25';
 
 export const Delegations = {
   paymentInstrumentsChange: 'payment.instruments_change',
