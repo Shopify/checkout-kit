@@ -37,16 +37,14 @@ tools:
 
 pipelines:
   e2e:
+    # Deliberately unfiltered. e2e is a required check, and a required check that
+    # never posts leaves a pull request permanently unmergeable. The cheap Linux
+    # run-plan workflow decides whether any app builds or BrowserStack runs are needed,
+    # and e2e-report always posts — including when the run plan is empty.
     triggers:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-          changed_files:
-            # Bitrise evaluates this with Go's RE2 engine. Use only basic syntax
-            # (anchors, groups, alternation, character classes, quantifiers). Do not
-            # add lookahead (?=…), lookbehind, backreferences (\1), or atomic/possessive
-            # groups — RE2 cannot compile them and the trigger will fail to evaluate.
-            regex: '^(platforms/(swift|android|react-native)|protocol|e2e|\.ci)/.*|^Package\.(swift|resolved)$'
     # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
     # which is identical for every pipeline on this app. A second triggered
     # pipeline would then overwrite this one's commit status. <target_id>
@@ -84,16 +82,15 @@ pipelines:
           - e2e-build-kotlin-android
           - e2e-build-swift-ios
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
+      # No run_if: this workflow owns the required result and must report an empty run
+      # plan as a successful no-op.
       e2e-report:
-        run_if:
-          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
           - e2e-execute-browserstack-run
         should_always_run: workflow
 
-  # The macOS merge gate. Separate from the e2e pipeline on purpose: Bitrise reports one
-  # status per pipeline, and sharing would tie the merge gate to the BrowserStack device
-  # flake that e2e/BITRISE.md deliberately keeps non-blocking.
+  # The macOS merge gate. Separate from the e2e pipeline so each required pipeline
+  # reports its own result and can select work independently.
   ci-ios:
     # Deliberately unfiltered. ci-ios is a required check, and a required check that
     # never posts leaves a pull request permanently unmergeable. The cheap Linux
