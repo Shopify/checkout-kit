@@ -122,6 +122,29 @@ final class ShopPayCallbackTests: XCTestCase {
         await fulfillment(of: [dismissExpectation], timeout: 1.0)
     }
 
+    func testCheckoutDelegateCallbacksFromDetachedTaskRunOnMainActor() async throws {
+        let dismissExpectation = expectation(description: "Dismiss callback should run on the main actor")
+        let failExpectation = expectation(description: "Fail callback should run on the main actor")
+        viewController.eventHandlers = EventHandlers(
+            checkoutDidFail: { _ in
+                MainActor.preconditionIsolated()
+                failExpectation.fulfill()
+            },
+            checkoutDidDismiss: {
+                MainActor.preconditionIsolated()
+                dismissExpectation.fulfill()
+            }
+        )
+        let controller = try XCTUnwrap(viewController)
+
+        await Task.detached {
+            await controller.checkoutDidDismiss()
+            await controller.checkoutDidFail(error: CheckoutError(code: .sdkError, message: "Test error"))
+        }.value
+
+        await fulfillment(of: [dismissExpectation, failExpectation], timeout: 1.0)
+    }
+
     // MARK: - Delegate Tests
 
     @MainActor

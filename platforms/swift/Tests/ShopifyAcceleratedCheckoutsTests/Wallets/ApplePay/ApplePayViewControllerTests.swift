@@ -158,6 +158,21 @@ class ApplePayViewControllerTests: XCTestCase {
         await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
     }
 
+    func test_checkoutDidDismiss_fromDetachedTask_invokesCallbackOnMainActor() async throws {
+        let dismissCallbackExpectation = expectation(description: "Dismiss callback should run on the main actor")
+        viewController.onCheckoutDismiss = {
+            MainActor.preconditionIsolated()
+            dismissCallbackExpectation.fulfill()
+        }
+        let controller = try XCTUnwrap(viewController)
+
+        await Task.detached {
+            await controller.checkoutDidDismiss()
+        }.value
+
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
     // MARK: - WalletController Inheritance
 
     func test_configuration_whenInitialized_usesCorrectStorefront() {

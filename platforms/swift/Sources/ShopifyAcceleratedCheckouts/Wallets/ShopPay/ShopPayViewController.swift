@@ -49,15 +49,11 @@ class ShopPayViewController: WalletController {
 
 @available(iOS 16.0, *)
 extension ShopPayViewController: CheckoutDelegate {
-    nonisolated func checkoutDidDismiss() {
-        MainActor.assumeIsolated {
-            eventHandlers.checkoutDidDismiss?()
-        }
+    func checkoutDidDismiss() {
+        eventHandlers.checkoutDidDismiss?()
     }
 
-    nonisolated func checkoutDidFail(error: CheckoutError) {
-        MainActor.assumeIsolated {
-            eventHandlers.checkoutDidFail?(error)
-        }
+    func checkoutDidFail(error: CheckoutError) {
+        eventHandlers.checkoutDidFail?(error)
     }
 }

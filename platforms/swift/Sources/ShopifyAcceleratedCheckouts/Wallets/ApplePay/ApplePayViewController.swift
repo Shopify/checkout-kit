@@ -166,19 +166,15 @@ class ApplePayViewController: WalletController, PayController {
 
 @available(iOS 16.0, *)
 extension ApplePayViewController: CheckoutDelegate {
-    nonisolated func checkoutDidDismiss() {
-        MainActor.assumeIsolated {
-            onCheckoutDismiss?()
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                try? await authorizationDelegate.transition(to: .completed)
-            }
+    func checkoutDidDismiss() {
+        onCheckoutDismiss?()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await authorizationDelegate.transition(to: .completed)
         }
     }
 
-    nonisolated func checkoutDidFail(error: CheckoutError) {
-        MainActor.assumeIsolated {
-            onCheckoutFail?(error)
-        }
+    func checkoutDidFail(error: CheckoutError) {
+        onCheckoutFail?(error)
     }
 }
