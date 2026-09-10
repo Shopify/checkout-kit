@@ -49,8 +49,8 @@ struct SettingsView: View {
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
     @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
-    @State private var isClearingCookies = false
-    @State private var showingCookiesCleared = false
+    @State private var isResettingSession = false
+    @State private var showingSessionReset = false
 
     var body: some View {
         NavigationView {
@@ -93,13 +93,13 @@ struct SettingsView: View {
                 )
 
                 Section(
-                    header: Text("WebView"),
-                    footer: Text("Removes all cookies from the app's embedded web views.")
+                    header: Text("Session"),
+                    footer: Text("Clears your cart, signs out your customer account, and removes all WebView cookies.")
                 ) {
-                    Button(role: .destructive, action: clearWebViewCookies) {
-                        Text(isClearingCookies ? "Clearing cookies…" : "Clear WebView cookies")
+                    Button(role: .destructive, action: resetSession) {
+                        Text(isResettingSession ? "Resetting session…" : "Reset session")
                     }
-                    .disabled(isClearingCookies)
+                    .disabled(isResettingSession)
                 }
 
                 Section(header: Text("Universal Links")) {
@@ -204,25 +204,26 @@ struct SettingsView: View {
         }
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
-        .alert("Cookies cleared", isPresented: $showingCookiesCleared) {
+        .alert("Session reset", isPresented: $showingSessionReset) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("All WebView cookies have been removed.")
+            Text("Your cart, customer account session, and WebView cookies have been cleared.")
         }
     }
 
-    private func clearWebViewCookies() {
-        guard !isClearingCookies else { return }
-        isClearingCookies = true
+    private func resetSession() {
+        guard !isResettingSession else { return }
+        isResettingSession = true
 
         Task {
-            ShopifyCheckoutKit.invalidate()
+            // Logout also clears the cart and invalidates any preloaded checkout.
+            await CustomerAccountManager.shared.logout()
             await WKWebsiteDataStore.default().removeData(
                 ofTypes: [WKWebsiteDataTypeCookies],
                 modifiedSince: .distantPast
             )
-            isClearingCookies = false
-            showingCookiesCleared = true
+            isResettingSession = false
+            showingSessionReset = true
         }
     }
 
