@@ -36,7 +36,7 @@ final class CheckoutErrorCodeParityTest: XCTestCase {
             codesUnavailableMessage
         )
 
-        return Set(try JSONDecoder().decode([String].self, from: Data(exported.utf8)))
+        return try Set(JSONDecoder().decode([String].self, from: Data(exported.utf8)))
     }
 
     private static let relativeErrorsPath = "src/errors.ts"

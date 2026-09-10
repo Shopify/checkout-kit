@@ -5,22 +5,21 @@ import XCTest
 
 @available(iOS 16.0, *)
 class EventSerializationTests: XCTestCase {
-
     // MARK: - RenderState
 
-    func testRenderStateSerialization_includesErrorReason() throws {
+    func testRenderStateSerialization_includesErrorReason() {
         let serialized = ShopifyEventSerialization.serialize(renderState: .error(reason: "invariant_violation"))
         XCTAssertEqual(serialized["state"], "error")
         XCTAssertEqual(serialized["reason"], "invariant_violation")
     }
 
-    func testRenderStateSerialization_includesEmptyErrorReason() throws {
+    func testRenderStateSerialization_includesEmptyErrorReason() {
         let serialized = ShopifyEventSerialization.serialize(renderState: .error(reason: ""))
         XCTAssertEqual(serialized["state"], "error")
         XCTAssertEqual(serialized["reason"], "")
     }
 
-    func testRenderStateSerialization_loadingAndRendered() throws {
+    func testRenderStateSerialization_loadingAndRendered() {
         let loading = ShopifyEventSerialization.serialize(renderState: .loading)
         XCTAssertEqual(loading["state"], "loading")
         XCTAssertNil(loading["reason"])
@@ -33,14 +32,14 @@ class EventSerializationTests: XCTestCase {
     // MARK: - Click event
 
     func testClickEventSerialization() throws {
-        let url = URL(string: "https://shopify.dev/test")!
+        let url = try XCTUnwrap(URL(string: "https://shopify.dev/test"))
         let serialized = ShopifyEventSerialization.serialize(clickEvent: url)
         XCTAssertEqual(serialized["url"], url)
     }
 
     // MARK: - Checkout error
 
-    func testCheckoutErrorSerialization_carriesFlattenedFields() throws {
+    func testCheckoutErrorSerialization_carriesFlattenedFields() {
         let serialized = ShopifyEventSerialization.serialize(
             checkoutError: CheckoutError(code: .cartExpired, message: "expired")
         )
@@ -51,7 +50,7 @@ class EventSerializationTests: XCTestCase {
         XCTAssertNil(serialized["__typename"])
     }
 
-    func testCheckoutErrorSerialization_addsStatusCodeForHTTPFailures() throws {
+    func testCheckoutErrorSerialization_addsStatusCodeForHTTPFailures() {
         let serialized = ShopifyEventSerialization.serialize(
             checkoutError: CheckoutError(code: .httpError, message: "Not Found", httpStatusCode: 404)
         )
@@ -65,7 +64,7 @@ class EventSerializationTests: XCTestCase {
     /// `CustomCheckoutListener.populateErrorDetails`, which sends the
     /// lower-snake-case enum constant name. Every code listed here must
     /// match a `CheckoutErrorCode` member on the JS side.
-    func testCheckoutErrorSerialization_everyCodeUsesTheSharedWireName() throws {
+    func testCheckoutErrorSerialization_everyCodeUsesTheSharedWireName() {
         let expectedWireNames: [CheckoutErrorCode: String] = [
             .storefrontPasswordRequired: "storefront_password_required",
             .customerAccountRequired: "customer_account_required",
