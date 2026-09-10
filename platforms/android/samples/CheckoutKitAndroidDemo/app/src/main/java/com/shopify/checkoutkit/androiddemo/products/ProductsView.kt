@@ -14,16 +14,15 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
@@ -46,21 +45,17 @@ fun ProductsView(
     navController: NavController,
     productsViewModel: ProductsViewModel = koinViewModel(),
 ) {
-    val pager = remember {
-        Pager(PagingConfig(pageSize = 10)) {
-            productsViewModel.pagingSource
-        }
-    }
-    val lazyPagingItems = pager.flow.collectAsLazyPagingItems()
+    val lazyPagingItems = productsViewModel.products.collectAsLazyPagingItems()
+    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 
-    Column(
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            productsViewModel.refreshFromNetwork()
+            lazyPagingItems.refresh()
+        },
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!lazyPagingItems.loadState.isIdle) {
-            ProgressIndicator()
-        }
-
         Column(
             Modifier
                 .padding(horizontal = horizontalPadding)
@@ -75,7 +70,7 @@ fun ProductsView(
                     verticalArrangement = Arrangement.spacedBy(30.dp),
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    if (lazyPagingItems.loadState.isIdle) {
+                    if (!isRefreshing || lazyPagingItems.itemCount > 0) {
                         item(span = { GridItemSpan(maxCurrentLineSpan) }) {
                             Header2(
                                 modifier = Modifier.padding(top = verticalPadding),
@@ -100,6 +95,12 @@ fun ProductsView(
                                     productsViewModel.productClicked(navController, productId)
                                 }
                             )
+                        }
+                    }
+
+                    if (lazyPagingItems.loadState.append is LoadState.Loading) {
+                        item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                            ProgressIndicator()
                         }
                     }
                 }

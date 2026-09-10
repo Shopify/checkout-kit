@@ -1,5 +1,6 @@
 package com.shopify.checkoutkit.androiddemo.products.product.data
 
+import com.apollographql.cache.normalized.FetchPolicy
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiClient
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiException
 import kotlinx.coroutines.flow.Flow
@@ -24,12 +25,27 @@ class ProductRepository(
             }
     }
 
-    suspend fun getProducts(numProducts: Int, numVariants: Int, cursor: String?): Products {
-        return observeProducts(numProducts, numVariants, cursor).last()
+    suspend fun getProducts(
+        numProducts: Int,
+        numVariants: Int,
+        cursor: String?,
+        fetchPolicy: FetchPolicy = FetchPolicy.CacheFirst,
+    ): Products {
+        return observeProducts(numProducts, numVariants, cursor, fetchPolicy).last()
     }
 
-    fun observeProducts(numProducts: Int, numVariants: Int, cursor: String?): Flow<Products> {
-        return client.fetchProducts(numProducts = numProducts, numVariants = numVariants, cursor = cursor)
+    fun observeProducts(
+        numProducts: Int,
+        numVariants: Int,
+        cursor: String?,
+        fetchPolicy: FetchPolicy = FetchPolicy.CacheFirst,
+    ): Flow<Products> {
+        return client.fetchProducts(
+            numProducts = numProducts,
+            numVariants = numVariants,
+            cursor = cursor,
+            fetchPolicy = fetchPolicy,
+        )
             .map { data ->
                 Products(
                     products = data.products.edges.map { edge ->
@@ -39,6 +55,7 @@ class ProductRepository(
                     pageInfo = PageInfo(
                         startCursor = data.products.pageInfo.startCursor,
                         endCursor = data.products.pageInfo.endCursor,
+                        hasNextPage = data.products.pageInfo.hasNextPage,
                     ),
                 )
             }
