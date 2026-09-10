@@ -87,28 +87,29 @@ Duplicate in-progress PR pipelines are cancelled by Bitrise native Rolling build
 
 ## Nightly release pipelines
 
-Nightly pipelines ship the sample apps to the stores from the same E2E test storefront the PR pipeline uses, so they need no storefront configuration of their own.
+Nightly pipelines distribute the sample apps from the same E2E test storefront the PR pipeline uses, so they need no storefront configuration of their own.
 
-| Pipeline                              | App                          | Destination |
-| ------------------------------------- | ---------------------------- | ----------- |
-| `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`       | TestFlight  |
-| `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo` | TestFlight  |
+| Pipeline                              | App                                                     | Destination                         |
+| ------------------------------------- | ------------------------------------------------------- | ----------------------------------- |
+| `nightly-swift-ios-testflight`        | `CheckoutKitSwiftDemo`                                  | TestFlight                          |
+| `nightly-react-native-ios-testflight` | `CheckoutKitReactNativeDemo`                            | TestFlight                          |
+| `nightly-android-bitrise-installs`    | `CheckoutKitAndroidDemo`, `CheckoutKitReactNativeDemo`  | Bitrise install pages sent to Slack |
 
 These pipelines deliberately define no target-based triggers, so no code event starts them. Create a daily **scheduled build** under **Project settings > Scheduled builds**, targeting `main` and selecting the pipeline. The schedule is the one part of this design that Bitrise keeps outside the repository.
 
 ### Commit age gate
 
-Every nightly pipeline starts with `nightly-decide-should-build`, which runs on the default Linux stack and publishes `NIGHTLY_SHOULD_BUILD`. The release workflow is gated on it with `run_if`, so a night with no new commits never boots a macOS machine and never consumes a store build number.
+Every nightly pipeline starts with `nightly-decide-should-build`, which runs on the default Linux stack and publishes `NIGHTLY_SHOULD_BUILD`. The distribution workflows are gated on it with `run_if`, so a night with no new commits never boots an app build machine and never consumes a store build number.
 
 The gate asks whether HEAD was committed inside `NIGHTLY_COMMIT_WINDOW`, which defaults to `24 hours`. **Keep this window equal to the schedule interval.** A window shorter than the interval skips commits, and a longer one re-uploads work that already shipped.
 
 ### Build numbers
 
-The build number is `$BITRISE_BUILD_NUMBER`, injected as an `xcodebuild` build-setting override. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
+The iOS build number is `$BITRISE_BUILD_NUMBER`, injected as an `xcodebuild` build-setting override. No committed file changes value, so nothing has to be bumped by hand and no two uploads can collide.
 
 This only works because each sample binds `CFBundleVersion` to `$(CURRENT_PROJECT_VERSION)` rather than to a literal. `CheckoutKitSwiftDemo` binds it in its XcodeGen spec, and `CheckoutKitReactNativeDemo` binds it in its committed `Info.plist`. Without that binding the literal wins, the override is silently discarded, and App Store Connect rejects every upload after the first. Both build scripts call `e2e_assert_archived_build_number`, which re-reads the archived plist and fails the build if the number did not land.
 
-### Signing
+### iOS signing
 
 The nightly iOS build passes its signing arguments explicitly and calls `e2e_reject_ios_signing_overrides` first, because each `E2E_IOS_*` variable in the Code signing table below wins over the matching argument. Do not expose any of them to a nightly workflow; a release build would silently fall back to development signing.
 
@@ -128,6 +129,12 @@ Required Bitrise code signing assets, beyond the E2E development assets:
 | Profile capabilities              | The profile must carry every entitlement the XcodeGen spec declares, currently Apple Pay and Associated Domains.            |
 | App Store Connect connection      | An App Store Connect API key connection on the Bitrise app, so the upload step needs `connection: automatic` and no secret.  |
 | App Store Connect app record      | An app record for the bundle identifier. The upload cannot create one.                                                      |
+
+### Android Bitrise installs and Slack
+
+`nightly-android-bitrise-installs` builds the existing Kotlin debug and React Native E2E APKs in parallel. Both variants are already signed for internal testing. `deploy-to-bitrise-io@2` uploads each APK with its public page disabled, creating an SSO-protected installable-artifact page whose Install action presents the Bitrise QR code.
+
+After each upload, `slack@4.3.0` posts an Install button to channel `C069N25R7EH`. It authenticates as Bitrise Bot with `$SLACK_AUTH_TOKEN`, a protected workspace-shared Bitrise secret available to Shopify projects. Do not add a Slack token or webhook to this repository or to app-level environment variables.
 
 ## Required app environment variables
 
