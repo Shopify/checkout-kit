@@ -10,7 +10,7 @@ import {Linking} from 'react-native';
 
 interface EventHandlers {
   onFail?: (error: CheckoutException) => void;
-  onCancel?: () => void;
+  onDismiss?: () => void;
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
   onClickLink?: (url: string) => void;
 }
@@ -45,8 +45,8 @@ export function useShopifyEventHandlers(name?: string): EventHandlers {
     onFail: error => {
       log('onFail', error);
     },
-    onCancel: () => {
-      log('onCancel');
+    onDismiss: () => {
+      log('onDismiss');
     },
     onRenderStateChange: event => {
       log('onRenderStateChange', event);

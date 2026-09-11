@@ -401,7 +401,7 @@ describe('ShopifyCheckoutKit', () => {
 
     it('calls `present` with a dispatcher when callbacks are provided', () => {
       const instance = new ShopifyCheckout();
-      instance.present(checkoutUrl, {onClose: jest.fn()});
+      instance.present(checkoutUrl, {onDismiss: jest.fn()});
       expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, []);
       expect(NativeModule.onDispatch).toHaveBeenCalledWith(
         expect.any(Function),
@@ -416,8 +416,8 @@ describe('ShopifyCheckoutKit', () => {
         .mockReturnValueOnce(secondSubscription);
       const instance = new ShopifyCheckout();
 
-      instance.present(checkoutUrl, {onClose: jest.fn()});
-      instance.present(checkoutUrl, {onClose: jest.fn()});
+      instance.present(checkoutUrl, {onDismiss: jest.fn()});
+      instance.present(checkoutUrl, {onDismiss: jest.fn()});
 
       expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
       expect(secondSubscription.remove).not.toHaveBeenCalled();
@@ -428,21 +428,21 @@ describe('ShopifyCheckoutKit', () => {
       NativeModule.onDispatch.mockReturnValueOnce(subscription);
       const instance = new ShopifyCheckout();
 
-      instance.present(checkoutUrl, {onClose: jest.fn()});
+      instance.present(checkoutUrl, {onDismiss: jest.fn()});
       lastDispatch()(JSON.stringify({type: 'close'}));
 
       expect(subscription.remove).toHaveBeenCalledTimes(1);
     });
 
-    it('invokes `onClose` when the dispatcher receives a close envelope', () => {
+    it('invokes `onDismiss` when the dispatcher receives a close envelope', () => {
       const instance = new ShopifyCheckout();
-      const onClose = jest.fn();
-      instance.present(checkoutUrl, {onClose});
+      const onDismiss = jest.fn();
+      instance.present(checkoutUrl, {onDismiss});
       lastDispatch()(JSON.stringify({type: 'close'}));
-      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('ignores a close envelope when no `onClose` handler was provided', () => {
+    it('ignores a close envelope when no `onDismiss` handler was provided', () => {
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl, {onFail: jest.fn()});
       expect(() =>
@@ -521,8 +521,8 @@ describe('ShopifyCheckoutKit', () => {
 
       it('ignores a fail envelope when no `onFail` handler was provided', () => {
         const instance = new ShopifyCheckout();
-        const onClose = jest.fn();
-        instance.present(checkoutUrl, {onClose});
+        const onDismiss = jest.fn();
+        instance.present(checkoutUrl, {onDismiss});
         expect(() =>
           lastDispatch()(
             JSON.stringify({type: 'fail', payload: sdkError}),
@@ -608,6 +608,32 @@ describe('ShopifyCheckoutKit', () => {
         expect(onStart.mock.calls[0][0].id).toBe('chk_123');
       });
 
+      it('delivers completion before a later sheet dismissal as separate events', () => {
+        const instance = new ShopifyCheckout();
+        const onComplete = jest.fn();
+        const onDismiss = jest.fn();
+        instance.present(
+          checkoutUrl,
+          {onDismiss},
+          {[CheckoutProtocol.complete]: onComplete},
+        );
+        const dispatch = lastDispatch();
+
+        dispatch(
+          JSON.stringify({
+            type: CheckoutProtocol.complete,
+            payload: {...wireStartPayload, status: 'completed'},
+          }),
+        );
+
+        expect(onComplete).toHaveBeenCalledTimes(1);
+        expect(onDismiss).not.toHaveBeenCalled();
+
+        dispatch(JSON.stringify({type: 'close'}));
+
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+      });
+
       it('passes subscribedMethods to native present()', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl, undefined, {
@@ -624,13 +650,13 @@ describe('ShopifyCheckoutKit', () => {
       it('still routes existing close/fail/geolocationRequest cases alongside protocol handlers', () => {
         Platform.OS = 'ios';
         const instance = new ShopifyCheckout();
-        const onClose = jest.fn();
+        const onDismiss = jest.fn();
         const onFail = jest.fn();
         const onGeolocationRequest = jest.fn();
         const onStart = jest.fn();
         instance.present(
           checkoutUrl,
-          {onClose, onFail, onGeolocationRequest},
+          {onDismiss, onFail, onGeolocationRequest},
           {[CheckoutProtocol.start]: onStart},
         );
         const dispatch = lastDispatch();
@@ -651,7 +677,7 @@ describe('ShopifyCheckoutKit', () => {
             payload: {origin: 'https://shopify.com'},
           }),
         );
-        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onDismiss).toHaveBeenCalledTimes(1);
         expect(onFail).toHaveBeenCalledTimes(1);
         expect(onFail.mock.calls[0][0]).toBeInstanceOf(CheckoutException);
         expect(onGeolocationRequest).toHaveBeenCalledWith({
@@ -665,10 +691,10 @@ describe('ShopifyCheckoutKit', () => {
     describe('envelope parsing', () => {
       it('logs a LifecycleEventParseError when the envelope is invalid JSON', () => {
         const instance = new ShopifyCheckout();
-        const onClose = jest.fn();
-        instance.present(checkoutUrl, {onClose});
+        const onDismiss = jest.fn();
+        instance.present(checkoutUrl, {onDismiss});
         lastDispatch()('not-json');
-        expect(onClose).not.toHaveBeenCalled();
+        expect(onDismiss).not.toHaveBeenCalled();
         expect(console.error).toHaveBeenCalledWith(
           expect.any(LifecycleEventParseError),
           'not-json',
@@ -677,13 +703,13 @@ describe('ShopifyCheckoutKit', () => {
 
       it('warns via console.warn for envelopes with unknown `type` values', () => {
         const instance = new ShopifyCheckout();
-        const onClose = jest.fn();
+        const onDismiss = jest.fn();
         const onFail = jest.fn();
-        instance.present(checkoutUrl, {onClose, onFail});
+        instance.present(checkoutUrl, {onDismiss, onFail});
         expect(() =>
           lastDispatch()(JSON.stringify({type: 'unknown', payload: {}})),
         ).not.toThrow();
-        expect(onClose).not.toHaveBeenCalled();
+        expect(onDismiss).not.toHaveBeenCalled();
         expect(onFail).not.toHaveBeenCalled();
         expect(console.warn).toHaveBeenCalledWith(
           expect.stringContaining('unknown type "unknown"'),
@@ -692,7 +718,7 @@ describe('ShopifyCheckoutKit', () => {
 
       it('logs a LifecycleEventParseError when the envelope is missing a string `type`', () => {
         const instance = new ShopifyCheckout();
-        instance.present(checkoutUrl, {onClose: jest.fn()});
+        instance.present(checkoutUrl, {onDismiss: jest.fn()});
         lastDispatch()(JSON.stringify({payload: {}}));
         expect(console.error).toHaveBeenCalledWith(
           expect.any(LifecycleEventParseError),
@@ -789,6 +815,16 @@ describe('ShopifyCheckoutKit', () => {
       const instance = new ShopifyCheckout();
       instance.dismiss();
       expect(NativeModule.dismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not invoke `onDismiss` for programmatic dismissal', () => {
+      const instance = new ShopifyCheckout();
+      const onDismiss = jest.fn();
+      instance.present(checkoutUrl, {onDismiss});
+
+      instance.dismiss();
+
+      expect(onDismiss).not.toHaveBeenCalled();
     });
   });
 
@@ -972,7 +1008,7 @@ describe('ShopifyCheckoutKit', () => {
         const instance = new ShopifyCheckout(undefined, {
           handleGeolocationRequests: false,
         });
-        instance.present(checkoutUrl, {onClose: jest.fn()});
+        instance.present(checkoutUrl, {onDismiss: jest.fn()});
         lastDispatch()(geolocationEnvelope);
         await flush();
 
@@ -1000,7 +1036,7 @@ describe('ShopifyCheckoutKit', () => {
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {
         const instance = new ShopifyCheckout();
-        instance.present(checkoutUrl, {onClose: jest.fn()});
+        instance.present(checkoutUrl, {onDismiss: jest.fn()});
         lastDispatch()(geolocationEnvelope);
         await flush();
 
