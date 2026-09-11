@@ -117,11 +117,11 @@ struct CartView: View {
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .onComplete { checkout in
+                        .onComplete { event in
                             // Set the flag here; defer the cart reset until the user dismisses
                             // the sheet (in .onDismiss). Resetting now would nil the cart and
                             // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
-                            print("[CheckoutKit] Complete: \(checkout.order?.id ?? "unknown")")
+                            print("[CheckoutKit] Complete: \(event.checkout.order?.id ?? "unknown")")
                             isCompleted = true
                         }
                         .appearance(.app(.automatic))
@@ -134,9 +134,9 @@ struct CartView: View {
                                 isCompleted = false
                             }
                         }
-                        .onFail { error in
+                        .onFail { event in
                             showCheckoutSheet = false
-                            print("[CheckoutKitSwiftDemo] FAIL - Checkout failed: \(error)")
+                            print("[CheckoutKitSwiftDemo] FAIL - Checkout failed: \(event.error)")
                         }
                         .edgesIgnoringSafeArea(.all)
                 }

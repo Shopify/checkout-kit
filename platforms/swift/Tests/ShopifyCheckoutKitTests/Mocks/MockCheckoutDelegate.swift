@@ -12,24 +12,24 @@ struct MockBridgeClient: CheckoutCommunicationProtocol {
 
 @MainActor
 final class MockCheckoutDelegate: CheckoutDelegate {
-    private(set) var didStartCheckouts: [Checkout] = []
-    private(set) var didUpdateCheckouts: [Checkout] = []
-    private(set) var didCompleteCheckouts: [Checkout] = []
+    private(set) var startEvents: [CheckoutStartEvent] = []
+    private(set) var updateEvents: [CheckoutUpdateEvent] = []
+    private(set) var completeEvents: [CheckoutCompleteEvent] = []
     private(set) var clickedLinks: [CheckoutLink] = []
     var linkAction: CheckoutLinkAction = .open
     private(set) var didDismissCount = 0
-    private(set) var didFailErrors: [CheckoutError] = []
+    private(set) var failureEvents: [CheckoutFailureEvent] = []
 
-    func checkoutDidStart(_ checkout: Checkout) {
-        didStartCheckouts.append(checkout)
+    func checkoutDidStart(_ event: CheckoutStartEvent) {
+        startEvents.append(event)
     }
 
-    func checkoutDidUpdate(_ checkout: Checkout) {
-        didUpdateCheckouts.append(checkout)
+    func checkoutDidUpdate(_ event: CheckoutUpdateEvent) {
+        updateEvents.append(event)
     }
 
-    func checkoutDidComplete(_ checkout: Checkout) {
-        didCompleteCheckouts.append(checkout)
+    func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        completeEvents.append(event)
     }
 
     func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
@@ -41,7 +41,7 @@ final class MockCheckoutDelegate: CheckoutDelegate {
         didDismissCount += 1
     }
 
-    func checkoutDidFail(error: CheckoutError) {
-        didFailErrors.append(error)
+    func checkoutDidFail(_ event: CheckoutFailureEvent) {
+        failureEvents.append(event)
     }
 }

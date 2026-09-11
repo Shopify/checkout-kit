@@ -40,12 +40,12 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
-    var onStartAction: ((Checkout) -> Void)?
-    var onUpdateAction: ((Checkout) -> Void)?
-    var onCompleteAction: ((Checkout) -> Void)?
+    var onStartAction: ((CheckoutStartEvent) -> Void)?
+    var onUpdateAction: ((CheckoutUpdateEvent) -> Void)?
+    var onCompleteAction: ((CheckoutCompleteEvent) -> Void)?
     var onLinkClickAction: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismissAction: (() -> Void)?
-    var onFailAction: ((CheckoutError) -> Void)?
+    var onFailAction: ((CheckoutFailureEvent) -> Void)?
 
     public init(checkout url: URL) {
         checkoutURL = url
@@ -83,19 +83,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         webViewController.onFail = onFailAction
     }
 
-    @discardableResult public func onStart(_ action: @escaping (Checkout) -> Void) -> Self {
+    @discardableResult public func onStart(_ action: @escaping (CheckoutStartEvent) -> Void) -> Self {
         var copy = self
         copy.onStartAction = action
         return copy
     }
 
-    @discardableResult public func onUpdate(_ action: @escaping (Checkout) -> Void) -> Self {
+    @discardableResult public func onUpdate(_ action: @escaping (CheckoutUpdateEvent) -> Void) -> Self {
         var copy = self
         copy.onUpdateAction = action
         return copy
     }
 
-    @discardableResult public func onComplete(_ action: @escaping (Checkout) -> Void) -> Self {
+    @discardableResult public func onComplete(_ action: @escaping (CheckoutCompleteEvent) -> Void) -> Self {
         var copy = self
         copy.onCompleteAction = action
         return copy
@@ -123,7 +123,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     /// Registers a handler called when checkout cannot continue.
     ///
     /// Use ``CheckoutError/code`` for your app's recovery policy.
-    @discardableResult public func onFail(_ action: @escaping (CheckoutError) -> Void) -> Self {
+    @discardableResult public func onFail(_ action: @escaping (CheckoutFailureEvent) -> Void) -> Self {
         var copy = self
         copy.onFailAction = action
         return copy

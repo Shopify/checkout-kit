@@ -19,10 +19,8 @@ final class CheckoutEventAdapterTests: XCTestCase {
 
     func testEveryChangeNotificationProducesOneUpdate() async {
         let methods = [
-            "ec.buyer.change",
             "ec.line_items.change",
             "ec.messages.change",
-            "ec.payment.change",
             "ec.totals.change",
             "ec.fulfillment.change"
         ]
@@ -32,6 +30,17 @@ final class CheckoutEventAdapterTests: XCTestCase {
             let adapter = CheckoutEventAdapter(sink: sink)
             _ = await adapter.process(message(method: method, total: index))
             XCTAssertEqual(sink.updated.count, 1, method)
+        }
+    }
+
+    func testUnsupportedChangeNotificationsDoNotProduceUpdates() async {
+        for method in ["ec.buyer.change", "ec.payment.change"] {
+            let sink = RecordingCheckoutEventSink()
+            let adapter = CheckoutEventAdapter(sink: sink)
+
+            _ = await adapter.process(message(method: method))
+
+            XCTAssertTrue(sink.updated.isEmpty, method)
         }
     }
 
