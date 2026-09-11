@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repository_root="$(cd "$script_directory/../.." && pwd)"
+
+: "${CURRENT_SIMULATOR_UUID:?CURRENT_SIMULATOR_UUID must be set}"
+: "${DERIVED_DATA_PATH:?DERIVED_DATA_PATH must be set}"
+
+xcodebuild_arguments=(
+    build
+    -scheme ShopifyCheckoutKit-Package
+    -sdk iphonesimulator
+    -destination "id=$CURRENT_SIMULATOR_UUID"
+    -derivedDataPath "$DERIVED_DATA_PATH"
+    -skipPackagePluginValidation
+    -disableAutomaticPackageResolution
+    SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+    CODE_SIGNING_REQUIRED=NO
+    CODE_SIGNING_ALLOWED=NO
+    COMPILER_INDEX_STORE_ENABLE=NO
+)
+
+rm -rf "$DERIVED_DATA_PATH"
+cd "$repository_root"
+
+if command -v xcbeautify >/dev/null 2>&1; then
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        xcodebuild "${xcodebuild_arguments[@]}" | xcbeautify --renderer github-actions
+    else
+        xcodebuild "${xcodebuild_arguments[@]}" | xcbeautify
+    fi
+else
+    xcodebuild "${xcodebuild_arguments[@]}"
+fi
+
+"$script_directory/build_swift" --prepare-dependencies

@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repository_root="$(cd "$script_directory/../.." && pwd)"
+mode="${1:---typecheck}"
+
+: "${DERIVED_DATA_PATH:?DERIVED_DATA_PATH must be set}"
+
+products_directory="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator"
+intermediates_directory="$DERIVED_DATA_PATH/Build/Intermediates.noindex/ShopifyCheckoutKit.build/Debug-iphonesimulator"
+prepared_module_directory="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codeql-swift-prepared-modules"
+sdk_path="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+target="arm64-apple-ios15.0-simulator"
+
+case "$mode" in
+    --prepare-dependencies)
+        module_cache_directory="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codeql-swift-prepare-clang-module-cache"
+        rm -rf "$prepared_module_directory"
+        mkdir -p "$prepared_module_directory"
+        ;;
+    --typecheck)
+        module_cache_directory="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/codeql-swift-clang-module-cache"
+        ;;
+    *)
+        echo "Usage: $0 [--prepare-dependencies|--typecheck]" >&2
+        exit 1
+        ;;
+esac
+
+if [[ ! -d "$products_directory" ]]; then
+    echo "Prepared Swift products were not found at $products_directory" >&2
+    exit 1
+fi
+
+rm -rf "$module_cache_directory"
+mkdir -p "$module_cache_directory"
+
+common_arguments=(
+    -parse-as-library
+    -swift-version 6
+    -target "$target"
+    -sdk "$sdk_path"
+    -module-cache-path "$module_cache_directory"
+    -I "$prepared_module_directory"
+    -I "$products_directory"
+    -D SWIFT_PACKAGE
+    -D DEBUG
+    -D SWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE
+    -D Xcode
+    -enable-testing
+    -package-name checkout_kit
+    -warnings-as-errors
+)
+
+emit_module() {
+    local module_name="$1"
+    shift
+
+    echo "::group::Prepare $module_name for focused CodeQL type checking ($# sources)"
+    xcrun swiftc \
+        -emit-module \
+        "${common_arguments[@]}" \
+        -module-name "$module_name" \
+        "$@" \
+        -emit-module-path "$prepared_module_directory/$module_name.swiftmodule"
+    echo "::endgroup::"
+}
+
+typecheck_module() {
+    local module_name="$1"
+    shift
+
+    echo "::group::Type-check $module_name for CodeQL ($# sources)"
+    xcrun swiftc \
+        -typecheck \
+        "${common_arguments[@]}" \
+        -module-name "$module_name" \
+        "$@"
+    echo "::endgroup::"
+}
+
+require_sources() {
+    local module_name="$1"
+    local source_count="$2"
+
+    if [[ "$source_count" -eq 0 ]]; then
+        echo "No Swift sources were found for $module_name" >&2
+        exit 1
+    fi
+}
+
+protocol_sources=()
+while IFS= read -r source; do
+    protocol_sources+=("$source")
+done < <(find "$repository_root/protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol" -type f -name '*.swift' | sort)
+require_sources EmbeddedCheckoutProtocol "${#protocol_sources[@]}"
+
+telemetry_sources=()
+while IFS= read -r source; do
+    telemetry_sources+=("$source")
+done < <(find "$repository_root/telemetry/languages/swift/Sources/CheckoutKitTelemetry" -type f -name '*.swift' | sort)
+require_sources CheckoutKitTelemetry "${#telemetry_sources[@]}"
+
+checkout_sources=()
+while IFS= read -r source; do
+    checkout_sources+=("$source")
+done < <(find "$repository_root/platforms/swift/Sources/ShopifyCheckoutKit" -type f -name '*.swift' | sort)
+require_sources ShopifyCheckoutKit "${#checkout_sources[@]}"
+checkout_sources+=(
+    "$intermediates_directory/ShopifyCheckoutKit.build/DerivedSources/resource_bundle_accessor.swift"
+    "$intermediates_directory/ShopifyCheckoutKit.build/DerivedSources/GeneratedAssetSymbols.swift"
+)
+
+accelerated_sources=()
+while IFS= read -r source; do
+    accelerated_sources+=("$source")
+done < <(find "$repository_root/platforms/swift/Sources/ShopifyAcceleratedCheckouts" -type f -name '*.swift' | sort)
+require_sources ShopifyAcceleratedCheckouts "${#accelerated_sources[@]}"
+accelerated_sources+=(
+    "$intermediates_directory/ShopifyAcceleratedCheckouts.build/DerivedSources/resource_bundle_accessor.swift"
+    "$intermediates_directory/ShopifyAcceleratedCheckouts.build/DerivedSources/GeneratedAssetSymbols.swift"
+)
+
+for source in "${checkout_sources[@]}" "${accelerated_sources[@]}"; do
+    if [[ ! -f "$source" ]]; then
+        echo "Required Swift source was not found at $source" >&2
+        exit 1
+    fi
+done
+
+if [[ "$mode" == "--prepare-dependencies" ]]; then
+    emit_module EmbeddedCheckoutProtocol "${protocol_sources[@]}"
+    emit_module CheckoutKitTelemetry "${telemetry_sources[@]}"
+    emit_module ShopifyCheckoutKit "${checkout_sources[@]}"
+else
+    for module_name in EmbeddedCheckoutProtocol CheckoutKitTelemetry ShopifyCheckoutKit; do
+        if [[ ! -f "$prepared_module_directory/$module_name.swiftmodule" ]]; then
+            echo "Prepared Swift module was not found at $prepared_module_directory/$module_name.swiftmodule" >&2
+            exit 1
+        fi
+    done
+
+    typecheck_module EmbeddedCheckoutProtocol "${protocol_sources[@]}"
+    typecheck_module CheckoutKitTelemetry "${telemetry_sources[@]}"
+    typecheck_module ShopifyCheckoutKit "${checkout_sources[@]}"
+    typecheck_module ShopifyAcceleratedCheckouts "${accelerated_sources[@]}"
+fi
