@@ -9,6 +9,8 @@ public let version = "4.0.0-alpha.6"
 private let lockedCheckoutKitConfiguration = LockedValue(Configuration())
 
 /// The configuration options for the `ShopifyCheckoutKit` library.
+///
+/// Assigning configuration invalidates any cached preload.
 public var configuration: Configuration {
     get { lockedCheckoutKitConfiguration.get() }
     set {
@@ -21,7 +23,9 @@ public var configuration: Configuration {
     }
 }
 
-/// A convienence function for configuring the `ShopifyCheckoutKit` library.
+/// A convenience function for configuring the `ShopifyCheckoutKit` library.
+///
+/// Calling this function invalidates any cached preload.
 public func configure(_ block: (inout Configuration) -> Void) {
     let previousConfiguration = lockedCheckoutKitConfiguration.get()
     lockedCheckoutKitConfiguration.update(block)
@@ -38,10 +42,8 @@ private func applyConfigurationChange(configuration: Configuration, previousConf
         CheckoutTelemetry.disable()
     }
 
-    if configuration.preloading.enabled != previousConfiguration.preloading.enabled {
-        Task { @MainActor in
-            invalidate()
-        }
+    Task { @MainActor in
+        invalidate()
     }
 }
 
