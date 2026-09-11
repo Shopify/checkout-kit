@@ -34,6 +34,7 @@ public struct Checkout: Codable, Sendable {
         case links, messages, order, payment, signals, status, totals
     }
 
+    /// Prevent typed fields and the omitted `ucp` metadata from being copied through `additionalProperties`.
     private static let excludedAdditionalPropertyKeys: Set<String> = [
         "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at",
         "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status",
