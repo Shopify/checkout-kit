@@ -6,6 +6,7 @@ require_relative "common"
 require_relative "bitrise_client"
 require_relative "bitrise_auth"
 require_relative "build_state"
+require_relative "diagnostics"
 
 WAIT_POLL_SECONDS = 30
 WAIT_TIMEOUT_SECONDS = 1800
@@ -240,9 +241,15 @@ def reverify_head!(client, option, pr)
   abort_with("The build finished but produced no HEAD artifact for #{option.fetch("label")}. Check the Bitrise build logs.")
 end
 
-def ensure_installable(option, manifest, pr, wait:)
+def ensure_installable(option, manifest, pr, wait:, force_rebuild:)
   app_slug = manifest.fetch("app_slug")
   client = BitriseClient.new(token: BitriseAuth.resolve_token(app_slug), app_slug: app_slug, retries: BITRISE_API_RETRIES)
+
+  if force_rebuild
+    puts "==> Forcing a fresh Bitrise build for #{option.fetch("label")}."
+    await_head_build(client, option, pr) { trigger_head_builds(client, option, pr) }
+    return
+  end
 
   puts "==> Checking Bitrise: #{option.fetch("label")} @ HEAD #{TophatBuildState.short_sha(pr.fetch("sha"))}…"
   evaluations = verify_bitrise_state(client, option, pr)
@@ -369,14 +376,25 @@ def run_tophat_install(config_path, stream: true)
   [output, status]
 end
 
-def install_with_tophat(config_path, app_slug)
-  output, status = run_tophat_install(config_path, stream: false)
+def report_install_diagnostics(attempt_started_at, verbose:)
+  raw_log = TophatDiagnostics.capture_raw_log(start_time: attempt_started_at)
+  puts raw_log if verbose && raw_log
+  finding = TophatDiagnostics.most_recent_finding(TophatDiagnostics.parse_log_output(raw_log))
+  puts TophatDiagnostics.format_diagnostic_message(finding) if finding
+rescue StandardError
+  nil
+end
+
+def install_with_tophat(config_path, app_slug, verbose: false)
+  attempt_started_at = Time.now - 5
+  output, status = run_tophat_install(config_path, stream: verbose)
   if status.success?
-    print output
+    print output unless verbose
     return true
   end
   unless bitrise_auth_error?(output)
-    print output
+    print output unless verbose
+    report_install_diagnostics(attempt_started_at, verbose: verbose)
     return false
   end
 
@@ -420,6 +438,8 @@ def print_help(manifest)
     built at the PR's HEAD commit. If it was not, it shows what CI currently has
     and lets you trigger a HEAD build and wait (~6 min), wait for a HEAD build
     that is already running, or knowingly install the current (older) build.
+    Pass --force-rebuild to skip this check and always trigger a fresh HEAD
+    build and wait for it, even if a build already looks ready.
 
     Arguments:
       <pr-number-or-url>  Optional pull request number or GitHub pull request URL.
@@ -432,8 +452,14 @@ def print_help(manifest)
       --wait              Non-interactively ensure the HEAD build: wait for a HEAD
                           build that is already running, or trigger one and wait,
                           then install. Skips the menu.
+      --force-rebuild     Always trigger a fresh Bitrise build and wait for it before
+                          installing, even if the HEAD build already looks ready.
+                          Useful when the last install failed with a stale or
+                          missing artifact.
       --clear-token       Remove dev tophat's saved Bitrise token from your keychain
                           (does not change Tophat's own token) and exit.
+      --verbose           Stream tophatctl's install output live, print the generated
+                          config, and show the raw diagnostic log on failure.
       -h, --help          Show this help.
 
     Available targets (pass as the <target> argument):
@@ -445,6 +471,7 @@ def print_help(manifest)
       dev tophat 382 react-native-ios
       dev tophat 382 s
       dev tophat --wait 382
+      dev tophat --force-rebuild 382
       dev tophat https://github.com/Shopify/checkout-kit/pull/382
 
     Environment:
@@ -471,6 +498,8 @@ def main
   end
 
   wait_flag = extract_flag("--wait")
+  force_rebuild_flag = extract_flag("--force-rebuild")
+  verbose_flag = extract_flag("--verbose")
 
   CheckoutKitTophat.require_tophat!
 
@@ -478,7 +507,9 @@ def main
   pr = pr_metadata(pr_number)
   options = CheckoutKitTophat.install_options(manifest)
   option = select_option(options, ARGV[1])
-  ensure_installable(option, manifest, pr, wait: wait_flag) unless skip_artifact_check?
+  unless skip_artifact_check?
+    ensure_installable(option, manifest, pr, wait: wait_flag, force_rebuild: force_rebuild_flag)
+  end
 
   device = select_device(option.fetch("platform"))
   recipe = recipe_for(option.fetch("target"), device)
@@ -488,15 +519,15 @@ def main
   puts "    Device: #{device.fetch("name")} #{device.fetch("runtimeVersion")} (#{device.fetch("type")})"
   puts "    Artifact: #{recipe.fetch("artifact_name")}"
 
-  if ENV["TOPHAT_DRY_RUN"] == "1"
+  if verbose_flag || ENV["TOPHAT_DRY_RUN"] == "1"
     puts JSON.pretty_generate(config)
-    exit 0
+    exit 0 if ENV["TOPHAT_DRY_RUN"] == "1"
   end
 
   Tempfile.create(["tophat-install", ".json"]) do |file|
     file.write(JSON.generate(config))
     file.flush
-    install_with_tophat(file.path, manifest.fetch("app_slug")) || abort_with("Tophat install failed.")
+    install_with_tophat(file.path, manifest.fetch("app_slug"), verbose: verbose_flag) || abort_with("Tophat install failed.")
     puts "✅ Installed #{option.fetch("label")} to #{device.fetch("name")}."
   end
 end
