@@ -436,7 +436,7 @@ build_and_install() {
       "$ROOT_DIR/Scripts/generate_xcode_projects"
       cd "$ROOT_DIR/Samples"
       xcodebuild build \
-        -workspace Samples.xcworkspace \
+        -project "$APP_NAME/$APP_NAME.xcodeproj" \
         -scheme "$APP_NAME" \
         -sdk iphonesimulator \
         -destination "id=$DEVICE_ID" \

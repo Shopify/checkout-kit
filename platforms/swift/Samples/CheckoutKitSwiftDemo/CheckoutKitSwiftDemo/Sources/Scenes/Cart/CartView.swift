@@ -69,20 +69,6 @@ struct CartView: View {
                                     print("[AcceleratedCheckout] Dismissed")
                                 }
                                 .connect(client)
-                                .environment(
-                                    \.shopifyAcceleratedCheckoutsConfiguration,
-                                    ShopifyAcceleratedCheckouts.Configuration(
-                                        storefrontDomain: InfoDictionary.shared.domain,
-                                        storefrontAccessToken: InfoDictionary.shared.accessToken
-                                    )
-                                )
-                                .environment(
-                                    \.shopifyApplePayConfiguration,
-                                    ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-                                        merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-                                        contactFields: [.email, .phone]
-                                    )
-                                )
                         }
                     }
 

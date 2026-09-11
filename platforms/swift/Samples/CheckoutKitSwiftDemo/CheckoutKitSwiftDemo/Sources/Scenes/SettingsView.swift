@@ -1,5 +1,4 @@
 import Combine
-import PassKit
 import ShopifyCheckoutKit
 import SwiftUI
 import WebKit
@@ -11,6 +10,12 @@ enum AppStorageKeys: String {
     case preloadObservabilityEnabled
     case buyerIdentityMode
     case applePayStyle
+    case requireEmail
+    case requirePhone
+    case locale
+    case email
+    case phone
+    case supportedCountries
     case windowOpenHandler
 }
 
@@ -37,9 +42,6 @@ struct SettingsView: View {
             }
         }
     }
-
-    @AppStorage(AppStorageKeys.applePayStyle.rawValue)
-    var applePayStyle: ApplePayStyleOption = .automatic
 
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
@@ -69,6 +71,12 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                }
+
+                Section(header: Text("Accelerated Checkouts")) {
+                    NavigationLink(destination: AcceleratedCheckoutsSettingsView()) {
+                        Text("Configure Accelerated Checkouts")
+                    }
                 }
 
                 Section(
@@ -134,26 +142,6 @@ struct SettingsView: View {
                             NotificationCenter.default.post(
                                 name: .colorSchemeChanged, object: nil
                             )
-                        }
-                    }
-                }
-
-                Section(
-                    header: Text("Apple Pay"),
-                    footer: Text("Configures the visual style of the Apple Pay button.")
-                ) {
-                    ForEach(ApplePayStyleOption.allCases, id: \.self) { option in
-                        HStack {
-                            Text(option.title)
-                            Spacer()
-                            if option == applePayStyle {
-                                Text("\u{2713}")
-                            }
-                        }
-                        .background(Color.clear)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            applePayStyle = option
                         }
                     }
                 }
@@ -359,32 +347,6 @@ extension Configuration.Appearance {
             return colorScheme
         case .storefront:
             return .light
-        }
-    }
-}
-
-enum ApplePayStyleOption: String, CaseIterable {
-    case automatic
-    case black
-    case white
-    case whiteOutline
-
-    var title: String {
-        switch self {
-        case .automatic: return "Automatic"
-        case .black: return "Black"
-        case .white: return "White"
-        case .whiteOutline: return "White Outline"
-        }
-    }
-
-    @available(iOS 16.0, *)
-    var style: PKPaymentButtonStyle {
-        switch self {
-        case .automatic: return .automatic
-        case .black: return .black
-        case .white: return .white
-        case .whiteOutline: return .whiteOutline
         }
     }
 }

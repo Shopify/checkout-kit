@@ -365,22 +365,22 @@ workflows:
       - bundle::bootstrap-mint:
           inputs:
             - mintfile_dir: platforms/swift
-      # Both samples build the root package and Apollo iOS from source. Neither changes
-      # between most pull requests, so DerivedData carries that work across builds. The key
-      # holds the resolved dependency graph: a pin change rebuilds rather than reuses.
-      # Xcode's incremental build owns correctness for the source that did change.
+      # The sample builds the root package and Apollo iOS from source. Those dependencies
+      # do not change between most pull requests, so DerivedData carries that work across
+      # builds. The key holds the resolved dependency graph: a pin change rebuilds rather
+      # than reuses. Xcode's incremental build owns correctness for changed source.
       - restore-cache@3:
           inputs:
             - key: &swift_samples_derived_data_cache_key |-
-                swift-samples-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "Package.resolved" }}
+                swift-samples-derived-data-{{ .OS }}-{{ .Arch }}-{{ checksum "platforms/swift/Samples/CheckoutKitSwiftDemo/Package.resolved" }}
       - script@1:
-          title: Build and test the Swift sample apps
+          title: Build and test the Swift sample app
           timeout: 5400
           no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
-                # The samples only need a well-formed storefront configuration to compile,
+                # The sample only needs a well-formed storefront configuration to compile,
                 # so this job runs on placeholders rather than e2e_configure_storefront,
                 # which asserts the real secrets. Keeping it off them is what lets the job
                 # run on fork pull requests, where Bitrise withholds secrets.

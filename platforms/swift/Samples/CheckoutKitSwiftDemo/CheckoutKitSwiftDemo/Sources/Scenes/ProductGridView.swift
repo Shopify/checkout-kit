@@ -171,6 +171,6 @@ struct ProductGridItem: View {
 
 struct ProductGrid_Previews: PreviewProvider {
     static var previews: some View {
-        ProductGridView()
+        AcceleratedCheckoutsConfiguredView(content: ProductGridView())
     }
 }

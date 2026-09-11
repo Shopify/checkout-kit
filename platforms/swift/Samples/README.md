@@ -1,15 +1,14 @@
 # Swift Samples
 
-This directory contains iOS sample apps for Checkout Kit.
+This directory contains the iOS sample app for Checkout Kit.
 
-The sample apps read generated `Storefront.xcconfig` files. From the repo root
+The sample app reads a generated `Storefront.xcconfig` file. From the repo root
 or any platform directory, run `dev up` to provision the repo and create or sync
 them from the shared `.env`.
 
 | Sample | Purpose |
 | --- | --- |
-| `CheckoutKitSwiftDemo` | Storefront API cart flow with Apollo iOS, checkout presentation, buyer identity modes, Customer Account API sign-in, and protocol lifecycle events. |
-| `ShopifyAcceleratedCheckoutsApp` | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons. |
+| `CheckoutKitSwiftDemo` | Storefront API cart flow with Apollo iOS, checkout presentation, Shop Pay and Apple Pay accelerated checkout buttons, buyer identity modes, Customer Account API sign-in, and protocol lifecycle events. |
 
 ## Prerequisites
 
@@ -34,31 +33,10 @@ fill in local values, then run `scripts/setup_storefront_env`.
 
 The setup script generates `platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig` and the sample Xcode project files from XcodeGen specs.
 
-Open `Samples/Samples.xcworkspace` or
-`Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj` in Xcode, then
-build and run the `CheckoutKitSwiftDemo` scheme.
+Open `Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj` in Xcode,
+then build and run the `CheckoutKitSwiftDemo` scheme.
 
-XcodeGen generates associated-domain entitlements that read `STOREFRONT_DOMAIN` from `Storefront.xcconfig` at build time.
-
-## ShopifyAcceleratedCheckoutsApp
-
-To get started:
-
-1. Create or sync the shared configuration from the repo root or this platform
-   directory:
-
-   ```sh
-   dev up
-   ```
-
-2. If you are not using `dev`, copy the repo-root `.env.example` to `.env`,
-fill in local values, then run `scripts/setup_storefront_env`.
-
-The setup script generates `platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig`.
-
-Open `Samples/Samples.xcworkspace` or
-`Samples/ShopifyAcceleratedCheckoutsApp/ShopifyAcceleratedCheckoutsApp.xcodeproj`
-in Xcode, then build and run the `ShopifyAcceleratedCheckoutsApp` scheme.
+XcodeGen generates associated-domain and Apple Pay entitlements that read values from `Storefront.xcconfig` at build time. The app's Settings tab can configure the accelerated checkout locale, Apple Pay contact fields and button style, buyer email and phone overrides, supported shipping countries, and logging.
 
 ## Troubleshooting
 
