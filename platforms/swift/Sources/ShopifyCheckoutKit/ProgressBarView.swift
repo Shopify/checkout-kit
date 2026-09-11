@@ -10,8 +10,10 @@ class ProgressBarView: UIView {
     }()
 
     private var progressAnimation: UIViewPropertyAnimator?
+    private let configuredTintColor: UIColor
 
-    override init(frame: CGRect) {
+    init(frame: CGRect, tintColor: UIColor) {
+        configuredTintColor = tintColor
         super.init(frame: frame)
 
         addSubview(progressBar)
@@ -21,7 +23,7 @@ class ProgressBarView: UIView {
             progressBar.heightAnchor.constraint(equalToConstant: 1)
         ])
 
-        progressBar.tintColor = ShopifyCheckoutKit.configuration.tintColor
+        progressBar.tintColor = configuredTintColor
     }
 
     override func didMoveToSuperview() {

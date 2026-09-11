@@ -83,46 +83,91 @@ class CheckoutConfigurableTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testBackgroundColor() {
+    func testBackgroundColorIsCapturedWithoutChangingGlobalConfiguration() {
+        let globalColor = ShopifyCheckoutKit.configuration.backgroundColor
         let color = UIColor.red
-        shopifyCheckout.backgroundColor(color)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, color)
+
+        let sheet = shopifyCheckout.backgroundColor(color)
+
+        XCTAssertEqual(sheet.configuration.backgroundColor, color)
+        XCTAssertEqual(shopifyCheckout.configuration.backgroundColor, globalColor)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, globalColor)
     }
 
-    func testAppearance() {
+    func testAppearanceIsCapturedWithoutChangingGlobalConfiguration() {
+        let globalAppearance = ShopifyCheckoutKit.configuration.appearance
         let appearance = ShopifyCheckoutKit.Configuration.Appearance.app(.light)
-        shopifyCheckout.appearance(appearance)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
+
+        let sheet = shopifyCheckout.appearance(appearance)
+
+        XCTAssertEqual(sheet.configuration.appearance, appearance)
+        XCTAssertEqual(shopifyCheckout.configuration.appearance, globalAppearance)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
     }
 
-    func testAppearanceDecoratesCheckoutURLAfterModifierRuns() throws {
-        let sheet = shopifyCheckout.appearance(.storefront)
+    func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
+        let sheet = shopifyCheckout.appearance(.app(.dark))
         let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
 
-        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "light")
-        XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "shop")
+        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "dark")
+        XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "app")
     }
 
-    func testTintColor() {
+    func testTintColorIsCapturedWithoutChangingGlobalConfiguration() {
+        let globalColor = ShopifyCheckoutKit.configuration.tintColor
         let color = UIColor.blue
-        shopifyCheckout.tintColor(color)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, color)
+
+        let sheet = shopifyCheckout.tintColor(color)
+
+        XCTAssertEqual(sheet.configuration.tintColor, color)
+        XCTAssertEqual(shopifyCheckout.configuration.tintColor, globalColor)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, globalColor)
     }
 
-    func testTitle() {
+    func testTitleIsCapturedWithoutChangingGlobalConfiguration() {
+        let globalTitle = ShopifyCheckoutKit.configuration.title
         let title = "Test Title"
-        shopifyCheckout.title(title)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, title)
+
+        let sheet = shopifyCheckout.title(title)
+
+        XCTAssertEqual(sheet.configuration.title, title)
+        XCTAssertEqual(shopifyCheckout.configuration.title, globalTitle)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, globalTitle)
     }
 
-    func testCloseButtonTintColor() {
+    func testCloseButtonTintColorIsCapturedWithoutChangingGlobalConfiguration() {
+        let globalColor = ShopifyCheckoutKit.configuration.closeButtonTintColor
         let color = UIColor.green
-        shopifyCheckout.closeButtonTintColor(color)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, color)
+
+        let sheet = shopifyCheckout.closeButtonTintColor(color)
+
+        XCTAssertEqual(sheet.configuration.closeButtonTintColor, color)
+        XCTAssertEqual(shopifyCheckout.configuration.closeButtonTintColor, globalColor)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, globalColor)
     }
 
-    func testCloseButtonTintColorNil() {
-        shopifyCheckout.closeButtonTintColor(nil)
+    func testCloseButtonTintColorCanBeClearedOnInstance() {
+        let sheet = shopifyCheckout
+            .closeButtonTintColor(.green)
+            .closeButtonTintColor(nil)
+
+        XCTAssertNil(sheet.configuration.closeButtonTintColor)
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    }
+
+    func testModifiersDoNotInvalidatePreload() async {
+        await Task.yield()
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        _ = shopifyCheckout
+            .backgroundColor(.red)
+            .appearance(.app(.dark))
+            .tintColor(.blue)
+            .title("Instance checkout")
+            .closeButtonTintColor(.green)
+        await Task.yield()
+
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 }

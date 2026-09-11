@@ -56,6 +56,29 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(viewController.title, "Custom title")
     }
 
+    func testInstanceConfigurationIsAppliedToCheckoutChrome() throws {
+        var configuration = Configuration()
+        configuration.backgroundColor = .red
+        configuration.tintColor = .blue
+        configuration.title = "Instance checkout"
+        configuration.closeButtonTintColor = .green
+
+        let controller = MockCheckoutWebViewController(
+            checkoutURL: checkoutURL,
+            configuration: configuration
+        )
+        controller.loadViewIfNeeded()
+
+        XCTAssertEqual(controller.title, "Instance checkout")
+        assertColor(controller.view.backgroundColor, equals: .red)
+        assertColor(controller.checkoutView?.backgroundColor, equals: .red)
+        assertColor(controller.checkoutView?.underPageBackgroundColor, equals: .red)
+        assertColor(controller.progressBar.progressBar.tintColor, equals: .blue)
+        let closeButton = try XCTUnwrap(controller.navigationItem.rightBarButtonItem)
+        assertColor(closeButton.tintColor, equals: .green)
+        XCTAssertNotNil(closeButton.image)
+    }
+
     func testCheckoutViewDidFailWithErrorDismissesViewController() {
         viewController.checkoutViewDidFailWithError(error: CheckoutError(code: .httpError, message: "error", httpStatusCode: 500))
 
@@ -124,6 +147,13 @@ class CheckoutViewDelegateTests: XCTestCase {
 
         let closeButton = controller.navigationItem.rightBarButtonItem
         XCTAssertNotNil(closeButton?.image)
+    }
+
+    private func assertColor(_ actual: UIColor?, equals expected: UIColor, file: StaticString = #filePath, line: UInt = #line) {
+        let actualComponents = actual?.cgColor.components
+        let expectedComponents = expected.cgColor.components
+
+        XCTAssertEqual(actualComponents, expectedComponents, file: file, line: line)
     }
 }
 
