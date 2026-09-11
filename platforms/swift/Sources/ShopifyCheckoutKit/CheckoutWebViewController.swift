@@ -7,12 +7,12 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     /// Keep this value in sync with the checkout close selector used by E2E flows.
     private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
 
-    var onStart: ((Checkout) -> Void)?
-    var onUpdate: ((Checkout) -> Void)?
-    var onComplete: ((Checkout) -> Void)?
+    var onStart: ((CheckoutStartEvent) -> Void)?
+    var onUpdate: ((CheckoutUpdateEvent) -> Void)?
+    var onComplete: ((CheckoutCompleteEvent) -> Void)?
     var onLinkClick: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismiss: (() -> Void)?
-    var onFail: ((CheckoutError) -> Void)?
+    var onFail: ((CheckoutFailureEvent) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
 
     var checkoutView: CheckoutWebView?
@@ -204,18 +204,21 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
 extension CheckoutWebViewController: CheckoutEventSink {
     func checkoutDidStart(_ checkout: Checkout) {
-        onStart?(checkout)
-        delegate?.checkoutDidStart(checkout)
+        let event = CheckoutStartEvent(checkout: checkout)
+        onStart?(event)
+        delegate?.checkoutDidStart(event)
     }
 
     func checkoutDidUpdate(_ checkout: Checkout) {
-        onUpdate?(checkout)
-        delegate?.checkoutDidUpdate(checkout)
+        let event = CheckoutUpdateEvent(checkout: checkout)
+        onUpdate?(event)
+        delegate?.checkoutDidUpdate(event)
     }
 
     func checkoutDidComplete(_ checkout: Checkout) {
-        onComplete?(checkout)
-        delegate?.checkoutDidComplete(checkout)
+        let event = CheckoutCompleteEvent(checkout: checkout)
+        onComplete?(event)
+        delegate?.checkoutDidComplete(event)
     }
 }
 
@@ -232,8 +235,9 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {
-        onFail?(error)
-        delegate?.checkoutDidFail(error: error)
+        let event = CheckoutFailureEvent(error: error)
+        onFail?(event)
+        delegate?.checkoutDidFail(event)
         dismiss(animated: true)
     }
 }

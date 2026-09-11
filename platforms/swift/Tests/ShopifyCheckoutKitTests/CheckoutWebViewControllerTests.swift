@@ -95,7 +95,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         viewController.checkoutViewDidFailWithError(error: sampleError)
 
-        XCTAssertEqual(delegate.didFailErrors.count, 1)
+        XCTAssertEqual(delegate.failureEvents.count, 1)
+        XCTAssertEqual(delegate.failureEvents.first?.error.code, sampleError.code)
     }
 
     func test_presentationControllerDidDismiss_invokesDelegateCancel() {
