@@ -22,6 +22,19 @@ class BrowserStackRunExecutorTest < Minitest::Test
     end
   end
 
+  class StartBuildClient
+    attr_reader :requests
+
+    def initialize
+      @requests = []
+    end
+
+    def start_build(platform, body)
+      @requests << [platform, body]
+      {"build_id" => "build-123"}
+    end
+  end
+
   def with_version_file(contents)
     Dir.mktmpdir do |dir|
       path = File.join(dir, ".maestro-version")
@@ -83,6 +96,34 @@ class BrowserStackRunExecutorTest < Minitest::Test
         assert_empty sessions
         assert_equal 1, client.poll_count
       end
+    end
+  end
+
+  def test_ios_builds_request_apple_pay
+    Dir.mktmpdir do |output_dir|
+      client = StartBuildClient.new
+      executor = BrowserStackRunExecutor.new({output_dir: output_dir}, client: client)
+      run = {
+        "id" => "swift-ios-latest",
+        "platform" => "ios",
+        "app_id" => "com.example.ios",
+        "ready_marker" => "ready",
+        "control_link" => "com.example.ios://e2e",
+        "execute" => ["tests/shared"],
+        "include_tags" => ["apple-pay"],
+        "exclude_tags" => ["flaky"]
+      }
+
+      executor.send(:start_build, run, "bs://app", "bs://suite", "iPhone 15-17")
+
+      _, body = client.requests.fetch(0)
+      assert_equal true, body.fetch(:enableApplePay)
+
+      run["platform"] = "android"
+      executor.send(:start_build, run, "bs://app", "bs://suite", "Google Pixel 9-16")
+
+      _, body = client.requests.fetch(1)
+      refute body.key?(:enableApplePay)
     end
   end
 end
