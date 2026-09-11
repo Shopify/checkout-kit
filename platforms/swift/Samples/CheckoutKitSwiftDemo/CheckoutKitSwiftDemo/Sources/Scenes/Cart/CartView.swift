@@ -126,12 +126,14 @@ struct CartView: View {
                             print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
                         }
                         .onUpdate { event in
+                            // The selected address changed.
                             let updatedAddressIDs = selectedAddressIDs(in: event.checkout)
                             if updatedAddressIDs != selectedAddressIDs {
                                 print("[CheckoutKitSwiftDemo] Selected address changed")
                                 selectedAddressIDs = updatedAddressIDs
                             }
 
+                            // The selected delivery method changed.
                             let updatedDeliveryMethodIDs = selectedDeliveryMethodIDs(in: event.checkout)
                             if updatedDeliveryMethodIDs != selectedDeliveryMethodIDs {
                                 print("[CheckoutKitSwiftDemo] Selected delivery method changed")
