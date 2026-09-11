@@ -7,6 +7,10 @@ class ShopPayViewController: WalletController {
     var eventHandlers: EventHandlers
     var client: (any CheckoutCommunicationProtocol)?
 
+    override var checkoutDelegate: (any CheckoutDelegate)? {
+        self
+    }
+
     init(
         identifier: CheckoutIdentifier,
         configuration: ShopifyAcceleratedCheckouts.Configuration,
@@ -40,5 +44,16 @@ class ShopPayViewController: WalletController {
             ShopifyAcceleratedCheckouts.logger.error("[present] Failed to create cart: \(error)")
             eventHandlers.checkoutDidFail?(error)
         }
+    }
+}
+
+@available(iOS 16.0, *)
+extension ShopPayViewController: CheckoutDelegate {
+    func checkoutDidDismiss() {
+        eventHandlers.checkoutDidDismiss?()
+    }
+
+    func checkoutDidFail(error: CheckoutError) {
+        eventHandlers.checkoutDidFail?(error)
     }
 }

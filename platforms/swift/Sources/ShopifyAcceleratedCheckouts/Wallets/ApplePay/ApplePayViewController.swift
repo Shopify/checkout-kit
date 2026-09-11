@@ -7,6 +7,7 @@ import SwiftUI
 protocol PayController: AnyObject {
     var cart: StorefrontAPI.Types.Cart? { get set }
     var storefront: StorefrontAPIProtocol { get set }
+    var onCheckoutDismiss: (() -> Void)? { get }
 
     /// Opens ShopifyCheckoutKit
     func present(url: URL) async throws
@@ -18,6 +19,10 @@ class ApplePayViewController: WalletController, PayController {
     @Published var paymentController: PKPaymentAuthorizationController?
 
     var cart: StorefrontAPI.Types.Cart?
+
+    override var checkoutDelegate: (any CheckoutDelegate)? {
+        self
+    }
 
     var client: (any CheckoutCommunicationProtocol)?
 
@@ -156,5 +161,20 @@ class ApplePayViewController: WalletController, PayController {
 
     func present(url: URL) async throws {
         try await present(url: url, client: client)
+    }
+}
+
+@available(iOS 16.0, *)
+extension ApplePayViewController: CheckoutDelegate {
+    func checkoutDidDismiss() {
+        onCheckoutDismiss?()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await authorizationDelegate.transition(to: .completed)
+        }
+    }
+
+    func checkoutDidFail(error: CheckoutError) {
+        onCheckoutFail?(error)
     }
 }

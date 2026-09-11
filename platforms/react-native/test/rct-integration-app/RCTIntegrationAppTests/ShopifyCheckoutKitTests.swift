@@ -497,6 +497,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         wait(for: [presentAttemptCompleted], timeout: 1)
     }
 
+    @MainActor
     func testCheckoutDidDismissDismissesCheckoutSheetFromRCTWrapper() {
         let dismissCompleted = expectation(description: "checkout sheet dismissed")
         let checkoutSheet = DismissTrackingViewController()

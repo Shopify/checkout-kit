@@ -1,5 +1,5 @@
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutKit
+@testable import ShopifyCheckoutKit
 import UIKit
 import XCTest
 
@@ -137,6 +137,38 @@ class ApplePayViewControllerTests: XCTestCase {
         viewController.onCheckoutDismiss = { dismissCallbackExpectation.fulfill() }
 
         viewController.onCheckoutDismiss?()
+
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
+    func test_checkoutDidDismiss_whenPresentedCheckoutDismisses_invokesOnDismissCallback() async throws {
+        let dismissCallbackExpectation = expectation(description: "Dismiss callback should be invoked")
+        viewController.onCheckoutDismiss = { dismissCallbackExpectation.fulfill() }
+        viewController.mockTopViewController = UIViewController()
+
+        let checkoutURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
+        try await viewController.present(url: checkoutURL, client: nil)
+
+        let checkoutViewController = try XCTUnwrap(viewController.checkoutViewController)
+        let webViewController = try XCTUnwrap(
+            checkoutViewController.viewControllers.first as? CheckoutWebViewController
+        )
+        webViewController.close()
+
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
+    func test_checkoutDidDismiss_fromDetachedTask_invokesCallbackOnMainActor() async throws {
+        let dismissCallbackExpectation = expectation(description: "Dismiss callback should run on the main actor")
+        viewController.onCheckoutDismiss = {
+            MainActor.preconditionIsolated()
+            dismissCallbackExpectation.fulfill()
+        }
+        let controller = try XCTUnwrap(viewController)
+
+        await Task.detached {
+            await controller.checkoutDidDismiss()
+        }.value
 
         await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
     }
