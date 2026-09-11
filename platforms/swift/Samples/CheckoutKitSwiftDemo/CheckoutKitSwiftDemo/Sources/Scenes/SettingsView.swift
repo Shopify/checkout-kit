@@ -2,6 +2,7 @@ import Combine
 import PassKit
 import ShopifyCheckoutKit
 import SwiftUI
+import WebKit
 
 enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
@@ -48,6 +49,8 @@ struct SettingsView: View {
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
     @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
+    @State private var isResettingSession = false
+    @State private var showingSessionReset = false
 
     var body: some View {
         NavigationView {
@@ -88,6 +91,16 @@ struct SettingsView: View {
                         )
                     }
                 )
+
+                Section(
+                    header: Text("Session"),
+                    footer: Text("Clears your cart, signs out your customer account, and removes all WebView cookies.")
+                ) {
+                    Button(role: .destructive, action: resetSession) {
+                        Text(isResettingSession ? "Resetting session…" : "Reset session")
+                    }
+                    .disabled(isResettingSession)
+                }
 
                 Section(header: Text("Universal Links")) {
                     Toggle("Handle Checkout URLs", isOn: $config.universalLinks.checkout)
@@ -191,6 +204,27 @@ struct SettingsView: View {
         }
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
+        .alert("Session reset", isPresented: $showingSessionReset) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your cart, customer account session, and WebView cookies have been cleared.")
+        }
+    }
+
+    private func resetSession() {
+        guard !isResettingSession else { return }
+        isResettingSession = true
+
+        Task {
+            // Logout also clears the cart and invalidates any preloaded checkout.
+            await CustomerAccountManager.shared.logout()
+            await WKWebsiteDataStore.default().removeData(
+                ofTypes: [WKWebsiteDataTypeCookies],
+                modifiedSince: .distantPast
+            )
+            isResettingSession = false
+            showingSessionReset = true
+        }
     }
 
     private func currentVersion() -> String {
