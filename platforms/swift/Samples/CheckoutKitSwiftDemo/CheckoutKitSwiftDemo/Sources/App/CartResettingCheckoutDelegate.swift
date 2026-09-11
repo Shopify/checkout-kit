@@ -5,7 +5,7 @@ final class CartResettingCheckoutDelegate: CheckoutDelegate {
     private var completed = false
 
     func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
-        print("[CheckoutKit] Checkout completed: \(event.checkout.order?.id ?? "unknown")")
+        print("[CheckoutKitSwiftDemo] Checkout completed: \(event.checkout.order?.id ?? "unknown")")
         completed = true
     }
 
