@@ -121,8 +121,6 @@ struct CartView: View {
                     ShopifyCheckout(checkout: url)
                         .appearance(.app(.automatic))
                         .onStart { event in
-                            selectedAddressIDs = selectedAddressIDs(in: event.checkout)
-                            selectedDeliveryMethodIDs = selectedDeliveryMethodIDs(in: event.checkout)
                             print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
                         }
                         .onUpdate { event in
