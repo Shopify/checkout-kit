@@ -126,7 +126,7 @@ struct CartView: View {
                         }
                         .appearance(.app(.automatic))
                         .onDismiss {
-                            print("[CheckoutKitSwiftDemo] DISMISSED")
+                            print("[CheckoutKitSwiftDemo] dismissed")
                             showCheckoutSheet = false
 
                             if isCompleted {
