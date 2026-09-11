@@ -17,17 +17,17 @@ struct CheckoutProtocolTests {
             "ec.start",
             "ec.complete",
             "ec.error",
-            "ec.buyer.change",
             "ec.fulfillment.change",
             "ec.line_items.change",
             "ec.messages.change",
-            "ec.payment.change",
             "ec.totals.change",
             "ec.window.open_request"
         ])
     }
 
     @Test func supportedProtocolMethodsExcludeUncuratedCatalogMethods() {
+        #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ec.buyer.change"))
+        #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ec.payment.change"))
         #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ec.payment.credential_request"))
         #expect(!CheckoutProtocol.supportedProtocolMethods.contains("ep.cart.ready"))
     }

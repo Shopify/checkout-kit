@@ -21,11 +21,9 @@ struct CheckoutEventAdapter: CheckoutCommunicationProtocol {
         let state = CheckoutEventState(sink: sink)
         eventClient = EmbeddedCheckoutProtocol.Client()
             .on(CheckoutProtocol.start) { state.start($0) }
-            .on(CheckoutProtocol.buyerChange) { state.update($0) }
             .on(CheckoutProtocol.lineItemsChange) { state.update($0) }
             .on(CheckoutProtocol.messagesChange) { state.update($0) }
             .on(CheckoutProtocol.totalsChange) { state.update($0) }
-            .on(CheckoutProtocol.paymentChange) { state.update($0) }
             .on(CheckoutProtocol.fulfillmentChange) { state.update($0) }
             .on(CheckoutProtocol.complete) { state.complete($0) }
     }
