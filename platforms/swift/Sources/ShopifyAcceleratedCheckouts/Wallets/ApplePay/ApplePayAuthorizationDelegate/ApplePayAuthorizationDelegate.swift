@@ -188,21 +188,27 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         try? await controller.present(url: url)
     }
 
+    /// Completion is a routing state and does not necessarily mean the buyer dismissed checkout.
     private func onCompleted(previousState: ApplePayState) async throws {
         switch previousState {
         case .paymentAuthorizationFailed,
              .unexpectedError,
              .interrupt:
+            // These states leave Apple Pay and recover in Checkout Kit, so the experience remains open.
             try await transition(to: .presentingCheckoutKit(url: createCheckoutKitURL(for: previousState)))
 
         case let .cartSubmittedForCompletion(redirectURL):
+            // Continue to the thank-you page or checkout fallback, so the experience remains open.
             try await transition(to: .presentingCheckoutKit(url: redirectURL))
 
         case .appleSheetPresented:
+            // PassKit finishing before the state advances uniquely identifies native Apple Pay dismissal.
             controller.onCheckoutDismiss?()
             try await transition(to: .reset)
 
         default:
+            // Setup, error, and Checkout Kit lifecycle completion do not imply dismissal.
+            // Checkout Kit forwards actual dismissal through ApplePayViewController.checkoutDidDismiss().
             try await transition(to: .reset)
         }
     }
