@@ -1,0 +1,16 @@
+appId: ${E2E_APP_ID}
+name: Present and reopen Apple Pay
+tags:
+  - apple-pay
+  - smoke
+
+env:
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- runFlow: ../../flows/checkout/present-apple-pay.yaml
+- runFlow: ../../flows/checkout/close-apple-pay.yaml
+- runFlow: ../../flows/checkout/present-apple-pay.yaml
+- runFlow: ../../flows/checkout/close-apple-pay.yaml
+- assertVisible:
+    id: cart-checkout-ready
