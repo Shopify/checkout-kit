@@ -50,10 +50,14 @@ expected = expected_raw.nil? || expected_raw.to_s.strip.empty? ? nil : Integer(e
 
 result_paths = Dir.glob(File.join(options.fetch(:results_root), "**", "result.json"))
 if result_paths.empty?
-  warn "No E2E result files found under #{options.fetch(:results_root)}"
-  exit 1 if expected.nil?
-
-  warn "Publishing an incomplete report: expected #{expected} run(s), found 0"
+  if expected.nil?
+    warn "No E2E result files found under #{options.fetch(:results_root)}"
+    exit 1
+  elsif expected.zero?
+    puts "No E2E tests to run"
+  else
+    warn "Publishing an incomplete report: expected #{expected} run(s), found 0"
+  end
 end
 
 results = result_paths.sort.map { |path| JSON.parse(File.read(path)) }
@@ -83,3 +87,4 @@ reporter = E2EGitHubReporter.new(
 )
 reporter.publish!
 puts reporter.markdown_summary
+exit 1 unless reporter.successful?

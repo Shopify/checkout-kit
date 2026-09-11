@@ -42,21 +42,17 @@ bitrise validate -c e2e/bitrise.yml
 
 ## PR and manual runs
 
-The `e2e` pipeline defines a target-based pull request trigger in `e2e/bitrise.yml`. The trigger uses Bitrise `changed_files.regex` as a coarse source-tree gate for Checkout Kit platform, protocol, shared filter, package, and E2E paths. Target-based triggers are defined on each pipeline so one pull request can start both `e2e` and `ci-ios`; the legacy project-level `trigger_map` starts only its first match and must not be restored. Bitrise does not support the same named include/exclude filter objects as GitHub Actions, so `platforms` level filtering is enforced by `e2e/config/matrix.yml` and `e2e/scripts/e2e_matrix_to_browserstack_run_plan` after the pipeline starts (essentially fulfilling the same need that `dorny/paths-filter` holds in GitHub Actions).
+The `e2e` pipeline defines an unfiltered target-based pull request trigger in `e2e/bitrise.yml`. It starts on every non-draft pull request so the required `ci/bitrise/e2e/pr` status is always reported. Target-based triggers remain defined independently on `e2e` and `ci-ios`; the legacy project-level `trigger_map` starts only its first match and must not be restored.
 
-Shared changed-file filter groups live in `.ci/changed-file-filters.yml` and are consumed by both GitHub Actions and Bitrise E2E. Each application in `e2e/config/matrix.yml` declares `changed_files_filters` by shared group name. The run-plan producer fetches the PR file list from GitHub, applies those groups, emits only matching application rows into the BrowserStack run plan, and shares `E2E_BUILD_*` variables that gate downstream Bitrise build workflows with `run_if`.
+Selection happens inside the pipeline. Shared changed-file filter groups live in `.ci/changed-file-filters.yml` and are consumed by both GitHub Actions and Bitrise E2E. Each application in `e2e/config/matrix.yml` declares `changed_files_filters` by shared group name. The Linux `e2e-produce-browserstack-run-plan` workflow fetches the pull request file list, applies those groups, emits only matching application rows, and shares `E2E_BUILD_*` variables that gate downstream app-build workflows.
 
-Markdown and `docs/` changes are excluded by the `platforms` level filters at runtime during the `e2e-produce-browserstack-run-plan` workflow. A docs-only change under a coarse Bitrise trigger path can still start the lightweight `e2e-produce-browserstack-run-plan` workflow (~15 seconds runtime), but it will produce an empty run plan and skip app build, BrowserStack execution, and reporting workflows.
-
-For example, editing `platforms/react-native/README.md` matches the coarse `changed_files.regex` (its `platforms/react-native/` prefix), so the `e2e` pipeline triggers — but the runtime `platforms` level filter drops it as a Markdown-only change, so the run plan comes back empty and no build, BrowserStack execution, or reporting runs. This two-layer design is why the coarse regex stays deliberately broad: it only has to be a cheap first pass, and the runtime filter makes the precise per-application decision.
-
-The GitHub checks are kept non-blocking while the suite stabilizes; they become merge-blocking only once the "Checkout Kit E2E" check is marked required in branch protection.
+When no application matches, every app build and BrowserStack workflow is skipped. `e2e-report` still runs and posts a successful **No E2E tests to run** result, so an intentionally empty run plan is distinct from a pipeline that never reported. When tests are selected, any failed or missing result makes both the diagnostic `Checkout Kit E2E` Check Run and the required Bitrise pipeline status fail.
 
 A manually started pipeline has no pull request file list, so it selects every application in the E2E matrix. Choose the branch and `e2e` pipeline from the Bitrise **Start build** page to run the complete E2E suite against that branch. No push trigger is configured, so merging to `main` does not automatically start this pipeline.
 
 ## The `ci-ios` pipeline
 
-`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. It is separate from `e2e` rather than a set of extra workflows inside it, because Bitrise reports one status per pipeline: sharing one would tie a merge gate to the BrowserStack device flake that the E2E checks deliberately keep non-blocking.
+`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. It is separate from `e2e` rather than a set of extra workflows inside it so each required pipeline reports independently and applies its own changed-file selection.
 
 ### Its trigger carries no `changed_files`
 
@@ -213,11 +209,11 @@ Do not pass storefront tokens or customer data through BrowserStack Maestro envi
 
 ## GitHub reporting
 
-For pull request builds, the `e2e-report` workflow creates commit statuses, Check Runs, and sticky PR comments using the short-lived token generated by the Bitrise GitHub App. Manual branch builds have no pull request to update, so both E2E and iOS reporting workflows skip GitHub reporting without requiring a token.
+For pull request builds, Bitrise reports the required `ci/bitrise/e2e/pr` pipeline status, while `e2e-report` creates the diagnostic `Checkout Kit E2E` Check Run and sticky PR comment using the short-lived token generated by the Bitrise GitHub App. A failed diagnostic report exits nonzero after publishing, keeping the required pipeline status aligned with the reported E2E result. Manual branch builds have no pull request to update, so both E2E and iOS reporting workflows skip GitHub reporting without requiring a token.
 
 The Bitrise project has **Project settings > Repository > Extend GitHub App permissions to builds** enabled. Bitrise exposes the build-scoped GitHub App token as `GIT_HTTP_PASSWORD`. GitHub API scripts prefer an explicit `OVERRIDE_GITHUB_TOKEN` for local runs and otherwise use `GIT_HTTP_PASSWORD`; they intentionally ignore the shared `GITHUB_TOKEN` because it is not authenticated as the GitHub App required to create Check Runs.
 
-Every run maintains a single sticky PR comment (create-or-update via a marker). The comment always includes an "Install with Tophat" link per SDK target and the E2E results table; failing runs add direct BrowserStack evidence links. The install links and Quick Launch entries are driven by `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
+Every run maintains a single sticky PR comment (create-or-update via a marker). An empty run plan reports that no E2E tests were needed. Selected runs include an "Install with Tophat" link per produced SDK target and the E2E results table; failing runs add direct BrowserStack evidence links. The install links and Quick Launch entries are driven by `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
 
 ## Caching
 
