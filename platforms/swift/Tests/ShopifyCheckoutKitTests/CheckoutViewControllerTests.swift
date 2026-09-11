@@ -88,9 +88,9 @@ class CheckoutViewDelegateTests: XCTestCase {
         controller.checkoutDidUpdate(checkout)
         controller.checkoutDidComplete(checkout)
 
-        XCTAssertEqual(delegate.didStartCheckouts, [checkout])
-        XCTAssertEqual(delegate.didUpdateCheckouts, [checkout])
-        XCTAssertEqual(delegate.didCompleteCheckouts, [checkout])
+        XCTAssertEqual(delegate.startEvents.map(\.checkout), [checkout])
+        XCTAssertEqual(delegate.updateEvents.map(\.checkout), [checkout])
+        XCTAssertEqual(delegate.completeEvents.map(\.checkout), [checkout])
     }
 
     func testPresentationControllerDidDismissInvokesDismissDelegate() throws {
