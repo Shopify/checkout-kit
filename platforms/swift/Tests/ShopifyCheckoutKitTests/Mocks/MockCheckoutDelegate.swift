@@ -10,15 +10,38 @@ struct MockBridgeClient: CheckoutCommunicationProtocol {
     }
 }
 
+@MainActor
 final class MockCheckoutDelegate: CheckoutDelegate {
+    private(set) var startEvents: [CheckoutStartEvent] = []
+    private(set) var updateEvents: [CheckoutUpdateEvent] = []
+    private(set) var completeEvents: [CheckoutCompleteEvent] = []
+    private(set) var clickedLinks: [CheckoutLink] = []
+    var linkAction: CheckoutLinkAction = .open
     private(set) var didDismissCount = 0
-    private(set) var didFailErrors: [CheckoutError] = []
+    private(set) var failureEvents: [CheckoutFailureEvent] = []
+
+    func checkoutDidStart(_ event: CheckoutStartEvent) {
+        startEvents.append(event)
+    }
+
+    func checkoutDidUpdate(_ event: CheckoutUpdateEvent) {
+        updateEvents.append(event)
+    }
+
+    func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        completeEvents.append(event)
+    }
+
+    func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
+        clickedLinks.append(link)
+        return linkAction
+    }
 
     func checkoutDidDismiss() {
         didDismissCount += 1
     }
 
-    func checkoutDidFail(error: CheckoutError) {
-        didFailErrors.append(error)
+    func checkoutDidFail(_ event: CheckoutFailureEvent) {
+        failureEvents.append(event)
     }
 }

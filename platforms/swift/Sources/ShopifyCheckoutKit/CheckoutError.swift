@@ -36,7 +36,7 @@ public enum CheckoutErrorCode: String, Codable, CaseIterable, Sendable {
     case unknown
 }
 
-/// A terminal checkout presentation failure delivered through ``CheckoutDelegate/checkoutDidFail(error:)``
+/// A terminal checkout presentation failure delivered through ``CheckoutDelegate/checkoutDidFail(_:)``
 /// or ``ShopifyCheckout/onFail(_:)``.
 ///
 /// Use ``code`` for application behavior. Use ``message`` and ``underlyingError`` only for debugging

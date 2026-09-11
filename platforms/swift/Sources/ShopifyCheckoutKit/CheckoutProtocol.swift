@@ -21,7 +21,7 @@ public enum CheckoutProtocol {
     /// Delivers the complete payload of a valid terminal `ec.error` notification.
     ///
     /// This callback runs before Checkout Kit maps the terminal event to
-    /// ``CheckoutDelegate/checkoutDidFail(error:)``. It is for advanced protocol diagnostics;
+    /// ``CheckoutDelegate/checkoutDidFail(_:)``. It is for advanced protocol diagnostics;
     /// use ``CheckoutError/code`` for normal lifecycle recovery.
     public static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }
     public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange.map { $0.params.checkout }

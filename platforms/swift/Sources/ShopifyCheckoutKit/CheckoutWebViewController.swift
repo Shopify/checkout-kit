@@ -7,10 +7,13 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     /// Keep this value in sync with the checkout close selector used by E2E flows.
     private static let closeButtonAccessibilityIdentifier = "shopify_checkout_kit_close_button"
 
+    var onStart: ((CheckoutStartEvent) -> Void)?
+    var onUpdate: ((CheckoutUpdateEvent) -> Void)?
+    var onComplete: ((CheckoutCompleteEvent) -> Void)?
+    var onLinkClick: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismiss: (() -> Void)?
-    var onFail: ((CheckoutError) -> Void)?
+    var onFail: ((CheckoutFailureEvent) -> Void)?
     weak var delegate: (any CheckoutDelegate)?
-    var client: (any CheckoutCommunicationProtocol)?
 
     var checkoutView: CheckoutWebView?
 
@@ -65,16 +68,21 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     public init(checkoutURL url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
         self.delegate = delegate
-        self.client = client
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
         checkoutView.isPresented = true
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
-        checkoutView.client = client
         self.checkoutView = checkoutView
 
         super.init(nibName: nil, bundle: nil)
+
+        checkoutView.linkActionProvider = { [weak self] link in
+            guard let self else { return .open }
+            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .open
+        }
+
+        checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
         title = ShopifyCheckoutKit.configuration.title
 
@@ -184,12 +192,33 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
             checkoutView.viewDelegate = nil
             checkoutView.client = nil
+            checkoutView.linkActionProvider = nil
             checkoutView.removeFromSuperview()
         } else {
             checkoutView?.cleanUpForDismissal()
         }
 
         checkoutView = nil
+    }
+}
+
+extension CheckoutWebViewController: CheckoutEventSink {
+    func checkoutDidStart(_ checkout: Checkout) {
+        let event = CheckoutStartEvent(checkout: checkout)
+        onStart?(event)
+        delegate?.checkoutDidStart(event)
+    }
+
+    func checkoutDidUpdate(_ checkout: Checkout) {
+        let event = CheckoutUpdateEvent(checkout: checkout)
+        onUpdate?(event)
+        delegate?.checkoutDidUpdate(event)
+    }
+
+    func checkoutDidComplete(_ checkout: Checkout) {
+        let event = CheckoutCompleteEvent(checkout: checkout)
+        onComplete?(event)
+        delegate?.checkoutDidComplete(event)
     }
 }
 
@@ -206,8 +235,9 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
     }
 
     func checkoutViewDidFailWithError(error: CheckoutError) {
-        onFail?(error)
-        delegate?.checkoutDidFail(error: error)
+        let event = CheckoutFailureEvent(error: error)
+        onFail?(event)
+        delegate?.checkoutDidFail(event)
         dismiss(animated: true)
     }
 }

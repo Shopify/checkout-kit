@@ -46,7 +46,7 @@ class ShopifyCheckoutTests: XCTestCase {
 
     func testOnFail() {
         var actionCalled = false
-        var actionData: CheckoutError?
+        var actionData: CheckoutFailureEvent?
         let error = CheckoutError(code: .httpError, message: "error", httpStatusCode: 500)
 
         let sheet = shopifyCheckout.onFail { failure in
@@ -54,15 +54,33 @@ class ShopifyCheckoutTests: XCTestCase {
             actionData = failure
         }
 
-        sheet.onFailAction?(error)
+        sheet.onFailAction?(CheckoutFailureEvent(error: error))
         XCTAssertTrue(actionCalled)
-        XCTAssertNotNil(actionData)
+        XCTAssertEqual(actionData?.error.code, error.code)
     }
 
-    func testConnect() {
-        let client = MockBridgeClient()
-        let sheet = shopifyCheckout.connect(client)
-        XCTAssertNotNil(sheet.client)
+    func testLifecycleModifiers() {
+        let sheet = shopifyCheckout
+            .onStart { _ in }
+            .onUpdate { _ in }
+            .onComplete { _ in }
+
+        XCTAssertNotNil(sheet.onStartAction)
+        XCTAssertNotNil(sheet.onUpdateAction)
+        XCTAssertNotNil(sheet.onCompleteAction)
+    }
+
+    func testOnLinkClick() throws {
+        let expectedLink = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.com/policy")))
+        var receivedLink: CheckoutLink?
+
+        let sheet = shopifyCheckout.onLinkClick { link in
+            receivedLink = link
+            return .handled
+        }
+
+        XCTAssertEqual(sheet.onLinkClickAction?(expectedLink), .handled)
+        XCTAssertEqual(receivedLink, expectedLink)
     }
 }
 
