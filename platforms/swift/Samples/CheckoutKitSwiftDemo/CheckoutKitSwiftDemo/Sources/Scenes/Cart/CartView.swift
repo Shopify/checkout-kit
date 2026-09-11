@@ -118,6 +118,12 @@ struct CartView: View {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
                         .appearance(.app(.automatic))
+                        .onStart { event in
+                            print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
+                        }
+                        .onUpdate { event in
+                            print("[CheckoutKitSwiftDemo] Updated: \(event.checkout.id)")
+                        }
                         .onComplete { event in
                             // Set the flag here; defer the cart reset until the user dismisses
                             // the sheet (in .onDismiss). Resetting now would nil the cart and
@@ -137,9 +143,6 @@ struct CartView: View {
                         .onFail { event in
                             showCheckoutSheet = false
                             print("[CheckoutKitSwiftDemo] FAIL - Checkout failed: \(event.error)")
-                        }
-                        .onStart { event in
-                            print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
                         }
                         .edgesIgnoringSafeArea(.all)
                 }
