@@ -5,6 +5,12 @@ import { version } from "../package.json";
 
 import "./checkout-web-component";
 import { CK_VERSION } from "./checkout";
+import {
+  createTestTelemetry,
+  installTestTelemetryFactory,
+  mockTelemetry,
+} from "./telemetry.test-helpers";
+import { overrideTelemetryFactoryForTesting } from "./telemetry";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 
@@ -22,6 +28,7 @@ function expectWindowOpenArgs(spy: {
 describe("<shopify-checkout>", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    installTestTelemetryFactory();
     // Disconnect elements so their global message listeners do not leak
     // into tests in this file or another concurrently running suite.
     document.body.innerHTML = "";
@@ -120,6 +127,32 @@ describe("<shopify-checkout>", () => {
         expect(checkout.hasAttribute("log-level")).toBe(true);
         checkout.logLevel = undefined;
         expect(checkout.hasAttribute("log-level")).toBe(false);
+      });
+    });
+
+    describe("telemetryEnabled", () => {
+      it("defaults to true", () => {
+        const checkout = renderCheckout();
+
+        expect(checkout.telemetryEnabled).toBe(true);
+      });
+
+      it("reflects false between the property and attribute", () => {
+        const checkout = renderCheckout();
+
+        checkout.telemetryEnabled = false;
+
+        expect(checkout.getAttribute("telemetry-enabled")).toBe("false");
+        expect(checkout.telemetryEnabled).toBe(false);
+      });
+
+      it("resets to the enabled default when assigned undefined", () => {
+        const checkout = renderCheckout({ "telemetry-enabled": "false" });
+
+        checkout.telemetryEnabled = undefined;
+
+        expect(checkout.hasAttribute("telemetry-enabled")).toBe(false);
+        expect(checkout.telemetryEnabled).toBe(true);
       });
     });
   });
@@ -330,6 +363,55 @@ describe("<shopify-checkout>", () => {
   });
 
   describe("lifecycle", () => {
+    it("does not start telemetry when disabled before connection", () => {
+      const startSpy = vi.spyOn(mockTelemetry(), "start");
+
+      renderCheckout({ "telemetry-enabled": "false" });
+
+      expect(startSpy).not.toHaveBeenCalled();
+    });
+
+    it("uses a separate telemetry client for each connected element", () => {
+      const clients = new Set();
+      overrideTelemetryFactoryForTesting(() => {
+        const client = createTestTelemetry();
+        clients.add(client);
+        return client;
+      });
+
+      renderCheckout();
+      renderCheckout();
+
+      expect(clients.size).toBe(2);
+    });
+
+    it("discards buffered telemetry when disabled at runtime", () => {
+      const shutdownSpy = vi.spyOn(mockTelemetry(), "shutdown").mockResolvedValue(true);
+      const checkout = renderCheckout();
+
+      checkout.telemetryEnabled = false;
+
+      expect(shutdownSpy).toHaveBeenCalledWith({ discardPending: true });
+    });
+
+    it("flushes and shuts down telemetry when disconnected", () => {
+      const shutdownSpy = vi.spyOn(mockTelemetry(), "shutdown").mockResolvedValue(true);
+      const checkout = renderCheckout();
+
+      checkout.remove();
+
+      expect(shutdownSpy).toHaveBeenCalledWith({ keepalive: true });
+    });
+
+    it("flushes the existing telemetry client on pagehide", () => {
+      const flushSpy = vi.spyOn(mockTelemetry(), "flush").mockResolvedValue(true);
+      renderCheckout();
+
+      window.dispatchEvent(new Event("pagehide"));
+
+      expect(flushSpy).toHaveBeenCalledWith({ keepalive: true });
+    });
+
     it("replaces the protocol message listener on reconnect and aborts it on disconnect", () => {
       const addEventListener = vi.spyOn(window, "addEventListener");
       const checkout = renderCheckout();

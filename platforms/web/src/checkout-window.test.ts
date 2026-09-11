@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
 import "./checkout-web-component";
 import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT } from "./checkout";
 import type { ShopifyCheckout } from "./checkout";
+import { mockTelemetry } from "./telemetry.test-helpers";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 
@@ -22,11 +23,15 @@ function expectWindowOpenArgs(spy: {
 }
 
 describe("<shopify-checkout>", () => {
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
+  });
+
   afterEach(() => {
-    vi.restoreAllMocks();
     // Disconnect elements so their global message listeners do not leak
     // into tests in this file or another concurrently running suite.
     document.body.innerHTML = "";
+    vi.restoreAllMocks();
   });
 
   describe("target", () => {
@@ -230,12 +235,20 @@ describe("<shopify-checkout>", () => {
 
         it("handles popup blocked scenario gracefully", () => {
           POPUP_TARGETS.forEach((target) => {
+            const telemetrySpy = vi.spyOn(mockTelemetry(), "recordError");
             const checkout = renderCheckout({ target });
             const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null);
 
             checkout.open();
 
             expect(windowOpenSpy).toHaveBeenCalled();
+            expect(telemetrySpy).toHaveBeenCalledWith({
+              category: "navigation",
+              stage: "presentation",
+              code: "unknown",
+              retryable: false,
+              isRetry: false,
+            });
             // Should not throw error when popup is blocked
           });
         });
@@ -269,6 +282,7 @@ describe("<shopify-checkout>", () => {
             } as CSSStyleDeclaration);
 
             const closeEventSpy = vi.fn();
+            const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
             checkout.addEventListener("ec.close", closeEventSpy);
 
             checkout.open();
@@ -278,6 +292,7 @@ describe("<shopify-checkout>", () => {
 
             expect(mockPopup.close).toHaveBeenCalled();
             expect(closeEventSpy).toHaveBeenCalled();
+            expect(durationSpy).not.toHaveBeenCalled();
           });
         });
       });
