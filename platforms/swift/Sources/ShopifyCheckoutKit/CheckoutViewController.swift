@@ -7,14 +7,16 @@ import UIKit
 @MainActor
 public class CheckoutViewController: UINavigationController {
     public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
+        let decoratedURL = CheckoutURLDecorator.decorate(url)
+        let rootViewController = CheckoutWebViewController(checkoutURL: decoratedURL, delegate: delegate, client: client, entryPoint: nil)
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
     }
 
     package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint)
+        let decoratedURL = CheckoutURLDecorator.decorate(url)
+        let rootViewController = CheckoutWebViewController(checkoutURL: decoratedURL, delegate: delegate, client: client, entryPoint: entryPoint)
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -48,12 +50,8 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         checkoutURL = url
     }
 
-    var decoratedCheckoutURL: URL {
-        CheckoutURLDecorator.decorate(checkoutURL)
-    }
-
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
+        let viewController = CheckoutViewController(checkout: checkoutURL, client: client)
         configureWebViewController(viewController)
         return viewController
     }
