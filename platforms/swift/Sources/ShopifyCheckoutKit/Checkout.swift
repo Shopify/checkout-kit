@@ -3,127 +3,164 @@
 #endif
 import Foundation
 
-/// A protocol-independent snapshot of the checkout visible to the buyer.
-///
-/// Checkout Kit derives this value from its internal communication protocol. Raw protocol
-/// messages, links, and transport metadata are intentionally not exposed.
-public struct Checkout: Equatable, Sendable {
-    public let id: String
-    public let status: CheckoutStatus
+/// A checkout snapshot that excludes protocol metadata.
+public struct Checkout: Codable, Sendable {
+    public var additionalProperties: [String: JSONAny]
+    public let attribution: [String: String]?
+    public let buyer: Buyer?
+    public let context: Context?
+    public let continueURL: String?
     public let currency: String
-    public let buyer: CheckoutBuyer?
-    public let lineItems: [CheckoutLineItem]
-    public let totals: [CheckoutTotal]
+    public let discounts: CheckoutDiscounts?
+    public let expiresAt: Date?
     public let fulfillment: CheckoutFulfillment?
-    public let discounts: [CheckoutDiscount]
-    public let paymentInstruments: [CheckoutPaymentInstrument]
-    public let order: CheckoutOrder?
+    public let id: String
+    public let lineItems: [LineItem]
+    public let links: [Link]
+    public let messages: [Message]?
+    public let order: OrderConfirmation?
+    public let payment: Payment?
+    public let signals: [String: JSONAny]?
+    public let status: CheckoutStatus
+    public let totals: [CheckoutTotal]
+
+    enum CodingKeys: String, CodingKey {
+        case attribution, buyer, context
+        case continueURL = "continue_url"
+        case currency, discounts
+        case expiresAt = "expires_at"
+        case fulfillment, id
+        case lineItems = "line_items"
+        case links, messages, order, payment, signals, status, totals
+    }
+
+    private static let excludedAdditionalPropertyKeys: Set<String> = [
+        "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at",
+        "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status",
+        "totals", "ucp"
+    ]
 
     public init(
         id: String,
         status: CheckoutStatus,
         currency: String,
-        buyer: CheckoutBuyer? = nil,
-        lineItems: [CheckoutLineItem],
-        totals: [CheckoutTotal],
+        attribution: [String: String]? = nil,
+        buyer: Buyer? = nil,
+        context: Context? = nil,
+        continueURL: String? = nil,
+        discounts: CheckoutDiscounts? = nil,
+        expiresAt: Date? = nil,
         fulfillment: CheckoutFulfillment? = nil,
-        discounts: [CheckoutDiscount] = [],
-        paymentInstruments: [CheckoutPaymentInstrument] = [],
-        order: CheckoutOrder? = nil
+        lineItems: [LineItem],
+        links: [Link] = [],
+        messages: [Message]? = nil,
+        order: OrderConfirmation? = nil,
+        payment: Payment? = nil,
+        signals: [String: JSONAny]? = nil,
+        totals: [CheckoutTotal],
+        additionalProperties: [String: JSONAny] = [:]
     ) {
-        self.id = id
-        self.status = status
-        self.currency = currency
+        self.additionalProperties = additionalProperties
+        self.attribution = attribution
         self.buyer = buyer
-        self.lineItems = lineItems
-        self.totals = totals
-        self.fulfillment = fulfillment
+        self.context = context
+        self.continueURL = continueURL
+        self.currency = currency
         self.discounts = discounts
-        self.paymentInstruments = paymentInstruments
+        self.expiresAt = expiresAt
+        self.fulfillment = fulfillment
+        self.id = id
+        self.lineItems = lineItems
+        self.links = links
+        self.messages = messages
         self.order = order
+        self.payment = payment
+        self.signals = signals
+        self.status = status
+        self.totals = totals
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
+        buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
+        context = try container.decodeIfPresent(Context.self, forKey: .context)
+        continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+        currency = try container.decode(String.self, forKey: .currency)
+        discounts = try container.decodeIfPresent(CheckoutDiscounts.self, forKey: .discounts)
+        expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        fulfillment = try container.decodeIfPresent(CheckoutFulfillment.self, forKey: .fulfillment)
+        id = try container.decode(String.self, forKey: .id)
+        lineItems = try container.decode([LineItem].self, forKey: .lineItems)
+        links = try container.decode([Link].self, forKey: .links)
+        messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+        order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
+        payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+        signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
+        status = try container.decode(CheckoutStatus.self, forKey: .status)
+        totals = try container.decode([CheckoutTotal].self, forKey: .totals)
+
+        let additionalContainer = try decoder.container(keyedBy: CheckoutAdditionalPropertyKey.self)
+        additionalProperties = try additionalContainer.allKeys.reduce(into: [:]) { properties, key in
+            guard !Self.excludedAdditionalPropertyKeys.contains(key.stringValue) else { return }
+            properties[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(attribution, forKey: .attribution)
+        try container.encodeIfPresent(buyer, forKey: .buyer)
+        try container.encodeIfPresent(context, forKey: .context)
+        try container.encodeIfPresent(continueURL, forKey: .continueURL)
+        try container.encode(currency, forKey: .currency)
+        try container.encodeIfPresent(discounts, forKey: .discounts)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+        try container.encode(id, forKey: .id)
+        try container.encode(lineItems, forKey: .lineItems)
+        try container.encode(links, forKey: .links)
+        try container.encodeIfPresent(messages, forKey: .messages)
+        try container.encodeIfPresent(order, forKey: .order)
+        try container.encodeIfPresent(payment, forKey: .payment)
+        try container.encodeIfPresent(signals, forKey: .signals)
+        try container.encode(status, forKey: .status)
+        try container.encode(totals, forKey: .totals)
+
+        var additionalContainer = encoder.container(keyedBy: CheckoutAdditionalPropertyKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.excludedAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(
+                additionalProperties[key],
+                forKey: CheckoutAdditionalPropertyKey(stringValue: key)!
+            )
+        }
     }
 }
 
-public enum CheckoutStatus: String, Equatable, Sendable {
-    case incomplete
-    case readyForComplete = "ready_for_complete"
-    case completeInProgress = "complete_in_progress"
-    case completed
-    case canceled
-    case requiresEscalation = "requires_escalation"
+private struct CheckoutAdditionalPropertyKey: CodingKey {
+    let stringValue: String
+    let intValue: Int? = nil
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+    }
+
+    init?(intValue _: Int) {
+        return nil
+    }
 }
 
-public struct CheckoutBuyer: Equatable, Sendable {
-    public let email: String?
-    public let firstName: String?
-    public let lastName: String?
-    public let phoneNumber: String?
-}
+extension Checkout: Equatable {
+    public static func == (lhs: Checkout, rhs: Checkout) -> Bool {
+        lhs.comparisonData == rhs.comparisonData
+    }
 
-public struct CheckoutLineItem: Identifiable, Equatable, Sendable {
-    public let id: String
-    public let merchandiseID: String
-    public let title: String
-    public let quantity: Int
-    public let unitPrice: Int
-    public let totals: [CheckoutLineItemTotal]
-}
-
-public struct CheckoutLineItemTotal: Equatable, Sendable {
-    public let type: String
-    public let amount: Int
-    public let displayText: String?
-}
-
-public struct CheckoutTotal: Equatable, Sendable {
-    public let type: String
-    public let amount: Int
-    public let displayText: String?
-}
-
-public struct CheckoutFulfillment: Equatable, Sendable {
-    public let availableMethods: [CheckoutFulfillmentAvailability]
-    public let methods: [CheckoutFulfillmentMethod]
-}
-
-public struct CheckoutFulfillmentAvailability: Equatable, Sendable {
-    public let type: CheckoutFulfillmentMethodType
-    public let lineItemIDs: [String]
-    public let description: String?
-    public let fulfillableOn: String?
-}
-
-public struct CheckoutFulfillmentMethod: Identifiable, Equatable, Sendable {
-    public let id: String
-    public let type: CheckoutFulfillmentMethodType
-    public let lineItemIDs: [String]
-    public let selectedDestinationID: String?
-}
-
-public enum CheckoutFulfillmentMethodType: String, Equatable, Sendable {
-    case shipping
-    case pickup
-}
-
-public struct CheckoutDiscount: Equatable, Sendable {
-    public let title: String
-    public let code: String?
-    public let amount: Int
-    public let automatic: Bool
-    public let provisional: Bool
-}
-
-public struct CheckoutPaymentInstrument: Identifiable, Equatable, Sendable {
-    public let id: String
-    public let type: String
-    public let handlerID: String
-    public let selected: Bool
-}
-
-public struct CheckoutOrder: Identifiable, Equatable, Sendable {
-    public let id: String
-    public let label: String?
-    public let permalink: URL?
+    private var comparisonData: Data? {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .sortedKeys
+        return try? encoder.encode(self)
+    }
 }
 
 extension Checkout {
@@ -134,225 +171,11 @@ extension Checkout {
         decoder.dateDecodingStrategy = .iso8601
         guard
             let data = try? encoder.encode(protocolCheckout),
-            let checkout = try? decoder.decode(ProtocolCheckoutProjection.self, from: data)
+            let checkout = try? decoder.decode(Checkout.self, from: data)
         else {
             return nil
         }
 
-        let items = checkout.lineItems.map { lineItem in
-            CheckoutLineItem(
-                id: lineItem.id,
-                merchandiseID: lineItem.item.id,
-                title: lineItem.item.title,
-                quantity: lineItem.quantity,
-                unitPrice: lineItem.item.price,
-                totals: lineItem.totals.map {
-                    CheckoutLineItemTotal(type: $0.type, amount: $0.amount, displayText: $0.displayText)
-                }
-            )
-        }
-
-        id = checkout.id
-        status = CheckoutStatus(rawValue: checkout.status) ?? .incomplete
-        currency = checkout.currency
-        buyer = checkout.buyer.map {
-            CheckoutBuyer(
-                email: $0.email,
-                firstName: $0.firstName,
-                lastName: $0.lastName,
-                phoneNumber: $0.phoneNumber
-            )
-        }
-        lineItems = items
-        totals = checkout.totals.map {
-            CheckoutTotal(type: $0.type, amount: $0.amount, displayText: $0.displayText)
-        }
-        fulfillment = checkout.fulfillment.map { fulfillment in
-            CheckoutFulfillment(
-                availableMethods: (fulfillment.availableMethods ?? []).map { availability in
-                    CheckoutFulfillmentAvailability(
-                        type: CheckoutFulfillmentMethodType(rawValue: availability.type) ?? .shipping,
-                        lineItemIDs: availability.lineItemIDs,
-                        description: availability.description,
-                        fulfillableOn: availability.fulfillableOn
-                    )
-                },
-                methods: (fulfillment.methods ?? []).map { method in
-                    CheckoutFulfillmentMethod(
-                        id: method.id,
-                        type: CheckoutFulfillmentMethodType(rawValue: method.type) ?? .shipping,
-                        lineItemIDs: method.lineItemIDs,
-                        selectedDestinationID: method.selectedDestinationID
-                    )
-                }
-            )
-        }
-        discounts = (checkout.discounts?.applied ?? []).map {
-            CheckoutDiscount(
-                title: $0.title,
-                code: $0.code,
-                amount: $0.amount,
-                automatic: $0.automatic ?? false,
-                provisional: $0.provisional ?? false
-            )
-        }
-        paymentInstruments = (checkout.payment?.instruments ?? []).map {
-            CheckoutPaymentInstrument(
-                id: $0.id,
-                type: $0.type,
-                handlerID: $0.handlerID,
-                selected: $0.selected ?? false
-            )
-        }
-        order = checkout.order.map {
-            CheckoutOrder(id: $0.id, label: $0.label, permalink: URL(string: $0.permalinkURL))
-        }
-    }
-}
-
-private struct ProtocolCheckoutProjection: Decodable {
-    let buyer: Buyer?
-    let currency: String
-    let discounts: Discounts?
-    let fulfillment: Fulfillment?
-    let id: String
-    let lineItems: [LineItem]
-    let order: Order?
-    let payment: Payment?
-    let status: String
-    let totals: [Total]
-
-    enum CodingKeys: String, CodingKey {
-        case buyer, currency, discounts, fulfillment, id
-        case lineItems = "line_items"
-        case order, payment, status, totals
-    }
-
-    struct Buyer: Decodable {
-        let email: String?
-        let firstName: String?
-        let lastName: String?
-        let phoneNumber: String?
-
-        enum CodingKeys: String, CodingKey {
-            case email
-            case firstName = "first_name"
-            case lastName = "last_name"
-            case phoneNumber = "phone_number"
-        }
-    }
-
-    struct LineItem: Decodable {
-        let id: String
-        let item: Item
-        let quantity: Int
-        let totals: [LineItemTotal]
-    }
-
-    struct Item: Decodable {
-        let id: String
-        let price: Int
-        let title: String
-    }
-
-    struct LineItemTotal: Decodable {
-        let amount: Int
-        let displayText: String?
-        let type: String
-
-        enum CodingKeys: String, CodingKey {
-            case amount
-            case displayText = "display_text"
-            case type
-        }
-    }
-
-    struct Total: Decodable {
-        let amount: Int
-        let displayText: String?
-        let type: String
-
-        enum CodingKeys: String, CodingKey {
-            case amount
-            case displayText = "display_text"
-            case type
-        }
-    }
-
-    struct Fulfillment: Decodable {
-        let availableMethods: [AvailableMethod]?
-        let methods: [Method]?
-
-        enum CodingKeys: String, CodingKey {
-            case availableMethods = "available_methods"
-            case methods
-        }
-    }
-
-    struct AvailableMethod: Decodable {
-        let description: String?
-        let fulfillableOn: String?
-        let lineItemIDs: [String]
-        let type: String
-
-        enum CodingKeys: String, CodingKey {
-            case description
-            case fulfillableOn = "fulfillable_on"
-            case lineItemIDs = "line_item_ids"
-            case type
-        }
-    }
-
-    struct Method: Decodable {
-        let id: String
-        let lineItemIDs: [String]
-        let selectedDestinationID: String?
-        let type: String
-
-        enum CodingKeys: String, CodingKey {
-            case id
-            case lineItemIDs = "line_item_ids"
-            case selectedDestinationID = "selected_destination_id"
-            case type
-        }
-    }
-
-    struct Discounts: Decodable {
-        let applied: [Discount]?
-    }
-
-    struct Discount: Decodable {
-        let amount: Int
-        let automatic: Bool?
-        let code: String?
-        let provisional: Bool?
-        let title: String
-    }
-
-    struct Payment: Decodable {
-        let instruments: [Instrument]?
-    }
-
-    struct Instrument: Decodable {
-        let handlerID: String
-        let id: String
-        let selected: Bool?
-        let type: String
-
-        enum CodingKeys: String, CodingKey {
-            case handlerID = "handler_id"
-            case id, selected, type
-        }
-    }
-
-    struct Order: Decodable {
-        let id: String
-        let label: String?
-        let permalinkURL: String
-
-        enum CodingKeys: String, CodingKey {
-            case id, label
-            case permalinkURL = "permalink_url"
-        }
+        self = checkout
     }
 }
