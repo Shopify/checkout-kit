@@ -9,7 +9,7 @@ import Testing
 struct CheckoutURLDecoratorTests {
     @Test func appendsAppAppearanceAndBranding() throws {
         var configuration = Configuration()
-        configuration.appearance = .app(.dark)
+        configuration.appearance = .app(.dark())
 
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?key=cart_token"))
         let items = queryItems(CheckoutURLDecorator.decorate(url, configuration: configuration))
@@ -21,7 +21,7 @@ struct CheckoutURLDecoratorTests {
 
     @Test func replacesCallerSuppliedVersionAndBrandingAndIsIdempotent() throws {
         var configuration = Configuration()
-        configuration.appearance = .app(.light)
+        configuration.appearance = .app(.light())
 
         let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=caller-supplied&ck_branding=app&ec_color_scheme=dark"))
         let once = CheckoutURLDecorator.decorate(url, configuration: configuration)
@@ -34,14 +34,19 @@ struct CheckoutURLDecoratorTests {
     }
 
     @Test func derivesCheckoutParamsForEachAppearance() throws {
-        try assertAppearanceDecoratesWith(.app(.light), colorScheme: "light", branding: "app")
-        try assertAppearanceDecoratesWith(.app(.dark), colorScheme: "dark", branding: "app")
-        try assertAppearanceDecoratesWith(.app(.automatic), colorScheme: "automatic", branding: "app")
-        try assertAppearanceDecoratesWith(.storefront, colorScheme: "light", branding: "shop")
+        try assertAppearanceDecoratesWith(.app(.light()), colorScheme: "light", branding: "app")
+        try assertAppearanceDecoratesWith(.app(.dark()), colorScheme: "dark", branding: "app")
+        try assertAppearanceDecoratesWith(.app(.automatic()), colorScheme: "automatic", branding: "app")
+        try assertAppearanceDecoratesWith(.storefront(), colorScheme: "light", branding: "shop")
+    }
+
+    @Test func nativeColorOverridesDoNotChangeCheckoutBranding() throws {
+        try assertAppearanceDecoratesWith(.app(.automatic().customize { $0.webViewBackground = .red }), colorScheme: "automatic", branding: "app")
+        try assertAppearanceDecoratesWith(.storefront(colors: Colors(webViewBackground: .red)), colorScheme: "light", branding: "shop")
     }
 
     private func assertAppearanceDecoratesWith(
-        _ appearance: Configuration.Appearance,
+        _ appearance: CheckoutAppearance,
         colorScheme expectedColorScheme: String,
         branding expectedBranding: String
     ) throws {

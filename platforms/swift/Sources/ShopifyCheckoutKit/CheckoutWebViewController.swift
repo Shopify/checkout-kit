@@ -18,7 +18,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var checkoutView: CheckoutWebView?
 
     lazy var progressBar: ProgressBarView = {
-        let progressBar = ProgressBarView(frame: .zero, tintColor: configuration.tintColor)
+        let progressBar = ProgressBarView(frame: .zero, tintColor: colorScheme.color { $0.progressIndicator })
         progressBar.translatesAutoresizingMaskIntoConstraints = false
         return progressBar
     }()
@@ -27,40 +27,37 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     private let checkoutURL: URL
     private let configuration: Configuration
+    private let colorScheme: ColorScheme
 
-    private lazy var closeBarButtonItem: UIBarButtonItem = {
-        if let closeButtonTintColor = configuration.closeButtonTintColor {
-            var item: UIBarButtonItem
+    private var closeBarButtonItem: UIBarButtonItem {
+        let colors = colorScheme.colors(isDark: traitCollection.userInterfaceStyle == .dark)
+        let item: UIBarButtonItem
 
+        if colors.closeIcon != nil || colors.closeIconTint != nil {
+            let defaultSymbolName: String
             if #available(iOS 26.0, *) {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
+                defaultSymbolName = "xmark"
             } else {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark.circle.fill"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
+                defaultSymbolName = "xmark.circle.fill"
             }
-
-            item.tintColor = closeButtonTintColor
-            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
-            return item
+            item = UIBarButtonItem(
+                image: colors.closeIcon ?? UIImage(systemName: defaultSymbolName),
+                style: .plain,
+                target: self,
+                action: #selector(close)
+            )
+            item.tintColor = colors.closeIconTint
+        } else {
+            item = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self,
+                action: #selector(close)
+            )
         }
 
-        let item = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(close)
-        )
         item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
         return item
-    }()
+    }
 
     var progressObserver: NSKeyValueObservation?
 
@@ -69,12 +66,12 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     public init(checkoutURL url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
         self.configuration = configuration
+        colorScheme = configuration.appearance.effectiveColorScheme
         self.delegate = delegate
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
         checkoutView.isPresented = true
-        checkoutView.backgroundColor = configuration.backgroundColor
-        checkoutView.underPageBackgroundColor = configuration.backgroundColor
+        checkoutView.applyColorScheme(colorScheme)
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
         self.checkoutView = checkoutView
@@ -88,13 +85,20 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
+        overrideUserInterfaceStyle = colorScheme.userInterfaceStyle
         title = configuration.title
 
         navigationItem.rightBarButtonItem = closeBarButtonItem
 
         checkoutView.viewDelegate = self
 
-        view.backgroundColor = configuration.backgroundColor
+        view.backgroundColor = colorScheme.color { $0.webViewBackground }
+
+        if #available(iOS 17.0, *) {
+            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: CheckoutWebViewController, _) in
+                controller.navigationItem.rightBarButtonItem = controller.closeBarButtonItem
+            }
+        }
     }
 
     @available(*, unavailable)
@@ -104,10 +108,13 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     // MARK: UIViewController Lifecycle
 
-    override public func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    @available(iOS, deprecated: 17.0)
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
 
-        view.backgroundColor = configuration.backgroundColor
+        if #unavailable(iOS 17.0), previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            navigationItem.rightBarButtonItem = closeBarButtonItem
+        }
     }
 
     override public func viewDidLoad() {

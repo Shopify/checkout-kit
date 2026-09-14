@@ -50,7 +50,7 @@ struct SettingsView: View {
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
-    @State private var selectedAppearance = ShopifyCheckoutKit.configuration.appearance
+    @State private var selectedAppearanceOption = AppearanceOption(appearance: ShopifyCheckoutKit.configuration.appearance)
     @State private var isResettingSession = false
     @State private var showingSessionReset = false
 
@@ -134,19 +134,17 @@ struct SettingsView: View {
                     ForEach(AppearanceOption.allCases) { option in
                         AppearanceOptionView(
                             title: option.title,
-                            isSelected: option.appearance == selectedAppearance
+                            isSelected: option == selectedAppearanceOption
                         )
                         .background(Color.clear)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedAppearance = option.appearance
+                            selectedAppearanceOption = option
                             ShopifyCheckoutKit.configure {
                                 $0.appearance = option.appearance
-                                $0.tintColor = option.appearance.colorScheme.tintColor
-                                $0.backgroundColor = option.appearance.colorScheme.backgroundColor
                             }
                             NotificationCenter.default.post(
-                                name: .colorSchemeChanged, object: nil
+                                name: .appearanceChanged, object: nil
                             )
                         }
                     }
@@ -306,6 +304,19 @@ enum AppearanceOption: CaseIterable, Identifiable {
     case appLight
     case appDark
 
+    init(appearance: CheckoutAppearance) {
+        switch appearance {
+        case .storefront:
+            self = .storefront
+        case .app(.automatic):
+            self = .appAutomatic
+        case .app(.light):
+            self = .appLight
+        case .app(.dark):
+            self = .appDark
+        }
+    }
+
     var id: Self {
         self
     }
@@ -323,37 +334,16 @@ enum AppearanceOption: CaseIterable, Identifiable {
         }
     }
 
-    var appearance: Configuration.Appearance {
+    var appearance: CheckoutAppearance {
         switch self {
         case .storefront:
-            return .storefront
+            return .storefront()
         case .appAutomatic:
-            return .app(.automatic)
+            return .app(.automatic())
         case .appLight:
-            return .app(.light)
+            return .app(.light())
         case .appDark:
-            return .app(.dark)
-        }
-    }
-}
-
-extension Configuration.ColorScheme {
-    var tintColor: UIColor {
-        return UIColor(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
-    }
-
-    var backgroundColor: UIColor {
-        return .systemBackground
-    }
-}
-
-extension Configuration.Appearance {
-    var colorScheme: Configuration.ColorScheme {
-        switch self {
-        case let .app(colorScheme):
-            return colorScheme
-        case .storefront:
-            return .light
+            return .app(.dark())
         }
     }
 }

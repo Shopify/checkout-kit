@@ -96,7 +96,7 @@ struct Internal_ApplePayButton: View {
     private let cornerRadius: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
 
-    func buttonIdentity(colorScheme: ColorScheme) -> String {
+    func buttonIdentity(colorScheme: SwiftUI.ColorScheme) -> String {
         return "\(colorScheme)-\(buttonType.rawValue)-\(buttonStyle.rawValue)"
     }
 

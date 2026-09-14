@@ -109,7 +109,6 @@ struct CartView: View {
             .sheet(isPresented: $showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .appearance(.app(.automatic))
                         .title("Checkout (SwiftUI)")
                         .onStart { event in
                             print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")

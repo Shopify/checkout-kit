@@ -40,7 +40,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         setupControllers()
         subscribeToCartUpdates()
-        subscribeToColorSchemeChanges()
+        subscribeToAppearanceChanges()
 
         var viewControllers: [UIViewController?] = Array(repeating: nil, count: Screen.allCases.count)
 
@@ -70,9 +70,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
     }
 
-    private func subscribeToColorSchemeChanges() {
-        // Subscribe to color scheme changes on the settings screen
-        NotificationCenter.default.addObserver(self, selector: #selector(colorSchemeChanged), name: .colorSchemeChanged, object: nil)
+    private func subscribeToAppearanceChanges() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appearanceChanged), name: .appearanceChanged, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(navigateToAccountTab), name: .navigateToAccount, object: nil)
     }
 
@@ -299,7 +298,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         navigateTo(.catalog)
     }
 
-    @objc func colorSchemeChanged() {
+    @objc func appearanceChanged() {
         window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
     }
 
@@ -316,11 +315,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 extension Notification.Name {
-    static let colorSchemeChanged = Notification.Name("colorSchemeChanged")
+    static let appearanceChanged = Notification.Name("appearanceChanged")
     static let navigateToAccount = Notification.Name("navigateToAccount")
 }
 
-extension Configuration.ColorScheme {
+extension ShopifyCheckoutKit.ColorScheme {
     var userInterfaceStyle: UIUserInterfaceStyle {
         switch self {
         case .light:
@@ -333,13 +332,13 @@ extension Configuration.ColorScheme {
     }
 }
 
-extension Configuration.Appearance {
+extension CheckoutAppearance {
     var userInterfaceStyle: UIUserInterfaceStyle {
         switch self {
         case let .app(colorScheme):
             return colorScheme.userInterfaceStyle
         case .storefront:
-            return Configuration.ColorScheme.light.userInterfaceStyle
+            return .light
         }
     }
 }

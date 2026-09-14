@@ -24,13 +24,18 @@ public class CheckoutViewController: UINavigationController {
             entryPoint: entryPoint
         )
         super.init(rootViewController: rootViewController)
-        configureNavigationBar()
+        configureNavigationBar(colorScheme: configuration.appearance.effectiveColorScheme)
         presentationController?.delegate = rootViewController
     }
 
-    private func configureNavigationBar() {
+    private func configureNavigationBar(colorScheme: ColorScheme) {
+        overrideUserInterfaceStyle = colorScheme.userInterfaceStyle
+
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = colorScheme.color { $0.headerBackground }
+        appearance.titleTextAttributes = [.foregroundColor: colorScheme.color { $0.headerFont }]
+        appearance.shadowColor = colorScheme.optionalColor { $0.headerBorderColor }
 
         navigationBar.standardAppearance = appearance
         navigationBar.scrollEdgeAppearance = appearance
@@ -145,32 +150,17 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
 @MainActor
 public protocol CheckoutConfigurable {
-    func backgroundColor(_ color: UIColor) -> Self
-    func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self
-    func tintColor(_ color: UIColor) -> Self
+    func appearance(_ appearance: CheckoutAppearance) -> Self
     func title(_ title: String) -> Self
-    func closeButtonTintColor(_ color: UIColor?) -> Self
 }
 
 extension CheckoutConfigurable {
-    @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
-        modifyingConfiguration { $0.backgroundColor = color }
-    }
-
-    @discardableResult public func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self {
+    @discardableResult public func appearance(_ appearance: CheckoutAppearance) -> Self {
         modifyingConfiguration { $0.appearance = appearance }
-    }
-
-    @discardableResult public func tintColor(_ color: UIColor) -> Self {
-        modifyingConfiguration { $0.tintColor = color }
     }
 
     @discardableResult public func title(_ title: String) -> Self {
         modifyingConfiguration { $0.title = title }
-    }
-
-    @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
-        modifyingConfiguration { $0.closeButtonTintColor = color }
     }
 
     private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
