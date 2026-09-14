@@ -23,9 +23,8 @@ final class CheckoutEventAdapterTests: XCTestCase {
         let params = try XCTUnwrap(envelope["params"] as? [String: Any])
         let protocolObject = try XCTUnwrap(params["checkout"] as? [String: Any])
         let protocolData = try JSONSerialization.data(withJSONObject: protocolObject)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let checkout = try decoder.decode(ShopifyCheckoutKit.Checkout.self, from: protocolData)
+        let protocolCheckout = try EmbeddedCheckoutProtocol.Checkout(data: protocolData)
+        let checkout = try XCTUnwrap(ShopifyCheckoutKit.Checkout(protocolCheckout: protocolCheckout))
         XCTAssertEqual(checkout.attribution, ["source": "agent"])
         XCTAssertEqual(checkout.context?.addressCountry, "IE")
         XCTAssertEqual(checkout.continueURL, "https://example.com/continue")
@@ -63,6 +62,10 @@ final class CheckoutEventAdapterTests: XCTestCase {
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         XCTAssertNil(object["ucp"])
         XCTAssertNotNil(object["com.example.extension"])
+
+        let protocolEncoded = try JSONEncoder().encode(protocolCheckout)
+        let encodedProtocolObject = try XCTUnwrap(JSONSerialization.jsonObject(with: protocolEncoded) as? [String: Any])
+        XCTAssertNotNil(encodedProtocolObject["ucp"])
     }
 
     func testEveryChangeNotificationProducesOneUpdate() async {
