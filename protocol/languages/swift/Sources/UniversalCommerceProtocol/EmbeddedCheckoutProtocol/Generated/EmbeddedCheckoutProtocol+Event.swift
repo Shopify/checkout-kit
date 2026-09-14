@@ -4,7 +4,7 @@
 import Foundation
 
 extension AuthRequest: EventPayload {}
-extension Checkout: EventPayload {}
+extension EmbeddedCheckoutProtocol.Checkout: EventPayload {}
 extension ErrorResponse: EventPayload {}
 extension ReadyRequest: EventPayload {}
 extension WindowOpenRequest: EventPayload {}

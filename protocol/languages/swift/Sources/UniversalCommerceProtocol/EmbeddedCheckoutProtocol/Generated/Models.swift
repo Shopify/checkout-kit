@@ -1,7 +1,7 @@
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
 // To parse the JSON, add this file to your project and do:
 //
-//   let checkout = try Checkout(json)
+//   let checkout = try EmbeddedCheckoutProtocol.Checkout(json)
 //   let order = try Order(json)
 //   let errorResponse = try ErrorResponse(json)
 //   let instrumentsChangeResult = try InstrumentsChangeResult(json)
@@ -18,137 +18,139 @@ import Foundation
 
 /// Base checkout schema. Extensions compose onto this using allOf.
 // MARK: - Checkout
-public struct Checkout: Codable, Sendable {
-    public let attribution: [String: String]?
-    /// Representation of the buyer.
-    public let buyer: Buyer?
-    public let context: Context?
-    /// URL for checkout handoff and session recovery. MUST be provided when status is
-    /// requires_escalation. See specification for format and availability requirements.
-    public let continueURL: String?
-    /// ISO 4217 currency code reflecting the merchant's market determination. Derived from
-    /// address, context, and geo IP—buyers provide signals, merchants determine currency.
-    public let currency: String
-    public let discounts: CheckoutDiscounts?
-    /// RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
-    public let expiresAt: Date?
-    /// Fulfillment details.
-    public let fulfillment: CheckoutFulfillment?
-    /// Unique identifier of the checkout session.
-    public let id: String
-    /// List of line items being checked out.
-    public let lineItems: [LineItem]
-    /// Links to be displayed by the platform (Privacy Policy, TOS). Mandatory for legal
-    /// compliance.
-    public let links: [Link]
-    /// List of messages with error and info about the checkout session state.
-    public let messages: [Message]?
-    /// Details about an order created for this checkout session.
-    public let order: OrderConfirmation?
-    public let payment: Payment?
-    public let signals: [String: JSONAny]?
-    /// Checkout state indicating the current phase and required action. See Checkout Status
-    /// lifecycle documentation for state transition details.
-    public let status: CheckoutStatus
-    /// Different cart totals.
-    public let totals: [CheckoutTotal]
-    public let ucp: UCPCheckoutResponseSchema
+extension EmbeddedCheckoutProtocol {
+    public struct Checkout: Codable, Sendable {
+        public let attribution: [String: String]?
+        /// Representation of the buyer.
+        public let buyer: Buyer?
+        public let context: Context?
+        /// URL for checkout handoff and session recovery. MUST be provided when status is
+        /// requires_escalation. See specification for format and availability requirements.
+        public let continueURL: String?
+        /// ISO 4217 currency code reflecting the merchant's market determination. Derived from
+        /// address, context, and geo IP—buyers provide signals, merchants determine currency.
+        public let currency: String
+        public let discounts: CheckoutDiscounts?
+        /// RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
+        public let expiresAt: Date?
+        /// Fulfillment details.
+        public let fulfillment: CheckoutFulfillment?
+        /// Unique identifier of the checkout session.
+        public let id: String
+        /// List of line items being checked out.
+        public let lineItems: [LineItem]
+        /// Links to be displayed by the platform (Privacy Policy, TOS). Mandatory for legal
+        /// compliance.
+        public let links: [Link]
+        /// List of messages with error and info about the checkout session state.
+        public let messages: [Message]?
+        /// Details about an order created for this checkout session.
+        public let order: OrderConfirmation?
+        public let payment: Payment?
+        public let signals: [String: JSONAny]?
+        /// Checkout state indicating the current phase and required action. See Checkout Status
+        /// lifecycle documentation for state transition details.
+        public let status: CheckoutStatus
+        /// Different cart totals.
+        public let totals: [CheckoutTotal]
+        public let ucp: UCPCheckoutResponseSchema
 
-    public enum CodingKeys: String, CodingKey {
-        case attribution, buyer, context
-        case continueURL = "continue_url"
-        case currency, discounts
-        case expiresAt = "expires_at"
-        case fulfillment, id
-        case lineItems = "line_items"
-        case links, messages, order, payment, signals, status, totals, ucp
-    }
-
-    public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
-        self.attribution = attribution
-        self.buyer = buyer
-        self.context = context
-        self.continueURL = continueURL
-        self.currency = currency
-        self.discounts = discounts
-        self.expiresAt = expiresAt
-        self.fulfillment = fulfillment
-        self.id = id
-        self.lineItems = lineItems
-        self.links = links
-        self.messages = messages
-        self.order = order
-        self.payment = payment
-        self.signals = signals
-        self.status = status
-        self.totals = totals
-        self.ucp = ucp
-    }
-
-    public var additionalProperties: [String: JSONAny] = [:]
-
-    private static let knownAdditionalPropertyKeys: Set<String> = ["attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp"]
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
-        self.buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
-        self.context = try container.decodeIfPresent(Context.self, forKey: .context)
-        self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
-        self.currency = try container.decode(String.self, forKey: .currency)
-        self.discounts = try container.decodeIfPresent(CheckoutDiscounts.self, forKey: .discounts)
-        self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
-        self.fulfillment = try container.decodeIfPresent(CheckoutFulfillment.self, forKey: .fulfillment)
-        self.id = try container.decode(String.self, forKey: .id)
-        self.lineItems = try container.decode([LineItem].self, forKey: .lineItems)
-        self.links = try container.decode([Link].self, forKey: .links)
-        self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
-        self.order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
-        self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
-        self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
-        self.status = try container.decode(CheckoutStatus.self, forKey: .status)
-        self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
-        self.ucp = try container.decode(UCPCheckoutResponseSchema.self, forKey: .ucp)
-        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
-        var extras: [String: JSONAny] = [:]
-        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
-            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        public enum CodingKeys: String, CodingKey {
+            case attribution, buyer, context
+            case continueURL = "continue_url"
+            case currency, discounts
+            case expiresAt = "expires_at"
+            case fulfillment, id
+            case lineItems = "line_items"
+            case links, messages, order, payment, signals, status, totals, ucp
         }
-        self.additionalProperties = extras
-    }
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(attribution, forKey: .attribution)
-        try container.encodeIfPresent(buyer, forKey: .buyer)
-        try container.encodeIfPresent(context, forKey: .context)
-        try container.encodeIfPresent(continueURL, forKey: .continueURL)
-        try container.encode(currency, forKey: .currency)
-        try container.encodeIfPresent(discounts, forKey: .discounts)
-        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
-        try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
-        try container.encode(id, forKey: .id)
-        try container.encode(lineItems, forKey: .lineItems)
-        try container.encode(links, forKey: .links)
-        try container.encodeIfPresent(messages, forKey: .messages)
-        try container.encodeIfPresent(order, forKey: .order)
-        try container.encodeIfPresent(payment, forKey: .payment)
-        try container.encodeIfPresent(signals, forKey: .signals)
-        try container.encode(status, forKey: .status)
-        try container.encode(totals, forKey: .totals)
-        try container.encode(ucp, forKey: .ucp)
-        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
-        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
-            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
+            self.attribution = attribution
+            self.buyer = buyer
+            self.context = context
+            self.continueURL = continueURL
+            self.currency = currency
+            self.discounts = discounts
+            self.expiresAt = expiresAt
+            self.fulfillment = fulfillment
+            self.id = id
+            self.lineItems = lineItems
+            self.links = links
+            self.messages = messages
+            self.order = order
+            self.payment = payment
+            self.signals = signals
+            self.status = status
+            self.totals = totals
+            self.ucp = ucp
+        }
+
+        public var additionalProperties: [String: JSONAny] = [:]
+
+        private static let knownAdditionalPropertyKeys: Set<String> = ["attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp"]
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
+            self.buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
+            self.context = try container.decodeIfPresent(Context.self, forKey: .context)
+            self.continueURL = try container.decodeIfPresent(String.self, forKey: .continueURL)
+            self.currency = try container.decode(String.self, forKey: .currency)
+            self.discounts = try container.decodeIfPresent(CheckoutDiscounts.self, forKey: .discounts)
+            self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+            self.fulfillment = try container.decodeIfPresent(CheckoutFulfillment.self, forKey: .fulfillment)
+            self.id = try container.decode(String.self, forKey: .id)
+            self.lineItems = try container.decode([LineItem].self, forKey: .lineItems)
+            self.links = try container.decode([Link].self, forKey: .links)
+            self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
+            self.order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
+            self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+            self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
+            self.status = try container.decode(CheckoutStatus.self, forKey: .status)
+            self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
+            self.ucp = try container.decode(UCPCheckoutResponseSchema.self, forKey: .ucp)
+            let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+            var extras: [String: JSONAny] = [:]
+            for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+                extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+            }
+            self.additionalProperties = extras
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(attribution, forKey: .attribution)
+            try container.encodeIfPresent(buyer, forKey: .buyer)
+            try container.encodeIfPresent(context, forKey: .context)
+            try container.encodeIfPresent(continueURL, forKey: .continueURL)
+            try container.encode(currency, forKey: .currency)
+            try container.encodeIfPresent(discounts, forKey: .discounts)
+            try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+            try container.encodeIfPresent(fulfillment, forKey: .fulfillment)
+            try container.encode(id, forKey: .id)
+            try container.encode(lineItems, forKey: .lineItems)
+            try container.encode(links, forKey: .links)
+            try container.encodeIfPresent(messages, forKey: .messages)
+            try container.encodeIfPresent(order, forKey: .order)
+            try container.encodeIfPresent(payment, forKey: .payment)
+            try container.encodeIfPresent(signals, forKey: .signals)
+            try container.encode(status, forKey: .status)
+            try container.encode(totals, forKey: .totals)
+            try container.encode(ucp, forKey: .ucp)
+            var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+            for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+                try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+            }
         }
     }
 }
 
 // MARK: Checkout convenience initializers and mutators
 
-public extension Checkout {
+public extension EmbeddedCheckoutProtocol.Checkout {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Checkout.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -181,8 +183,8 @@ public extension Checkout {
         status: CheckoutStatus? = nil,
         totals: [CheckoutTotal]? = nil,
         ucp: UCPCheckoutResponseSchema? = nil
-    ) -> Checkout {
-        return Checkout(
+    ) -> EmbeddedCheckoutProtocol.Checkout {
+        return EmbeddedCheckoutProtocol.Checkout(
             attribution: attribution ?? self.attribution,
             buyer: buyer ?? self.buyer,
             context: context ?? self.context,

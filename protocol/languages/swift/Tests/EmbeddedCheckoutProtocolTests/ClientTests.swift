@@ -73,7 +73,7 @@ struct ClientTests {
     }
 
     @Test @MainActor func notificationDispatchesToRegisteredHandler() async throws {
-        var receivedCheckout: Checkout?
+        var receivedCheckout: EmbeddedCheckoutProtocol.Checkout?
         let client = EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.start) { message in
                 receivedCheckout = message.params.checkout

@@ -161,15 +161,15 @@ struct JSONRPCReadyParams: Codable {
 }
 
 public struct JSONRPCCheckoutParams: EventPayload {
-    public let checkout: Checkout
+    public let checkout: EmbeddedCheckoutProtocol.Checkout
 
-    public init(checkout: Checkout) {
+    public init(checkout: EmbeddedCheckoutProtocol.Checkout) {
         self.checkout = checkout
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        checkout = try container.decode(Checkout.self, forKey: .checkout)
+        checkout = try container.decode(EmbeddedCheckoutProtocol.Checkout.self, forKey: .checkout)
     }
 
     private enum CodingKeys: String, CodingKey {
