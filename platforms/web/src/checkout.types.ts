@@ -12,7 +12,7 @@ import type { LogLevel } from "./logger";
 
 export type { LogLevel };
 export type { Checkout } from "./models/checkout";
-export type { CheckoutError, CheckoutErrorCode } from "./checkout-error";
+export type { CheckoutError, CheckoutErrorCode } from "./models/error";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,

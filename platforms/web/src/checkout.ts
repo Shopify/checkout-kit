@@ -10,7 +10,7 @@ import {
 } from "@shopify/checkout-kit-protocol";
 
 import { toCheckout, checkoutComparisonKey } from "./models/checkout";
-import { toCheckoutError } from "./checkout-error";
+import { toCheckoutError } from "./models/error";
 import {
   ShopifyCheckoutStartEvent,
   ShopifyCheckoutUpdateEvent,
