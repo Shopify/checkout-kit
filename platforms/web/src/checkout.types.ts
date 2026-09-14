@@ -14,14 +14,6 @@ export type { LogLevel };
 export type { Checkout } from "./checkout-model";
 export type { CheckoutError, CheckoutErrorCode } from "./checkout-error";
 
-/** A validated HTTPS link that checkout asked the host page to open. */
-export interface CheckoutLink {
-  url: URL;
-}
-
-/** Open the link normally, report that the app handled it, or reject the request. */
-export type CheckoutLinkAction = "open" | "handled" | "cancel";
-
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
 // take note of the following:

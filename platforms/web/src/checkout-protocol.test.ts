@@ -8,7 +8,6 @@ import {
 import type { CheckoutProtocolMessageMap } from "./checkout.types";
 import "./checkout-web-component";
 import type { ShopifyCheckout } from "./checkout";
-import { ShopifyCheckoutLinkClickEvent } from "./checkout-events";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 const CHECKOUT_CHANGE_METHODS = [
@@ -680,289 +679,11 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("ec.window.open_request", () => {
-      it("dispatches linkclick with a parsed URL before applying the default open action", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        const linkSpy = vi.fn((event: ShopifyCheckoutLinkClickEvent) => {
-          expect(event).toBeInstanceOf(ShopifyCheckoutLinkClickEvent);
-          expect(event.detail.link.url).toBeInstanceOf(URL);
-          expect(event.detail.link.url.href).toBe("https://example.com/policy");
-          expect(windowOpenSpy).not.toHaveBeenCalled();
-        });
-        checkout.addEventListener("linkclick", linkSpy);
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/policy" },
-          { id: "link-default", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expect(linkSpy).toHaveBeenCalledOnce();
-        expect(windowOpenSpy).toHaveBeenCalledWith(
-          "https://example.com/policy",
-          "_blank",
-          "noopener",
-        );
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-default", "success");
-      });
-
-      it.each(["javascript:alert(1)", "https://other.example.com/replaced"])(
-        "opens the original validated URL when a listener changes its URL to %s",
-        async (replacement) => {
-          const { checkout, mockCheckoutWindow } = openPopupCheckout();
-          const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-          checkout.addEventListener("linkclick", (event) => {
-            event.detail.link.url.href = replacement;
-            event.respondWith("open");
-          });
-
-          simulateProtocolMessageEvent(
-            checkout,
-            "ec.window.open_request",
-            { url: "https://example.com/policy" },
-            { id: "link-mutated", source: mockCheckoutWindow },
-          );
-          await flushProtocolDispatch();
-
-          expect(windowOpenSpy).toHaveBeenCalledExactlyOnceWith(
-            "https://example.com/policy",
-            "_blank",
-            "noopener",
-          );
-          expectLinkResponse(checkout, mockCheckoutWindow, "link-mutated", "success");
-        },
-      );
-
-      it.each(["open", "handled", "cancel"] as const)(
-        "honors the consumer's synchronous %s action",
-        async (action) => {
-          const { checkout, mockCheckoutWindow } = openPopupCheckout();
-          const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-          const errorSpy = vi.fn();
-          const closeSpy = vi.fn();
-          checkout.addEventListener("error", errorSpy);
-          checkout.addEventListener("close", closeSpy);
-          checkout.addEventListener("linkclick", (event) => event.respondWith(action));
-
-          simulateProtocolMessageEvent(
-            checkout,
-            "ec.window.open_request",
-            { url: "https://example.com/policy" },
-            { id: "link-action", source: mockCheckoutWindow },
-          );
-          await flushProtocolDispatch();
-
-          expect(windowOpenSpy).toHaveBeenCalledTimes(action === "open" ? 1 : 0);
-          expectLinkResponse(
-            checkout,
-            mockCheckoutWindow,
-            "link-action",
-            action === "cancel" ? "error" : "success",
-          );
-          expect(errorSpy).not.toHaveBeenCalled();
-          expect(closeSpy).not.toHaveBeenCalled();
-          expect(checkout.error).toBeUndefined();
-        },
-      );
-
-      it.each(["open", "handled", "cancel"] as const)(
-        "awaits a registered promise before applying its %s action",
-        async (action) => {
-          const { checkout, mockCheckoutWindow } = openPopupCheckout();
-          const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-          let resolveAction!: (action: "open" | "handled" | "cancel") => void;
-          const response = new Promise<"open" | "handled" | "cancel">((resolve) => {
-            resolveAction = resolve;
-          });
-          checkout.addEventListener("linkclick", (event) => event.respondWith(response));
-
-          simulateProtocolMessageEvent(
-            checkout,
-            "ec.window.open_request",
-            { url: "https://example.com/policy" },
-            { id: "link-async", source: mockCheckoutWindow },
-          );
-          await flushProtocolDispatch();
-
-          expect(windowOpenSpy).not.toHaveBeenCalled();
-          expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
-          resolveAction(action);
-          await flushProtocolDispatch();
-
-          expect(windowOpenSpy).toHaveBeenCalledTimes(action === "open" ? 1 : 0);
-          expectLinkResponse(
-            checkout,
-            mockCheckoutWindow,
-            "link-async",
-            action === "cancel" ? "error" : "success",
-          );
-        },
-      );
-
-      it.each(["close", "reopen", "disconnect"] as const)(
-        "rejects a pending link when the checkout session ends through %s",
-        async (action) => {
-          const { checkout, mockCheckoutWindow } = openPopupCheckout();
-          const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-          let resolveAction!: (action: "open") => void;
-          const response = new Promise<"open">((resolve) => {
-            resolveAction = resolve;
-          });
-          checkout.addEventListener("linkclick", (event) => event.respondWith(response));
-
-          simulateProtocolMessageEvent(
-            checkout,
-            "ec.window.open_request",
-            { url: "https://example.com/obsolete" },
-            { id: "link-ended-session", source: mockCheckoutWindow },
-          );
-          await flushProtocolDispatch();
-          expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
-
-          if (action === "reopen") {
-            windowOpenSpy.mockReturnValueOnce(createMockWindow());
-            checkout.open();
-            windowOpenSpy.mockClear();
-          } else if (action === "disconnect") {
-            checkout.remove();
-          } else {
-            checkout.close();
-          }
-          await flushProtocolDispatch();
-
-          expectLinkResponse(checkout, mockCheckoutWindow, "link-ended-session", "error");
-          resolveAction("open");
-          await flushProtocolDispatch();
-
-          expect(windowOpenSpy).not.toHaveBeenCalled();
-          expect(mockCheckoutWindow.postMessage).toHaveBeenCalledOnce();
-        },
-      );
-
-      it("rejects a resolved link action if the session closes before the action is applied", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        let resolveAction!: (action: "open") => void;
-        const response = new Promise<"open">((resolve) => {
-          resolveAction = resolve;
-        });
-        checkout.addEventListener("linkclick", (event) => event.respondWith(response));
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/obsolete" },
-          { id: "link-close-race", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        resolveAction("open");
-        queueMicrotask(() => checkout.close());
-        await flushProtocolDispatch();
-
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-close-race", "error");
-        expect(windowOpenSpy).not.toHaveBeenCalled();
-      });
-
-      it("cancels a link when the consumer prevents the default action", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        const errorSpy = vi.fn();
-        const closeSpy = vi.fn();
-        checkout.addEventListener("error", errorSpy);
-        checkout.addEventListener("close", closeSpy);
-        checkout.addEventListener("linkclick", (event) => event.preventDefault());
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/policy" },
-          { id: "link-prevented", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-prevented", "error");
-        expect(windowOpenSpy).not.toHaveBeenCalled();
-        expect(errorSpy).not.toHaveBeenCalled();
-        expect(closeSpy).not.toHaveBeenCalled();
-        expect(checkout.error).toBeUndefined();
-      });
-
-      it("rejects the protocol request when the consumer's response promise rejects", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        const errorSpy = vi.fn();
-        const closeSpy = vi.fn();
-        checkout.addEventListener("error", errorSpy);
-        checkout.addEventListener("close", closeSpy);
-        checkout.addEventListener("linkclick", (event) => {
-          event.respondWith(Promise.reject(new Error("Consumer could not handle link")));
-        });
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/policy" },
-          { id: "link-rejected", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-rejected", "error");
-        expect(windowOpenSpy).not.toHaveBeenCalled();
-        expect(errorSpy).not.toHaveBeenCalled();
-        expect(closeSpy).not.toHaveBeenCalled();
-        expect(checkout.error).toBeUndefined();
-      });
-
-      it("allows only one response registration across all link listeners", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        checkout.addEventListener("linkclick", (event) => event.respondWith("handled"));
-        const secondListener = vi.fn((event: ShopifyCheckoutLinkClickEvent) => {
-          expect(() => event.respondWith("open")).toThrow(DOMException);
-        });
-        checkout.addEventListener("linkclick", secondListener);
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/policy" },
-          { id: "link-once", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expect(secondListener).toHaveBeenCalledOnce();
-        expect(windowOpenSpy).not.toHaveBeenCalled();
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-once", "success");
-      });
-
-      it("requires respondWith to be called during synchronous event dispatch", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const windowOpenSpy = vi.spyOn(window, "open").mockClear();
-        let linkEvent!: ShopifyCheckoutLinkClickEvent;
-        checkout.addEventListener("linkclick", (event) => {
-          linkEvent = event;
-        });
-
-        simulateProtocolMessageEvent(
-          checkout,
-          "ec.window.open_request",
-          { url: "https://example.com/policy" },
-          { id: "link-late", source: mockCheckoutWindow },
-        );
-        await flushProtocolDispatch();
-
-        expect(linkEvent).toBeDefined();
-        expect(() => linkEvent.respondWith("cancel")).toThrow(DOMException);
-        expect(windowOpenSpy).toHaveBeenCalledOnce();
-        expectLinkResponse(checkout, mockCheckoutWindow, "link-late", "success");
-      });
-
       it("opens the requested url in a new tab with noopener when an id is present", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const windowOpenSpy = vi.spyOn(window, "open");
+        const linkClickSpy = vi.fn();
+        checkout.addEventListener("linkclick", linkClickSpy);
 
         simulateProtocolMessageEvent(
           checkout,
@@ -977,6 +698,7 @@ describe("<shopify-checkout>", () => {
           "_blank",
           "noopener",
         );
+        expect(linkClickSpy).not.toHaveBeenCalled();
       });
 
       it("posts a JSON-RPC response back to the source", async () => {
@@ -1082,8 +804,6 @@ describe("<shopify-checkout>", () => {
       it("rejects the request when the url string cannot be parsed", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const linkSpy = vi.fn();
-        checkout.addEventListener("linkclick", linkSpy);
 
         simulateProtocolMessageEvent(
           checkout,
@@ -1108,15 +828,12 @@ describe("<shopify-checkout>", () => {
           }),
           new URL(checkout.src).origin,
         );
-        expect(linkSpy).not.toHaveBeenCalled();
       });
 
       it("rejects the request when the url uses a non-https scheme", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
         const windowOpenSpy = vi.spyOn(window, "open");
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const linkSpy = vi.fn();
-        checkout.addEventListener("linkclick", linkSpy);
 
         simulateProtocolMessageEvent(
           checkout,
@@ -1146,7 +863,6 @@ describe("<shopify-checkout>", () => {
           "_blank",
           "noopener",
         );
-        expect(linkSpy).not.toHaveBeenCalled();
       });
 
       it("does not warn about an invalid url when the handler throws internally", async () => {
@@ -1747,24 +1463,6 @@ function simulateProtocolMessageEvent(
     source,
   });
   window.dispatchEvent(event);
-}
-
-function expectLinkResponse(
-  checkout: ShopifyCheckout,
-  checkoutWindow: Window,
-  id: string,
-  status: "success" | "error",
-) {
-  expect(checkoutWindow.postMessage).toHaveBeenCalledWith(
-    expect.objectContaining({
-      jsonrpc: "2.0",
-      id,
-      result: expect.objectContaining({
-        ucp: { status, version: EMBED_PROTOCOL_VERSION },
-      }),
-    }),
-    new URL(checkout.src).origin,
-  );
 }
 
 function flushProtocolDispatch(): Promise<void> {

@@ -276,11 +276,4 @@ function attachListeners(): void {
   for (const type of EVENT_TYPES) {
     checkout.addEventListener(type, recordEvent);
   }
-
-  checkout.addEventListener("linkclick", (event) => {
-    // Choose the policy while the event is being dispatched. An application can
-    // respond with "handled" after taking over navigation, or "cancel" to block it.
-    event.respondWith("open");
-    recordEvent(event);
-  });
 }

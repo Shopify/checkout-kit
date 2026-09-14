@@ -9,7 +9,6 @@ export {
   ShopifyCheckoutCompleteEvent,
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
-  ShopifyCheckoutLinkClickEvent,
 } from "./checkout-events";
 
 export type {
@@ -17,15 +16,12 @@ export type {
   ShopifyCheckoutUpdateEventDetail,
   ShopifyCheckoutCompleteEventDetail,
   ShopifyCheckoutErrorEventDetail,
-  ShopifyCheckoutLinkClickEventDetail,
   ShopifyCheckoutEventMap,
 } from "./checkout-events";
 
 export type {
   CheckoutAppearance,
   CheckoutTarget,
-  CheckoutLink,
-  CheckoutLinkAction,
   Checkout,
   CheckoutError,
   CheckoutErrorCode,

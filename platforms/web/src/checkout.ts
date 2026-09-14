@@ -18,7 +18,6 @@ import {
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
   type ShopifyCheckoutEventMap,
-  dispatchCheckoutLinkClick,
 } from "./checkout-events";
 import stylesText from "./checkout.css?inline";
 import { Logger, coerceLogLevel } from "./logger";
@@ -176,7 +175,6 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
  * @event {ShopifyCheckoutErrorEvent} error - Checkout reported an error; unrecoverable errors close the session.
  * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed.
- * @event {ShopifyCheckoutLinkClickEvent} linkclick - Checkout requested a link; respondWith selects its handling.
  *
  * @example
  * ```js
@@ -825,12 +823,11 @@ export class ShopifyCheckout
   }
 
   /**
-   * Handles a link delegation after HTTPS validation. The public linkclick
-   * event controls whether the URL opens, was handled by the app, or is rejected.
+   * Handles an `ec.window.open_request` delegation: opens a validated `https:`
+   * URL in a new tab and returns a UCP result. Invalid or non-`https:` URLs
+   * are rejected (and warned about) rather than opened.
    */
-  async #handleWindowOpen(request: WindowOpenRequest): Promise<WindowOpenResult> {
-    const session = this.#currentOpen;
-    if (!session) return windowOpenRejected("checkout session ended");
+  #handleWindowOpen(request: WindowOpenRequest): WindowOpenResult {
     let targetUrl: URL;
     try {
       targetUrl = new URL(request.url);
@@ -842,22 +839,6 @@ export class ShopifyCheckout
     if (targetUrl.protocol !== "https:") {
       this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
       return windowOpenRejected("url must use https scheme");
-    }
-
-    try {
-      // Keep the validated default URL separate from the consumer's mutable URL.
-      const action = await dispatchCheckoutLinkClick(
-        this,
-        { url: new URL(targetUrl.href) },
-        session.controller.signal,
-      );
-      if (session.controller.signal.aborted || this.#currentOpen !== session) {
-        return windowOpenRejected("checkout session ended");
-      }
-      if (action === "handled") return windowOpenSuccess();
-      if (action === "cancel") return windowOpenRejected("link opening canceled");
-    } catch {
-      return windowOpenRejected("link handler failed");
     }
 
     window.open(targetUrl.href, "_blank", "noopener");
