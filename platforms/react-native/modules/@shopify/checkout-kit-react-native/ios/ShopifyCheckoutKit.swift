@@ -324,41 +324,24 @@ class RCTShopifyCheckoutKit: NSObject {
 // MARK: - CheckoutDelegate
 
 extension RCTShopifyCheckoutKit: CheckoutDelegate {
-    /// Fired by the iOS SDK when the buyer dismisses the checkout sheet
-    /// without a terminal error. Mirrors
+    /// Fired after the iOS SDK closes the checkout presentation. Mirrors
     /// `CustomCheckoutListener.onCheckoutDismissed()` on Android.
     ///
-    /// The iOS SDK dismisses the presented checkout when the buyer taps
-    /// the close button; this wrapper also clears its local reference so
-    /// future presentations start from a clean state.
+    /// The SDK has already completed presentation teardown, so the wrapper
+    /// clears its retained reference without dismissing the controller again.
     func checkoutDidDismiss() {
+        checkoutSheet = nil
         emitDispatchEnvelope(type: .close, payload: nil)
-        dismissCheckoutSheet()
     }
 
     /// Fired by the iOS SDK when checkout terminates with an error.
     /// Mirrors `CustomCheckoutListener.onCheckoutFailed()` on Android.
     /// The error is serialised into the JS-side `CheckoutNativeError`
     /// shape (`message` / `code` / optional `statusCode`) so it can be
-    /// coerced into a `CheckoutException` on the JS side.
-    ///
-    /// The sheet is left visible — consumers may want to render a
-    /// recovery UI on top of the still-presented checkout, or decide to
-    /// dismiss it explicitly via `ShopifyCheckoutKit.dismiss()` from
-    /// their `onFail` handler. Mirrors the Android behaviour where
-    /// `onCheckoutFailed` also does not auto-dismiss the dialog.
+    /// coerced into a `CheckoutException` on the JS side. When the failure
+    /// closes checkout, the SDK sends `checkoutDidDismiss()` after teardown.
     func checkoutDidFail(error: CheckoutError) {
         emitDispatchEnvelope(type: .fail, payload: ShopifyEventSerialization.serialize(checkoutError: error))
-    }
-
-    /// Dismisses the currently-presented checkout sheet on the main
-    /// queue and releases our reference to it. Safe to call when no
-    /// sheet is presented — `checkoutSheet` will simply be `nil`.
-    private func dismissCheckoutSheet() {
-        DispatchQueue.main.async { [weak self] in
-            self?.checkoutSheet?.dismiss(animated: true)
-            self?.checkoutSheet = nil
-        }
     }
 }
 

@@ -190,23 +190,25 @@ export interface GeolocationRequestEvent {
 /**
  * Per-call SDK callbacks for `present(url, callbacks, protocol)`.
  *
- * At most one of `onDismiss` or `onFail` fires per `present(...)` invocation,
- * after which the callbacks are released. Programmatic dismissal invokes neither.
+ * `onFail` reports a terminal checkout failure. If that failure closes the
+ * presentation, `onDismiss` follows after closure. The callbacks are released
+ * after dismissal. Programmatic dismissal invokes neither callback.
  *
  * `onGeolocationRequest` may fire any number of times during a single
  * `present(...)` call while the checkout sheet is open.
  */
 export interface PresentCallbacks {
   /**
-   * Fires when the checkout sheet is dismissed without a terminal error.
-   * This presentation lifecycle event is independent of checkout completion,
-   * so it also fires when the buyer dismisses the sheet after completing payment.
+   * Fires after the checkout presentation closes, independently of checkout
+   * outcome. It can follow `onFail` when a terminal failure closes checkout and
+   * can follow `CheckoutProtocol.complete` when the presentation closes later.
    * Mirrors `CheckoutListener.onCheckoutDismissed` on Android
    * and `CheckoutDelegate.checkoutDidDismiss` on iOS.
    */
   onDismiss?: () => void;
   /**
-   * Fires when the checkout sheet terminates with an error.
+   * Fires when checkout cannot continue. When the failure closes the native
+   * presentation, `onDismiss` follows after closure.
    * Mirrors `CheckoutListener.onCheckoutFailed` on Android
    * and `CheckoutDelegate.checkoutDidFail` on iOS.
    */
@@ -337,9 +339,9 @@ export interface ShopifyCheckoutKit {
    * Present the checkout.
    *
    * @param checkoutURL The URL of the checkout to display.
-   * @param callbacks Optional per-call SDK callbacks. At most one of
-   * `onDismiss` or `onFail` fires per call, after which the callbacks are
-   * released. Programmatic dismissal invokes neither.
+   * @param callbacks Optional per-call SDK callbacks. A terminal failure can
+   * invoke `onFail` followed by `onDismiss` after native presentation closure.
+   * Programmatic dismissal invokes neither callback.
    * @param protocol Optional per-call Checkout Protocol event handlers.
    */
   present(

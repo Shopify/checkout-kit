@@ -354,6 +354,25 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
+    it('delivers failure before a later dismissal as separate events', () => {
+      const lifecycleEvents: string[] = [];
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId="gid://shopify/Cart/123"
+          onFail={() => lifecycleEvents.push('fail')}
+          onDismiss={() => lifecycleEvents.push('dismiss')}
+        />,
+      );
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+
+      nativeComponent.props.onFail({
+        nativeEvent: {code: 'sdk_error', message: 'boom'},
+      });
+      nativeComponent.props.onDismiss();
+
+      expect(lifecycleEvents).toEqual(['fail', 'dismiss']);
+    });
+
     it('delivers completion before a later dismissal as separate events', () => {
       const onComplete = jest.fn();
       const onDismiss = jest.fn();

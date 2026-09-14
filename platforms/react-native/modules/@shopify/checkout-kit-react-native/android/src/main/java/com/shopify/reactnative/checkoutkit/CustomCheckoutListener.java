@@ -15,11 +15,17 @@ import java.util.Locale;
 import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
+  @FunctionalInterface
+  interface CheckoutDismissedCallback {
+    void invoke(@NonNull CustomCheckoutListener listener);
+  }
+
   private static final String TAG = "ShopifyCheckoutKit";
 
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
+  private final CheckoutDismissedCallback checkoutDismissedCallback;
 
   // Geolocation-specific variables
 
@@ -31,7 +37,13 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   public CustomCheckoutListener(@NonNull DispatchHandle dispatch) {
+    this(dispatch, listener -> { });
+  }
+
+  CustomCheckoutListener(@NonNull DispatchHandle dispatch,
+      @NonNull CheckoutDismissedCallback checkoutDismissedCallback) {
     this.dispatch = dispatch;
+    this.checkoutDismissedCallback = checkoutDismissedCallback;
   }
 
   // Public methods
@@ -67,9 +79,9 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       @NonNull GeolocationPermissions.Callback callback) {
 
     if (dispatch.isReleased()) {
-      // Multi-shot geolocation requests can in principle arrive after a
-      // terminal event or explicit dismiss has released the dispatcher. Log
-      // so the silence is observable rather than mystifying.
+      // Multi-shot geolocation requests can in principle arrive after
+      // presentation teardown or explicit dismiss has released the dispatcher.
+      // Log so the silence is observable rather than mystifying.
       Log.w(TAG, "Dropping geolocationRequest — dispatcher already released.");
       return;
     }
@@ -103,8 +115,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, populateErrorDetails(checkoutError)));
     } catch (IOException e) {
       Log.e(TAG, "Error processing checkout failed event", e);
-    } finally {
-      release();
     }
   }
 
@@ -114,6 +124,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       return;
     }
     try {
+      checkoutDismissedCallback.invoke(this);
       dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
     } catch (IOException e) {
       Log.e(TAG, "Error processing checkout dismissed event", e);

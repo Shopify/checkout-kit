@@ -435,6 +435,56 @@ describe('ShopifyCheckoutKit', () => {
       expect(subscription.remove).toHaveBeenCalledTimes(1);
     });
 
+    it('delivers failure followed by dismissal and releases after dismissal', () => {
+      const subscription = {remove: jest.fn()};
+      NativeModule.onDispatch.mockReturnValueOnce(subscription);
+      const instance = new ShopifyCheckout();
+      const lifecycleEvents: string[] = [];
+      instance.present(checkoutUrl, {
+        onFail: () => lifecycleEvents.push('fail'),
+        onDismiss: () => lifecycleEvents.push('dismiss'),
+      });
+      const dispatch = lastDispatch();
+
+      dispatch(
+        JSON.stringify({
+          type: 'fail',
+          payload: {
+            message: 'Something went wrong',
+            code: CheckoutErrorCode.sdkError,
+          },
+        }),
+      );
+
+      expect(lifecycleEvents).toEqual(['fail']);
+      expect(subscription.remove).not.toHaveBeenCalled();
+
+      dispatch(JSON.stringify({type: 'close'}));
+
+      expect(lifecycleEvents).toEqual(['fail', 'dismiss']);
+      expect(subscription.remove).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a re-entrant presentation subscribed after dismissal', () => {
+      const firstSubscription = {remove: jest.fn()};
+      const secondSubscription = {remove: jest.fn()};
+      NativeModule.onDispatch
+        .mockReturnValueOnce(firstSubscription)
+        .mockReturnValueOnce(secondSubscription);
+      const instance = new ShopifyCheckout();
+      instance.present(checkoutUrl, {
+        onDismiss: () => {
+          instance.present(`${checkoutUrl}/next`, {onDismiss: jest.fn()});
+        },
+      });
+      const firstDispatch = lastDispatch();
+
+      firstDispatch(JSON.stringify({type: 'close'}));
+
+      expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
+      expect(secondSubscription.remove).not.toHaveBeenCalled();
+    });
+
     it('invokes `onDismiss` when the dispatcher receives a close envelope', () => {
       const instance = new ShopifyCheckout();
       const onDismiss = jest.fn();
@@ -727,18 +777,30 @@ describe('ShopifyCheckoutKit', () => {
         );
       });
 
-      it('logs a LifecycleEventParseError when a `fail` envelope payload is malformed', () => {
+      it('logs a malformed `fail` envelope without dropping the later dismissal', () => {
+        const subscription = {remove: jest.fn()};
+        NativeModule.onDispatch.mockReturnValueOnce(subscription);
         const instance = new ShopifyCheckout();
+        const onDismiss = jest.fn();
         const onFail = jest.fn();
-        instance.present(checkoutUrl, {onFail});
-        lastDispatch()(
+        instance.present(checkoutUrl, {onDismiss, onFail});
+        const dispatch = lastDispatch();
+
+        dispatch(
           JSON.stringify({type: 'fail', payload: {message: 'no code'}}),
         );
+
         expect(onFail).not.toHaveBeenCalled();
+        expect(subscription.remove).not.toHaveBeenCalled();
         expect(console.error).toHaveBeenCalledWith(
           expect.any(LifecycleEventParseError),
           expect.any(String),
         );
+
+        dispatch(JSON.stringify({type: 'close'}));
+
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+        expect(subscription.remove).toHaveBeenCalledTimes(1);
       });
 
       it('logs a LifecycleEventParseError when a `geolocationRequest` envelope payload is malformed', () => {

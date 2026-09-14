@@ -129,9 +129,10 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   /**
    * Presents the checkout sheet for a given checkout URL.
    *
-   * At most one of `callbacks.onDismiss` or `callbacks.onFail` fires per
-   * call, after which the per-presentation dispatch subscription is released.
-   * Programmatic dismissal invokes neither callback.
+   * `callbacks.onFail` reports a terminal checkout failure. If that failure
+   * closes the presentation, `callbacks.onDismiss` follows after closure and
+   * releases the per-presentation dispatch subscription. Programmatic
+   * dismissal invokes neither callback.
    *
    * @param checkoutUrl The URL of the checkout to display
    * @param callbacks Optional per-call SDK callbacks
@@ -156,14 +157,18 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     });
 
     if (dispatcher) {
-      this.dispatchSubscription = RNShopifyCheckoutKit.onDispatch(
+      const dispatchSubscription = RNShopifyCheckoutKit.onDispatch(
         envelopeJson => {
           const result = dispatcher(envelopeJson);
-          if (result.terminal) {
+          if (
+            result.terminal &&
+            this.dispatchSubscription === dispatchSubscription
+          ) {
             this.releaseDispatchSubscription();
           }
         },
       );
+      this.dispatchSubscription = dispatchSubscription;
     }
 
     RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);

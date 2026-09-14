@@ -497,21 +497,22 @@ class ShopifyCheckoutKitTests: XCTestCase {
         wait(for: [presentAttemptCompleted], timeout: 1)
     }
 
-    func testCheckoutDidDismissDismissesCheckoutSheetFromRCTWrapper() {
-        let dismissCompleted = expectation(description: "checkout sheet dismissed")
+    @MainActor
+    func testCheckoutDidDismissClearsCheckoutSheetWithoutDismissingItAgain() {
+        let callbackCompleted = expectation(description: "checkout dismissal handled")
         let checkoutSheet = DismissTrackingViewController()
         shopifyCheckoutKit.checkoutSheet = checkoutSheet
 
         shopifyCheckoutKit.checkoutDidDismiss()
 
+        XCTAssertNil(shopifyCheckoutKit.checkoutSheet)
         DispatchQueue.main.async {
-            XCTAssertTrue(checkoutSheet.dismissCalled)
-            XCTAssertTrue(checkoutSheet.dismissAnimated)
-            XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
-            dismissCompleted.fulfill()
+            XCTAssertFalse(checkoutSheet.dismissCalled)
+            XCTAssertFalse(checkoutSheet.dismissAnimated)
+            callbackCompleted.fulfill()
         }
 
-        wait(for: [dismissCompleted], timeout: 1)
+        wait(for: [callbackCompleted], timeout: 1)
     }
 }
 
