@@ -7,7 +7,7 @@ import {
   type LineItem,
 } from "@shopify/checkout-kit-protocol";
 
-import { checkoutComparisonKey, toCheckout, type Checkout } from "./checkout-model";
+import { checkoutComparisonKey, toCheckout, type Checkout } from "./models/checkout";
 
 function protocolCheckout(overrides: Partial<ProtocolCheckout> = {}): ProtocolCheckout {
   return {

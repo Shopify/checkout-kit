@@ -9,7 +9,7 @@ import {
   type Checkout as ProtocolCheckout,
 } from "@shopify/checkout-kit-protocol";
 
-import { toCheckout, checkoutComparisonKey } from "./checkout-model";
+import { toCheckout, checkoutComparisonKey } from "./models/checkout";
 import { toCheckoutError } from "./checkout-error";
 import {
   ShopifyCheckoutStartEvent,

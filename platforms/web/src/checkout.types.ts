@@ -11,7 +11,7 @@ import type {
 import type { LogLevel } from "./logger";
 
 export type { LogLevel };
-export type { Checkout } from "./checkout-model";
+export type { Checkout } from "./models/checkout";
 export type { CheckoutError, CheckoutErrorCode } from "./checkout-error";
 
 // This component should follow the custom element conventions set out here:
