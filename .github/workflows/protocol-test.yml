@@ -35,4 +35,5 @@ jobs:
         with:
           coverage-summary-path: protocol/coverage/coverage-summary.json
           title: 'Protocol — Coverage Report'
+          unique-id-for-comment: protocol
           create-new-comment: false

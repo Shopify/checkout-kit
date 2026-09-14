@@ -35,6 +35,7 @@ jobs:
         with:
           coverage-summary-path: platforms/react-native/coverage/coverage-summary.json
           title: 'React Native — Coverage Report'
+          unique-id-for-comment: react-native
           create-new-comment: false
 
       # Runs without --coverage so the coverage report above stays scoped to the
