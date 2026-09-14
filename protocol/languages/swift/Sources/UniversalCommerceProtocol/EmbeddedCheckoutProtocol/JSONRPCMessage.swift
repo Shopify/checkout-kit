@@ -160,37 +160,41 @@ struct JSONRPCReadyParams: Codable {
     }
 }
 
-public struct JSONRPCCheckoutParams: EventPayload {
-    public let checkout: EmbeddedCheckoutProtocol.Checkout
+extension EmbeddedCheckoutProtocol {
+    public struct JSONRPCCheckoutParams: EventPayload {
+        public let checkout: EmbeddedCheckoutProtocol.Checkout
 
-    public init(checkout: EmbeddedCheckoutProtocol.Checkout) {
-        self.checkout = checkout
-    }
+        public init(checkout: EmbeddedCheckoutProtocol.Checkout) {
+            self.checkout = checkout
+        }
 
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        checkout = try container.decode(EmbeddedCheckoutProtocol.Checkout.self, forKey: .checkout)
-    }
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            checkout = try container.decode(EmbeddedCheckoutProtocol.Checkout.self, forKey: .checkout)
+        }
 
-    private enum CodingKeys: String, CodingKey {
-        case checkout
+        private enum CodingKeys: String, CodingKey {
+            case checkout
+        }
     }
 }
 
-public struct JSONRPCErrorParams: EventPayload {
-    public let error: ErrorResponse
+extension EmbeddedCheckoutProtocol {
+    public struct JSONRPCErrorParams: EventPayload {
+        public let error: EmbeddedCheckoutProtocol.ErrorResponse
 
-    public init(error: ErrorResponse) {
-        self.error = error
-    }
+        public init(error: EmbeddedCheckoutProtocol.ErrorResponse) {
+            self.error = error
+        }
 
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        error = try container.decode(ErrorResponse.self, forKey: .error)
-    }
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            error = try container.decode(EmbeddedCheckoutProtocol.ErrorResponse.self, forKey: .error)
+        }
 
-    private enum CodingKeys: String, CodingKey {
-        case error
+        private enum CodingKeys: String, CodingKey {
+            case error
+        }
     }
 }
 
