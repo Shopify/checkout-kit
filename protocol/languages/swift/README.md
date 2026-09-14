@@ -6,6 +6,11 @@ See the [UCP shopping embedded protocol schema](../../services/shopping/embedded
 
 Most apps consume this product through the root Checkout Kit Swift package.
 
+The wire checkout model is `EmbeddedCheckoutProtocol.Checkout`. This namespace
+keeps it distinct from Checkout Kit's public `Checkout` snapshot under both
+SwiftPM and CocoaPods. Protocol consumers should qualify explicit type references
+with `EmbeddedCheckoutProtocol`; there is no top-level `Checkout` alias.
+
 ## Requirements
 
 - Swift Package Manager with Swift tools 5.9+

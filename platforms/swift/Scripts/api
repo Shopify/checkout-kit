@@ -69,6 +69,13 @@ dump_module() {
         -avoid-location \
         -avoid-tool-args \
         -o "$out_path"
+
+}
+
+normalize_module() {
+    # Declaration order can vary between builds. Preserve member and parameter
+    # order, and normalize only comparison copies so baselines avoid ordering churn.
+    jq '.ABIRoot.children |= sort_by(.kind, .printedName, .usr)' "$1" > "$2"
 }
 
 diagnose_module() {
@@ -120,7 +127,12 @@ case "$SUBCOMMAND" in
 
             dump_module "$module" "$current"
 
-            if ! diff -u "$committed" "$current"; then
+            normalized_committed="$TMP_OUT/$module.committed.normalized.json"
+            normalized_current="$TMP_OUT/$module.current.normalized.json"
+            normalize_module "$committed" "$normalized_committed"
+            normalize_module "$current" "$normalized_current"
+
+            if ! diff -u "$normalized_committed" "$normalized_current"; then
                 failed_modules+=("$module")
                 echo ""
                 echo "── swift-api-digester -diagnose-sdk ($module) ──"

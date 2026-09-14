@@ -18,11 +18,17 @@ struct ModelDecodingTests {
         #expect(checkout.links.first?.type == "privacy_policy")
 
         let reEncoded = try JSONEncoder().encode(checkout)
-        let reDecoded = try JSONDecoder().decode(Checkout.self, from: reEncoded)
+        let reDecoded = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: reEncoded)
 
         #expect(reDecoded.id == checkout.id)
         #expect(reDecoded.currency == checkout.currency)
         #expect(reDecoded.lineItems.count == checkout.lineItems.count)
+
+        let updated = reDecoded.with(currency: "EUR")
+        let copied = try EmbeddedCheckoutProtocol.Checkout(data: JSONEncoder().encode(updated))
+        #expect(copied.currency == "EUR")
+        #expect(copied.id == checkout.id)
+        #expect(copied.ucp.version == checkout.ucp.version)
     }
 
     @Test func decodesLineItemDetails() throws {
@@ -103,7 +109,7 @@ struct ModelDecodingTests {
           }
         }
         """
-        let checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
+        let checkout = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: Data(json.utf8))
 
         #expect(checkout.discounts?.codes == ["SUMMER20"])
         #expect(checkout.discounts?.applied?.first?.method == .across)
@@ -168,7 +174,7 @@ struct ModelDecodingTests {
           "com.example.foo": "bar"
         }
         """
-        var checkout = try JSONDecoder().decode(Checkout.self, from: Data(json.utf8))
+        var checkout = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: Data(json.utf8))
         let reEncoded = try JSONEncoder().encode(checkout)
         let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
 
