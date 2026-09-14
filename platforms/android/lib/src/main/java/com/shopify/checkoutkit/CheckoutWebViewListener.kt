@@ -20,6 +20,22 @@ internal class CheckoutWebViewListener(
     private val hideLoadingBackground: () -> Unit = {},
     private val updateProgressBarPercentage: (Int) -> Unit = {},
 ) {
+    internal val isNoop: Boolean = listener is NoopCheckoutListener
+
+    fun onCheckoutStarted(event: CheckoutStartEvent) {
+        listener.onCheckoutStarted(event)
+    }
+
+    fun onCheckoutUpdated(event: CheckoutUpdateEvent) {
+        listener.onCheckoutUpdated(event)
+    }
+
+    fun onCheckoutCompleted(event: CheckoutCompleteEvent) {
+        listener.onCheckoutCompleted(event)
+    }
+
+    fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction = listener.onCheckoutLinkClicked(link)
+
     /**
      * Reports checkout load failure through the presentation close path.
      */

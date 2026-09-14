@@ -316,7 +316,7 @@ class CheckoutBottomSheetOptionsTest {
     private class RecordingCheckoutListener : DefaultCheckoutListener() {
         var dismissed = false
 
-        override fun onCheckoutFailed(error: CheckoutException) = Unit
+        override fun onCheckoutFailed(event: CheckoutFailureEvent) = Unit
 
         override fun onCheckoutDismissed() {
             dismissed = true

@@ -50,6 +50,9 @@ internal class PreloadCache(
     val hasEntry: Boolean
         get() = entry != null
 
+    internal val cachedKey: PreloadKey?
+        get() = entry?.key
+
     fun setObserver(observer: CheckoutPreload) {
         this.observer = observer
     }
