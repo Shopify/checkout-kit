@@ -4,15 +4,11 @@ import SwiftUI
 @available(iOS 16.0, *)
 @MainActor
 class ShopPayViewController: WalletController {
-    var eventHandlers: EventHandlers
-    var client: (any CheckoutCommunicationProtocol)?
-
     init(
         identifier: CheckoutIdentifier,
         configuration: ShopifyAcceleratedCheckouts.Configuration,
         eventHandlers: EventHandlers = EventHandlers()
     ) {
-        self.eventHandlers = eventHandlers
         super.init(
             identifier: identifier,
             storefront: StorefrontAPI(
@@ -21,6 +17,7 @@ class ShopPayViewController: WalletController {
             ),
             configuration: configuration
         )
+        self.eventHandlers = eventHandlers
         self.identifier = identifier.parse()
     }
 
@@ -30,7 +27,7 @@ class ShopPayViewController: WalletController {
             guard let url = cart.checkoutUrl.url.appendQueryParam(name: "payment", value: "shop_pay") else {
                 throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "url")
             }
-            try await present(url: url, client: client)
+            try await present(url: url)
         } catch {
             let error = CheckoutError(
                 code: .sdkError,
