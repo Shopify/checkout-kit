@@ -44,7 +44,7 @@ class CheckoutExceptionAssert(actual: CheckoutException) :
 }
 
 fun noopDefaultCheckoutListener(): DefaultCheckoutListener = object : DefaultCheckoutListener() {
-    override fun onCheckoutFailed(error: CheckoutException) {
+    override fun onCheckoutFailed(event: CheckoutFailureEvent) {
         // no-op
     }
 

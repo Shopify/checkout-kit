@@ -13,7 +13,11 @@ import android.webkit.WebView
  * Use through [ShopifyCheckoutKit.present] or [ShopifyCheckout.create].
  */
 public class CheckoutPresentation internal constructor() {
-    internal var onFail: ((CheckoutException) -> Unit)? = null
+    internal var onStart: ((CheckoutStartEvent) -> Unit)? = null
+    internal var onUpdate: ((CheckoutUpdateEvent) -> Unit)? = null
+    internal var onComplete: ((CheckoutCompleteEvent) -> Unit)? = null
+    internal var onFail: ((CheckoutFailureEvent) -> Unit)? = null
+    internal var onLinkClick: ((CheckoutLink) -> CheckoutLinkAction)? = null
     internal var onDismiss: (() -> Unit)? = null
     internal var onPermissionRequest: ((PermissionRequest) -> Unit)? = null
     internal var onShowFileChooser:
@@ -21,14 +25,33 @@ public class CheckoutPresentation internal constructor() {
     internal var onGeolocationPermissionsShowPrompt:
         ((String, GeolocationPermissions.Callback) -> Unit)? = null
     internal var onGeolocationPermissionsHidePrompt: (() -> Unit)? = null
-    internal var protocolClient: CheckoutProtocol.Client? = null
+
+    /** Called when checkout starts. */
+    public fun onStart(handler: (CheckoutStartEvent) -> Unit) {
+        onStart = handler
+    }
+
+    /** Called when the buyer-visible checkout state changes. */
+    public fun onUpdate(handler: (CheckoutUpdateEvent) -> Unit) {
+        onUpdate = handler
+    }
+
+    /** Called when checkout completes. */
+    public fun onComplete(handler: (CheckoutCompleteEvent) -> Unit) {
+        onComplete = handler
+    }
+
+    /** Chooses how Checkout Kit handles links. Defaults to [CheckoutLinkAction.Open]. */
+    public fun onLinkClick(handler: (CheckoutLink) -> CheckoutLinkAction) {
+        onLinkClick = handler
+    }
 
     /**
      * Called when checkout cannot continue.
      *
      * Use [CheckoutException.code] for your app's recovery policy.
      */
-    public fun onFail(handler: (CheckoutException) -> Unit) {
+    public fun onFail(handler: (CheckoutFailureEvent) -> Unit) {
         onFail = handler
     }
 
@@ -75,17 +98,25 @@ public class CheckoutPresentation internal constructor() {
         onGeolocationPermissionsHidePrompt = handler
     }
 
-    /**
-     * Connects a typed client for supported Embedded Checkout Protocol callbacks.
-     */
-    public fun connect(client: CheckoutProtocol.Client?) {
-        protocolClient = client
-    }
-
     internal fun buildListener(): DefaultCheckoutListener =
         object : DefaultCheckoutListener() {
-            override fun onCheckoutFailed(error: CheckoutException) {
-                onFail?.invoke(error)
+            override fun onCheckoutStarted(event: CheckoutStartEvent) {
+                onStart?.invoke(event)
+            }
+
+            override fun onCheckoutUpdated(event: CheckoutUpdateEvent) {
+                onUpdate?.invoke(event)
+            }
+
+            override fun onCheckoutCompleted(event: CheckoutCompleteEvent) {
+                onComplete?.invoke(event)
+            }
+
+            override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction =
+                onLinkClick?.invoke(link) ?: CheckoutLinkAction.Open
+
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) {
+                onFail?.invoke(event)
             }
 
             override fun onCheckoutDismissed() {

@@ -54,27 +54,25 @@ public class ShopifyCheckout @MainThread internal constructor(
 ) : FrameLayout(context) {
 
     /**
-     * Creates checkout content with a listener and optional typed protocol client.
+     * Creates checkout content with a listener for checkout events and browser hooks.
      *
      * Initialization failures are reported on the main thread after this constructor returns. The
      * returned view remains inert when initialization fails.
      */
     @MainThread
-    @JvmOverloads
     public constructor(
         context: Context,
         checkoutUrl: String,
         checkoutListener: DefaultCheckoutListener,
-        protocolClient: CheckoutProtocol.Client? = null,
     ) : this(
         context = context,
         checkoutUrl = checkoutUrl,
         webMessageTransport = WebMessageListenerTransport,
         hostConfiguration = CheckoutHostConfiguration(
             listener = checkoutListener,
-            protocolClient = protocolClient,
+            protocolClient = null,
             onDismissRequest = checkoutListener::onCheckoutDismissed,
-            onFailure = checkoutListener::onCheckoutFailed,
+            onFailure = { checkoutListener.onCheckoutFailed(CheckoutFailureEvent(it)) },
             reportInitializationFailure = true,
         ),
     )
@@ -312,7 +310,10 @@ public class ShopifyCheckout @MainThread internal constructor(
 
     private fun webViewListener(): CheckoutWebViewListener = CheckoutWebViewListener(
         listener = hostConfiguration.listener,
-        closeCheckoutWithError = hostConfiguration.onFailure,
+        closeCheckoutWithError = { error ->
+            checkoutWebView?.endPresentationEvents()
+            hostConfiguration.onFailure(error)
+        },
         setProgressBarVisibility = { progressBar.visibility = it },
         hideLoadingBackground = ::hideLoadingBackground,
         updateProgressBarPercentage = { percentage -> progressBar.setProgressCompat(percentage) },
@@ -352,7 +353,7 @@ public class ShopifyCheckout @MainThread internal constructor(
         /**
          * Creates checkout content using the Kotlin presentation builder.
          *
-         * Callbacks and the connected protocol client are fixed for the lifetime of this view.
+         * Callbacks are fixed for the lifetime of this view.
          * Initialization failures are reported through the configured `onFail` callback on the
          * main thread after this function returns. The returned view remains inert when
          * initialization fails.
@@ -403,9 +404,9 @@ private fun buildCheckoutHostConfiguration(
     val listener = presentation.buildListener()
     return CheckoutHostConfiguration(
         listener = listener,
-        protocolClient = presentation.protocolClient,
+        protocolClient = null,
         onDismissRequest = listener::onCheckoutDismissed,
-        onFailure = listener::onCheckoutFailed,
+        onFailure = { listener.onCheckoutFailed(CheckoutFailureEvent(it)) },
         reportInitializationFailure = true,
     )
 }

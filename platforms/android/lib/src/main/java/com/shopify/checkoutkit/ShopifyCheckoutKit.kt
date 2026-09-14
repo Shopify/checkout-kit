@@ -116,8 +116,7 @@ public object ShopifyCheckoutKit {
      *
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
-     * @param configure a Kotlin-first builder for fail/dismiss callbacks, browser/system hooks,
-     * and an optional typed protocol client
+     * @param configure a Kotlin-first builder for checkout events and browser/system hooks
      * @return A [CheckoutHandle] if the sheet was successfully created and displayed.
      */
     @JvmStatic
@@ -132,14 +131,13 @@ public object ShopifyCheckoutKit {
             checkoutUrl = checkoutUrl,
             context = context,
             checkoutListener = presentation.buildListener(),
-            protocolClient = presentation.protocolClient,
         )
     }
 
     /**
      * Internal Kotlin presentation entry point that allows [webMessageTransport] to be injected.
      *
-     * Builds the callbacks and protocol client from [configure], then delegates to the core
+     * Builds the callbacks from [configure], then delegates to the core
      * presentation path.
      */
     internal fun present(
@@ -153,7 +151,6 @@ public object ShopifyCheckoutKit {
             checkoutUrl = checkoutUrl,
             context = context,
             checkoutListener = presentation.buildListener(),
-            protocolClient = presentation.protocolClient,
             webMessageTransport = webMessageTransport,
         )
     }
@@ -164,26 +161,19 @@ public object ShopifyCheckoutKit {
      * @param checkoutUrl The URL of the checkout to be presented, this can be obtained via the Storefront API
      * @param context The context the checkout is being presented from
      * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
-     * (failure, dismissal, permission prompts, file chooser).
-     * @param protocolClient optional typed handler for supported Embedded Checkout Protocol (ECP)
-     * callbacks from the checkout web page. Built-in messages
-     * (`ec.ready` and [ec.start][CheckoutProtocol.start])
-     * are handled automatically by the SDK.
+     * (start, updates, completion, failure, dismissal, links, permission prompts, file chooser).
      * @return A [CheckoutHandle] if the sheet was successfully created and displayed.
      */
-    @JvmOverloads
     @JvmStatic
     public fun <T : DefaultCheckoutListener> present(
         checkoutUrl: String,
         context: ComponentActivity,
         checkoutListener: T,
-        protocolClient: CheckoutProtocol.Client? = null,
     ): CheckoutHandle? {
         return present(
             checkoutUrl = checkoutUrl,
             context = context,
             checkoutListener = checkoutListener,
-            protocolClient = protocolClient,
             webMessageTransport = WebMessageListenerTransport,
         )
     }
