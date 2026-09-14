@@ -1,5 +1,5 @@
 import type { Checkout } from "./models/checkout";
-import type { CheckoutError } from "./checkout-error";
+import type { CheckoutError } from "./models/error";
 
 export interface ShopifyCheckoutStartEventDetail {
   checkout: Checkout;
