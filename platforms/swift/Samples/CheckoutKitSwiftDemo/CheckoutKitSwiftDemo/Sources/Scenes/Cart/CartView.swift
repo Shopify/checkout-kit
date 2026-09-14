@@ -8,12 +8,9 @@ typealias CartLineNode = Storefront.CartFragment.Lines.Node
 struct CartView: View {
     @State var cartCompleted: Bool = false
     @State var isBusy: Bool = false
-    @State var isCompleted: Bool = false
-    @State var showCheckoutSheet: Bool = false
+    @StateObject private var checkoutPresentation = CartCheckoutPresentation()
     @State private var checkoutPreload: CheckoutPreload?
     @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
-    @State private var selectedAddressIDs: [String: String] = [:]
-    @State private var selectedDeliveryMethodIDs: [String: String] = [:]
 
     @ObservedObject var cartManager: CartManager = .shared
     @ObservedObject private var preloadCacheHitLog: PreloadCacheHitLog = .shared
@@ -21,8 +18,8 @@ struct CartView: View {
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
 
-    @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
-    var windowOpenHandler: WindowOpenHandlerOption = .default
+    @AppStorage(AppStorageKeys.checkoutPresentation.rawValue)
+    var checkoutPresentationOption: CheckoutPresentationOption = .swiftUI
 
     @AppStorage(AppStorageKeys.checkoutPreloadingEnabled.rawValue)
     var checkoutPreloadingEnabled = true
@@ -62,24 +59,24 @@ struct CartView: View {
                                 .onStart { event in
                                     print("[AcceleratedCheckout] Started: \(event.checkout.id)")
                                 }
-                                .onUpdate(handleCheckoutUpdate)
+                                .onUpdate(checkoutPresentation.checkoutDidUpdate)
                                 .onComplete { event in
                                     print("[AcceleratedCheckout] Completed: \(event.checkout.order?.id ?? "unknown")")
-                                    isCompleted = true
+                                    checkoutPresentation.recordCompletion()
                                 }
-                                .onLinkClick(handleCheckoutLink)
+                                .onLinkClick(checkoutPresentation.checkoutAction(for:))
                                 .onFail { error in
                                     print("[AcceleratedCheckout] Failed: \(error)")
                                 }
                                 .onDismiss {
                                     print("[AcceleratedCheckout] Dismissed")
-                                    resetCompletedCart()
+                                    checkoutPresentation.resetCompletedCart()
                                 }
                         }
                     }
 
                     Button(
-                        action: { showCheckoutSheet = true },
+                        action: presentCheckout,
                         label: {
                             HStack {
                                 Text("Check out")
@@ -106,33 +103,17 @@ struct CartView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
-            .sheet(isPresented: $showCheckoutSheet) {
+            .sheet(isPresented: $checkoutPresentation.showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
                         .appearance(.app(.automatic))
                         .title("Checkout (SwiftUI)")
-                        .onStart { event in
-                            print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
-                        }
-                        .onUpdate(handleCheckoutUpdate)
-                        .onLinkClick(handleCheckoutLink)
-                        .onComplete { event in
-                            // Set the flag here; defer the cart reset until the user dismisses
-                            // the sheet (in .onDismiss). Resetting now would nil the cart and
-                            // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
-                            print("[CheckoutKitSwiftDemo] Completed: \(event.checkout.order?.id ?? "unknown")")
-                            isCompleted = true
-                        }
-                        .onDismiss {
-                            print("[CheckoutKitSwiftDemo] Dismissed")
-                            showCheckoutSheet = false
-
-                            resetCompletedCart()
-                        }
-                        .onFail { event in
-                            showCheckoutSheet = false
-                            print("[CheckoutKitSwiftDemo] Failed: \(event.error)")
-                        }
+                        .onStart(checkoutPresentation.checkoutDidStart)
+                        .onUpdate(checkoutPresentation.checkoutDidUpdate)
+                        .onLinkClick(checkoutPresentation.checkoutAction(for:))
+                        .onComplete(checkoutPresentation.checkoutDidComplete)
+                        .onDismiss(checkoutPresentation.checkoutDidDismiss)
+                        .onFail(checkoutPresentation.checkoutDidFail)
                         .edgesIgnoringSafeArea(.all)
                 }
             }
@@ -162,9 +143,13 @@ struct CartView: View {
     }
 
     private func presentCheckout() {
-        guard let url = CartManager.shared.cart?.checkoutURL else { return }
+        guard let url = cartManager.cart?.checkoutURL else { return }
 
-        CheckoutCoordinator.shared?.present(checkout: url)
+        checkoutPresentation.present(
+            checkout: url,
+            using: checkoutPresentationOption,
+            from: CheckoutCoordinator.shared?.window?.topMostViewController()
+        )
     }
 
     private func preloadCheckoutIfNeeded() {
@@ -176,60 +161,6 @@ struct CartView: View {
             preloadStateTestId = PreloadStateMarker.testId(for: state)
             print("[Preload] state changed to \(state)")
             ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
-        }
-    }
-
-    private func resetCompletedCart() {
-        if isCompleted {
-            CartManager.shared.resetCart()
-            isCompleted = false
-        }
-        selectedAddressIDs = [:]
-        selectedDeliveryMethodIDs = [:]
-    }
-
-    private func handleCheckoutUpdate(_ event: CheckoutUpdateEvent) {
-        let updatedAddressIDs = selectedAddressIDs(in: event.checkout)
-        if updatedAddressIDs != selectedAddressIDs {
-            print("[CheckoutKitSwiftDemo] Selected address changed")
-            selectedAddressIDs = updatedAddressIDs
-        }
-
-        let updatedDeliveryMethodIDs = selectedDeliveryMethodIDs(in: event.checkout)
-        if updatedDeliveryMethodIDs != selectedDeliveryMethodIDs {
-            print("[CheckoutKitSwiftDemo] Selected delivery method changed")
-            selectedDeliveryMethodIDs = updatedDeliveryMethodIDs
-        }
-
-        print("[CheckoutKitSwiftDemo] Updated: \(event.checkout.id)")
-    }
-
-    private func handleCheckoutLink(_ link: CheckoutLink) -> CheckoutLinkAction {
-        print("[CheckoutKitSwiftDemo] Checkout link clicked: \(link.url)")
-        switch windowOpenHandler {
-        case .default:
-            print("[CheckoutKitSwiftDemo] Checkout link delegated to Checkout Kit: \(link.url)")
-            return .open
-        case .externalApp:
-            print("[CheckoutKitSwiftDemo] Checkout link handled by sample: \(link.url)")
-            UIApplication.shared.open(link.url)
-            return .handled
-        }
-    }
-
-    private func selectedAddressIDs(in checkout: ShopifyCheckoutKit.Checkout) -> [String: String] {
-        (checkout.fulfillment?.methods ?? []).reduce(into: [:]) { selections, method in
-            guard method.type == "shipping", let destinationID = method.selectedDestinationID else { return }
-            selections[method.id] = destinationID
-        }
-    }
-
-    private func selectedDeliveryMethodIDs(in checkout: ShopifyCheckoutKit.Checkout) -> [String: String] {
-        (checkout.fulfillment?.methods ?? []).reduce(into: [:]) { selections, method in
-            for group in method.groups ?? [] {
-                guard let optionID = group.selectedOptionID else { continue }
-                selections["\(method.id):\(group.id)"] = optionID
-            }
         }
     }
 }
