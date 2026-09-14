@@ -5,11 +5,11 @@ import Testing
 @Suite("Codec Encode Tests")
 struct CodecEncodeTests {
     @Test func encodesResponse() throws {
-        let result = CredentialResult(
-            checkout: CredentialCheckout(
+        let result = EmbeddedCheckoutProtocol.CredentialResult(
+            checkout: EmbeddedCheckoutProtocol.CredentialCheckout(
                 payment: Payment(instruments: nil)
             ),
-            ucp: InstrumentsChangeResultUcp(
+            ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                 capabilities: nil,
                 paymentHandlers: nil,
                 services: nil,
@@ -30,7 +30,7 @@ struct CodecEncodeTests {
     @Test func encodesReadyResultCarryingOnlyUCPEnvelope() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: "ready-1",
-            result: ReadyResult(
+            result: EmbeddedCheckoutProtocol.ReadyResult(
                 checkout: nil,
                 credential: nil,
                 ucp: .success(),
@@ -56,7 +56,7 @@ struct CodecEncodeTests {
     @Test func encodesReadyResultIncludingCredential() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: .null,
-            result: ReadyResult(
+            result: EmbeddedCheckoutProtocol.ReadyResult(
                 checkout: nil,
                 credential: "tok-123",
                 ucp: .success(),
@@ -75,7 +75,7 @@ struct CodecEncodeTests {
     @Test func encodesAuthResult() throws {
         let json = EmbeddedCheckoutProtocol.encodeResponse(
             id: "auth-1",
-            result: AuthResult(
+            result: EmbeddedCheckoutProtocol.AuthResult(
                 credential: "tok-abc",
                 ucp: .success(),
                 continueURL: nil,

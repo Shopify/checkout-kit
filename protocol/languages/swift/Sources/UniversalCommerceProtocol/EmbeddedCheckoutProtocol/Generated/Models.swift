@@ -53,7 +53,7 @@ extension EmbeddedCheckoutProtocol {
         public let status: CheckoutStatus
         /// Different cart totals.
         public let totals: [CheckoutTotal]
-        public let ucp: UCPCheckoutResponseSchema
+        public let ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
 
         public enum CodingKeys: String, CodingKey {
             case attribution, buyer, context
@@ -65,7 +65,7 @@ extension EmbeddedCheckoutProtocol {
             case links, messages, order, payment, signals, status, totals, ucp
         }
 
-        public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: UCPCheckoutResponseSchema) {
+        public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) {
             self.attribution = attribution
             self.buyer = buyer
             self.context = context
@@ -109,7 +109,7 @@ extension EmbeddedCheckoutProtocol {
             self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
             self.status = try container.decode(CheckoutStatus.self, forKey: .status)
             self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
-            self.ucp = try container.decode(UCPCheckoutResponseSchema.self, forKey: .ucp)
+            self.ucp = try container.decode(EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema.self, forKey: .ucp)
             let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
             var extras: [String: JSONAny] = [:]
             for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
@@ -182,7 +182,7 @@ public extension EmbeddedCheckoutProtocol.Checkout {
         signals: [String: JSONAny]?? = nil,
         status: CheckoutStatus? = nil,
         totals: [CheckoutTotal]? = nil,
-        ucp: UCPCheckoutResponseSchema? = nil
+        ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema? = nil
     ) -> EmbeddedCheckoutProtocol.Checkout {
         return EmbeddedCheckoutProtocol.Checkout(
             attribution: attribution ?? self.attribution,
@@ -2246,37 +2246,39 @@ public extension Line {
 ///
 /// Base UCP metadata with shared properties for all schema types.
 // MARK: - UCPCheckoutResponseSchema
-public struct UCPCheckoutResponseSchema: Codable, Sendable {
-    /// Capability registry keyed by reverse-domain name.
-    public let capabilities: [String: [CapabilityResponseSchema]]?
-    /// Payment handler registry keyed by reverse-domain name.
-    public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]
-    /// Service registry keyed by reverse-domain name.
-    public let services: [String: [ServiceResponseSchema]]?
-    /// Application-level status of the UCP operation.
-    public let status: UCPCheckoutResponseSchemaStatus?
-    public let version: String
+extension EmbeddedCheckoutProtocol {
+    public struct UCPCheckoutResponseSchema: Codable, Sendable {
+        /// Capability registry keyed by reverse-domain name.
+        public let capabilities: [String: [CapabilityResponseSchema]]?
+        /// Payment handler registry keyed by reverse-domain name.
+        public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]
+        /// Service registry keyed by reverse-domain name.
+        public let services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?
+        /// Application-level status of the UCP operation.
+        public let status: UCPCheckoutResponseSchemaStatus?
+        public let version: String
 
-    public enum CodingKeys: String, CodingKey {
-        case capabilities
-        case paymentHandlers = "payment_handlers"
-        case services, status, version
-    }
+        public enum CodingKeys: String, CodingKey {
+            case capabilities
+            case paymentHandlers = "payment_handlers"
+            case services, status, version
+        }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]], services: [String: [ServiceResponseSchema]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
-        self.capabilities = capabilities
-        self.paymentHandlers = paymentHandlers
-        self.services = services
-        self.status = status
-        self.version = version
+        public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]], services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
+            self.capabilities = capabilities
+            self.paymentHandlers = paymentHandlers
+            self.services = services
+            self.status = status
+            self.version = version
+        }
     }
 }
 
 // MARK: UCPCheckoutResponseSchema convenience initializers and mutators
 
-public extension UCPCheckoutResponseSchema {
+public extension EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(UCPCheckoutResponseSchema.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -2293,11 +2295,11 @@ public extension UCPCheckoutResponseSchema {
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]? = nil,
-        services: [String: [ServiceResponseSchema]]?? = nil,
+        services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus?? = nil,
         version: String? = nil
-    ) -> UCPCheckoutResponseSchema {
-        return UCPCheckoutResponseSchema(
+    ) -> EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
+        return EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
@@ -2560,39 +2562,41 @@ public extension PaymentHandlerResponseSchemaAvailableInstrument {
 ///
 /// Shared foundation for all UCP entities.
 // MARK: - ServiceResponseSchema
-public struct ServiceResponseSchema: Codable, Sendable {
-    /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: EmbeddedTransportConfig?
-    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
-    /// exist.
-    public let id: String?
-    /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
-    /// URL to human-readable specification document.
-    public let spec: String?
-    /// Entity version in YYYY-MM-DD format.
-    public let version: String
-    /// Endpoint URL for this transport binding.
-    public let endpoint: String?
-    /// Transport protocol for this service binding.
-    public let transport: Transport
+extension EmbeddedCheckoutProtocol {
+    public struct ServiceResponseSchema: Codable, Sendable {
+        /// Entity-specific configuration. Structure defined by each entity's schema.
+        public let config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?
+        /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+        /// exist.
+        public let id: String?
+        /// URL to JSON Schema defining this entity's structure and payloads.
+        public let schema: String?
+        /// URL to human-readable specification document.
+        public let spec: String?
+        /// Entity version in YYYY-MM-DD format.
+        public let version: String
+        /// Endpoint URL for this transport binding.
+        public let endpoint: String?
+        /// Transport protocol for this service binding.
+        public let transport: Transport
 
-    public init(config: EmbeddedTransportConfig?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
-        self.version = version
-        self.endpoint = endpoint
-        self.transport = transport
+        public init(config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
+            self.config = config
+            self.id = id
+            self.schema = schema
+            self.spec = spec
+            self.version = version
+            self.endpoint = endpoint
+            self.transport = transport
+        }
     }
 }
 
 // MARK: ServiceResponseSchema convenience initializers and mutators
 
-public extension ServiceResponseSchema {
+public extension EmbeddedCheckoutProtocol.ServiceResponseSchema {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ServiceResponseSchema.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ServiceResponseSchema.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -2607,15 +2611,15 @@ public extension ServiceResponseSchema {
     }
 
     func with(
-        config: EmbeddedTransportConfig?? = nil,
+        config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?? = nil,
         id: String?? = nil,
         schema: String?? = nil,
         spec: String?? = nil,
         version: String? = nil,
         endpoint: String?? = nil,
         transport: Transport? = nil
-    ) -> ServiceResponseSchema {
-        return ServiceResponseSchema(
+    ) -> EmbeddedCheckoutProtocol.ServiceResponseSchema {
+        return EmbeddedCheckoutProtocol.ServiceResponseSchema(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -2640,30 +2644,32 @@ public extension ServiceResponseSchema {
 /// Per-session configuration for embedded transport binding. Allows businesses to vary EP
 /// availability and delegations based on cart contents, agent authorization, or policy.
 // MARK: - EmbeddedTransportConfig
-public struct EmbeddedTransportConfig: Codable, Sendable {
-    /// Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
-    /// a scheme from this list.
-    public let colorScheme: [EmbeddedColorScheme]?
-    /// Delegations the business allows. At service-level, declares available delegations. In UCP
-    /// responses, confirms accepted delegations for this session.
-    public let delegate: [String]?
+extension EmbeddedCheckoutProtocol {
+    public struct EmbeddedTransportConfig: Codable, Sendable {
+        /// Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
+        /// a scheme from this list.
+        public let colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?
+        /// Delegations the business allows. At service-level, declares available delegations. In UCP
+        /// responses, confirms accepted delegations for this session.
+        public let delegate: [String]?
 
-    public enum CodingKeys: String, CodingKey {
-        case colorScheme = "color_scheme"
-        case delegate
-    }
+        public enum CodingKeys: String, CodingKey {
+            case colorScheme = "color_scheme"
+            case delegate
+        }
 
-    public init(colorScheme: [EmbeddedColorScheme]?, delegate: [String]?) {
-        self.colorScheme = colorScheme
-        self.delegate = delegate
+        public init(colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?, delegate: [String]?) {
+            self.colorScheme = colorScheme
+            self.delegate = delegate
+        }
     }
 }
 
 // MARK: EmbeddedTransportConfig convenience initializers and mutators
 
-public extension EmbeddedTransportConfig {
+public extension EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(EmbeddedTransportConfig.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.EmbeddedTransportConfig.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -2678,10 +2684,10 @@ public extension EmbeddedTransportConfig {
     }
 
     func with(
-        colorScheme: [EmbeddedColorScheme]?? = nil,
+        colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?? = nil,
         delegate: [String]?? = nil
-    ) -> EmbeddedTransportConfig {
-        return EmbeddedTransportConfig(
+    ) -> EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
+        return EmbeddedCheckoutProtocol.EmbeddedTransportConfig(
             colorScheme: colorScheme ?? self.colorScheme,
             delegate: delegate ?? self.delegate
         )
@@ -2696,9 +2702,11 @@ public extension EmbeddedTransportConfig {
     }
 }
 
-public enum EmbeddedColorScheme: String, Codable, Sendable {
-    case dark = "dark"
-    case light = "light"
+extension EmbeddedCheckoutProtocol {
+    public enum EmbeddedColorScheme: String, Codable, Sendable {
+        case dark = "dark"
+        case light = "light"
+    }
 }
 
 /// Transport protocol for this service binding.
@@ -3608,31 +3616,33 @@ public extension Service {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - ErrorResponse
-public struct ErrorResponse: Codable, Sendable {
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: ErrorResponseUcp
+extension EmbeddedCheckoutProtocol {
+    public struct ErrorResponse: Codable, Sendable {
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp
 
-    public enum CodingKeys: String, CodingKey {
-        case continueURL = "continue_url"
-        case messages, ucp
-    }
+        public enum CodingKeys: String, CodingKey {
+            case continueURL = "continue_url"
+            case messages, ucp
+        }
 
-    public init(continueURL: String?, messages: [Message], ucp: ErrorResponseUcp) {
-        self.continueURL = continueURL
-        self.messages = messages
-        self.ucp = ucp
+        public init(continueURL: String?, messages: [Message], ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp) {
+            self.continueURL = continueURL
+            self.messages = messages
+            self.ucp = ucp
+        }
     }
 }
 
 // MARK: ErrorResponse convenience initializers and mutators
 
-public extension ErrorResponse {
+public extension EmbeddedCheckoutProtocol.ErrorResponse {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ErrorResponse.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ErrorResponse.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3649,9 +3659,9 @@ public extension ErrorResponse {
     func with(
         continueURL: String?? = nil,
         messages: [Message]? = nil,
-        ucp: ErrorResponseUcp? = nil
-    ) -> ErrorResponse {
-        return ErrorResponse(
+        ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp? = nil
+    ) -> EmbeddedCheckoutProtocol.ErrorResponse {
+        return EmbeddedCheckoutProtocol.ErrorResponse(
             continueURL: continueURL ?? self.continueURL,
             messages: messages ?? self.messages,
             ucp: ucp ?? self.ucp
@@ -3674,37 +3684,39 @@ public extension ErrorResponse {
 ///
 /// Base UCP metadata with shared properties for all schema types.
 // MARK: - ErrorResponseUcp
-public struct ErrorResponseUcp: Codable, Sendable {
-    /// Capability registry keyed by reverse-domain name.
-    public let capabilities: [String: [CapabilityResponseSchema]]?
-    /// Payment handler registry keyed by reverse-domain name.
-    public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
-    /// Service registry keyed by reverse-domain name.
-    public let services: [String: [Service]]?
-    /// Application-level status of the UCP operation.
-    public let status: ErrorStatus
-    public let version: String
+extension EmbeddedCheckoutProtocol {
+    public struct ErrorResponseUcp: Codable, Sendable {
+        /// Capability registry keyed by reverse-domain name.
+        public let capabilities: [String: [CapabilityResponseSchema]]?
+        /// Payment handler registry keyed by reverse-domain name.
+        public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
+        /// Service registry keyed by reverse-domain name.
+        public let services: [String: [Service]]?
+        /// Application-level status of the UCP operation.
+        public let status: EmbeddedCheckoutProtocol.ErrorStatus
+        public let version: String
 
-    public enum CodingKeys: String, CodingKey {
-        case capabilities
-        case paymentHandlers = "payment_handlers"
-        case services, status, version
-    }
+        public enum CodingKeys: String, CodingKey {
+            case capabilities
+            case paymentHandlers = "payment_handlers"
+            case services, status, version
+        }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: ErrorStatus, version: String) {
-        self.capabilities = capabilities
-        self.paymentHandlers = paymentHandlers
-        self.services = services
-        self.status = status
-        self.version = version
+        public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: EmbeddedCheckoutProtocol.ErrorStatus, version: String) {
+            self.capabilities = capabilities
+            self.paymentHandlers = paymentHandlers
+            self.services = services
+            self.status = status
+            self.version = version
+        }
     }
 }
 
 // MARK: ErrorResponseUcp convenience initializers and mutators
 
-public extension ErrorResponseUcp {
+public extension EmbeddedCheckoutProtocol.ErrorResponseUcp {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ErrorResponseUcp.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ErrorResponseUcp.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3722,10 +3734,10 @@ public extension ErrorResponseUcp {
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
         services: [String: [Service]]?? = nil,
-        status: ErrorStatus? = nil,
+        status: EmbeddedCheckoutProtocol.ErrorStatus? = nil,
         version: String? = nil
-    ) -> ErrorResponseUcp {
-        return ErrorResponseUcp(
+    ) -> EmbeddedCheckoutProtocol.ErrorResponseUcp {
+        return EmbeddedCheckoutProtocol.ErrorResponseUcp(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
@@ -3744,8 +3756,10 @@ public extension ErrorResponseUcp {
 }
 
 /// Application-level status of the UCP operation.
-public enum ErrorStatus: String, Codable, Sendable {
-    case error = "error"
+extension EmbeddedCheckoutProtocol {
+    public enum ErrorStatus: String, Codable, Sendable {
+        case error = "error"
+    }
 }
 
 /// Checkout state after instrument selection.
@@ -3753,35 +3767,37 @@ public enum ErrorStatus: String, Codable, Sendable {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - InstrumentsChangeResult
-public struct InstrumentsChangeResult: Codable, Sendable {
-    /// Partial checkout update with payment instrument selection.
-    public let checkout: InstrumentsChangeCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct InstrumentsChangeResult: Codable, Sendable {
+        /// Partial checkout update with payment instrument selection.
+        public let checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case checkout, ucp
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(checkout: InstrumentsChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-        self.checkout = checkout
-        self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+            self.checkout = checkout
+            self.ucp = ucp
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: InstrumentsChangeResult convenience initializers and mutators
 
-public extension InstrumentsChangeResult {
+public extension EmbeddedCheckoutProtocol.InstrumentsChangeResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.InstrumentsChangeResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3796,12 +3812,12 @@ public extension InstrumentsChangeResult {
     }
 
     func with(
-        checkout: InstrumentsChangeCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
+        checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> InstrumentsChangeResult {
-        return InstrumentsChangeResult(
+    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeResult {
+        return EmbeddedCheckoutProtocol.InstrumentsChangeResult(
             checkout: checkout ?? self.checkout,
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
@@ -3820,20 +3836,22 @@ public extension InstrumentsChangeResult {
 
 /// Partial checkout update with payment instrument selection.
 // MARK: - InstrumentsChangeCheckout
-public struct InstrumentsChangeCheckout: Codable, Sendable {
-    /// Payment instruments with selected instrument ID.
-    public let payment: InstrumentsChangePayment?
+extension EmbeddedCheckoutProtocol {
+    public struct InstrumentsChangeCheckout: Codable, Sendable {
+        /// Payment instruments with selected instrument ID.
+        public let payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?
 
-    public init(payment: InstrumentsChangePayment?) {
-        self.payment = payment
+        public init(payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?) {
+            self.payment = payment
+        }
     }
 }
 
 // MARK: InstrumentsChangeCheckout convenience initializers and mutators
 
-public extension InstrumentsChangeCheckout {
+public extension EmbeddedCheckoutProtocol.InstrumentsChangeCheckout {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeCheckout.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.InstrumentsChangeCheckout.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3848,9 +3866,9 @@ public extension InstrumentsChangeCheckout {
     }
 
     func with(
-        payment: InstrumentsChangePayment?? = nil
-    ) -> InstrumentsChangeCheckout {
-        return InstrumentsChangeCheckout(
+        payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?? = nil
+    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeCheckout {
+        return EmbeddedCheckoutProtocol.InstrumentsChangeCheckout(
             payment: payment ?? self.payment
         )
     }
@@ -3868,30 +3886,32 @@ public extension InstrumentsChangeCheckout {
 ///
 /// Payment configuration containing handlers.
 // MARK: - InstrumentsChangePayment
-public struct InstrumentsChangePayment: Codable, Sendable {
-    /// The payment instruments available for this payment. Each instrument is associated with a
-    /// specific handler via the handler_id field. Handlers can extend the base
-    /// payment_instrument schema to add handler-specific fields.
-    public let instruments: [SelectedPaymentInstrument]?
-    /// ID of the selected payment instrument.
-    public let selectedInstrumentID: String?
+extension EmbeddedCheckoutProtocol {
+    public struct InstrumentsChangePayment: Codable, Sendable {
+        /// The payment instruments available for this payment. Each instrument is associated with a
+        /// specific handler via the handler_id field. Handlers can extend the base
+        /// payment_instrument schema to add handler-specific fields.
+        public let instruments: [SelectedPaymentInstrument]?
+        /// ID of the selected payment instrument.
+        public let selectedInstrumentID: String?
 
-    public enum CodingKeys: String, CodingKey {
-        case instruments
-        case selectedInstrumentID = "selected_instrument_id"
-    }
+        public enum CodingKeys: String, CodingKey {
+            case instruments
+            case selectedInstrumentID = "selected_instrument_id"
+        }
 
-    public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
-        self.instruments = instruments
-        self.selectedInstrumentID = selectedInstrumentID
+        public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
+            self.instruments = instruments
+            self.selectedInstrumentID = selectedInstrumentID
+        }
     }
 }
 
 // MARK: InstrumentsChangePayment convenience initializers and mutators
 
-public extension InstrumentsChangePayment {
+public extension EmbeddedCheckoutProtocol.InstrumentsChangePayment {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangePayment.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.InstrumentsChangePayment.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3908,8 +3928,8 @@ public extension InstrumentsChangePayment {
     func with(
         instruments: [SelectedPaymentInstrument]?? = nil,
         selectedInstrumentID: String?? = nil
-    ) -> InstrumentsChangePayment {
-        return InstrumentsChangePayment(
+    ) -> EmbeddedCheckoutProtocol.InstrumentsChangePayment {
+        return EmbeddedCheckoutProtocol.InstrumentsChangePayment(
             instruments: instruments ?? self.instruments,
             selectedInstrumentID: selectedInstrumentID ?? self.selectedInstrumentID
         )
@@ -3933,37 +3953,39 @@ public extension InstrumentsChangePayment {
 ///
 /// UCP metadata with status 'error'. Use for response branches that carry error information.
 // MARK: - InstrumentsChangeResultUcp
-public struct InstrumentsChangeResultUcp: Codable, Sendable {
-    /// Capability registry keyed by reverse-domain name.
-    public let capabilities: [String: [CapabilityElement]]?
-    /// Payment handler registry keyed by reverse-domain name.
-    public let paymentHandlers: [String: [PaymentHandlerElement]]?
-    /// Service registry keyed by reverse-domain name.
-    public let services: [String: [EmbeddedService]]?
-    /// Application-level status of the UCP operation.
-    public let status: UCPCheckoutResponseSchemaStatus
-    public let version: String
+extension EmbeddedCheckoutProtocol {
+    public struct InstrumentsChangeResultUcp: Codable, Sendable {
+        /// Capability registry keyed by reverse-domain name.
+        public let capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?
+        /// Payment handler registry keyed by reverse-domain name.
+        public let paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?
+        /// Service registry keyed by reverse-domain name.
+        public let services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?
+        /// Application-level status of the UCP operation.
+        public let status: UCPCheckoutResponseSchemaStatus
+        public let version: String
 
-    public enum CodingKeys: String, CodingKey {
-        case capabilities
-        case paymentHandlers = "payment_handlers"
-        case services, status, version
-    }
+        public enum CodingKeys: String, CodingKey {
+            case capabilities
+            case paymentHandlers = "payment_handlers"
+            case services, status, version
+        }
 
-    public init(capabilities: [String: [CapabilityElement]]?, paymentHandlers: [String: [PaymentHandlerElement]]?, services: [String: [EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
-        self.capabilities = capabilities
-        self.paymentHandlers = paymentHandlers
-        self.services = services
-        self.status = status
-        self.version = version
+        public init(capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?, paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?, services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
+            self.capabilities = capabilities
+            self.paymentHandlers = paymentHandlers
+            self.services = services
+            self.status = status
+            self.version = version
+        }
     }
 }
 
 // MARK: InstrumentsChangeResultUcp convenience initializers and mutators
 
-public extension InstrumentsChangeResultUcp {
+public extension EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(InstrumentsChangeResultUcp.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -3978,13 +4000,13 @@ public extension InstrumentsChangeResultUcp {
     }
 
     func with(
-        capabilities: [String: [CapabilityElement]]?? = nil,
-        paymentHandlers: [String: [PaymentHandlerElement]]?? = nil,
-        services: [String: [EmbeddedService]]?? = nil,
+        capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?? = nil,
+        paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?? = nil,
+        services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus? = nil,
         version: String? = nil
-    ) -> InstrumentsChangeResultUcp {
-        return InstrumentsChangeResultUcp(
+    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
+        return EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
             capabilities: capabilities ?? self.capabilities,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
@@ -4007,37 +4029,39 @@ public extension InstrumentsChangeResultUcp {
 /// Capability reference in responses. Only name/version required to confirm active
 /// capabilities.
 // MARK: - CapabilityElement
-public struct CapabilityElement: Codable, Sendable {
-    /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
-    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
-    /// exist.
-    public let id: String?
-    /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
-    /// URL to human-readable specification document.
-    public let spec: String?
-    /// Entity version in YYYY-MM-DD format.
-    public let version: String
-    /// Parent capability(s) this extends. Present for extensions, absent for root capabilities.
-    /// Use array for multi-parent extensions.
-    public let extends: Extends?
+extension EmbeddedCheckoutProtocol {
+    public struct CapabilityElement: Codable, Sendable {
+        /// Entity-specific configuration. Structure defined by each entity's schema.
+        public let config: [String: JSONAny]?
+        /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+        /// exist.
+        public let id: String?
+        /// URL to JSON Schema defining this entity's structure and payloads.
+        public let schema: String?
+        /// URL to human-readable specification document.
+        public let spec: String?
+        /// Entity version in YYYY-MM-DD format.
+        public let version: String
+        /// Parent capability(s) this extends. Present for extensions, absent for root capabilities.
+        /// Use array for multi-parent extensions.
+        public let extends: Extends?
 
-    public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, extends: Extends?) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
-        self.version = version
-        self.extends = extends
+        public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, extends: Extends?) {
+            self.config = config
+            self.id = id
+            self.schema = schema
+            self.spec = spec
+            self.version = version
+            self.extends = extends
+        }
     }
 }
 
 // MARK: CapabilityElement convenience initializers and mutators
 
-public extension CapabilityElement {
+public extension EmbeddedCheckoutProtocol.CapabilityElement {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CapabilityElement.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.CapabilityElement.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4058,8 +4082,8 @@ public extension CapabilityElement {
         spec: String?? = nil,
         version: String? = nil,
         extends: Extends?? = nil
-    ) -> CapabilityElement {
-        return CapabilityElement(
+    ) -> EmbeddedCheckoutProtocol.CapabilityElement {
+        return EmbeddedCheckoutProtocol.CapabilityElement(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -4083,42 +4107,44 @@ public extension CapabilityElement {
 /// Handler reference in responses. May include full config state for runtime usage of the
 /// handler.
 // MARK: - PaymentHandlerElement
-public struct PaymentHandlerElement: Codable, Sendable {
-    /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
-    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
-    /// exist.
-    public let id: String
-    /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
-    /// URL to human-readable specification document.
-    public let spec: String?
-    /// Entity version in YYYY-MM-DD format.
-    public let version: String
-    /// Instrument types this handler supports, with optional constraints. When absent, every
-    /// instrument should be considered available.
-    public let availableInstruments: [PaymentHandlerAvailableInstrument]?
+extension EmbeddedCheckoutProtocol {
+    public struct PaymentHandlerElement: Codable, Sendable {
+        /// Entity-specific configuration. Structure defined by each entity's schema.
+        public let config: [String: JSONAny]?
+        /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+        /// exist.
+        public let id: String
+        /// URL to JSON Schema defining this entity's structure and payloads.
+        public let schema: String?
+        /// URL to human-readable specification document.
+        public let spec: String?
+        /// Entity version in YYYY-MM-DD format.
+        public let version: String
+        /// Instrument types this handler supports, with optional constraints. When absent, every
+        /// instrument should be considered available.
+        public let availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?
 
-    public enum CodingKeys: String, CodingKey {
-        case config, id, schema, spec, version
-        case availableInstruments = "available_instruments"
-    }
+        public enum CodingKeys: String, CodingKey {
+            case config, id, schema, spec, version
+            case availableInstruments = "available_instruments"
+        }
 
-    public init(config: [String: JSONAny]?, id: String, schema: String?, spec: String?, version: String, availableInstruments: [PaymentHandlerAvailableInstrument]?) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
-        self.version = version
-        self.availableInstruments = availableInstruments
+        public init(config: [String: JSONAny]?, id: String, schema: String?, spec: String?, version: String, availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?) {
+            self.config = config
+            self.id = id
+            self.schema = schema
+            self.spec = spec
+            self.version = version
+            self.availableInstruments = availableInstruments
+        }
     }
 }
 
 // MARK: PaymentHandlerElement convenience initializers and mutators
 
-public extension PaymentHandlerElement {
+public extension EmbeddedCheckoutProtocol.PaymentHandlerElement {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(PaymentHandlerElement.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.PaymentHandlerElement.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4138,9 +4164,9 @@ public extension PaymentHandlerElement {
         schema: String?? = nil,
         spec: String?? = nil,
         version: String? = nil,
-        availableInstruments: [PaymentHandlerAvailableInstrument]?? = nil
-    ) -> PaymentHandlerElement {
-        return PaymentHandlerElement(
+        availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?? = nil
+    ) -> EmbeddedCheckoutProtocol.PaymentHandlerElement {
+        return EmbeddedCheckoutProtocol.PaymentHandlerElement(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -4161,25 +4187,27 @@ public extension PaymentHandlerElement {
 
 /// An instrument type available from a payment handler with optional constraints.
 // MARK: - PaymentHandlerAvailableInstrument
-public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
-    /// Constraints on this instrument type. Structure depends on instrument type and active
-    /// capabilities.
-    public let constraints: [String: JSONAny]?
-    /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
-    /// schema's type constant.
-    public let type: String
+extension EmbeddedCheckoutProtocol {
+    public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
+        /// Constraints on this instrument type. Structure depends on instrument type and active
+        /// capabilities.
+        public let constraints: [String: JSONAny]?
+        /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
+        /// schema's type constant.
+        public let type: String
 
-    public init(constraints: [String: JSONAny]?, type: String) {
-        self.constraints = constraints
-        self.type = type
+        public init(constraints: [String: JSONAny]?, type: String) {
+            self.constraints = constraints
+            self.type = type
+        }
     }
 }
 
 // MARK: PaymentHandlerAvailableInstrument convenience initializers and mutators
 
-public extension PaymentHandlerAvailableInstrument {
+public extension EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(PaymentHandlerAvailableInstrument.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4196,8 +4224,8 @@ public extension PaymentHandlerAvailableInstrument {
     func with(
         constraints: [String: JSONAny]?? = nil,
         type: String? = nil
-    ) -> PaymentHandlerAvailableInstrument {
-        return PaymentHandlerAvailableInstrument(
+    ) -> EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
+        return EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument(
             constraints: constraints ?? self.constraints,
             type: type ?? self.type
         )
@@ -4214,39 +4242,41 @@ public extension PaymentHandlerAvailableInstrument {
 
 /// Shared foundation for all UCP entities.
 // MARK: - EmbeddedService
-public struct EmbeddedService: Codable, Sendable {
-    /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
-    /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
-    /// exist.
-    public let id: String?
-    /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
-    /// URL to human-readable specification document.
-    public let spec: String?
-    /// Entity version in YYYY-MM-DD format.
-    public let version: String
-    /// Endpoint URL for this transport binding.
-    public let endpoint: String?
-    /// Transport protocol for this service binding.
-    public let transport: Transport
+extension EmbeddedCheckoutProtocol {
+    public struct EmbeddedService: Codable, Sendable {
+        /// Entity-specific configuration. Structure defined by each entity's schema.
+        public let config: [String: JSONAny]?
+        /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
+        /// exist.
+        public let id: String?
+        /// URL to JSON Schema defining this entity's structure and payloads.
+        public let schema: String?
+        /// URL to human-readable specification document.
+        public let spec: String?
+        /// Entity version in YYYY-MM-DD format.
+        public let version: String
+        /// Endpoint URL for this transport binding.
+        public let endpoint: String?
+        /// Transport protocol for this service binding.
+        public let transport: Transport
 
-    public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
-        self.version = version
-        self.endpoint = endpoint
-        self.transport = transport
+        public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
+            self.config = config
+            self.id = id
+            self.schema = schema
+            self.spec = spec
+            self.version = version
+            self.endpoint = endpoint
+            self.transport = transport
+        }
     }
 }
 
 // MARK: EmbeddedService convenience initializers and mutators
 
-public extension EmbeddedService {
+public extension EmbeddedCheckoutProtocol.EmbeddedService {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(EmbeddedService.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.EmbeddedService.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4268,8 +4298,8 @@ public extension EmbeddedService {
         version: String? = nil,
         endpoint: String?? = nil,
         transport: Transport? = nil
-    ) -> EmbeddedService {
-        return EmbeddedService(
+    ) -> EmbeddedCheckoutProtocol.EmbeddedService {
+        return EmbeddedCheckoutProtocol.EmbeddedService(
             config: config ?? self.config,
             id: id ?? self.id,
             schema: schema ?? self.schema,
@@ -4294,35 +4324,37 @@ public extension EmbeddedService {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - CredentialResult
-public struct CredentialResult: Codable, Sendable {
-    /// Partial checkout update with payment credential.
-    public let checkout: CredentialCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct CredentialResult: Codable, Sendable {
+        /// Partial checkout update with payment credential.
+        public let checkout: EmbeddedCheckoutProtocol.CredentialCheckout?
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case checkout, ucp
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(checkout: CredentialCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-        self.checkout = checkout
-        self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(checkout: EmbeddedCheckoutProtocol.CredentialCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+            self.checkout = checkout
+            self.ucp = ucp
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: CredentialResult convenience initializers and mutators
 
-public extension CredentialResult {
+public extension EmbeddedCheckoutProtocol.CredentialResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CredentialResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.CredentialResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4337,12 +4369,12 @@ public extension CredentialResult {
     }
 
     func with(
-        checkout: CredentialCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
+        checkout: EmbeddedCheckoutProtocol.CredentialCheckout?? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> CredentialResult {
-        return CredentialResult(
+    ) -> EmbeddedCheckoutProtocol.CredentialResult {
+        return EmbeddedCheckoutProtocol.CredentialResult(
             checkout: checkout ?? self.checkout,
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
@@ -4361,19 +4393,21 @@ public extension CredentialResult {
 
 /// Partial checkout update with payment credential.
 // MARK: - CredentialCheckout
-public struct CredentialCheckout: Codable, Sendable {
-    public let payment: Payment?
+extension EmbeddedCheckoutProtocol {
+    public struct CredentialCheckout: Codable, Sendable {
+        public let payment: Payment?
 
-    public init(payment: Payment?) {
-        self.payment = payment
+        public init(payment: Payment?) {
+            self.payment = payment
+        }
     }
 }
 
 // MARK: CredentialCheckout convenience initializers and mutators
 
-public extension CredentialCheckout {
+public extension EmbeddedCheckoutProtocol.CredentialCheckout {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CredentialCheckout.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.CredentialCheckout.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4389,8 +4423,8 @@ public extension CredentialCheckout {
 
     func with(
         payment: Payment?? = nil
-    ) -> CredentialCheckout {
-        return CredentialCheckout(
+    ) -> EmbeddedCheckoutProtocol.CredentialCheckout {
+        return EmbeddedCheckoutProtocol.CredentialCheckout(
             payment: payment ?? self.payment
         )
     }
@@ -4409,35 +4443,37 @@ public extension CredentialCheckout {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - AddressChangeResult
-public struct AddressChangeResult: Codable, Sendable {
-    /// Partial checkout update with fulfillment address selection.
-    public let checkout: AddressChangeCheckout?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct AddressChangeResult: Codable, Sendable {
+        /// Partial checkout update with fulfillment address selection.
+        public let checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case checkout, ucp
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(checkout: AddressChangeCheckout?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-        self.checkout = checkout
-        self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+            self.checkout = checkout
+            self.ucp = ucp
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: AddressChangeResult convenience initializers and mutators
 
-public extension AddressChangeResult {
+public extension EmbeddedCheckoutProtocol.AddressChangeResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AddressChangeResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.AddressChangeResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4452,12 +4488,12 @@ public extension AddressChangeResult {
     }
 
     func with(
-        checkout: AddressChangeCheckout?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
+        checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> AddressChangeResult {
-        return AddressChangeResult(
+    ) -> EmbeddedCheckoutProtocol.AddressChangeResult {
+        return EmbeddedCheckoutProtocol.AddressChangeResult(
             checkout: checkout ?? self.checkout,
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
@@ -4476,20 +4512,22 @@ public extension AddressChangeResult {
 
 /// Partial checkout update with fulfillment address selection.
 // MARK: - AddressChangeCheckout
-public struct AddressChangeCheckout: Codable, Sendable {
-    /// Updated fulfillment with new selected destination and destinations.
-    public let fulfillment: CheckoutFulfillmentClass?
+extension EmbeddedCheckoutProtocol {
+    public struct AddressChangeCheckout: Codable, Sendable {
+        /// Updated fulfillment with new selected destination and destinations.
+        public let fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
 
-    public init(fulfillment: CheckoutFulfillmentClass?) {
-        self.fulfillment = fulfillment
+        public init(fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?) {
+            self.fulfillment = fulfillment
+        }
     }
 }
 
 // MARK: AddressChangeCheckout convenience initializers and mutators
 
-public extension AddressChangeCheckout {
+public extension EmbeddedCheckoutProtocol.AddressChangeCheckout {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AddressChangeCheckout.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.AddressChangeCheckout.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4504,9 +4542,9 @@ public extension AddressChangeCheckout {
     }
 
     func with(
-        fulfillment: CheckoutFulfillmentClass?? = nil
-    ) -> AddressChangeCheckout {
-        return AddressChangeCheckout(
+        fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?? = nil
+    ) -> EmbeddedCheckoutProtocol.AddressChangeCheckout {
+        return EmbeddedCheckoutProtocol.AddressChangeCheckout(
             fulfillment: fulfillment ?? self.fulfillment
         )
     }
@@ -4524,28 +4562,30 @@ public extension AddressChangeCheckout {
 ///
 /// Container for fulfillment methods and availability.
 // MARK: - CheckoutFulfillmentClass
-public struct CheckoutFulfillmentClass: Codable, Sendable {
-    /// Inventory availability hints.
-    public let availableMethods: [FulfillmentAvailableMethod]?
-    /// Fulfillment methods for cart items.
-    public let methods: [FulfillmentMethod]?
+extension EmbeddedCheckoutProtocol {
+    public struct CheckoutFulfillmentClass: Codable, Sendable {
+        /// Inventory availability hints.
+        public let availableMethods: [FulfillmentAvailableMethod]?
+        /// Fulfillment methods for cart items.
+        public let methods: [FulfillmentMethod]?
 
-    public enum CodingKeys: String, CodingKey {
-        case availableMethods = "available_methods"
-        case methods
-    }
+        public enum CodingKeys: String, CodingKey {
+            case availableMethods = "available_methods"
+            case methods
+        }
 
-    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
-        self.availableMethods = availableMethods
-        self.methods = methods
+        public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
+            self.availableMethods = availableMethods
+            self.methods = methods
+        }
     }
 }
 
 // MARK: CheckoutFulfillmentClass convenience initializers and mutators
 
-public extension CheckoutFulfillmentClass {
+public extension EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(CheckoutFulfillmentClass.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.CheckoutFulfillmentClass.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4562,8 +4602,8 @@ public extension CheckoutFulfillmentClass {
     func with(
         availableMethods: [FulfillmentAvailableMethod]?? = nil,
         methods: [FulfillmentMethod]?? = nil
-    ) -> CheckoutFulfillmentClass {
-        return CheckoutFulfillmentClass(
+    ) -> EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
+        return EmbeddedCheckoutProtocol.CheckoutFulfillmentClass(
             availableMethods: availableMethods ?? self.availableMethods,
             methods: methods ?? self.methods
         )
@@ -4579,22 +4619,24 @@ public extension CheckoutFulfillmentClass {
 }
 
 // MARK: - ReadyRequest
-public struct ReadyRequest: Codable, Sendable {
-    public let auth: Auth?
-    /// Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
-    public let delegate: [String]
+extension EmbeddedCheckoutProtocol {
+    public struct ReadyRequest: Codable, Sendable {
+        public let auth: EmbeddedCheckoutProtocol.Auth?
+        /// Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
+        public let delegate: [String]
 
-    public init(auth: Auth?, delegate: [String]) {
-        self.auth = auth
-        self.delegate = delegate
+        public init(auth: EmbeddedCheckoutProtocol.Auth?, delegate: [String]) {
+            self.auth = auth
+            self.delegate = delegate
+        }
     }
 }
 
 // MARK: ReadyRequest convenience initializers and mutators
 
-public extension ReadyRequest {
+public extension EmbeddedCheckoutProtocol.ReadyRequest {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ReadyRequest.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ReadyRequest.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4609,10 +4651,10 @@ public extension ReadyRequest {
     }
 
     func with(
-        auth: Auth?? = nil,
+        auth: EmbeddedCheckoutProtocol.Auth?? = nil,
         delegate: [String]? = nil
-    ) -> ReadyRequest {
-        return ReadyRequest(
+    ) -> EmbeddedCheckoutProtocol.ReadyRequest {
+        return EmbeddedCheckoutProtocol.ReadyRequest(
             auth: auth ?? self.auth,
             delegate: delegate ?? self.delegate
         )
@@ -4628,19 +4670,21 @@ public extension ReadyRequest {
 }
 
 // MARK: - Auth
-public struct Auth: Codable, Sendable {
-    public let type: String?
+extension EmbeddedCheckoutProtocol {
+    public struct Auth: Codable, Sendable {
+        public let type: String?
 
-    public init(type: String?) {
-        self.type = type
+        public init(type: String?) {
+            self.type = type
+        }
     }
 }
 
 // MARK: Auth convenience initializers and mutators
 
-public extension Auth {
+public extension EmbeddedCheckoutProtocol.Auth {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Auth.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.Auth.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4656,8 +4700,8 @@ public extension Auth {
 
     func with(
         type: String?? = nil
-    ) -> Auth {
-        return Auth(
+    ) -> EmbeddedCheckoutProtocol.Auth {
+        return EmbeddedCheckoutProtocol.Auth(
             type: type ?? self.type
         )
     }
@@ -4676,42 +4720,44 @@ public extension Auth {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - ReadyResult
-public struct ReadyResult: Codable, Sendable {
-    /// Initial delegation state from host. Fields are permitted only when the corresponding
-    /// delegation is accepted.
-    public let checkout: ReadyCheckout?
-    /// Requested authorization. Some common examples include API key and OAuth token.
-    public let credential: String?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// Channel upgrade instructions. If present, switch to provided MessagePort.
-    public let upgrade: Upgrade?
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct ReadyResult: Codable, Sendable {
+        /// Initial delegation state from host. Fields are permitted only when the corresponding
+        /// delegation is accepted.
+        public let checkout: EmbeddedCheckoutProtocol.ReadyCheckout?
+        /// Requested authorization. Some common examples include API key and OAuth token.
+        public let credential: String?
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// Channel upgrade instructions. If present, switch to provided MessagePort.
+        public let upgrade: EmbeddedCheckoutProtocol.Upgrade?
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case checkout, credential, ucp, upgrade
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case checkout, credential, ucp, upgrade
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(checkout: ReadyCheckout?, credential: String?, ucp: InstrumentsChangeResultUcp, upgrade: Upgrade?, continueURL: String?, messages: [Message]?) {
-        self.checkout = checkout
-        self.credential = credential
-        self.ucp = ucp
-        self.upgrade = upgrade
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(checkout: EmbeddedCheckoutProtocol.ReadyCheckout?, credential: String?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, upgrade: EmbeddedCheckoutProtocol.Upgrade?, continueURL: String?, messages: [Message]?) {
+            self.checkout = checkout
+            self.credential = credential
+            self.ucp = ucp
+            self.upgrade = upgrade
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: ReadyResult convenience initializers and mutators
 
-public extension ReadyResult {
+public extension EmbeddedCheckoutProtocol.ReadyResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ReadyResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ReadyResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4726,14 +4772,14 @@ public extension ReadyResult {
     }
 
     func with(
-        checkout: ReadyCheckout?? = nil,
+        checkout: EmbeddedCheckoutProtocol.ReadyCheckout?? = nil,
         credential: String?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
-        upgrade: Upgrade?? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
+        upgrade: EmbeddedCheckoutProtocol.Upgrade?? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> ReadyResult {
-        return ReadyResult(
+    ) -> EmbeddedCheckoutProtocol.ReadyResult {
+        return EmbeddedCheckoutProtocol.ReadyResult(
             checkout: checkout ?? self.checkout,
             credential: credential ?? self.credential,
             ucp: ucp ?? self.ucp,
@@ -4755,22 +4801,24 @@ public extension ReadyResult {
 /// Initial delegation state from host. Fields are permitted only when the corresponding
 /// delegation is accepted.
 // MARK: - ReadyCheckout
-public struct ReadyCheckout: Codable, Sendable {
-    public let fulfillment: CheckoutFulfillmentClass?
-    /// Payment instruments with selected instrument ID.
-    public let payment: ReadyPayment?
+extension EmbeddedCheckoutProtocol {
+    public struct ReadyCheckout: Codable, Sendable {
+        public let fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
+        /// Payment instruments with selected instrument ID.
+        public let payment: EmbeddedCheckoutProtocol.ReadyPayment?
 
-    public init(fulfillment: CheckoutFulfillmentClass?, payment: ReadyPayment?) {
-        self.fulfillment = fulfillment
-        self.payment = payment
+        public init(fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?, payment: EmbeddedCheckoutProtocol.ReadyPayment?) {
+            self.fulfillment = fulfillment
+            self.payment = payment
+        }
     }
 }
 
 // MARK: ReadyCheckout convenience initializers and mutators
 
-public extension ReadyCheckout {
+public extension EmbeddedCheckoutProtocol.ReadyCheckout {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ReadyCheckout.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ReadyCheckout.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4785,10 +4833,10 @@ public extension ReadyCheckout {
     }
 
     func with(
-        fulfillment: CheckoutFulfillmentClass?? = nil,
-        payment: ReadyPayment?? = nil
-    ) -> ReadyCheckout {
-        return ReadyCheckout(
+        fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?? = nil,
+        payment: EmbeddedCheckoutProtocol.ReadyPayment?? = nil
+    ) -> EmbeddedCheckoutProtocol.ReadyCheckout {
+        return EmbeddedCheckoutProtocol.ReadyCheckout(
             fulfillment: fulfillment ?? self.fulfillment,
             payment: payment ?? self.payment
         )
@@ -4807,30 +4855,32 @@ public extension ReadyCheckout {
 ///
 /// Payment configuration containing handlers.
 // MARK: - ReadyPayment
-public struct ReadyPayment: Codable, Sendable {
-    /// The payment instruments available for this payment. Each instrument is associated with a
-    /// specific handler via the handler_id field. Handlers can extend the base
-    /// payment_instrument schema to add handler-specific fields.
-    public let instruments: [SelectedPaymentInstrument]?
-    /// ID of the selected payment instrument.
-    public let selectedInstrumentID: String?
+extension EmbeddedCheckoutProtocol {
+    public struct ReadyPayment: Codable, Sendable {
+        /// The payment instruments available for this payment. Each instrument is associated with a
+        /// specific handler via the handler_id field. Handlers can extend the base
+        /// payment_instrument schema to add handler-specific fields.
+        public let instruments: [SelectedPaymentInstrument]?
+        /// ID of the selected payment instrument.
+        public let selectedInstrumentID: String?
 
-    public enum CodingKeys: String, CodingKey {
-        case instruments
-        case selectedInstrumentID = "selected_instrument_id"
-    }
+        public enum CodingKeys: String, CodingKey {
+            case instruments
+            case selectedInstrumentID = "selected_instrument_id"
+        }
 
-    public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
-        self.instruments = instruments
-        self.selectedInstrumentID = selectedInstrumentID
+        public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
+            self.instruments = instruments
+            self.selectedInstrumentID = selectedInstrumentID
+        }
     }
 }
 
 // MARK: ReadyPayment convenience initializers and mutators
 
-public extension ReadyPayment {
+public extension EmbeddedCheckoutProtocol.ReadyPayment {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(ReadyPayment.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.ReadyPayment.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4847,8 +4897,8 @@ public extension ReadyPayment {
     func with(
         instruments: [SelectedPaymentInstrument]?? = nil,
         selectedInstrumentID: String?? = nil
-    ) -> ReadyPayment {
-        return ReadyPayment(
+    ) -> EmbeddedCheckoutProtocol.ReadyPayment {
+        return EmbeddedCheckoutProtocol.ReadyPayment(
             instruments: instruments ?? self.instruments,
             selectedInstrumentID: selectedInstrumentID ?? self.selectedInstrumentID
         )
@@ -4865,20 +4915,22 @@ public extension ReadyPayment {
 
 /// Channel upgrade instructions. If present, switch to provided MessagePort.
 // MARK: - Upgrade
-public struct Upgrade: Codable, Sendable {
-    /// MessagePort for upgraded channel. Runtime type is MessagePort.
-    public let port: [String: JSONAny]?
+extension EmbeddedCheckoutProtocol {
+    public struct Upgrade: Codable, Sendable {
+        /// MessagePort for upgraded channel. Runtime type is MessagePort.
+        public let port: [String: JSONAny]?
 
-    public init(port: [String: JSONAny]?) {
-        self.port = port
+        public init(port: [String: JSONAny]?) {
+            self.port = port
+        }
     }
 }
 
 // MARK: Upgrade convenience initializers and mutators
 
-public extension Upgrade {
+public extension EmbeddedCheckoutProtocol.Upgrade {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(Upgrade.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.Upgrade.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4894,8 +4946,8 @@ public extension Upgrade {
 
     func with(
         port: [String: JSONAny]?? = nil
-    ) -> Upgrade {
-        return Upgrade(
+    ) -> EmbeddedCheckoutProtocol.Upgrade {
+        return EmbeddedCheckoutProtocol.Upgrade(
             port: port ?? self.port
         )
     }
@@ -4910,19 +4962,21 @@ public extension Upgrade {
 }
 
 // MARK: - AuthRequest
-public struct AuthRequest: Codable, Sendable {
-    public let type: String?
+extension EmbeddedCheckoutProtocol {
+    public struct AuthRequest: Codable, Sendable {
+        public let type: String?
 
-    public init(type: String?) {
-        self.type = type
+        public init(type: String?) {
+            self.type = type
+        }
     }
 }
 
 // MARK: AuthRequest convenience initializers and mutators
 
-public extension AuthRequest {
+public extension EmbeddedCheckoutProtocol.AuthRequest {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AuthRequest.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.AuthRequest.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -4938,8 +4992,8 @@ public extension AuthRequest {
 
     func with(
         type: String?? = nil
-    ) -> AuthRequest {
-        return AuthRequest(
+    ) -> EmbeddedCheckoutProtocol.AuthRequest {
+        return EmbeddedCheckoutProtocol.AuthRequest(
             type: type ?? self.type
         )
     }
@@ -4958,35 +5012,37 @@ public extension AuthRequest {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - AuthResult
-public struct AuthResult: Codable, Sendable {
-    /// Requested authorization. Some common examples include API key and OAuth token.
-    public let credential: String?
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct AuthResult: Codable, Sendable {
+        /// Requested authorization. Some common examples include API key and OAuth token.
+        public let credential: String?
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case credential, ucp
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case credential, ucp
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(credential: String?, ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-        self.credential = credential
-        self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(credential: String?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+            self.credential = credential
+            self.ucp = ucp
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: AuthResult convenience initializers and mutators
 
-public extension AuthResult {
+public extension EmbeddedCheckoutProtocol.AuthResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(AuthResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.AuthResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -5002,11 +5058,11 @@ public extension AuthResult {
 
     func with(
         credential: String?? = nil,
-        ucp: InstrumentsChangeResultUcp? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> AuthResult {
-        return AuthResult(
+    ) -> EmbeddedCheckoutProtocol.AuthResult {
+        return EmbeddedCheckoutProtocol.AuthResult(
             credential: credential ?? self.credential,
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
@@ -5024,20 +5080,22 @@ public extension AuthResult {
 }
 
 // MARK: - WindowOpenRequest
-public struct WindowOpenRequest: Codable, Sendable {
-    /// The URL of the resource to present.
-    public let url: String
+extension EmbeddedCheckoutProtocol {
+    public struct WindowOpenRequest: Codable, Sendable {
+        /// The URL of the resource to present.
+        public let url: String
 
-    public init(url: String) {
-        self.url = url
+        public init(url: String) {
+            self.url = url
+        }
     }
 }
 
 // MARK: WindowOpenRequest convenience initializers and mutators
 
-public extension WindowOpenRequest {
+public extension EmbeddedCheckoutProtocol.WindowOpenRequest {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(WindowOpenRequest.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.WindowOpenRequest.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -5053,8 +5111,8 @@ public extension WindowOpenRequest {
 
     func with(
         url: String? = nil
-    ) -> WindowOpenRequest {
-        return WindowOpenRequest(
+    ) -> EmbeddedCheckoutProtocol.WindowOpenRequest {
+        return EmbeddedCheckoutProtocol.WindowOpenRequest(
             url: url ?? self.url
         )
     }
@@ -5073,32 +5131,34 @@ public extension WindowOpenRequest {
 /// Generic error response when business logic prevents resource creation or failed to
 /// retrieve resource. Used when no valid resource can be established.
 // MARK: - WindowOpenResult
-public struct WindowOpenResult: Codable, Sendable {
-    /// UCP protocol metadata. Status MUST be 'error' for error response.
-    public let ucp: InstrumentsChangeResultUcp
-    /// URL for buyer handoff or session recovery.
-    public let continueURL: String?
-    /// Array of messages describing why the operation failed.
-    public let messages: [Message]?
+extension EmbeddedCheckoutProtocol {
+    public struct WindowOpenResult: Codable, Sendable {
+        /// UCP protocol metadata. Status MUST be 'error' for error response.
+        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        /// URL for buyer handoff or session recovery.
+        public let continueURL: String?
+        /// Array of messages describing why the operation failed.
+        public let messages: [Message]?
 
-    public enum CodingKeys: String, CodingKey {
-        case ucp
-        case continueURL = "continue_url"
-        case messages
-    }
+        public enum CodingKeys: String, CodingKey {
+            case ucp
+            case continueURL = "continue_url"
+            case messages
+        }
 
-    public init(ucp: InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-        self.ucp = ucp
-        self.continueURL = continueURL
-        self.messages = messages
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+            self.ucp = ucp
+            self.continueURL = continueURL
+            self.messages = messages
+        }
     }
 }
 
 // MARK: WindowOpenResult convenience initializers and mutators
 
-public extension WindowOpenResult {
+public extension EmbeddedCheckoutProtocol.WindowOpenResult {
     init(data: Data) throws {
-        self = try newJSONDecoder().decode(WindowOpenResult.self, from: data)
+        self = try newJSONDecoder().decode(EmbeddedCheckoutProtocol.WindowOpenResult.self, from: data)
     }
 
     init(_ json: String, using encoding: String.Encoding = .utf8) throws {
@@ -5113,11 +5173,11 @@ public extension WindowOpenResult {
     }
 
     func with(
-        ucp: InstrumentsChangeResultUcp? = nil,
+        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
         continueURL: String?? = nil,
         messages: [Message]?? = nil
-    ) -> WindowOpenResult {
-        return WindowOpenResult(
+    ) -> EmbeddedCheckoutProtocol.WindowOpenResult {
+        return EmbeddedCheckoutProtocol.WindowOpenResult(
             ucp: ucp ?? self.ucp,
             continueURL: continueURL ?? self.continueURL,
             messages: messages ?? self.messages

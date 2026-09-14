@@ -3,17 +3,17 @@
 
 import Foundation
 
-extension AuthRequest: EventPayload {}
+extension EmbeddedCheckoutProtocol.AuthRequest: EventPayload {}
 extension EmbeddedCheckoutProtocol.Checkout: EventPayload {}
-extension ErrorResponse: EventPayload {}
-extension ReadyRequest: EventPayload {}
-extension WindowOpenRequest: EventPayload {}
-extension AddressChangeResult: ResponsePayload {}
-extension AuthResult: ResponsePayload {}
-extension CredentialResult: ResponsePayload {}
-extension InstrumentsChangeResult: ResponsePayload {}
-extension ReadyResult: ResponsePayload {}
-extension WindowOpenResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.ErrorResponse: EventPayload {}
+extension EmbeddedCheckoutProtocol.ReadyRequest: EventPayload {}
+extension EmbeddedCheckoutProtocol.WindowOpenRequest: EventPayload {}
+extension EmbeddedCheckoutProtocol.AddressChangeResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.AuthResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.CredentialResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.InstrumentsChangeResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.ReadyResult: ResponsePayload {}
+extension EmbeddedCheckoutProtocol.WindowOpenResult: ResponsePayload {}
 
 extension EmbeddedCheckoutProtocol {
     /// Every `ec.*` method this protocol owns, resolved to a typed descriptor.

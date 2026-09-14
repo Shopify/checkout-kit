@@ -36,6 +36,7 @@ import {
   run,
 } from "./codegen_tools.mjs";
 import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
+import {namespaceSwiftPayloadModels} from "./swift_namespacing.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
@@ -776,24 +777,6 @@ function useSwiftMapsForModels(source, mapModelNames) {
   return result;
 }
 
-function namespaceSwiftCheckout(source) {
-  // CocoaPods compiles protocol and Kit sources into one module. Give the wire
-  // checkout its own identity while keeping shared domain models top-level.
-  const declaration = /^public struct Checkout: Codable, Sendable \{[\s\S]*?^\}/gm;
-  const conveniences = /^public extension Checkout \{[\s\S]*?^\}/gm;
-  if ([...source.matchAll(declaration)].length !== 1 || [...source.matchAll(conveniences)].length !== 1) {
-    throw new Error("Swift Checkout namespacing failed; quicktype output may have changed");
-  }
-
-  return source
-    .replace(declaration, (model) => {
-      const indented = model.split("\n").map((line) => line ? `    ${line}` : line).join("\n");
-      return `extension EmbeddedCheckoutProtocol {\n${indented}\n}`;
-    })
-    .replace(conveniences, (extension) => extension.replace(/\bCheckout\b/g, "EmbeddedCheckoutProtocol.Checkout"))
-    .replace("let checkout = try Checkout(json)", "let checkout = try EmbeddedCheckoutProtocol.Checkout(json)");
-}
-
 async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -829,7 +812,7 @@ async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
 
     const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
     const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
-    return namespaceSwiftCheckout(injectSwiftAdditionalProperties(withMapModels, openModelNames));
+    return namespaceSwiftPayloadModels(injectSwiftAdditionalProperties(withMapModels, openModelNames));
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
