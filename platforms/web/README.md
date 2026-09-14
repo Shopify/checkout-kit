@@ -39,7 +39,6 @@ Check out our blog to
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
-- [Handling links](#handling-links)
 - [Migrating from `ec.*` events](#migrating-from-ec-events)
 - [Explore the sample app](#explore-the-sample-app)
 - [Contributing](#contributing)
@@ -497,7 +496,6 @@ relevant to that moment.
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
 | `error`    | `{error}`      | Checkout reported an error, exposed as `{code, message}`. The component closes automatically only when a message has `unrecoverable` severity. |
 | `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
-| `linkclick` | `{link}`      | Checkout requests that the host open a link. See [Handling links](#handling-links). |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
 `event.detail.checkout`. It preserves checkout data, including unknown
@@ -561,39 +559,6 @@ These properties are useful for handlers that don't have a reference to the
 originating event. TypeScript users get fully typed events through overloaded
 `addEventListener` signatures with no additional setup.
 
-## Handling links
-
-The `linkclick` event exposes a validated HTTPS `URL` at
-`event.detail.link.url`. Call `event.respondWith()` to select a link policy:
-
-| Policy | Behavior |
-| ------ | -------- |
-| `'open'` | Checkout Kit opens the URL in a new tab with `noopener`. This is the default when no handler responds. |
-| `'handled'` | Your application handles the link. Checkout Kit does not open another tab. |
-| `'cancel'` | Cancel the link request. |
-
-```ts
-checkout.addEventListener('linkclick', (event) => {
-  const {url} = event.detail.link;
-
-  if (url.origin === location.origin && url.pathname === '/help') {
-    event.respondWith('handled');
-    router.navigate(url.pathname);
-    return;
-  }
-
-  event.respondWith('open');
-});
-```
-
-Call `respondWith` synchronously while the listener is running. It accepts
-either a policy or a promise that resolves to a policy, so asynchronous
-handlers should pass their promise immediately rather than awaiting it first.
-Only one listener can respond to a link request. A rejected promise or a
-checkout session ending cancels the pending request. Calling `preventDefault()`
-also cancels it when no response was supplied.
-Links with invalid or non-HTTPS URLs are rejected before this event fires.
-
 ## Migrating from `ec.*` events
 
 Checkout Kit's public events replace the protocol-named DOM events from
@@ -610,8 +575,7 @@ earlier alpha releases:
 Subscribe to `update` once when replacing several change listeners, since a
 single snapshot may include changes to several fields. Checkout snapshots no
 longer expose `checkout.ucp`. Error handlers read `event.detail.error.code`
-and `.message` instead of a protocol `ErrorResponse`. Use `linkclick` for
-application-owned link handling; it has no previous public event equivalent.
+and `.message` instead of a protocol `ErrorResponse`.
 
 ## Explore the sample app
 
