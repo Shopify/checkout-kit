@@ -8,7 +8,7 @@ struct ModelDecodingTests {
         let json = try fixtureString("notification")
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data)
+        let envelope = try JSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
         let checkout = envelope.params.checkout
 
         #expect(checkout.id == "checkout-123")
@@ -35,7 +35,7 @@ struct ModelDecodingTests {
         let json = try fixtureString("notification")
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data)
+        let envelope = try JSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
         let lineItem = envelope.params.checkout.lineItems[0]
 
         #expect(lineItem.id == "li-1")
@@ -153,8 +153,8 @@ struct ModelDecodingTests {
           "delegate": ["window.open"]
         }
         """
-        let config = try JSONDecoder().decode(EmbeddedTransportConfig.self, from: Data(json.utf8))
-        let colorScheme: [EmbeddedColorScheme]? = config.colorScheme
+        let config = try JSONDecoder().decode(EmbeddedCheckoutProtocol.EmbeddedTransportConfig.self, from: Data(json.utf8))
+        let colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]? = config.colorScheme
 
         #expect(colorScheme == [.light, .dark])
         #expect(config.delegate == ["window.open"])

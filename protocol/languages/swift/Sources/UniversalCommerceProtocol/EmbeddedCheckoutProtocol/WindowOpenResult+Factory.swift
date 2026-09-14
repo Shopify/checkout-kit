@@ -1,22 +1,22 @@
 import Foundation
 
-extension WindowOpenRequest {
+extension EmbeddedCheckoutProtocol.WindowOpenRequest {
     public var parsedURL: URL? {
         url.isEmpty ? nil : URL(string: url)
     }
 }
 
-extension WindowOpenResult {
-    public static func success(version: String = EmbeddedCheckoutProtocol.specVersion) -> WindowOpenResult {
-        WindowOpenResult(ucp: .success(version: version), continueURL: nil, messages: nil)
+extension EmbeddedCheckoutProtocol.WindowOpenResult {
+    public static func success(version: String = EmbeddedCheckoutProtocol.specVersion) -> EmbeddedCheckoutProtocol.WindowOpenResult {
+        EmbeddedCheckoutProtocol.WindowOpenResult(ucp: .success(version: version), continueURL: nil, messages: nil)
     }
 
     public static func rejected(
         reason: String? = nil,
         version: String = EmbeddedCheckoutProtocol.specVersion
-    ) -> WindowOpenResult {
-        WindowOpenResult(
-            ucp: InstrumentsChangeResultUcp(
+    ) -> EmbeddedCheckoutProtocol.WindowOpenResult {
+        EmbeddedCheckoutProtocol.WindowOpenResult(
+            ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                 capabilities: nil,
                 paymentHandlers: nil,
                 services: nil,
