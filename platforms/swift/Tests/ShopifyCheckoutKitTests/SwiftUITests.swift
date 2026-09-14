@@ -89,8 +89,9 @@ class ShopifyCheckoutTests: XCTestCase {
         XCTAssertNotNil(sheet.client)
     }
 
-    func testCheckoutViewControllerDecoratesCheckoutURL() async throws {
-        let hostingController = UIHostingController(rootView: shopifyCheckout)
+    func testCheckoutViewControllerDecoratesCheckoutURLAfterAppearanceModifierRuns() async throws {
+        let sheet = shopifyCheckout.appearance(.storefront)
+        let hostingController = UIHostingController(rootView: sheet)
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = hostingController
         window.makeKeyAndVisible()
@@ -104,7 +105,11 @@ class ShopifyCheckoutTests: XCTestCase {
         }
 
         let checkoutViewController = try XCTUnwrap(descendant)
-        try assertDecoratedCheckoutURL(loadedCheckoutURL(from: checkoutViewController))
+        try assertDecoratedCheckoutURL(
+            loadedCheckoutURL(from: checkoutViewController),
+            colorScheme: "light",
+            branding: "shop"
+        )
         withExtendedLifetime(window) {}
     }
 
