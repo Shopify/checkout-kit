@@ -1,15 +1,40 @@
 package com.shopify.reactnative.checkoutkit
 
+import com.facebook.react.bridge.BridgeReactContext
 import com.shopify.checkoutkit.CheckoutAppearance
+import com.shopify.checkoutkit.CheckoutHandle
 import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.LogLevel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class ShopifyCheckoutKitModuleTest {
+
+    @Test
+    fun `dismissal clears only the matching checkout presentation`() {
+        val module = ShopifyCheckoutKitModule(
+            BridgeReactContext(RuntimeEnvironment.getApplication()),
+        )
+        val activeListener = CustomCheckoutListener(DispatchCallback { })
+        val staleListener = CustomCheckoutListener(DispatchCallback { })
+        val activeHandle = CheckoutHandle { }
+        module.checkoutListener = activeListener
+        module.checkoutSheet = activeHandle
+
+        module.clearCheckoutPresentation(staleListener)
+
+        assertThat(module.checkoutListener === activeListener).isTrue()
+        assertThat(module.checkoutSheet === activeHandle).isTrue()
+
+        module.clearCheckoutPresentation(activeListener)
+
+        assertThat(module.checkoutListener).isNull()
+        assertThat(module.checkoutSheet).isNull()
+    }
 
     @Test
     fun `appearanceFor maps an app color scheme to an App appearance`() {

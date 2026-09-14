@@ -80,12 +80,14 @@ interface CommonAcceleratedCheckoutButtonsProps {
   applePayStyle?: ApplePayStyle;
 
   /**
-   * Called when checkout fails
+   * Called when checkout cannot continue. If the failure closes the
+   * presentation, `onDismiss` follows after closure.
    */
   onFail?: (error: CheckoutException) => void;
 
   /**
-   * Called when the buyer dismisses checkout, including after completion.
+   * Called after the accelerated checkout presentation closes, independently
+   * of checkout outcome.
    */
   onDismiss?: () => void;
 
