@@ -20,6 +20,10 @@ extension EmbeddedCheckoutProtocol {
     /// Notifications become `NotificationDescriptor`s; requests become
     /// `RequestDescriptor`s.
     public enum Event {
+        // Protocol dates use RFC 3339 strings, including fractional seconds.
+        // newJSONDecoder() handles them; plain JSONDecoder() expects numeric dates
+        // and can reject checkout updates before Kit invokes onUpdate.
+
         public static let error = NotificationDescriptor(
             method: "ec.error",
             decode: { try newJSONDecoder().decode(JSONRPCErrorParams.self, from: $0) }
