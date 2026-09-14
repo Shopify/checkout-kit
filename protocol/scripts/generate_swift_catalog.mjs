@@ -107,7 +107,7 @@ function decodeClosure(entry) {
 }
 
 const conformances = [
-  ...eventPayloadTypes.map(type => `extension ${type}: EventPayload {}`),
+  ...eventPayloadTypes.map(type => `extension ${type === 'Checkout' ? 'EmbeddedCheckoutProtocol.Checkout' : type}: EventPayload {}`),
   ...responsePayloadTypes.map(type => `extension ${type}: ResponsePayload {}`),
 ].join('\n');
 
