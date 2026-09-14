@@ -1,6 +1,6 @@
 # Web Component Playground
 
-A development harness for the `<shopify-checkout>` web component. It imports the same entry as published consumers (`@shopify/checkout-kit`, aliased to `../src/index.ts` in dev), registers the custom element, and logs `ec.*` events.
+A development harness for the `<shopify-checkout>` web component. It imports the same entry as published consumers (`@shopify/checkout-kit`, aliased to `../src/index.ts` in dev), registers the custom element, and logs Checkout Kit lifecycle events and link clicks.
 
 ## Run locally
 
@@ -34,9 +34,22 @@ You can also choose **Use existing checkout source** in Settings. In that mode, 
 
 - **Settings** — persisted storefront domain, flow, target (`popup` | `auto`), appearance (default `storefront` | `app:light` | `app:dark` | `app:automatic` | `storefront`), and log-level (`debug` | `warn` | `error` | `none`) settings. The storefront domain appears first because the cart builder cannot load products without it.
 - **Center workspace** — build mode shows a storefront-style product grid plus sticky cart banner; manual mode shows a focused checkout URL/cart permalink input.
-- **Runtime** — shows component state above the `ec.*` event log, with a JSON snapshot of component state at fire time.
+- **Runtime** — shows component state above the `start`, `update`, `complete`, `error`, `close`, and `linkclick` event log. Each entry includes the event detail and a JSON snapshot of component state at fire time.
 
 The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is mostly the overlay scrim while checkout is open in a separate window or tab.
+
+The `start`, `update`, and `complete` events expose the latest Checkout Kit
+snapshot at `event.detail.checkout`, without protocol metadata. Changes to line
+items, fulfillment, totals, or messages feed one `update` event; repeated identical
+snapshots do not produce another update. The `error` event exposes a
+`{code, message}` error. Checkout stays open for recoverable errors and closes
+automatically only for errors with `unrecoverable` severity.
+
+The sample's `linkclick` listener calls `event.respondWith('open')` to let the
+component open `event.detail.link.url` in a new tab. To try application-owned
+navigation, change the listener in `main.ts` to respond with `'handled'` after
+handling the link, or `'cancel'` to block it. Call `respondWith` during the
+listener; it also accepts a promise for an asynchronous decision.
 
 ## Troubleshooting product loading
 

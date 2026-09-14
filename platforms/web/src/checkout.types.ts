@@ -1,12 +1,26 @@
-// Types for this component are derived from the 2026-04-08 UCP embedded
-// checkout protocol. Payload shapes come from the shared
-// `@shopify/checkout-kit-protocol` package (decoded to camelCase).
+// Public component types and the internal protocol message map. Checkout Kit
+// owns the top-level snapshots and events; nested checkout domain models reuse
+// the shared protocol package's camelCase types.
 
-import type { Checkout, ReadyRequest, ErrorResponse } from "@shopify/checkout-kit-protocol";
+import type {
+  Checkout as ProtocolCheckout,
+  ReadyRequest,
+  ErrorResponse,
+} from "@shopify/checkout-kit-protocol";
 
 import type { LogLevel } from "./logger";
 
 export type { LogLevel };
+export type { Checkout } from "./checkout-model";
+export type { CheckoutError, CheckoutErrorCode } from "./checkout-error";
+
+/** A validated HTTPS link that checkout asked the host page to open. */
+export interface CheckoutLink {
+  url: URL;
+}
+
+/** Open the link normally, report that the app handled it, or reject the request. */
+export type CheckoutLinkAction = "open" | "handled" | "cancel";
 
 // This component should follow the custom element conventions set out here:
 // https://github.com/Shopify/ui-api-design/tree/main/codex. In particular,
@@ -154,19 +168,18 @@ export type TypedEventListener<Event> =
  */
 export interface CheckoutProtocolMessageMap {
   "ec.ready": ReadyRequest;
-  "ec.start": { checkout: Checkout };
-  "ec.complete": { checkout: Checkout };
+  "ec.start": { checkout: ProtocolCheckout };
+  "ec.complete": { checkout: ProtocolCheckout };
   "ec.error": { error: ErrorResponse };
-  "ec.fulfillment.change": { checkout: Checkout };
-  "ec.line_items.change": { checkout: Checkout };
-  "ec.totals.change": { checkout: Checkout };
-  "ec.messages.change": { checkout: Checkout };
+  "ec.fulfillment.change": { checkout: ProtocolCheckout };
+  "ec.line_items.change": { checkout: ProtocolCheckout };
+  "ec.totals.change": { checkout: ProtocolCheckout };
+  "ec.messages.change": { checkout: ProtocolCheckout };
   "ec.window.open_request": { url: string };
 }
 
 export type {
   Buyer,
-  Checkout,
   LineItem,
   Message,
   ReadyRequest,

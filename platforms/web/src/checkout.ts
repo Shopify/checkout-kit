@@ -6,8 +6,20 @@ import {
   INVALID_PARAMS_CODE,
   type WindowOpenRequest,
   type WindowOpenResult,
+  type Checkout as ProtocolCheckout,
 } from "@shopify/checkout-kit-protocol";
 
+import { toCheckout, checkoutComparisonKey } from "./checkout-model";
+import { toCheckoutError } from "./checkout-error";
+import {
+  ShopifyCheckoutStartEvent,
+  ShopifyCheckoutUpdateEvent,
+  ShopifyCheckoutCompleteEvent,
+  ShopifyCheckoutErrorEvent,
+  ShopifyCheckoutCloseEvent,
+  type ShopifyCheckoutEventMap,
+  dispatchCheckoutLinkClick,
+} from "./checkout-events";
 import stylesText from "./checkout.css?inline";
 import { Logger, coerceLogLevel } from "./logger";
 import { createTemplate, html, safe } from "./utils";
@@ -19,7 +31,7 @@ import type {
   TypedEventListener,
   Checkout,
   CheckoutAppearance,
-  ErrorResponse,
+  CheckoutError,
   LogLevel,
   MessageRejectedDetail,
 } from "./checkout.types";
@@ -159,14 +171,12 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @attribute log-level - Console logging verbosity (debug, warn, error, or none).
  * @attribute allowed-origins - Extra trusted message origins, separated by spaces or commas.
  *
- * @event ec.start - Dispatched when the checkout has started
- * @event ec.complete - Dispatched when the checkout was successfully completed
- * @event ec.error - Dispatched on a session-level fatal error
- * @event ec.fulfillment.change - Dispatched when fulfillment details change
- * @event ec.line_items.change - Dispatched when cart line items change
- * @event ec.totals.change - Dispatched when totals change
- * @event ec.messages.change - Dispatched when checkout messages change
- * @event ec.close - Dispatched when the checkout overlay is closed (synthetic, not part of ECP)
+ * @event {ShopifyCheckoutStartEvent} start - Checkout has started.
+ * @event {ShopifyCheckoutUpdateEvent} update - The checkout snapshot changed.
+ * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
+ * @event {ShopifyCheckoutErrorEvent} error - Checkout reported an error; unrecoverable errors close the session.
+ * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed.
+ * @event {ShopifyCheckoutLinkClickEvent} linkclick - Checkout requested a link; respondWith selects its handling.
  *
  * @example
  * ```js
@@ -191,7 +201,8 @@ export class ShopifyCheckout
   }
 
   #checkout?: Checkout;
-  #error?: ErrorResponse;
+  #error?: CheckoutError;
+  #checkoutComparisonKey?: string;
 
   #checkoutWindow: WindowProxy | null = null;
 
@@ -333,13 +344,12 @@ export class ShopifyCheckout
    */
 
   /**
-   * The latest UCP `Checkout` object received from the embedded checkout.
-   * Populated and updated whenever a notification carrying a `checkout` field
-   * is received (e.g., `ec.start`, `ec.complete`, every `ec.*.change`).
+   * The latest checkout snapshot, excluding protocol metadata.
+   * Updated before start, update, and complete events are dispatched.
    *
    * @returns The current Checkout, or undefined before the first notification.
    * @example
-   * checkout.addEventListener('ec.start', (event) => {
+   * checkout.addEventListener('start', (event) => {
    *   const {lineItems, totals, buyer} = event.detail.checkout;
    * });
    */
@@ -348,16 +358,15 @@ export class ShopifyCheckout
   }
 
   /**
-   * Session-level fatal error received via `ec.error`.
+   * The latest checkout error, with a stable recovery code and diagnostic message.
    *
-   * @returns The UCP error response, or undefined.
+   * @returns The checkout error, or undefined.
    * @example
-   * checkout.addEventListener('ec.error', (event) => {
-   *   const {messages} = event.detail.error;
-   *   console.error(messages[0]?.code, messages[0]?.content);
+   * checkout.addEventListener('error', (event) => {
+   *   console.error(event.detail.error.code, event.detail.error.message);
    * });
    */
-  get error(): ErrorResponse | undefined {
+  get error(): CheckoutError | undefined {
     return this.#error;
   }
 
@@ -402,6 +411,10 @@ export class ShopifyCheckout
     if (this.#currentOpen) {
       this.close();
     }
+
+    this.#checkout = undefined;
+    this.#error = undefined;
+    this.#checkoutComparisonKey = undefined;
 
     let checkoutWindow: WindowProxy | null = null;
 
@@ -497,6 +510,7 @@ export class ShopifyCheckout
       checkoutWindow?.close();
       this.#checkoutWindow = null;
       this.#currentOpen = null;
+      /** @ignore - Events are documented by the class @event tags. */
       this.dispatchEvent(new ShopifyCheckoutCloseEvent());
     });
 
@@ -728,42 +742,57 @@ export class ShopifyCheckout
         },
       }))
       .on(Event.start, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout }));
+        const snapshot = this.#recordCheckout(checkout);
+        /** @ignore - Events are documented by the class @event tags. */
+        this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout: snapshot }));
       })
       .on(Event.complete, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout }));
+        const snapshot = this.#recordCheckout(checkout);
+        /** @ignore - Events are documented by the class @event tags. */
+        this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout: snapshot }));
       })
       .on(Event.error, ({ params: { error } }) => {
-        this.#error = error;
-        this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
+        const shouldClose =
+          Array.isArray(error.messages) &&
+          error.messages.some((message) => message?.severity === "unrecoverable");
+        this.#error = toCheckoutError(error);
+        /** @ignore - Events are documented by the class @event tags. */
+        this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error: this.#error }));
         // Per UCP spec, `unrecoverable` means no valid resource exists to act on —
         // the kit closes so consumers don't have to wire dismissal in every handler.
-        if (
-          Array.isArray(error.messages) &&
-          error.messages.some((m) => m.severity === "unrecoverable")
-        ) {
+        if (shouldClose) {
           this.close();
         }
       })
       .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutFulfillmentChangeEvent({ checkout }));
+        this.#updateCheckout(checkout);
       })
       .on(Event.lineItemsChange, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutLineItemsChangeEvent({ checkout }));
+        this.#updateCheckout(checkout);
       })
       .on(Event.totalsChange, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutTotalsChangeEvent({ checkout }));
+        this.#updateCheckout(checkout);
       })
       .on(Event.messagesChange, ({ params: { checkout } }) => {
-        this.#checkout = checkout;
-        this.dispatchEvent(new ShopifyCheckoutMessagesChangeEvent({ checkout }));
+        this.#updateCheckout(checkout);
       })
       .on(Event.windowOpen, ({ params }) => this.#handleWindowOpen(params));
+  }
+
+  #recordCheckout(checkout: ProtocolCheckout): Checkout {
+    const snapshot = toCheckout(checkout);
+    this.#checkout = snapshot;
+    // Keep the comparison independent of mutations made by event listeners.
+    this.#checkoutComparisonKey = checkoutComparisonKey(snapshot);
+    return snapshot;
+  }
+
+  #updateCheckout(checkout: ProtocolCheckout): void {
+    const previous = this.#checkoutComparisonKey;
+    const snapshot = this.#recordCheckout(checkout);
+    if (this.#checkoutComparisonKey === previous) return;
+    /** @ignore - Events are documented by the class @event tags. */
+    this.dispatchEvent(new ShopifyCheckoutUpdateEvent({ checkout: snapshot }));
   }
 
   /**
@@ -796,11 +825,12 @@ export class ShopifyCheckout
   }
 
   /**
-   * Handles an `ec.window.open_request` delegation: opens a validated `https:`
-   * URL in a new tab and returns a UCP result. Invalid or non-`https:` URLs
-   * are rejected (and warned about) rather than opened.
+   * Handles a link delegation after HTTPS validation. The public linkclick
+   * event controls whether the URL opens, was handled by the app, or is rejected.
    */
-  #handleWindowOpen(request: WindowOpenRequest): WindowOpenResult {
+  async #handleWindowOpen(request: WindowOpenRequest): Promise<WindowOpenResult> {
+    const session = this.#currentOpen;
+    if (!session) return windowOpenRejected("checkout session ended");
     let targetUrl: URL;
     try {
       targetUrl = new URL(request.url);
@@ -812,6 +842,22 @@ export class ShopifyCheckout
     if (targetUrl.protocol !== "https:") {
       this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
       return windowOpenRejected("url must use https scheme");
+    }
+
+    try {
+      // Keep the validated default URL separate from the consumer's mutable URL.
+      const action = await dispatchCheckoutLinkClick(
+        this,
+        { url: new URL(targetUrl.href) },
+        session.controller.signal,
+      );
+      if (session.controller.signal.aborted || this.#currentOpen !== session) {
+        return windowOpenRejected("checkout session ended");
+      }
+      if (action === "handled") return windowOpenSuccess();
+      if (action === "cancel") return windowOpenRejected("link opening canceled");
+    } catch {
+      return windowOpenRejected("link handler failed");
     }
 
     window.open(targetUrl.href, "_blank", "noopener");
@@ -860,52 +906,22 @@ export class ShopifyCheckout
    * Custom Events
    * ------------------------------------------------------------
    */
-  // we overload these so that the consumer of the component can autocomplete the correct events
-  override addEventListener(
-    type: "ec.start",
-    listener: TypedEventListener<ShopifyCheckoutStartEvent> | null,
+  // Typed overloads provide event-specific payloads and preserve native listeners.
+  override addEventListener<K extends keyof ShopifyCheckoutEventMap>(
+    type: K,
+    listener: TypedEventListener<ShopifyCheckoutEventMap[K]> | null,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+
+  override addEventListener<K extends keyof HTMLElementEventMap>(
+    type: K,
+    listener: TypedEventListener<HTMLElementEventMap[K]> | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
   override addEventListener(
-    type: "ec.close",
-    listener: TypedEventListener<ShopifyCheckoutCloseEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.complete",
-    listener: TypedEventListener<ShopifyCheckoutCompleteEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.error",
-    listener: TypedEventListener<ShopifyCheckoutErrorEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.fulfillment.change",
-    listener: TypedEventListener<ShopifyCheckoutFulfillmentChangeEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.line_items.change",
-    listener: TypedEventListener<ShopifyCheckoutLineItemsChangeEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.totals.change",
-    listener: TypedEventListener<ShopifyCheckoutTotalsChangeEvent> | null,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
-
-  override addEventListener(
-    type: "ec.messages.change",
-    listener: TypedEventListener<ShopifyCheckoutMessagesChangeEvent> | null,
+    type: string,
+    listener: EventListenerOrEventListenerObject | null,
     options?: boolean | AddEventListenerOptions,
   ): void;
 
@@ -916,114 +932,5 @@ export class ShopifyCheckout
   ): void {
     if (listener === null) return;
     super.addEventListener(type, listener, options);
-  }
-}
-
-/* ------------------------------------------------------------
- * Event detail shapes — what each event carries on `event.detail`.
- * ------------------------------------------------------------
- */
-
-export interface ShopifyCheckoutStartEventDetail {
-  /** Initial checkout snapshot from the ECP `ec.start` notification. */
-  checkout: Checkout;
-}
-
-export interface ShopifyCheckoutCompleteEventDetail {
-  /** Final checkout snapshot from the ECP `ec.complete` notification. */
-  checkout: Checkout;
-}
-
-export interface ShopifyCheckoutErrorEventDetail {
-  /** Error payload from the ECP `ec.error` notification. */
-  error: ErrorResponse;
-}
-
-export interface ShopifyCheckoutFulfillmentChangeEventDetail {
-  /** Checkout snapshot with updated fulfillment details. */
-  checkout: Checkout;
-}
-
-export interface ShopifyCheckoutLineItemsChangeEventDetail {
-  /** Checkout snapshot with updated cart line items. */
-  checkout: Checkout;
-}
-
-export interface ShopifyCheckoutTotalsChangeEventDetail {
-  /** Checkout snapshot with updated totals. */
-  checkout: Checkout;
-}
-
-export interface ShopifyCheckoutMessagesChangeEventDetail {
-  /** Checkout snapshot with updated warnings, errors, and informational messages. */
-  checkout: Checkout;
-}
-
-/* ------------------------------------------------------------
- * Event classes — `CustomEvent<T>` subclasses carrying typed details.
- * ------------------------------------------------------------
- */
-
-export class ShopifyCheckoutStartEvent extends CustomEvent<ShopifyCheckoutStartEventDetail> {
-  declare type: "ec.start";
-
-  constructor(detail: ShopifyCheckoutStartEventDetail) {
-    super("ec.start", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutCompleteEvent extends CustomEvent<ShopifyCheckoutCompleteEventDetail> {
-  declare type: "ec.complete";
-
-  constructor(detail: ShopifyCheckoutCompleteEventDetail) {
-    super("ec.complete", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
-  declare type: "ec.close";
-
-  constructor() {
-    super("ec.close", { bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorEventDetail> {
-  declare type: "ec.error";
-
-  constructor(detail: ShopifyCheckoutErrorEventDetail) {
-    super("ec.error", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutFulfillmentChangeEvent extends CustomEvent<ShopifyCheckoutFulfillmentChangeEventDetail> {
-  declare type: "ec.fulfillment.change";
-
-  constructor(detail: ShopifyCheckoutFulfillmentChangeEventDetail) {
-    super("ec.fulfillment.change", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutLineItemsChangeEvent extends CustomEvent<ShopifyCheckoutLineItemsChangeEventDetail> {
-  declare type: "ec.line_items.change";
-
-  constructor(detail: ShopifyCheckoutLineItemsChangeEventDetail) {
-    super("ec.line_items.change", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutTotalsChangeEvent extends CustomEvent<ShopifyCheckoutTotalsChangeEventDetail> {
-  declare type: "ec.totals.change";
-
-  constructor(detail: ShopifyCheckoutTotalsChangeEventDetail) {
-    super("ec.totals.change", { detail, bubbles: true });
-  }
-}
-
-export class ShopifyCheckoutMessagesChangeEvent extends CustomEvent<ShopifyCheckoutMessagesChangeEventDetail> {
-  declare type: "ec.messages.change";
-
-  constructor(detail: ShopifyCheckoutMessagesChangeEventDetail) {
-    super("ec.messages.change", { detail, bubbles: true });
   }
 }
