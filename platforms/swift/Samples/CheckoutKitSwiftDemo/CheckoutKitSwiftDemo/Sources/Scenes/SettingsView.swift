@@ -7,6 +7,7 @@ import WebKit
 enum AppStorageKeys: String {
     case acceleratedCheckoutsLogLevel
     case checkoutKitLogLevel
+    case checkoutPresentation
     case checkoutPreloadingEnabled
     case preloadObservabilityEnabled
     case buyerIdentityMode
@@ -26,8 +27,23 @@ enum WindowOpenHandlerOption: String, CaseIterable {
     }
 }
 
+enum CheckoutPresentationOption: String, CaseIterable {
+    case swiftUI
+    case uiKit
+
+    var title: String {
+        switch self {
+        case .swiftUI: return "SwiftUI"
+        case .uiKit: return "UIKit"
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var config: AppConfiguration = appConfiguration
+
+    @AppStorage(AppStorageKeys.checkoutPresentation.rawValue)
+    var checkoutPresentationOption: CheckoutPresentationOption = .swiftUI
 
     @AppStorage(AppStorageKeys.checkoutKitLogLevel.rawValue)
     var checkoutKitLogLevel: LogLevel = .debug {
@@ -55,7 +71,17 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text("Features")) {
+                Section(
+                    header: Text("Features"),
+                    footer: Text("Checkout presentation applies to the Cart tab.")
+                ) {
+                    Picker("Checkout presentation", selection: $checkoutPresentationOption) {
+                        ForEach(CheckoutPresentationOption.allCases, id: \.self) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
                     Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
                         .onChange(of: checkoutPreloadingEnabled) { _ in
                             ShopifyCheckoutKit.configure {
