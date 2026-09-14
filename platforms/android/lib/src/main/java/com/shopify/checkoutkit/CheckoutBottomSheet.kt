@@ -82,7 +82,7 @@ internal class CheckoutBottomSheet(
         val initializationError = checkoutView.initializationError
         if (initializationError != null) {
             log.w(LOG_TAG, "WebView is not supported, failing checkout presentation.")
-            checkoutListener.onCheckoutFailed(initializationError)
+            checkoutListener.onCheckoutFailed(CheckoutFailureEvent(initializationError))
             checkoutView.destroy()
             presentedCheckoutView = null
         } else {
@@ -261,7 +261,7 @@ internal class CheckoutBottomSheet(
      */
     internal fun closeCheckoutWithError(exception: CheckoutException) {
         log.d(LOG_TAG, "Closing with error, calling onCheckoutFailed.")
-        checkoutListener.onCheckoutFailed(exception)
+        checkoutListener.onCheckoutFailed(CheckoutFailureEvent(exception))
         dismiss()
     }
 }

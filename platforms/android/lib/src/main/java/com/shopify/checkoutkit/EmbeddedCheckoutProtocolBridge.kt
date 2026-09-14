@@ -48,6 +48,8 @@ internal class EmbeddedCheckoutProtocolBridge(
 ) {
     private var isTransportAttached = false
 
+    @Volatile private var eventAdapter: CheckoutEventAdapter? = null
+
     /**
      * True once a decode-error metric was recorded for the message currently
      * being processed. The contract counts undecodable messages, not decode
@@ -62,14 +64,6 @@ internal class EmbeddedCheckoutProtocolBridge(
         CheckoutProtocol.ready.method to DefaultClientBinding(
             client = defaultClient,
             policy = DefaultClientPolicy.KitOwned,
-        ),
-        CheckoutProtocol.windowOpen.method to DefaultClientBinding(
-            client = defaultClient,
-            policy = DefaultClientPolicy.RunIfUnhandled,
-        ),
-        CheckoutProtocol.complete.method to DefaultClientBinding(
-            client = defaultClient,
-            policy = DefaultClientPolicy.AlwaysRunAfterMerchant,
         ),
     )
     private val composedClient: ComposedCheckoutProtocolClient
@@ -104,6 +98,16 @@ internal class EmbeddedCheckoutProtocolBridge(
         this.client = client
     }
 
+    internal fun setPresentationListener(listener: CheckoutWebViewListener) {
+        invalidateEventAdapter()
+        eventAdapter = if (listener.isNoop) null else CheckoutEventAdapter(listener, ::recordParamsDecodeErrorOnce)
+    }
+
+    internal fun invalidateEventAdapter() {
+        eventAdapter?.invalidate()
+        eventAdapter = null
+    }
+
     private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
         val incomingMessage = IncomingCheckoutMessage(
             origin = sourceOrigin,
@@ -134,12 +138,14 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     internal fun receiveMessage(message: String) {
+        // Bind queued messages to the presentation that received them. Preload messages are not replayed.
+        val adapter = eventAdapter
         protocolMessageExecutor.execute {
-            processMessage(message)
+            processMessage(message, adapter)
         }
     }
 
-    private fun processMessage(message: String) {
+    private fun processMessage(message: String, adapter: CheckoutEventAdapter?) {
         decodeErrorRecordedForMessage = false
         try {
             val request = decodeProtocolRequest(message)
@@ -148,9 +154,9 @@ internal class EmbeddedCheckoutProtocolBridge(
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
                 CheckoutProtocol.ready.method -> requestId?.let { handleClientMessage(method, message) }
-                CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message) }
-                CheckoutProtocol.start.method -> handleStart(message)
-                CheckoutProtocol.complete.method -> handleComplete(message)
+                CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message, adapter) }
+                CheckoutProtocol.start.method -> handleStart(message, adapter)
+                CheckoutProtocol.complete.method -> handleComplete(message, adapter)
                 CheckoutProtocol.error.method -> handleTerminalError(message, request.params)
                 null -> handleUnsupportedOrMalformedTerminalError(
                     method = request.method,
@@ -158,7 +164,10 @@ internal class EmbeddedCheckoutProtocolBridge(
                     params = request.params,
                     requestId = requestId,
                 )
-                else -> handleClientMessage(method, message)
+                else -> {
+                    adapter?.process(message)
+                    handleClientMessage(method, message)
+                }
             }
         } catch (e: SerializationException) {
             log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
@@ -192,17 +201,30 @@ internal class EmbeddedCheckoutProtocolBridge(
         }
     }
 
-    private fun handleStart(message: String) {
+    private fun handleStart(message: String, adapter: CheckoutEventAdapter?) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
         onMainThread {
             view.listener.onCheckoutViewLoadComplete()
         }
+        adapter?.process(message)
         composedClient.process(message)
     }
 
-    private fun handleComplete(message: String) {
+    private fun handleComplete(message: String, adapter: CheckoutEventAdapter?) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.complete.method}: bubbling up.")
-        composedClient.process(message)
+        var wasPresented = false
+        onMainThread { wasPresented = view.isPresented }
+        adapter?.process(message)
+        val completionClient = CheckoutProtocol.Client().on(CheckoutProtocol.complete) {
+            // The callback may remove its presentation before requesting a replacement preload.
+            CheckoutWebView.evictForCompletion(view, wasPresented)
+        }
+        processWithDefault(
+            message,
+            CheckoutProtocol.complete.method,
+            completionClient,
+            DefaultClientPolicy.AlwaysRunAfterMerchant
+        )
     }
 
     /**
@@ -211,12 +233,31 @@ internal class EmbeddedCheckoutProtocolBridge(
      * Tries the merchant's [client] first — if they registered a handler via
      * `.on(CheckoutProtocol.windowOpen) { ... }`, their response wins. Otherwise
      * falls back to the kit-owned [defaultClient], which launches web URLs in a
-     * Custom Tab and other URLs via `Intent.ACTION_VIEW` (see [defaultDelegationClient]).
+     * Custom Tab and other URLs via `Intent.ACTION_VIEW` (see [windowOpenClient]).
      */
-    private fun handleWindowOpenRequest(message: String) {
+    private fun handleWindowOpenRequest(message: String, adapter: CheckoutEventAdapter?) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
-        composedClient.process(message)?.let { sendRaw(it) }
+        processWithDefault(
+            message,
+            CheckoutProtocol.windowOpen.method,
+            windowOpenClient(adapter),
+            DefaultClientPolicy.RunIfUnhandled
+        )
+            ?.let { sendRaw(it) }
     }
+
+    private fun processWithDefault(
+        message: String,
+        method: String,
+        defaultClient: CheckoutProtocol.Client,
+        policy: DefaultClientPolicy,
+    ): String? =
+        ComposedCheckoutProtocolClient(
+            merchant = client?.withDecodeErrorObserver(::recordParamsDecodeErrorOnce),
+            defaults = mapOf(
+                method to DefaultClientBinding(defaultClient.withDecodeErrorObserver(::recordParamsDecodeErrorOnce), policy),
+            ),
+        ).process(message)
 
     /** Dispatch a supported protocol message through the consumer client. */
     private fun handleClientMessage(method: String, message: String) {
@@ -246,6 +287,7 @@ internal class EmbeddedCheckoutProtocolBridge(
                 return@onMainThread
             }
             view.hasHandledTerminalFailure = true
+            invalidateEventAdapter()
 
             // `ec.error` denotes a terminal session error. Message severity selects the public
             // lifecycle code, but does not keep the embedded session alive.
@@ -289,12 +331,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     /**
-     * Kit-owned client that handles delegations and kit-mandated notifications,
-     * mirroring Swift's `defaultsClient`. Currently:
-     *   - [CheckoutProtocol.windowOpen] - launches web URIs in a Custom Tab and other URIs
-     *     via `Intent.ACTION_VIEW`, or returns [windowOpenRejected] with
-     *     `window_open_rejected_error` semantics.
-     *   - [CheckoutProtocol.complete] - evicts any cached preload state.
+     * Kit-owned client that acknowledges the ready handshake.
      *
      * Terminal `ec.error` is delivered to consumer protocol handlers before its separate
      * lifecycle failure mapping.
@@ -313,14 +350,23 @@ internal class EmbeddedCheckoutProtocolBridge(
                     ),
                 )
             }
-            .on(CheckoutProtocol.complete) {
-                CheckoutWebView.invalidate()
-            }
+
+    /** Capture the requesting presentation so a queued link cannot invoke a later host's callback. */
+    private fun windowOpenClient(adapter: CheckoutEventAdapter?): CheckoutProtocol.Client =
+        CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { request ->
                 val url = request.url
                 if (url.isBlank() || runCatching { URI(url) }.isFailure) {
                     log.d(LOG_TAG, "window.open rejected: malformed URL ${url.redactedUrlForLogging()}")
                     return@on windowOpenRejected(reason = "malformed URL")
+                }
+                if (view.hasHandledTerminalFailure) {
+                    return@on windowOpenRejected(reason = "checkout session ended")
+                }
+                when (adapter?.actionForLink(CheckoutLink(url.toUri())) ?: CheckoutLinkAction.Open) {
+                    CheckoutLinkAction.Handled -> return@on windowOpenSuccess()
+                    CheckoutLinkAction.Cancel -> return@on windowOpenRejected(reason = "link opening canceled")
+                    CheckoutLinkAction.Open -> Unit
                 }
                 when (val result = ExternalUriLauncher.launch(view.context, url.toUri())) {
                     is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()

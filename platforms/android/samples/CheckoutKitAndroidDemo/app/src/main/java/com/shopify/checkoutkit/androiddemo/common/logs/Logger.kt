@@ -10,8 +10,8 @@ class Logger(
     private val logDb: LogDatabase,
     private val coroutineScope: CoroutineScope,
 ) {
-    fun logSdkEvent(message: String) {
-        log(LogSource.SDK, LogLevel.INFO, message)
+    fun logSdkEvent(message: String, payload: String? = null, level: LogLevel = LogLevel.INFO) {
+        log(LogSource.SDK, level, message, payload)
     }
 
     fun logSdkError(message: String, error: CheckoutException) {
@@ -23,10 +23,6 @@ class Logger(
             )
         )
         log(LogSource.SDK, LogLevel.ERROR, message, payload)
-    }
-
-    fun logProtocolMessage(message: String, payload: String, level: LogLevel) {
-        log(LogSource.PROTOCOL, level, message, payload)
     }
 
     private fun log(

@@ -50,12 +50,14 @@ class EmbeddedCheckoutProtocolBridgeTest {
         shadowOf(activity.application).checkActivities(true)
         viewSpy = Mockito.spy(CheckoutWebView(activity, webMessageTransport))
         mockListener = mock()
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Open)
         whenever(viewSpy.listener).thenReturn(mockListener)
         ecp = EmbeddedCheckoutProtocolBridge(
             viewSpy,
             webMessageTransport,
             protocolMessageExecutor = directExecutor,
         )
+        ecp.setPresentationListener(mockListener)
     }
 
     @After
@@ -247,6 +249,43 @@ class EmbeddedCheckoutProtocolBridgeTest {
     // endregion
 
     // region ec.window.open_request — merchant-overridable with kit fallback
+
+    @Test
+    fun `handled link acknowledges success without launching an activity`() {
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Handled)
+
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"handled\"", url = "https://example.com"))
+        }
+
+        assertThat(response).contains("\"status\":\"success\"")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+        val link = argumentCaptor<CheckoutLink>()
+        verify(mockListener).onCheckoutLinkClicked(link.capture())
+        assertThat(link.firstValue.url).isEqualTo(Uri.parse("https://example.com"))
+    }
+
+    @Test
+    fun `cancelled link returns a protocol rejection without launching an activity`() {
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Cancel)
+
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"cancelled\"", url = "https://example.com"))
+        }
+
+        assertThat(response).contains("window_open_rejected_error", "link opening canceled")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+    }
+
+    @Test
+    fun `invalid links are rejected before consulting the consumer`() {
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"invalid\"", url = "https://example.com/invalid url"))
+        }
+
+        assertThat(response).contains("window_open_rejected_error")
+        verify(mockListener, Mockito.never()).onCheckoutLinkClicked(any())
+    }
 
     @Test
     fun `window open launches Custom Tabs when activity resolves the uri`() {
@@ -712,12 +751,14 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
-    fun `ec complete invalidates cached preload`() {
+    fun `ec complete invalidates its own cached preload`() {
         CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)
         shadowOf(Looper.getMainLooper()).idle()
         val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-        ecp.receiveMessage(ecCompleteMessage())
+        val bridge =
+            EmbeddedCheckoutProtocolBridge(cachedWebView, webMessageTransport, protocolMessageExecutor = directExecutor)
+        bridge.receiveMessage(ecCompleteMessage())
         shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()

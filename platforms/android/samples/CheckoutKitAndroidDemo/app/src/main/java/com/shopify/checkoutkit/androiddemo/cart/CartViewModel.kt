@@ -3,14 +3,14 @@ package com.shopify.checkoutkit.androiddemo.cart
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.ComponentActivity
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.shopify.checkoutkit.CheckoutErrorCode
 import com.shopify.checkoutkit.CheckoutException
+import com.shopify.checkoutkit.CheckoutLink
+import com.shopify.checkoutkit.CheckoutLinkAction
 import com.shopify.checkoutkit.CheckoutPresentation
-import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.PreloadState
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.BuildConfig
@@ -32,9 +32,6 @@ import com.shopify.checkoutkit.androiddemo.settings.authentication.data.Authenti
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
-import com.shopify.ucp.embedded.checkout.WindowOpenResult
-import com.shopify.ucp.embedded.checkout.windowOpenRejected
-import com.shopify.ucp.embedded.checkout.windowOpenSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -167,18 +164,38 @@ class CartViewModel(
             checkoutUrl = url,
             context = activity,
         ) {
-            configureCheckout(activity, navController)
+            configureCheckout(this, activity, navController)
         }
     }
 
-    private fun CheckoutPresentation.configureCheckout(
+    internal fun configureCheckout(
+        presentation: CheckoutPresentation,
         activity: ComponentActivity,
         navController: NavController,
-    ) {
+        dismissPresentation: () -> Unit = {},
+    ): Unit = with(presentation) {
         val sampleActivity = activity as? MainActivity
-        onFail(::handleCheckoutFailed)
+        val linkHandler = windowOpenHandler
+        onStart { event ->
+            recordSdkEvent("Checkout started", event.checkout)
+        }
+        onUpdate { event ->
+            recordSdkEvent("Checkout updated", event.checkout)
+        }
+        onComplete { event ->
+            recordSdkEvent("Checkout completed", event.checkout)
+            handleCheckoutCompleted(navController)
+        }
+        onFail { event ->
+            dismissPresentation()
+            handleCheckoutFailed(event.error)
+        }
         onDismiss {
+            dismissPresentation()
             handleCheckoutDismissed()
+        }
+        onLinkClick { link ->
+            handleCheckoutLink(link, activity, linkHandler)
         }
         sampleActivity?.let { mainActivity ->
             onShowFileChooser { _, filePathCallback, fileChooserParams ->
@@ -191,7 +208,6 @@ class CartViewModel(
                 mainActivity.onGeolocationPermissionsHidePrompt()
             }
         }
-        connect(buildProtocolClient(navController, activity))
     }
 
     fun checkoutDismissedByHost() {
@@ -284,89 +300,53 @@ class CartViewModel(
         logger.logSdkEvent("Checkout dismissed")
     }
 
-    internal fun buildProtocolClient(
-        navController: NavController,
+    private fun handleCheckoutLink(
+        link: CheckoutLink,
         activity: ComponentActivity,
-    ): CheckoutProtocol.Client {
-        val base = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.start) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.start.method, checkout)
-            }
-            .on(CheckoutProtocol.complete) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.complete.method, checkout)
-                handleCheckoutCompleted(navController)
-            }
-            .on(CheckoutProtocol.error) { error ->
-                recordReceivedProtocolMessage(CheckoutProtocol.error.method, error, LogLevel.ERROR)
-            }
-            .on(CheckoutProtocol.totalsChange) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.totalsChange.method, checkout)
-            }
-            .on(CheckoutProtocol.lineItemsChange) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.lineItemsChange.method, checkout)
-            }
-            .on(CheckoutProtocol.messagesChange) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.messagesChange.method, checkout)
-            }
-            .on(CheckoutProtocol.fulfillmentChange) { checkout ->
-                recordReceivedProtocolMessage(CheckoutProtocol.fulfillmentChange.method, checkout)
-            }
+        handler: WindowOpenHandler,
+    ): CheckoutLinkAction {
+        // Returning Open keeps Checkout Kit's Custom Tab and non-web intent handling.
+        if (handler == WindowOpenHandler.Default) return CheckoutLinkAction.Open
 
-        return when (windowOpenHandler) {
-            // With no sample handler registered, Checkout Kit retains its default Custom Tab handling.
-            WindowOpenHandler.Default -> base
-            WindowOpenHandler.ExternalApp -> base.on(CheckoutProtocol.windowOpen) { request ->
-                recordReceivedProtocolMessage(CheckoutProtocol.windowOpen.method, request)
-                val uri = request.url.toUri()
-                Timber.i("ECP ec.window.open_request (${uri.scheme}) → external app")
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    activity.startActivity(intent)
-                    windowOpenSuccess().also {
-                        recordWindowOpenResponse("success", it)
-                    }
-                } catch (e: ActivityNotFoundException) {
-                    Timber.w(e, "No activity resolved URL")
-                    windowOpenRejected(reason = "no activity resolved URL").also {
-                        recordWindowOpenResponse("rejected", it)
-                    }
-                } catch (e: SecurityException) {
-                    Timber.w(e, "External app launch blocked")
-                    windowOpenRejected(reason = "external app launch blocked").also {
-                        recordWindowOpenResponse("rejected", it)
-                    }
-                }
-            }
+        recordSdkEvent("Checkout link clicked", mapOf("url" to link.url.toString()))
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, link.url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            recordSdkEvent("Checkout link handled", mapOf("url" to link.url.toString()))
+            CheckoutLinkAction.Handled
+        } catch (e: ActivityNotFoundException) {
+            Timber.w(e, "No activity resolved URL")
+            recordLinkCancellation(link, "no activity resolved URL")
+            CheckoutLinkAction.Cancel
+        } catch (e: SecurityException) {
+            Timber.w(e, "External app launch blocked")
+            recordLinkCancellation(link, "external app launch blocked")
+            CheckoutLinkAction.Cancel
         }
     }
 
-    private inline fun <reified T> recordReceivedProtocolMessage(
-        method: String,
-        payload: T,
-        level: LogLevel = LogLevel.INFO,
-    ) {
-        recordProtocolMessage("Received: $method", payload, level)
+    private fun recordLinkCancellation(link: CheckoutLink, reason: String) {
+        recordSdkEvent(
+            "Checkout link cancelled",
+            mapOf("url" to link.url.toString(), "reason" to reason),
+            LogLevel.ERROR,
+        )
     }
 
-    private fun recordWindowOpenResponse(outcome: String, payload: WindowOpenResult) {
-        val level = if (outcome == "success") LogLevel.INFO else LogLevel.ERROR
-        recordProtocolMessage("Sent: ${CheckoutProtocol.windowOpen.method} response ($outcome)", payload, level)
-    }
-
-    private inline fun <reified T> recordProtocolMessage(
+    private inline fun <reified T> recordSdkEvent(
         message: String,
         payload: T,
-        level: LogLevel,
+        level: LogLevel = LogLevel.INFO,
     ) {
         val serializedPayload = runCatching { Json.encodeToString(payload) }
             .getOrElse {
                 Timber.w(it, "Couldn't serialize $message payload")
                 payload.toString()
             }
-        logger.logProtocolMessage(message, serializedPayload, level)
+        logger.logSdkEvent(message, serializedPayload, level)
         when (level) {
-            LogLevel.INFO -> Timber.i("ECP $message: $serializedPayload")
-            LogLevel.ERROR -> Timber.e("ECP $message: $serializedPayload")
+            LogLevel.INFO -> Timber.i("SDK $message: $serializedPayload")
+            LogLevel.ERROR -> Timber.e("SDK $message: $serializedPayload")
         }
     }
 
