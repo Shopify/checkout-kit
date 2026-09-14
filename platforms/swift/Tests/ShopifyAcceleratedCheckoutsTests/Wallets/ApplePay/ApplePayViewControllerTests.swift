@@ -1,5 +1,5 @@
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutKit
+@testable import ShopifyCheckoutKit
 import UIKit
 import XCTest
 
@@ -79,12 +79,14 @@ class ApplePayViewControllerTests: XCTestCase {
 
     class MockApplePayAuthorizationDelegate: ApplePayAuthorizationDelegate {
         var transitionHistory: [ApplePayState] = []
+        var onTransition: ((ApplePayState) -> Void)?
         var setCartCalls: [StorefrontAPI.Types.Cart] = []
         var shouldThrowOnTransition = false
         var shouldThrowOnSetCart = false
 
         override func transition(to state: ApplePayState) async throws {
             transitionHistory.append(state)
+            onTransition?(state)
             if shouldThrowOnTransition {
                 throw NSError(domain: "MockError", code: 1, userInfo: nil)
             }
@@ -139,6 +141,36 @@ class ApplePayViewControllerTests: XCTestCase {
         viewController.onCheckoutDismiss?()
 
         await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
+    func testWebCheckoutCompletionFinishesApplePayAndForwardsCallback() async throws {
+        let forwarded = expectation(description: "Public completion callback")
+        let finished = expectation(description: "Apple Pay completion transition")
+        viewController.eventHandlers.checkoutDidComplete = { event in
+            XCTAssertEqual(event.checkout.id, "checkout-1")
+            forwarded.fulfill()
+        }
+        mockAuthorizationDelegate.onTransition = { state in
+            XCTAssertEqual(state, .completed)
+            finished.fulfill()
+        }
+        viewController.mockTopViewController = UIViewController()
+        try await viewController.present(url: XCTUnwrap(URL(string: "https://example.com/checkout")))
+        let webController = try XCTUnwrap(viewController.checkoutViewController?.viewControllers.first as? CheckoutWebViewController)
+        let client = try XCTUnwrap(webController.checkoutView?.client)
+
+        // Only a decoded completion event should finish the Apple Pay state machine.
+        _ = await client.process(#"{"jsonrpc":"2.0","method":"ec.complete","params":{}}"#)
+        _ = await client.process("""
+        {"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{
+          "id":"checkout-1","currency":"USD","status":"completed",
+          "line_items":[],"links":[],"totals":[{"type":"total","amount":1000}],
+          "ucp":{"payment_handlers":{},"version":"2026-01-11"}
+        }}}
+        """)
+
+        await fulfillment(of: [forwarded, finished], timeout: 1)
+        XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [.completed])
     }
 
     // MARK: - WalletController Inheritance

@@ -530,13 +530,24 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .onRenderStateChange { state in
     // loading, rendered, or error(reason:)
   }
+  .onStart { event in
+    // Checkout started: event.checkout.
+  }
+  .onUpdate { event in
+    // Buyer-visible checkout data changed: event.checkout.
+  }
+  .onComplete { event in
+    // Mark checkout as completed; reset the cart after dismissal.
+  }
+  .onLinkClick { link in
+    .open
+  }
   .onFail { error in
     // Handle checkout failure.
   }
   .onDismiss {
     // The buyer dismissed the accelerated checkout flow.
   }
-  .connect(client)
 ```
 
 You can also render buttons for a single product variant:
@@ -548,7 +559,7 @@ AcceleratedCheckoutButtons(
 )
 ```
 
-Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout completion and state changes. Clear or refresh the cart when `CheckoutProtocol.complete` fires to avoid reusing an expired cart ID.
+Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
 
 ## Troubleshooting
 
