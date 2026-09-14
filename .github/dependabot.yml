@@ -35,6 +35,10 @@ updates:
       # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
         versions: [">=1.8.0"]
+      # WebKit 1.16 raises minSdk to 24 and requests Kotlin stdlib 2.1. Keep the
+      # library's minSdk 23 / Kotlin 2.0 consumer baseline until it is deliberately revised.
+      - dependency-name: "androidx.webkit:webkit"
+        versions: [">=1.16.0"]
       # Keep JUnit on 4.x. JUnit 5 is a test-platform migration
       # (Jupiter/Vintage), not a drop-in update to junit:junit.
       - dependency-name: "junit:junit"
@@ -63,6 +67,10 @@ updates:
       # consumer floor is pinned to 2.0.
       - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
         versions: [">=1.8.0"]
+      # WebKit 1.16 raises minSdk to 24 and requests Kotlin stdlib 2.1. Keep the
+      # library's minSdk 23 / Kotlin 2.0 consumer baseline until it is deliberately revised.
+      - dependency-name: "androidx.webkit:webkit"
+        versions: [">=1.16.0"]
       # Keep JUnit on 4.x. JUnit 5 is a test-platform migration
       # (Jupiter/Vintage), not a drop-in update to junit:junit.
       - dependency-name: "junit:junit"
