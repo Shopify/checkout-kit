@@ -38,7 +38,6 @@ Check out our blog to
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
-- [Migrating from `ec.*` events](#migrating-from-ec-events)
 - [Explore the sample app](#explore-the-sample-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -533,24 +532,6 @@ The latest snapshot is also mirrored to `element.checkout`. The latest
 These properties are useful for handlers that don't have a reference to the
 originating event. TypeScript users get fully typed events through overloaded
 `addEventListener` signatures with no additional setup.
-
-## Migrating from `ec.*` events
-
-Checkout Kit's public events replace the protocol-named DOM events from
-earlier alpha releases:
-
-| Previous event | Replacement |
-| -------------- | ----------- |
-| `ec.start` | `start` |
-| `ec.complete` | `complete` |
-| `ec.error` | `error` |
-| `ec.close` | `close` |
-| `ec.fulfillment.change`, `ec.line_items.change`, `ec.totals.change`, `ec.messages.change` | `update` |
-
-Subscribe to `update` once when replacing several change listeners, since a
-single snapshot may include changes to several fields. Checkout snapshots no
-longer expose `checkout.ucp`. Error handlers read `event.detail.error.code`
-and `.message` instead of a protocol `ErrorResponse`.
 
 ## Explore the sample app
 
