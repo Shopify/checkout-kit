@@ -81,6 +81,33 @@ final class CheckoutEventAdapterTests: XCTestCase {
         }
     }
 
+    func testShippingSelectionAndPriceChangesProduceUpdates() async throws {
+        let sink = RecordingCheckoutEventSink()
+        let adapter = CheckoutEventAdapter(sink: sink)
+        _ = await adapter.process(message(method: "ec.start"))
+
+        // Entering an address populates shipping options and delivery estimates.
+        let addressUpdate = fullCheckoutMessage.replacingOccurrences(of: "ec.start", with: "ec.fulfillment.change")
+        _ = await adapter.process(addressUpdate)
+
+        // Keep the destination unchanged while selecting a different shipping option.
+        let selectionUpdate = addressUpdate.replacingOccurrences(of: "option-1", with: "express")
+        _ = await adapter.process(selectionUpdate)
+        let priceUpdate = selectionUpdate
+            .replacingOccurrences(of: "ec.fulfillment.change", with: "ec.totals.change")
+            .replacingOccurrences(of: #""amount":1100"#, with: #""amount":1600"#)
+        _ = await adapter.process(priceUpdate)
+        _ = await adapter.process(priceUpdate)
+
+        XCTAssertEqual(sink.updated.count, 3)
+        let checkout = try XCTUnwrap(sink.updated.last)
+        let method = try XCTUnwrap(checkout.fulfillment?.methods?.first)
+        XCTAssertEqual(method.selectedDestinationID, "destination-1")
+        XCTAssertEqual(method.groups?.first?.selectedOptionID, "express")
+        XCTAssertNotNil(method.groups?.first?.options?.first?.earliestFulfillmentTime)
+        XCTAssertEqual(checkout.totals.first?.amount, 1600)
+    }
+
     func testUnsupportedChangeNotificationsDoNotProduceUpdates() async {
         for method in ["ec.buyer.change", "ec.payment.change"] {
             let sink = RecordingCheckoutEventSink()

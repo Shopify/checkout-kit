@@ -1,5 +1,5 @@
 @testable import ShopifyAcceleratedCheckouts
-import ShopifyCheckoutKit
+@testable import ShopifyCheckoutKit
 import UIKit
 import XCTest
 
@@ -24,12 +24,6 @@ final class WalletControllerTests: XCTestCase {
 
         override func getTopViewController() -> UIViewController? {
             return mockTopViewController
-        }
-    }
-
-    struct MockClient: CheckoutCommunicationProtocol {
-        func process(_: String) async -> String? {
-            return nil
         }
     }
 
@@ -160,6 +154,53 @@ final class WalletControllerTests: XCTestCase {
 
     // MARK: - present Tests
 
+    func testPresentedCheckoutForwardsPublicEventsWithoutProtocolClient() async throws {
+        var events: [String] = []
+        let buttons = AcceleratedCheckoutButtons(cartID: "gid://shopify/Cart/test-cart-id")
+            .onStart { _ in events.append("start") }
+            .onUpdate { event in
+                events.append("update")
+                XCTAssertEqual(event.checkout.totals.first?.amount, 1600)
+            }
+            .onComplete { _ in events.append("complete") }
+            .onLinkClick { _ in .cancel }
+            .onFail { error in
+                events.append("fail")
+                XCTAssertEqual(error.code, .sdkError)
+            }
+            .onDismiss { events.append("dismiss") }
+        controller = MockWalletController(
+            identifier: .cart(cartID: "gid://shopify/Cart/test-cart-id"),
+            storefront: mockStorefront,
+            configuration: .testConfiguration
+        )
+        controller.eventHandlers = buttons.eventHandlers
+        controller.mockTopViewController = UIViewController()
+        try await controller.present(url: XCTUnwrap(URL(string: "https://example.com/checkout")))
+
+        let webController = try XCTUnwrap(controller.checkoutViewController?.viewControllers.first as? CheckoutWebViewController)
+        let checkoutView = try XCTUnwrap(webController.checkoutView)
+        let client = try XCTUnwrap(checkoutView.client)
+        func message(_ method: String, total: Int = 1000) -> String {
+            """
+            {"jsonrpc":"2.0","method":"\(method)","params":{"checkout":{
+              "id":"checkout-1","currency":"USD","status":"incomplete",
+              "line_items":[],"links":[],"totals":[{"type":"total","amount":\(total)}],
+              "ucp":{"payment_handlers":{},"version":"2026-01-11"}
+            }}}
+            """
+        }
+        _ = await client.process(message("ec.start"))
+        _ = await client.process(message("ec.totals.change", total: 1600))
+        _ = await client.process(message("ec.complete", total: 1600))
+        let link = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.com/help")))
+        XCTAssertEqual(checkoutView.linkActionProvider?(link), .cancel)
+        webController.checkoutViewDidFailWithError(error: CheckoutError(code: .sdkError, message: "Synthetic failure"))
+        webController.close()
+
+        XCTAssertEqual(events, ["start", "update", "complete", "fail", "dismiss"])
+    }
+
     func test_present_withValidParameters_shouldSucceed() async throws {
         controller = MockWalletController(
             identifier: .cart(cartID: "gid://Shopify/Cart/test-cart-id"),
@@ -173,7 +214,7 @@ final class WalletControllerTests: XCTestCase {
 
         let testURL = try XCTUnwrap(URL(string: "https://test.myshopify.com/checkout"))
 
-        try await controller.present(url: testURL, client: MockClient())
+        try await controller.present(url: testURL)
 
         XCTAssertNotNil(controller.checkoutViewController)
     }

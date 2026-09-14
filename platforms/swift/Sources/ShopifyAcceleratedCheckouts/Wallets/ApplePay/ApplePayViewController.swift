@@ -19,8 +19,6 @@ class ApplePayViewController: WalletController, PayController {
 
     var cart: StorefrontAPI.Types.Cart?
 
-    var client: (any CheckoutCommunicationProtocol)?
-
     // MARK: - Callback Properties
 
     /// Callback invoked when an error occurs during the checkout process.
@@ -57,8 +55,7 @@ class ApplePayViewController: WalletController, PayController {
 
     init(
         identifier: CheckoutIdentifier,
-        configuration: ApplePayConfigurationWrapper,
-        client: (any CheckoutCommunicationProtocol)? = nil
+        configuration: ApplePayConfigurationWrapper
     ) {
         super.init(
             identifier: identifier,
@@ -72,13 +69,6 @@ class ApplePayViewController: WalletController, PayController {
             configuration: configuration,
             controller: self
         )
-
-        self.client = LifecycleObservingClient(base: client, onComplete: { [weak self] in
-            guard let self else { return }
-            Task { @MainActor in
-                try? await self.authorizationDelegate.transition(to: .completed)
-            }
-        })
     }
 
     func onPress() async {
@@ -154,7 +144,10 @@ class ApplePayViewController: WalletController, PayController {
         }
     }
 
-    func present(url: URL) async throws {
-        try await present(url: url, client: client)
+    override func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        Task { @MainActor in
+            try? await authorizationDelegate.transition(to: .completed)
+        }
+        super.checkoutDidComplete(event)
     }
 }
