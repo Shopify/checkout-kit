@@ -271,7 +271,7 @@ struct ClientTests {
     @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
         let response = try await EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                ReadyResult(
+                EmbeddedCheckoutProtocol.ReadyResult(
                     checkout: nil,
                     credential: nil,
                     ucp: .success(),
@@ -301,7 +301,7 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                    ReadyResult(
+                    EmbeddedCheckoutProtocol.ReadyResult(
                         checkout: nil,
                         credential: nil,
                         ucp: .success(),
@@ -327,7 +327,7 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.auth) { _ in
-                    AuthResult(
+                    EmbeddedCheckoutProtocol.AuthResult(
                         credential: "tok-xyz",
                         ucp: .success(),
                         continueURL: nil,
@@ -349,9 +349,9 @@ struct ClientTests {
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { message in
                     receivedCheckoutID = message.params.checkout.id
-                    return CredentialResult(
+                    return EmbeddedCheckoutProtocol.CredentialResult(
                         checkout: nil,
-                        ucp: InstrumentsChangeResultUcp(
+                        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                             capabilities: nil,
                             paymentHandlers: nil,
                             services: nil,
@@ -374,7 +374,7 @@ struct ClientTests {
     @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
         let client = EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                ReadyResult(
+                EmbeddedCheckoutProtocol.ReadyResult(
                     checkout: nil,
                     credential: nil,
                     ucp: .success(),

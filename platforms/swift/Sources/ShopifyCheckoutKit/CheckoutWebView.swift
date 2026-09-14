@@ -356,7 +356,7 @@ class CheckoutWebView: WKWebView {
             )
         }
         .on(CheckoutProtocol.ready) { _ in
-            ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
+            EmbeddedCheckoutProtocol.ReadyResult(checkout: nil, credential: nil, ucp: .success(), upgrade: nil, continueURL: nil, messages: nil)
         }
         .on(CheckoutProtocol.complete) { [weak self] _ in
             guard let self else { return }
@@ -805,7 +805,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
 }
 
 private struct TerminalErrorNotification: Decodable {
-    let params: JSONRPCErrorParams
+    let params: EmbeddedCheckoutProtocol.JSONRPCErrorParams
 }
 
 extension UIApplication {

@@ -13,7 +13,7 @@ struct CodecDecodeTests {
             return
         }
         let checkout = try #require(
-            try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: params).checkout
+            try? JSONDecoder().decode(EmbeddedCheckoutProtocol.JSONRPCCheckoutParams.self, from: params).checkout
         )
 
         #expect(method == "ec.start")
@@ -34,7 +34,7 @@ struct CodecDecodeTests {
             return
         }
         let error = try #require(
-            try? JSONDecoder().decode(JSONRPCErrorParams.self, from: params).error
+            try? JSONDecoder().decode(EmbeddedCheckoutProtocol.JSONRPCErrorParams.self, from: params).error
         )
 
         #expect(method == "ec.error")
