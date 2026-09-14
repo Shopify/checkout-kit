@@ -32,22 +32,18 @@ struct ApplePayButton: View {
     /// The corner radius for the button
     private let cornerRadius: CGFloat?
 
-    private let clientContainer: CheckoutProtocolClientContainer
-
     init(
         identifier: CheckoutIdentifier,
         eventHandlers: EventHandlers = EventHandlers(),
         cornerRadius: CGFloat?,
         buttonType: PKPaymentButtonType = .plain,
-        buttonStyle: PKPaymentButtonStyle = .automatic,
-        client: (any CheckoutCommunicationProtocol)? = nil
+        buttonStyle: PKPaymentButtonStyle = .automatic
     ) {
         self.identifier = identifier.parse()
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
-        clientContainer = CheckoutProtocolClientContainer(client)
     }
 
     var body: some View {
@@ -65,8 +61,7 @@ struct ApplePayButton: View {
                     shopSettings: shopSettings
                 ),
                 eventHandlers: eventHandlers,
-                cornerRadius: cornerRadius,
-                client: clientContainer.client
+                cornerRadius: cornerRadius
             )
         }
     }
@@ -94,7 +89,10 @@ struct ApplePayButton: View {
 struct Internal_ApplePayButton: View {
     private let buttonType: PKPaymentButtonType
     private let buttonStyle: PKPaymentButtonStyle
-    private let controller: ApplePayViewController
+    @State private var controller: ApplePayViewController?
+    private let identifier: CheckoutIdentifier
+    private let eventHandlers: EventHandlers
+    private let configuration: ApplePayConfigurationWrapper
     private let cornerRadius: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
 
@@ -108,19 +106,14 @@ struct Internal_ApplePayButton: View {
         buttonStyle: PKPaymentButtonStyle,
         configuration: ApplePayConfigurationWrapper,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?,
-        client: (any CheckoutCommunicationProtocol)? = nil
+        cornerRadius: CGFloat?
     ) {
-        controller = ApplePayViewController(
-            identifier: identifier,
-            configuration: configuration,
-            client: client
-        )
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
         self.cornerRadius = cornerRadius
-        controller.onCheckoutFail = eventHandlers.checkoutDidFail
-        controller.onCheckoutDismiss = eventHandlers.checkoutDidDismiss
+        self.configuration = configuration
+        self.identifier = identifier
+        self.eventHandlers = eventHandlers
     }
 
     var body: some View {
@@ -129,7 +122,19 @@ struct Internal_ApplePayButton: View {
                 buttonType: buttonType,
                 buttonStyle: buttonStyle,
                 cornerRadius: cornerRadius ?? 8,
-                action: { Task { @MainActor in await controller.onPress() } }
+                action: {
+                    Task { @MainActor in
+                        let controller = ApplePayViewController(
+                            identifier: identifier,
+                            configuration: configuration
+                        )
+                        controller.eventHandlers = eventHandlers
+                        controller.onCheckoutFail = eventHandlers.checkoutDidFail
+                        controller.onCheckoutDismiss = eventHandlers.checkoutDidDismiss
+                        self.controller = controller
+                        await controller.onPress()
+                    }
+                }
             )
             .id(buttonIdentity(colorScheme: colorScheme))
             .frame(height: 48)

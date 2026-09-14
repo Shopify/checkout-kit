@@ -1,5 +1,4 @@
 import ApolloAPI
-import EmbeddedCheckoutProtocol
 import ShopifyAcceleratedCheckouts
 import ShopifyCheckoutKit
 import SwiftUI
@@ -31,10 +30,6 @@ struct CartView: View {
     @AppStorage(AppStorageKeys.preloadObservabilityEnabled.rawValue)
     private var preloadObservabilityEnabled = false
 
-    private var client: CheckoutProtocol.Client {
-        .with(windowOpen: windowOpenHandler)
-    }
-
     var body: some View {
         if let lines = cartManager.cart?.lines.nodes {
             ZStack(alignment: .bottom) {
@@ -64,13 +59,22 @@ struct CartView: View {
                         if #available(iOS 16, *) {
                             AcceleratedCheckoutButtons(cartID: cartID)
                                 .applePayButtonStyle(applePayStyle.style)
+                                .onStart { event in
+                                    print("[AcceleratedCheckout] Started: \(event.checkout.id)")
+                                }
+                                .onUpdate(handleCheckoutUpdate)
+                                .onComplete { event in
+                                    print("[AcceleratedCheckout] Completed: \(event.checkout.order?.id ?? "unknown")")
+                                    isCompleted = true
+                                }
+                                .onLinkClick(handleCheckoutLink)
                                 .onFail { error in
                                     print("[AcceleratedCheckout] Failed: \(error)")
                                 }
                                 .onDismiss {
                                     print("[AcceleratedCheckout] Dismissed")
+                                    resetCompletedCart()
                                 }
-                                .connect(client)
                                 .environment(
                                     \.shopifyAcceleratedCheckoutsConfiguration,
                                     ShopifyAcceleratedCheckouts.Configuration(
@@ -123,23 +127,8 @@ struct CartView: View {
                         .onStart { event in
                             print("[CheckoutKitSwiftDemo] Started: \(event.checkout.id)")
                         }
-                        .onUpdate { event in
-                            // The selected address changed.
-                            let updatedAddressIDs = selectedAddressIDs(in: event.checkout)
-                            if updatedAddressIDs != selectedAddressIDs {
-                                print("[CheckoutKitSwiftDemo] Selected address changed")
-                                selectedAddressIDs = updatedAddressIDs
-                            }
-
-                            // The selected delivery method changed.
-                            let updatedDeliveryMethodIDs = selectedDeliveryMethodIDs(in: event.checkout)
-                            if updatedDeliveryMethodIDs != selectedDeliveryMethodIDs {
-                                print("[CheckoutKitSwiftDemo] Selected delivery method changed")
-                                selectedDeliveryMethodIDs = updatedDeliveryMethodIDs
-                            }
-
-                            print("[CheckoutKitSwiftDemo] Updated: \(event.checkout.id)")
-                        }
+                        .onUpdate(handleCheckoutUpdate)
+                        .onLinkClick(handleCheckoutLink)
                         .onComplete { event in
                             // Set the flag here; defer the cart reset until the user dismisses
                             // the sheet (in .onDismiss). Resetting now would nil the cart and
@@ -151,10 +140,7 @@ struct CartView: View {
                             print("[CheckoutKitSwiftDemo] Dismissed")
                             showCheckoutSheet = false
 
-                            if isCompleted {
-                                CartManager.shared.resetCart()
-                                isCompleted = false
-                            }
+                            resetCompletedCart()
                         }
                         .onFail { event in
                             showCheckoutSheet = false
@@ -203,6 +189,41 @@ struct CartView: View {
             preloadStateTestId = PreloadStateMarker.testId(for: state)
             print("[Preload] state changed to \(state)")
             ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
+        }
+    }
+
+    private func resetCompletedCart() {
+        if isCompleted {
+            CartManager.shared.resetCart()
+            isCompleted = false
+        }
+        selectedAddressIDs = [:]
+        selectedDeliveryMethodIDs = [:]
+    }
+
+    private func handleCheckoutUpdate(_ event: CheckoutUpdateEvent) {
+        let updatedAddressIDs = selectedAddressIDs(in: event.checkout)
+        if updatedAddressIDs != selectedAddressIDs {
+            print("[CheckoutKitSwiftDemo] Selected address changed")
+            selectedAddressIDs = updatedAddressIDs
+        }
+
+        let updatedDeliveryMethodIDs = selectedDeliveryMethodIDs(in: event.checkout)
+        if updatedDeliveryMethodIDs != selectedDeliveryMethodIDs {
+            print("[CheckoutKitSwiftDemo] Selected delivery method changed")
+            selectedDeliveryMethodIDs = updatedDeliveryMethodIDs
+        }
+
+        print("[CheckoutKitSwiftDemo] Updated: \(event.checkout.id)")
+    }
+
+    private func handleCheckoutLink(_ link: CheckoutLink) -> CheckoutLinkAction {
+        switch windowOpenHandler {
+        case .default:
+            return .open
+        case .externalApp:
+            UIApplication.shared.open(link.url)
+            return .handled
         }
     }
 
