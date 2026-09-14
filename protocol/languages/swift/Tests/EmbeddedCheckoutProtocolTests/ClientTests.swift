@@ -94,7 +94,7 @@ struct ClientTests {
             EmbeddedCheckoutProtocol.Event.complete
         ]
         for descriptor in descriptors {
-            var receivedCheckout: Checkout?
+            var receivedCheckout: EmbeddedCheckoutProtocol.Checkout?
             let client = EmbeddedCheckoutProtocol.Client()
                 .on(descriptor) { receivedCheckout = $0.params.checkout }
             let message = """
