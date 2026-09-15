@@ -218,7 +218,7 @@ ShopifyCheckoutKit.present(
 )
 ```
 
-Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart represented by the URL passed to `preload`, so call `preload` again after cart changes produce a new checkout URL.
+Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart represented by the URL passed to `preload`, so call `preload` again after cart changes produce a new checkout URL. It also reflects the `appearance` in `ShopifyCheckoutKit.configuration` at the time of the `preload` call: in SwiftUI, keep any instance `.appearance(...)` modifier aligned with the global appearance when relying on preloading, since a mismatch skips and clears the preload at presentation.
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
@@ -253,7 +253,7 @@ ShopifyCheckoutKit.configure {
 }
 ```
 
-SwiftUI modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` override these defaults only for that `ShopifyCheckout` value. They do not mutate `ShopifyCheckoutKit.configuration` or invalidate a cached preload.
+SwiftUI modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` override these defaults only for that `ShopifyCheckout` value. They do not mutate `ShopifyCheckoutKit.configuration`, and applying them does not invalidate a cached preload. Whether the preload is reused is decided later, at presentation: `preload` prepares the checkout URL using the global configuration's `appearance`, so a `ShopifyCheckout` reuses the preload only when its effective appearance matches the one that was preloaded. Presenting with a different instance `.appearance(...)` loads checkout fresh and discards the preloaded checkout. `.tintColor(...)`, `.backgroundColor(...)`, `.title(...)`, and `.closeButtonTintColor(...)` do not affect the checkout URL and never affect preload reuse.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
