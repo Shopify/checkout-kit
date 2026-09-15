@@ -50,11 +50,16 @@ export function namespaceSwiftPayloadModels(source, payloadTypes = swiftPayloadT
   }
 
   return source
+    .replace('// To parse the JSON, add this file to your project and do:',
+      '// To parse JSON with the protocol models, use:')
     .replace(swiftTokens, token => namespaced.has(token) ? `EmbeddedCheckoutProtocol.${token}` : token)
     .replace(/^public (struct|enum) EmbeddedCheckoutProtocol\.(\w+):[\s\S]*?^\}/gm, model => {
       const declaration = model.replace('EmbeddedCheckoutProtocol.', '');
       const indented = declaration.split('\n').map(line => line ? `    ${line}` : line).join('\n');
       return `extension EmbeddedCheckoutProtocol {\n${indented}\n}`;
     })
-    .replace('let checkout = try Checkout(json)', 'let checkout = try EmbeddedCheckoutProtocol.Checkout(json)');
+    // The token pass deliberately skips comments. Qualify quicktype's constructor
+    // examples separately, using the same model set as the declarations above.
+    .replace(/^(\/\/\s+let \w+ = try )(\w+)(\(json\))$/gm, (example, prefix, name, suffix) =>
+      namespaced.has(name) ? `${prefix}EmbeddedCheckoutProtocol.${name}${suffix}` : example);
 }
