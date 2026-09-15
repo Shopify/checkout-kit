@@ -204,7 +204,7 @@ internal class CheckoutWebView private constructor(
             TelemetryErrorMetric(
                 category = TelemetryErrorCategory.Protocol,
                 stage = TelemetryErrorStage.Message,
-                code = TelemetryErrorCode.Unknown,
+                code = TelemetryErrorCode.EcError,
                 retryable = false,
                 isRetry = didRetryCheckoutRequest,
             ),
