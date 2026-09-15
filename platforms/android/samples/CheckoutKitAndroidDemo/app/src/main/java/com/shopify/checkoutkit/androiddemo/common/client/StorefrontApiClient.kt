@@ -23,7 +23,12 @@ import kotlinx.coroutines.flow.transform
 class StorefrontApiClient(
     private val apollo: ApolloClient,
 ) {
-    fun fetchProducts(numProducts: Int, numVariants: Int, cursor: String? = null): Flow<FetchProductsQuery.Data> {
+    fun fetchProducts(
+        numProducts: Int,
+        numVariants: Int,
+        cursor: String? = null,
+        fetchPolicy: FetchPolicy = FetchPolicy.CacheFirst,
+    ): Flow<FetchProductsQuery.Data> {
         return apollo.query(
             FetchProductsQuery(
                 numProducts = numProducts,
@@ -31,7 +36,7 @@ class StorefrontApiClient(
                 cursor = Optional.presentIfNotNull(cursor),
             )
         )
-            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .fetchPolicy(fetchPolicy)
             .toFlow()
             .emitDataOrFinalError()
     }
