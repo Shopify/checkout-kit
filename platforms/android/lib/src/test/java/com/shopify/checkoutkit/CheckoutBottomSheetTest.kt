@@ -28,6 +28,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
@@ -730,13 +731,11 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `present connects protocol client to checkout WebView bridge`() {
+    fun `present delivers checkout updates without a protocol client`() {
         var received = false
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.messagesChange) { received = true }
 
         ShopifyCheckoutKit.present("https://shopify.com", activity, webMessageTransport) {
-            connect(client)
+            onUpdate { received = true }
         }
 
         webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
@@ -771,7 +770,9 @@ class CheckoutBottomSheetTest {
         runDismissAnimation()
 
         verify(mockListener, never()).onCheckoutDismissed()
-        verify(mockListener).onCheckoutFailed(error)
+        val captor = argumentCaptor<CheckoutFailureEvent>()
+        verify(mockListener).onCheckoutFailed(captor.capture())
+        assertThat(captor.firstValue.error).isSameAs(error)
         assertThat(checkoutSheet.isShowing).isFalse()
     }
 

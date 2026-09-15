@@ -58,10 +58,10 @@ class ShopifyCheckoutKitTest {
                 webMessageTransport = webMessageTransport,
             )
 
-            val captor = argumentCaptor<CheckoutException>()
+            val captor = argumentCaptor<CheckoutFailureEvent>()
             assertThat(checkout).isNull()
             verify(listener).onCheckoutFailed(captor.capture())
-            CheckoutExceptionAssert.assertThat(captor.firstValue)
+            CheckoutExceptionAssert.assertThat(captor.firstValue.error)
                 .hasMessage("This Android WebView does not support Shopify Checkout Kit.")
                 .hasCode(CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED)
         }
