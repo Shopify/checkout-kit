@@ -190,7 +190,7 @@ function routeSdkLifecycleEvent(
 ): PresentDispatchResult {
   switch (type) {
     case 'close':
-      callbacks?.onClose?.();
+      callbacks?.onDismiss?.();
       return {terminal: true};
     case 'fail': {
       const failPayload = validateFailPayload(payload);

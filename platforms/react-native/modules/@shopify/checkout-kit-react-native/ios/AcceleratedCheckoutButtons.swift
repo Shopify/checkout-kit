@@ -104,7 +104,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     }
 
     @objc var onFail: RCTBubblingEventBlock?
-    @objc var onCancel: RCTBubblingEventBlock?
+    @objc var onDismiss: RCTDirectEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
     @objc var onClickLink: RCTBubblingEventBlock?
     @objc var onDispatch: RCTDirectEventBlock?
@@ -339,7 +339,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     }
 
     private func handleCheckoutDismissed() {
-        onCancel?([:])
+        onDismiss?([:])
     }
 
     private func handleRenderStateChange(_ state: RenderState) {

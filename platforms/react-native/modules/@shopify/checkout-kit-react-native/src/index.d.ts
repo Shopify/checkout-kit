@@ -189,8 +189,8 @@ export interface GeolocationRequestEvent {
 /**
  * Per-call SDK callbacks for `present(url, callbacks, protocol)`.
  *
- * Exactly one of `onClose` or `onFail` fires per `present(...)` invocation,
- * after which the callbacks are released.
+ * At most one of `onDismiss` or `onFail` fires per `present(...)` invocation,
+ * after which the callbacks are released. Programmatic dismissal invokes neither.
  *
  * `onGeolocationRequest` may fire any number of times during a single
  * `present(...)` call while the checkout sheet is open.
@@ -198,10 +198,12 @@ export interface GeolocationRequestEvent {
 export interface PresentCallbacks {
   /**
    * Fires when the checkout sheet is dismissed without a terminal error.
+   * This presentation lifecycle event is independent of checkout completion,
+   * so it also fires when the buyer dismisses the sheet after completing payment.
    * Mirrors `CheckoutListener.onCheckoutDismissed` on Android
    * and `CheckoutDelegate.checkoutDidDismiss` on iOS.
    */
-  onClose?: () => void;
+  onDismiss?: () => void;
   /**
    * Fires when the checkout sheet terminates with an error.
    * Mirrors `CheckoutListener.onCheckoutFailed` on Android
@@ -334,9 +336,9 @@ export interface ShopifyCheckoutKit {
    * Present the checkout.
    *
    * @param checkoutURL The URL of the checkout to display.
-   * @param callbacks Optional per-call SDK callbacks. Exactly one of
-   * `onClose` or `onFail` fires per call, after which the callbacks are
-   * released.
+   * @param callbacks Optional per-call SDK callbacks. At most one of
+   * `onDismiss` or `onFail` fires per call, after which the callbacks are
+   * released. Programmatic dismissal invokes neither.
    * @param protocol Optional per-call Checkout Protocol event handlers.
    */
   present(
