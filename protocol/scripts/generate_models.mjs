@@ -36,6 +36,7 @@ import {
   run,
 } from "./codegen_tools.mjs";
 import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
+import {namespaceSwiftPayloadModels} from "./swift_namespacing.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
@@ -811,7 +812,7 @@ async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
 
     const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
     const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
-    return injectSwiftAdditionalProperties(withMapModels, openModelNames);
+    return namespaceSwiftPayloadModels(injectSwiftAdditionalProperties(withMapModels, openModelNames));
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);

@@ -106,7 +106,7 @@ extension CheckoutError {
         CheckoutError(code: .unknown, message: message, underlyingError: underlyingError)
     }
 
-    internal static func terminalProtocol(error: ErrorResponse) -> CheckoutError {
+    internal static func terminalProtocol(error: EmbeddedCheckoutProtocol.ErrorResponse) -> CheckoutError {
         let representative = error.messages.first {
             $0.type == .error && $0.severity == .unrecoverable
         }
