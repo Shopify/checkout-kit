@@ -1230,7 +1230,9 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(mockDelegate.failureCount, 1)
         // Stray HTTP records can arrive from neighboring tests' in-flight
         // real navigations; count only this scenario's category.
-        XCTAssertEqual(telemetryRecorder.errors.filter { $0.category == .protocol }.count, 1)
+        let protocolErrors = telemetryRecorder.errors.filter { $0.category == .protocol }
+        XCTAssertEqual(protocolErrors.count, 1)
+        XCTAssertEqual(protocolErrors.first?.code, .ecError)
     }
 
     func testHTTPPolicyCancellationDoesNotRecordDuplicateNavigationError() throws {

@@ -781,7 +781,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 .init(
                     category: .protocol,
                     stage: .message,
-                    code: .unknown,
+                    code: .ecError,
                     retryable: false,
                     isRetry: navigationRetryReason != nil
                 )

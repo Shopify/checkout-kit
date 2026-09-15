@@ -277,7 +277,7 @@ describe("<shopify-checkout>", () => {
         expect(telemetrySpy).toHaveBeenCalledWith({
           category: "protocol",
           stage: "message",
-          code: "unknown",
+          code: "ec_error",
           retryable: false,
           isRetry: false,
         });
