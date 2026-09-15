@@ -8,17 +8,17 @@ source "$script_dir/ios_build_helpers"
 
 e2e_configure_storefront
 
-e2e_log "Generating Swift sample Xcode projects"
+e2e_log "Generating the Swift sample Xcode project"
 platforms/swift/Scripts/generate_xcode_projects
 
 cd platforms/swift/Samples
 
 app_name="CheckoutKitSwiftDemo"
-workspace="Samples.xcworkspace"
+project="$app_name/$app_name.xcodeproj"
 scheme="$app_name"
 
 e2e_build_ios_device_ipa \
-  --workspace "$workspace" \
+  --project "$project" \
   --scheme "$scheme" \
   --app-name "$app_name" \
   --bundle-id com.shopify.checkoutkit.swiftdemo \
@@ -34,7 +34,7 @@ simulator_app_zip="$e2e_dir/${app_name}-Simulator.zip"
 # Builds the simulator app bundle that is zipped for Tophat simulator installs.
 build_simulator_app() {
   xcodebuild build \
-    -workspace "$workspace" \
+    -project "$project" \
     -scheme "$scheme" \
     -configuration Release \
     -skipPackagePluginValidation \

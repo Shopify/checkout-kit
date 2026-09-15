@@ -213,20 +213,6 @@ struct ProductView: View {
             .onDismiss {
                 print("[AcceleratedCheckout] Dismissed")
             }
-            .environment(
-                \.shopifyAcceleratedCheckoutsConfiguration,
-                ShopifyAcceleratedCheckouts.Configuration(
-                    storefrontDomain: InfoDictionary.shared.domain,
-                    storefrontAccessToken: InfoDictionary.shared.accessToken
-                )
-            )
-            .environment(
-                \.shopifyApplePayConfiguration,
-                ShopifyAcceleratedCheckouts.ApplePayConfiguration(
-                    merchantIdentifier: InfoDictionary.shared.merchantIdentifier,
-                    contactFields: [.email, .phone]
-                )
-            )
     }
 
     private func addToCart() {
@@ -392,6 +378,6 @@ struct ProductGalleryView: View {
 
 struct ProductGalleryView_Previews: PreviewProvider {
     static var previews: some View {
-        ProductGalleryView()
+        AcceleratedCheckoutsConfiguredView(content: ProductGalleryView())
     }
 }
