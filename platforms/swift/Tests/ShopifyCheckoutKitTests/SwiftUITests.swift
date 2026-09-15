@@ -74,12 +74,14 @@ class CheckoutConfigurableTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         ShopifyCheckoutKit.configuration = Configuration()
+        CheckoutWebView.invalidate()
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     override func tearDown() async throws {
         ShopifyCheckoutKit.configuration = Configuration()
+        CheckoutWebView.invalidate()
         try await super.tearDown()
     }
 
@@ -169,6 +171,41 @@ class CheckoutConfigurableTests: XCTestCase {
         await Task.yield()
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPresentationReusesPreloadWhenInstanceAppearanceMatchesPreloadedAppearance() async {
+        await Task.yield()
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        CheckoutWebView.preloadCache.transition(to: .ready)
+        let preloaded = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(checkoutURL))
+
+        let sheet = shopifyCheckout
+            .backgroundColor(.red)
+            .tintColor(.blue)
+            .title("Instance checkout")
+            .closeButtonTintColor(.green)
+
+        XCTAssertEqual(sheet.decoratedCheckoutURL, CheckoutURLDecorator.decorate(checkoutURL))
+        let presented = CheckoutWebView.for(checkout: sheet.decoratedCheckoutURL)
+
+        XCTAssertTrue(presented === preloaded)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPresentationWithDifferentInstanceAppearanceMissesAndEvictsPreload() async {
+        await Task.yield()
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        CheckoutWebView.preloadCache.transition(to: .ready)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        let sheet = shopifyCheckout.appearance(.app(.dark))
+        XCTAssertNotEqual(sheet.decoratedCheckoutURL, CheckoutURLDecorator.decorate(checkoutURL))
+
+        let fresh = CheckoutWebView.for(checkout: sheet.decoratedCheckoutURL)
+
+        XCTAssertNil(fresh.url)
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasActiveKeepAlive())
     }
 
     func testModifiersApplyToAnyConformerWithoutCasts() {
