@@ -18,7 +18,7 @@ also provides web idiomatic defaults such as opening checkout in a popup or
 new tab, a transient overlay scrim while the popup is open, and convenient
 developer APIs to embed, customize, and follow the lifecycle of the checkout
 experience via the
-[Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/).
+[Embedded Checkout Protocol](https://ucp.dev/2026-08-25/specification/shopping/checkout/embedded/).
 
 Check out our blog to
 [learn how and why we built the Shopify Checkout Kit](https://www.shopify.com/partners/blog/mobile-checkout-sdks-for-ios-and-android).
@@ -545,7 +545,7 @@ additional setup.
 
 > [!NOTE]
 > Most public `ec.*` DOM event names mirror the underlying
-> [Embedded Checkout Protocol](https://ucp.dev/2026-04-08/specification/embedded-checkout/)
+> [Embedded Checkout Protocol](https://ucp.dev/2026-08-25/specification/shopping/checkout/embedded/)
 > JSON-RPC method names. `ec.close` is component-only and synthetic; it is not
 > part of the ECP wire protocol.
 

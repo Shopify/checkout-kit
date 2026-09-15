@@ -6,8 +6,8 @@ import Testing
 struct DescriptorTests {
     @Suite("Spec Version")
     struct SpecVersion {
-        @Test func matchesOpenRPCInfoVersion() {
-            #expect(EmbeddedCheckoutProtocol.specVersion == "2026-04-08")
+        @Test func advertisesAugustRevision() {
+            #expect(EmbeddedCheckoutProtocol.specVersion == "2026-08-25")
         }
     }
 

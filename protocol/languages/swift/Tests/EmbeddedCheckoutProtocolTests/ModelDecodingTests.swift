@@ -108,9 +108,9 @@ struct ModelDecodingTests {
         #expect(checkout.discounts?.codes == ["SUMMER20"])
         #expect(checkout.discounts?.applied?.first?.method == .across)
         #expect(checkout.discounts?.applied?.first?.allocations?.first?.path == "$.line_items[0]")
-        #expect(checkout.fulfillment?.availableMethods?.first?.type == .shipping)
+        #expect(checkout.fulfillment?.availableMethods?.first?.type == "shipping")
         #expect(checkout.fulfillment?.methods?.first?.id == "pickup-main")
-        #expect(checkout.fulfillment?.methods?.first?.type == .pickup)
+        #expect(checkout.fulfillment?.methods?.first?.type == "pickup")
     }
 
     @Test func decodesOrderLineItemQuantity() throws {

@@ -7,6 +7,9 @@ import {DELEGATIONS, EC_METHODS, MODEL_EXTRACTIONS} from './method_catalog.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const protocolRoot = path.resolve(scriptDir, '..');
+const {protocolVersion: specVersion} = JSON.parse(
+  fs.readFileSync(path.join(protocolRoot, 'source-lock.json'), 'utf8'),
+);
 
 const outputPath = path.resolve(
   protocolRoot,
@@ -143,6 +146,10 @@ import Foundation
 ${conformances}
 
 extension EmbeddedCheckoutProtocol {
+    /// The UCP spec revision these artifacts were generated from, taken from
+    /// \`protocol/source-lock.json\`. Do not edit by hand.
+    public static let specVersion = "${specVersion}"
+
     /// Every \`ec.*\` method this protocol owns, resolved to a typed descriptor.
     /// Notifications become \`NotificationDescriptor\`s; requests become
     /// \`RequestDescriptor\`s.
