@@ -113,6 +113,8 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             scripts:
+              - 'platforms/swift/Scripts/api'
+              - 'platforms/swift/Scripts/normalize-api.jq'
               - 'scripts/lib/**'
               - 'scripts/test_ruby'
               - 'scripts/test/**'
