@@ -4,38 +4,55 @@ import Testing
 
 @Suite("Model Decoding Tests")
 struct ModelDecodingTests {
-    @Test func roundTripsCheckoutPayload() throws {
-        let json = try fixtureString("notification")
+    @Test(arguments: ["notification", "notification_with_dates"])
+    func roundTripsCheckoutPayload(fixture: String) throws {
+        let json = try fixtureString(fixture)
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
+        let envelope = try newJSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
         let checkout = envelope.params.checkout
+        let hasDates = fixture == "notification_with_dates"
+        let expectedExpiry = hasDates ? ISO8601DateFormatter().date(from: "2026-09-15T18:00:00Z") : nil
+        let expectedEarliest = hasDates ? ISO8601DateFormatter().date(from: "2026-09-16T09:00:00Z") : nil
+        let expectedLatest = hasDates ? ISO8601DateFormatter().date(from: "2026-09-18T17:00:00Z") : nil
 
         #expect(checkout.id == "checkout-123")
         #expect(checkout.status == .incomplete)
         #expect(checkout.currency == "USD")
         #expect(checkout.totals.first?.amount == 2999)
         #expect(checkout.links.first?.type == "privacy_policy")
+        #expect(checkout.expiresAt == expectedExpiry)
 
-        let reEncoded = try JSONEncoder().encode(checkout)
-        let reDecoded = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: reEncoded)
+        // Use the generated wire-format helpers throughout. Foundation's default
+        // encoder writes numeric dates, which these ISO 8601 initializers reject.
+        let reEncoded = try checkout.jsonData()
+        let reDecoded = try EmbeddedCheckoutProtocol.Checkout(data: reEncoded)
 
         #expect(reDecoded.id == checkout.id)
         #expect(reDecoded.currency == checkout.currency)
         #expect(reDecoded.lineItems.count == checkout.lineItems.count)
 
         let updated = reDecoded.with(currency: "EUR")
-        let copied = try EmbeddedCheckoutProtocol.Checkout(data: JSONEncoder().encode(updated))
+        let copied = try EmbeddedCheckoutProtocol.Checkout(data: updated.jsonData())
         #expect(copied.currency == "EUR")
         #expect(copied.id == checkout.id)
         #expect(copied.ucp.version == checkout.ucp.version)
+
+        for value in [checkout, reDecoded, updated, copied] {
+            #expect(value.expiresAt == expectedExpiry)
+            let option = value.fulfillment?.methods?.first?.groups?.first?.options?.first
+            #expect(option?.earliestFulfillmentTime == expectedEarliest)
+            #expect(option?.latestFulfillmentTime == expectedLatest)
+        }
+        let encodedObject = try #require(try JSONSerialization.jsonObject(with: copied.jsonData()) as? [String: Any])
+        #expect(encodedObject["expires_at"] as? String == (hasDates ? "2026-09-15T18:00:00Z" : nil))
     }
 
     @Test func decodesLineItemDetails() throws {
         let json = try fixtureString("notification")
         let data = Data(json.utf8)
 
-        let envelope = try JSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
+        let envelope = try newJSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
         let lineItem = envelope.params.checkout.lineItems[0]
 
         #expect(lineItem.id == "li-1")
@@ -109,7 +126,7 @@ struct ModelDecodingTests {
           }
         }
         """
-        let checkout = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: Data(json.utf8))
+        let checkout = try EmbeddedCheckoutProtocol.Checkout(json)
 
         #expect(checkout.discounts?.codes == ["SUMMER20"])
         #expect(checkout.discounts?.applied?.first?.method == .across)
@@ -174,8 +191,8 @@ struct ModelDecodingTests {
           "com.example.foo": "bar"
         }
         """
-        var checkout = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: Data(json.utf8))
-        let reEncoded = try JSONEncoder().encode(checkout)
+        var checkout = try EmbeddedCheckoutProtocol.Checkout(json)
+        let reEncoded = try checkout.jsonData()
         let object = try #require(try JSONSerialization.jsonObject(with: reEncoded) as? [String: Any])
 
         #expect(object["com.example.foo"] as? String == "bar")
@@ -185,7 +202,7 @@ struct ModelDecodingTests {
         #expect(signals["com.example.device_id"] as? String == "abc-123")
 
         checkout.additionalProperties["id"] = try JSONDecoder().decode(JSONAny.self, from: Data("\"extension-id\"".utf8))
-        let collisionEncoded = try JSONEncoder().encode(checkout)
+        let collisionEncoded = try checkout.jsonData()
         let collisionObject = try #require(try JSONSerialization.jsonObject(with: collisionEncoded) as? [String: Any])
         #expect(collisionObject["id"] as? String == "checkout-123")
     }

@@ -1,18 +1,18 @@
 // This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To parse the JSON, add this file to your project and do:
+// To parse JSON with the protocol models, use:
 //
 //   let checkout = try EmbeddedCheckoutProtocol.Checkout(json)
 //   let order = try Order(json)
-//   let errorResponse = try ErrorResponse(json)
-//   let instrumentsChangeResult = try InstrumentsChangeResult(json)
-//   let credentialResult = try CredentialResult(json)
-//   let addressChangeResult = try AddressChangeResult(json)
-//   let readyRequest = try ReadyRequest(json)
-//   let readyResult = try ReadyResult(json)
-//   let authRequest = try AuthRequest(json)
-//   let authResult = try AuthResult(json)
-//   let windowOpenRequest = try WindowOpenRequest(json)
-//   let windowOpenResult = try WindowOpenResult(json)
+//   let errorResponse = try EmbeddedCheckoutProtocol.ErrorResponse(json)
+//   let instrumentsChangeResult = try EmbeddedCheckoutProtocol.InstrumentsChangeResult(json)
+//   let credentialResult = try EmbeddedCheckoutProtocol.CredentialResult(json)
+//   let addressChangeResult = try EmbeddedCheckoutProtocol.AddressChangeResult(json)
+//   let readyRequest = try EmbeddedCheckoutProtocol.ReadyRequest(json)
+//   let readyResult = try EmbeddedCheckoutProtocol.ReadyResult(json)
+//   let authRequest = try EmbeddedCheckoutProtocol.AuthRequest(json)
+//   let authResult = try EmbeddedCheckoutProtocol.AuthResult(json)
+//   let windowOpenRequest = try EmbeddedCheckoutProtocol.WindowOpenRequest(json)
+//   let windowOpenResult = try EmbeddedCheckoutProtocol.WindowOpenResult(json)
 
 import Foundation
 
