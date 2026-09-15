@@ -25,6 +25,7 @@ export type TelemetryErrorCode =
   | 'cannot_connect'
   | 'dns'
   | 'invalid_url'
+  | 'terminal_error'
   | 'timeout'
   | 'unknown';
 

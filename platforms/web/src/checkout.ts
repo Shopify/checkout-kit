@@ -819,7 +819,7 @@ export class ShopifyCheckout
         this.#recorder?.recordError({
           category: "protocol",
           stage: "message",
-          code: "unknown",
+          code: "terminal_error",
           retryable: false,
           isRetry: false,
         });

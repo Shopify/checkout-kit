@@ -24,6 +24,7 @@ internal enum class TelemetryErrorCode(internal val wireValue: String) {
     ConnectionLost("connection_lost"),
     CannotConnect("cannot_connect"),
     Dns("dns"),
+    TerminalError("terminal_error"),
     Timeout("timeout"),
     Unknown("unknown"),
 }
