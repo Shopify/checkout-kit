@@ -2684,6 +2684,79 @@
             "moduleName": "ShopifyCheckoutKit"
           },
           {
+            "kind": "Var",
+            "name": "configuration",
+            "printedName": "configuration",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Configuration",
+                "printedName": "ShopifyCheckoutKit.Configuration",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvp",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage",
+              "Custom"
+            ],
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Configuration",
+                    "printedName": "ShopifyCheckoutKit.Configuration",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvg",
+                "mangledName": "$s18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Configuration",
+                    "printedName": "ShopifyCheckoutKit.Configuration",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvs",
+                "mangledName": "$s18ShopifyCheckoutKit0aB0V13configurationAA13ConfigurationVvs",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "set"
+              }
+            ]
+          },
+          {
             "kind": "Constructor",
             "name": "init",
             "printedName": "init(checkout:)",
@@ -3090,6 +3163,76 @@
         "name": "CheckoutConfigurable",
         "printedName": "CheckoutConfigurable",
         "children": [
+          {
+            "kind": "Var",
+            "name": "configuration",
+            "printedName": "configuration",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Configuration",
+                "printedName": "ShopifyCheckoutKit.Configuration",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Configuration",
+                    "printedName": "ShopifyCheckoutKit.Configuration",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
+                "protocolReq": true,
+                "reqNewWitnessTableEntry": true,
+                "accessorKind": "get"
+              },
+              {
+                "kind": "Accessor",
+                "name": "Set",
+                "printedName": "Set()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Configuration",
+                    "printedName": "ShopifyCheckoutKit.Configuration",
+                    "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP13configurationAA13ConfigurationVvs",
+                "moduleName": "ShopifyCheckoutKit",
+                "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutConfigurable>",
+                "protocolReq": true,
+                "reqNewWitnessTableEntry": true,
+                "accessorKind": "set"
+              }
+            ]
+          },
           {
             "kind": "Function",
             "name": "backgroundColor",
