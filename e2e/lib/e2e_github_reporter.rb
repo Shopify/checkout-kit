@@ -65,7 +65,6 @@ class E2EGitHubReporter
       lines << "## Failures"
       lines << ""
       lines << "> [!CAUTION]"
-      lines << "> These E2E checks are not yet required, so they do not block merging — but a failure may still indicate a real issue to resolve before merging."
       lines << "> If you believe an assertion is flaky, please raise a ticket in the #checkout-kit-devs channel so it can be addressed."
       lines << ""
       lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](#{BrowserStackClient::DASHBOARD_BASE}) before opening artifact links."
