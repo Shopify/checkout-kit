@@ -86,7 +86,13 @@ class SwiftApiNormalizationTest < Minitest::Test
       File.write(File.join(root, "Package.swift"), "// Test package\n")
       bin = File.join(root, "bin")
       FileUtils.mkdir_p(bin)
-      write_executable(File.join(bin, "xcodebuild"), "#!/bin/sh\nexit 0\n")
+      write_executable(File.join(bin, "xcodebuild"), <<~'SH')
+        #!/bin/sh
+        case " $* " in
+          *" -disableAutomaticPackageResolution "*) exit 0 ;;
+          *) echo "Expected committed package resolution" >&2; exit 1 ;;
+        esac
+      SH
       write_executable(File.join(bin, "xcbeautify"), "#!/bin/sh\ncat\n")
       write_executable(File.join(bin, "xcrun"), <<~RUBY)
         #!#{RbConfig.ruby}
