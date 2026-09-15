@@ -38,6 +38,7 @@ jobs:
         with:
           coverage-summary-path: platforms/web/coverage/coverage-summary.json
           title: 'Web — Coverage Report'
+          unique-id-for-comment: web
           create-new-comment: false
 
       - name: Build

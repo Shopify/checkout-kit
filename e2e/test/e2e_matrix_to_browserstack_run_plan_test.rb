@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "yaml"
 require_relative "../lib/e2e_matrix_to_browserstack_run_plan"
 
 class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   MATRIX_PATH = File.expand_path("../config/matrix.yml", __dir__)
+  PIPELINE_PATH = File.expand_path("../bitrise.yml", __dir__)
 
   def plan(changed_files: nil, config: base_config)
     E2EMatrixToBrowserStackRunPlan.new(MATRIX_PATH, config, changed_files: changed_files)
@@ -44,6 +46,10 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
   def run_for(application_id, changed_files: nil)
     plan(changed_files: changed_files).expand.find { |run| run.fetch("application_id") == application_id }
+  end
+
+  def e2e_pipeline
+    YAML.safe_load_file(PIPELINE_PATH, aliases: true).fetch("pipelines").fetch("e2e")
   end
 
   def test_expand_produces_one_run_per_application_and_os_version_tag
@@ -241,6 +247,42 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
     assert_equal "false", env.fetch("E2E_BUILD_SWIFT_IOS")
+  end
+
+  # A required pipeline status cannot be published when its trigger rejects the PR.
+  def test_required_pipeline_starts_for_every_ready_pull_request
+    trigger = e2e_pipeline.fetch("triggers").fetch("pull_request").find do |candidate|
+      candidate["source_branch"] == "*" && !candidate.key?("changed_files")
+    end
+
+    refute_nil trigger, "Required E2E status needs a PR trigger without a changed-files filter"
+    assert_equal false, trigger.fetch("draft_enabled")
+  end
+
+  def test_workflow_and_docs_changes_run_only_the_planner
+    workflows = e2e_pipeline.fetch("workflows")
+    planner = "e2e-produce-browserstack-run-plan"
+    refute workflows.fetch(planner).key?("run_if"), "The planner must run to complete the required pipeline"
+
+    [
+      [".github/workflows/protocol-test.yml", ".github/workflows/rn-test.yml", ".github/workflows/web.yml"],
+      ["README.md"],
+      ["platforms/react-native/docs/assets/screenshot.png"]
+    ].each do |changed_files|
+      run_plan = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: changed_files)
+      assert_empty run_plan.selected_applications, changed_files.inspect
+      assert_empty run_plan.expand, changed_files.inspect
+      env = run_plan.bitrise_env
+
+      workflows.each do |name, workflow|
+        next if name == planner
+
+        expression = workflow.fetch("run_if").fetch("expression")
+        flag = /\A\{\{\s+enveq "(E2E_[A-Z0-9_]+)" "true"\s+\}\}\z/.match(expression)
+        refute_nil flag, "#{name} must run only when its plan flag is true"
+        assert_equal "false", env.fetch(flag[1]), "#{name} should skip #{changed_files.inspect}"
+      end
+    end
   end
 
   def test_build_env_key_sanitizes_application_id
