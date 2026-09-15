@@ -24,7 +24,6 @@ public struct AcceleratedCheckoutButtons: View {
     public var wallets: [Wallet] = [.shopPay, .applePay]
     var eventHandlers: EventHandlers = .init()
     var cornerRadius: CGFloat?
-    var clientContainer: CheckoutProtocolClientContainer = .init()
 
     /// The Apple Pay button type
     private var applePayButtonType: PKPaymentButtonType = .plain
@@ -72,15 +71,13 @@ public struct AcceleratedCheckoutButtons: View {
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius,
                                 buttonType: applePayButtonType,
-                                buttonStyle: applePayButtonStyle,
-                                client: clientContainer.client
+                                buttonStyle: applePayButtonStyle
                             )
                         case .shopPay:
                             ShopPayButton(
                                 identifier: identifier,
                                 eventHandlers: eventHandlers,
-                                cornerRadius: cornerRadius,
-                                client: clientContainer.client
+                                cornerRadius: cornerRadius
                             )
                         }
                     }
@@ -162,6 +159,34 @@ extension AcceleratedCheckoutButtons {
         return newView
     }
 
+    /// Called when a checkout presented by an accelerated button starts.
+    public func onStart(_ action: @escaping (CheckoutStartEvent) -> Void) -> AcceleratedCheckoutButtons {
+        var view = self
+        view.eventHandlers.checkoutDidStart = action
+        return view
+    }
+
+    /// Called when the buyer-visible state of a presented checkout changes.
+    public func onUpdate(_ action: @escaping (CheckoutUpdateEvent) -> Void) -> AcceleratedCheckoutButtons {
+        var view = self
+        view.eventHandlers.checkoutDidUpdate = action
+        return view
+    }
+
+    /// Called when a presented checkout completes.
+    public func onComplete(_ action: @escaping (CheckoutCompleteEvent) -> Void) -> AcceleratedCheckoutButtons {
+        var view = self
+        view.eventHandlers.checkoutDidComplete = action
+        return view
+    }
+
+    /// Chooses how to handle a link clicked in a presented checkout.
+    public func onLinkClick(_ action: @escaping (CheckoutLink) -> CheckoutLinkAction) -> AcceleratedCheckoutButtons {
+        var view = self
+        view.eventHandlers.checkoutAction = action
+        return view
+    }
+
     /// Adds an action to perform when the checkout encounters an error.
     ///
     /// Use this modifier to handle checkout errors:
@@ -227,12 +252,6 @@ extension AcceleratedCheckoutButtons {
     {
         var newView = self
         newView.eventHandlers.renderStateDidChange = action
-        return newView
-    }
-
-    public func connect(_ client: (any CheckoutCommunicationProtocol)?) -> AcceleratedCheckoutButtons {
-        var newView = self
-        newView.clientContainer = CheckoutProtocolClientContainer(client)
         return newView
     }
 }

@@ -7,7 +7,7 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 - Product listing from the Storefront API
 - Cart create, add, update, and fetch operations
 - `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
-- Checkout lifecycle and completion through `CheckoutProtocol.Client`
+- Checkout lifecycle and completion through public Checkout Kit callbacks
 - Buyer identity demo data for checkout prefill
 - Customer Account API sign-in and customer access token cart identity
 - Universal Links entitlements for checkout/offsite-payment returns
@@ -57,7 +57,7 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
 
 1. `Network.swift` creates an `ApolloClient` that points at the configured Storefront API endpoint and attaches the Storefront access token.
 2. `StorefrontClient.swift` and `CartManager.swift` call Apollo using generated operation types such as `Storefront.CartCreateMutation` and `Storefront.GetCartQuery`.
-3. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CheckoutProtocolClient.swift` handles typed checkout lifecycle events.
+3. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CartView.swift` handles `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick`.
 4. Apollo decodes responses into generated Swift types, so schema or operation changes surface as compile errors.
 
 ## Setup
@@ -150,5 +150,5 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `CheckoutKitSwiftDemo/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
 | `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
 | `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
-| `CheckoutKitSwiftDemo/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
+| `CheckoutKitSwiftDemo/Sources/Scenes/Cart/CartView.swift` | Public checkout callbacks for regular and accelerated checkout. |
 | `project.yml` | Generates the Xcode project, Info.plist, and Associated Domains entitlements through XcodeGen. |

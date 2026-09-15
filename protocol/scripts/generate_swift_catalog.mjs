@@ -103,7 +103,7 @@ function decodeClosure(entry) {
   if (entry.decode !== 'whole' && entry.decode !== 'checkoutUnwrap') {
     throw new Error(`Unknown decode strategy: ${entry.decode}`);
   }
-  return `{ try JSONDecoder().decode(${paramsType(entry)}.self, from: $0) }`;
+  return `{ try newJSONDecoder().decode(${paramsType(entry)}.self, from: $0) }`;
 }
 
 const conformances = [
@@ -115,7 +115,7 @@ const notificationCatalog = notifications
   .map(
     entry => `        public static let ${entry.identifier} = NotificationDescriptor(
             method: "${entry.method}",
-            decode: { try JSONDecoder().decode(${notificationParamsType(entry)}.self, from: $0) }
+            decode: { try newJSONDecoder().decode(${notificationParamsType(entry)}.self, from: $0) }
         )`,
   )
   .join('\n\n');
@@ -147,6 +147,10 @@ extension EmbeddedCheckoutProtocol {
     /// Notifications become \`NotificationDescriptor\`s; requests become
     /// \`RequestDescriptor\`s.
     public enum Event {
+        // Protocol dates use RFC 3339 strings, including fractional seconds.
+        // newJSONDecoder() handles them; plain JSONDecoder() expects numeric dates
+        // and can reject checkout updates before Kit invokes onUpdate.
+
 ${notificationCatalog}
 
 ${requestDescriptors}

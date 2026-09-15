@@ -9,6 +9,10 @@ public enum Wallet: String {
 
 /// Event handlers for wallet buttons
 public struct EventHandlers {
+    public var checkoutDidStart: ((CheckoutStartEvent) -> Void)?
+    public var checkoutDidUpdate: ((CheckoutUpdateEvent) -> Void)?
+    public var checkoutDidComplete: ((CheckoutCompleteEvent) -> Void)?
+    public var checkoutAction: ((CheckoutLink) -> CheckoutLinkAction)?
     public var checkoutDidFail: ((CheckoutError) -> Void)?
     public var checkoutDidDismiss: (() -> Void)?
     public var renderStateDidChange: ((RenderState) -> Void)?
@@ -16,21 +20,19 @@ public struct EventHandlers {
     public init(
         checkoutDidFail: ((CheckoutError) -> Void)? = nil,
         checkoutDidDismiss: (() -> Void)? = nil,
-        renderStateDidChange: ((RenderState) -> Void)? = nil
+        renderStateDidChange: ((RenderState) -> Void)? = nil,
+        checkoutDidStart: ((CheckoutStartEvent) -> Void)? = nil,
+        checkoutDidUpdate: ((CheckoutUpdateEvent) -> Void)? = nil,
+        checkoutDidComplete: ((CheckoutCompleteEvent) -> Void)? = nil,
+        checkoutAction: ((CheckoutLink) -> CheckoutLinkAction)? = nil
     ) {
+        self.checkoutDidStart = checkoutDidStart
+        self.checkoutDidUpdate = checkoutDidUpdate
+        self.checkoutDidComplete = checkoutDidComplete
+        self.checkoutAction = checkoutAction
         self.checkoutDidFail = checkoutDidFail
         self.checkoutDidDismiss = checkoutDidDismiss
         self.renderStateDidChange = renderStateDidChange
-    }
-}
-
-/// Keeps bridge client storage behind a reference so SwiftUI view values do not
-/// embed optional existential storage while they are repeatedly copied.
-final class CheckoutProtocolClientContainer: Sendable {
-    let client: (any CheckoutCommunicationProtocol)?
-
-    init(_ client: (any CheckoutCommunicationProtocol)? = nil) {
-        self.client = client
     }
 }
 

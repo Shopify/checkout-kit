@@ -86,6 +86,41 @@ struct ClientTests {
         #expect(receivedCheckout?.id == "checkout-123")
     }
 
+    @Test(arguments: ["", ".123"]) @MainActor func checkoutNotificationsDecodeShippingDates(fraction: String) async throws {
+        let descriptors = [
+            EmbeddedCheckoutProtocol.Event.start,
+            EmbeddedCheckoutProtocol.Event.fulfillmentChange,
+            EmbeddedCheckoutProtocol.Event.totalsChange,
+            EmbeddedCheckoutProtocol.Event.complete
+        ]
+        for descriptor in descriptors {
+            var receivedCheckout: EmbeddedCheckoutProtocol.Checkout?
+            let client = EmbeddedCheckoutProtocol.Client()
+                .on(descriptor) { receivedCheckout = $0.params.checkout }
+            let message = """
+            {"jsonrpc":"2.0","method":"\(descriptor.method)","params":{"checkout":{
+              "id":"checkout-1","currency":"USD","status":"incomplete",
+              "line_items":[],"links":[],"totals":[{"type":"total","amount":1500}],
+              "expires_at":"2026-09-15T12:00:00\(fraction)Z",
+              "fulfillment":{"methods":[{"id":"shipping","type":"shipping","line_item_ids":[],
+                "groups":[{"id":"group-1","line_item_ids":[],"selected_option_id":"standard",
+                  "options":[{"id":"standard","title":"Standard","totals":[],
+                    "earliest_fulfillment_time":"2026-09-16T09:00:00\(fraction)Z",
+                    "latest_fulfillment_time":"2026-09-17T17:00:00\(fraction)Z"}]}]}]},
+              "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
+            }}}
+            """
+
+            _ = await client.process(message)
+
+            let checkout = try #require(receivedCheckout, "Dropped \(descriptor.method)")
+            #expect(checkout.expiresAt == ISO8601DateFormatter().date(from: "2026-09-15T12:00:00Z")?.addingTimeInterval(Double("0" + fraction) ?? 0))
+            let option = try #require(checkout.fulfillment?.methods?.first?.groups?.first?.options?.first)
+            #expect(option.earliestFulfillmentTime == ISO8601DateFormatter().date(from: "2026-09-16T09:00:00Z")?.addingTimeInterval(Double("0" + fraction) ?? 0))
+            #expect(option.latestFulfillmentTime == ISO8601DateFormatter().date(from: "2026-09-17T17:00:00Z")?.addingTimeInterval(Double("0" + fraction) ?? 0))
+        }
+    }
+
     @Test @MainActor func notificationDoesNotFireUnregisteredHandler() async throws {
         var completeFired = false
         let client = EmbeddedCheckoutProtocol.Client()
