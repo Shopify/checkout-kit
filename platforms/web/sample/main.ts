@@ -21,16 +21,7 @@ import {
 } from "./storage";
 import "./styles.css";
 
-const EVENT_TYPES = [
-  "ec.start",
-  "ec.complete",
-  "ec.close",
-  "ec.error",
-  "ec.fulfillment.change",
-  "ec.line_items.change",
-  "ec.totals.change",
-  "ec.messages.change",
-] as const;
+const EVENT_TYPES = ["start", "update", "complete", "close", "error"] as const;
 
 const refs = queryRefs();
 
@@ -129,10 +120,11 @@ function openCheckout(): void {
   checkout.open();
 }
 
-function recordEvent(type: string): void {
+function recordEvent(event: Event): void {
   const snapshot: ComponentSnapshot = { checkout: checkout.checkout, error: checkout.error };
   const json = JSON.stringify(
     {
+      detail: event instanceof CustomEvent ? (event.detail as unknown) : undefined,
       checkout: checkout.checkout,
       error: checkout.error,
       target: checkout.target,
@@ -144,7 +136,7 @@ function recordEvent(type: string): void {
   );
   store.setState({
     component: snapshot,
-    log: [{ type, time: timestamp(), snapshot: json }, ...store.getState().log],
+    log: [{ type: event.type, time: timestamp(), snapshot: json }, ...store.getState().log],
   });
 }
 
@@ -281,10 +273,7 @@ function attachListeners(): void {
     store.setState({ log: [] });
   });
 
-  const checkoutEl: HTMLElement = checkout;
   for (const type of EVENT_TYPES) {
-    checkoutEl.addEventListener(type, () => {
-      recordEvent(type);
-    });
+    checkout.addEventListener(type, recordEvent);
   }
 }
