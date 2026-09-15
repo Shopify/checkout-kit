@@ -49,7 +49,11 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
-    var configuration: Configuration
+
+    /// The configuration captured when this value was created, plus any modifier
+    /// overrides. Isolated from ``ShopifyCheckoutKit/configuration``.
+    public var configuration: Configuration
+
     var client: (any CheckoutCommunicationProtocol)?
     var onDismissAction: (() -> Void)?
     var onFailAction: ((CheckoutError) -> Void)?
@@ -117,6 +121,11 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
 @MainActor
 public protocol CheckoutConfigurable {
+    /// The configuration the modifiers read and write. Modifiers copy `self`,
+    /// update the copy's configuration, and return the copy, so conforming
+    /// types should have value semantics.
+    var configuration: ShopifyCheckoutKit.Configuration { get set }
+
     func backgroundColor(_ color: UIColor) -> Self
     func appearance(_ appearance: ShopifyCheckoutKit.Configuration.Appearance) -> Self
     func tintColor(_ color: UIColor) -> Self
@@ -145,12 +154,9 @@ extension CheckoutConfigurable {
         modifyingConfiguration { $0.closeButtonTintColor = color }
     }
 
-    private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
-        guard var copy = self as? ShopifyCheckout else {
-            return self
-        }
-
+    private func modifyingConfiguration(_ update: (inout ShopifyCheckoutKit.Configuration) -> Void) -> Self {
+        var copy = self
         update(&copy.configuration)
-        return copy as? Self ?? self
+        return copy
     }
 }
