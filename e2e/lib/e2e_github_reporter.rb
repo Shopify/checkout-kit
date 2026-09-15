@@ -86,6 +86,13 @@ class E2EGitHubReporter
     }
   end
 
+  # e2e-report is the only stage that sees the BrowserStack verdict: a runner records a
+  # failure into result.json and still exits 0, so the report's exit status is what makes
+  # the required pipeline check fail.
+  def successful?
+    conclusion == "success"
+  end
+
   private
 
   def results_table
