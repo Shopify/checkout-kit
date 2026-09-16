@@ -113,8 +113,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                                 "cost": {
                                     "totalAmount": {"amount": "19.99", "currencyCode": "USD"},
                                     "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"}
-                                },
-                                "discountAllocations": []
+                                }
                             }]
                         },
                         "cost": {
@@ -122,8 +121,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -157,8 +155,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "0.00", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -217,8 +214,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": null,
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -272,8 +268,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -334,8 +329,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -400,8 +394,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "29.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -480,8 +473,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -654,8 +646,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -695,8 +686,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": {"amount": "2.50", "currencyCode": "USD"}
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -829,8 +819,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": {"amount": "3.00", "currencyCode": "USD"}
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -899,8 +888,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": []
                 }
@@ -936,8 +924,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                                 "subtotalAmount": {"amount": "19.99", "currencyCode": "USD"},
                                 "totalTaxAmount": {"amount": "2.50", "currencyCode": "USD"}
                             },
-                            "discountCodes": [],
-                            "discountAllocations": []
+                            "discountApplications": []
                         },
                         "checkoutURL": "https://test.myshopify.com/checkout/ready-123"
                     },
@@ -1319,8 +1306,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "0.00", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": [{
                         "field": ["input"],
@@ -1364,8 +1350,7 @@ final class StorefrontAPIMutationsTests: XCTestCase {
                             "subtotalAmount": {"amount": "0.00", "currencyCode": "USD"},
                             "totalTaxAmount": null
                         },
-                        "discountCodes": [],
-                        "discountAllocations": []
+                        "discountApplications": []
                     },
                     "userErrors": [{
                         "field": ["buyerIdentity", "email"],
