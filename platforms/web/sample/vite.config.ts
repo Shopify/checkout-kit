@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Same entry consumers use from npm (`import '@shopify/checkout-kit'`).
+      "@shopify/checkout-kit/wallets": resolve(here, "../src/wallets-index.ts"),
       "@shopify/checkout-kit": resolve(here, "../src/index.ts"),
     },
   },

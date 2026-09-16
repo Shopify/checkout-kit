@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accelerated Checkout Buttons — Web Component Playground</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        max-width: 640px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+      }
+      .subtitle {
+        color: #666;
+        margin-top: 0;
+      }
+      pre {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+      }
+      .element-wrapper {
+        border: 2px dashed #ccc;
+        border-radius: 6px;
+        padding: 1rem;
+        margin: 1rem 0;
+        min-height: 60px;
+      }
+      .element-wrapper::before {
+        content: "<shopify-accelerated-checkout-buttons>";
+        display: block;
+        font-size: 0.75rem;
+        color: #999;
+        margin-bottom: 0.5rem;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Accelerated Checkout Buttons</h1>
+    <p class="subtitle">Scaffold playground — no wallet UI is rendered yet.</p>
+
+    <div class="element-wrapper">
+      <shopify-accelerated-checkout-buttons
+        id="wallets"
+        store-domain="example.myshopify.com"
+        country="US"
+        language="en"
+        variant-id="gid://shopify/ProductVariant/00000000000000"
+        wallet-count="3"
+      ></shopify-accelerated-checkout-buttons>
+    </div>
+
+    <h2>Property reflection</h2>
+    <pre id="log"></pre>
+
+    <script type="module">
+      import "@shopify/checkout-kit/wallets";
+
+      const el = document.getElementById("wallets");
+      const log = document.getElementById("log");
+
+      function dump() {
+        const lines = [
+          `storeDomain  = ${JSON.stringify(el.storeDomain)}`,
+          `country      = ${JSON.stringify(el.country)}`,
+          `language     = ${JSON.stringify(el.language)}`,
+          `cartId       = ${JSON.stringify(el.cartId)}`,
+          `variantId    = ${JSON.stringify(el.variantId)}`,
+          `sellingPlanId = ${JSON.stringify(el.sellingPlanId)}`,
+          `walletCount  = ${el.walletCount}`,
+          "",
+          `data-state   = ${JSON.stringify(
+            el.shadowRoot?.querySelector("[data-state]")?.getAttribute("data-state"),
+          )}`,
+        ];
+        log.textContent = lines.join("\n");
+      }
+
+      dump();
+
+      // Demonstrate property → attribute reflection
+      el.cartId = "gid://shopify/Cart/00000000000000";
+      console.log("cart-id attribute after property set:", el.getAttribute("cart-id"));
+
+      // Re-dump after property change
+      dump();
+    </script>
+  </body>
+</html>
