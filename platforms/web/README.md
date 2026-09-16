@@ -493,7 +493,7 @@ relevant to that moment.
 | `start`    | `{checkout}`   | Checkout has loaded and is interactive. |
 | `update`   | `{checkout}`   | A change to line items, fulfillment, totals, or checkout messages produces a different checkout snapshot. |
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
-| `error`    | `{error}`      | Checkout reported an error, exposed as `{code, message}`. The component closes automatically only when a message has `unrecoverable` severity. |
+| `error`    | `{error}`      | Checkout reported a terminal error, exposed as `{code, message}`. The component closes automatically after this event. |
 | `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
@@ -532,9 +532,8 @@ checkout.addEventListener('close', () => {
 });
 ```
 
-Errors with other severities emit `error` while leaving checkout open. For an
-unrecoverable error, the component emits `error` before closing and emitting
-`close`.
+Protocol errors are terminal for the checkout session regardless of message
+severity. The component emits `error` before closing and emitting `close`.
 
 Because these events carry the full snapshot, one handler can combine fields.
 For example, rendering an inline cart summary on `start` requires line items,

@@ -327,7 +327,7 @@ describe("<shopify-checkout>", () => {
         expect(onErrorSpy).not.toHaveBeenCalled();
       });
 
-      it("auto-closes when any message has severity 'unrecoverable'", async () => {
+      it("auto-closes for mixed message severities", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const errorOrder: string[] = [];
         checkout.addEventListener("error", () => errorOrder.push("error"));
