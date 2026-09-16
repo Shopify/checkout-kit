@@ -70,6 +70,7 @@ internal class CheckoutWebView private constructor(
         private set
 
     private var checkoutRequest: CheckoutRequest? = null
+    private var checkoutKey: PreloadKey? = null
     private var didRetryCheckoutRequest = false
 
     /**
@@ -103,11 +104,22 @@ internal class CheckoutWebView private constructor(
     fun setListener(listener: CheckoutWebViewListener) {
         log.d(LOG_TAG, "Setting listener $listener.")
         this.listener = listener
+        embeddedCheckoutProtocol.setPresentationListener(listener)
     }
 
     fun setClient(client: CheckoutProtocol.Client?) {
         log.d(LOG_TAG, "Setting protocol client $client.")
         embeddedCheckoutProtocol.setClient(client)
+    }
+
+    internal fun endPresentationEvents() {
+        embeddedCheckoutProtocol.invalidateEventAdapter()
+    }
+
+    override fun destroy() {
+        endPresentationEvents()
+        embeddedCheckoutProtocol.detach()
+        super.destroy()
     }
 
     fun markPresented() {
@@ -150,6 +162,7 @@ internal class CheckoutWebView private constructor(
         )
         loadComplete = false
         isPreloadRequest = isPreload
+        checkoutKey = PreloadKey.forUrl(url)
         checkoutOrigin = OriginAllowlist.originFromUrl(url)
         Handler(Looper.getMainLooper()).post {
             hasHandledTerminalFailure = false
@@ -240,6 +253,7 @@ internal class CheckoutWebView private constructor(
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             val shouldDeliverLifecycleFailure = !hasHandledTerminalFailure
             hasHandledTerminalFailure = true
+            endPresentationEvents()
             val wasBackgroundedUnconsumedPreload = evictForTerminalFailure(
                 this@CheckoutWebView,
                 PreloadState.FailureReason.WebContentUnavailable,
@@ -583,6 +597,19 @@ internal class CheckoutWebView private constructor(
         fun invalidate() {
             runOnMainThread {
                 preloadCache.evict(PreloadState.Idle)
+            }
+        }
+
+        /** Clears the completed checkout and any replacement preload for its active presentation. */
+        internal fun evictForCompletion(view: CheckoutWebView, wasPresented: Boolean = view.isPresented) {
+            runOnMainThread {
+                val cachedView = preloadCache.cachedView ?: return@runOnMainThread
+                val containsCompletedView = cachedView === view
+                val containsReplacement = wasPresented &&
+                    view.checkoutKey?.let { it == preloadCache.cachedKey } == true
+                if (containsCompletedView || containsReplacement) {
+                    preloadCache.evict(PreloadState.Idle, view = cachedView)
+                }
             }
         }
 

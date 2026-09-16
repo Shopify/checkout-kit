@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.children
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility.await
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -17,6 +18,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 class ShopifyCheckoutTest {
@@ -135,6 +137,55 @@ class ShopifyCheckoutTest {
     }
 
     @Test
+    fun `app owned failure stops checkout events while host retains the view`() {
+        val events = mutableListOf<String>()
+        var protocolMessages = 0
+        var failure: CheckoutFailureEvent? = null
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+        ) {
+            onStart { events.add("start") }
+            onUpdate { events.add("update") }
+            onComplete { events.add("complete") }
+            onFail { failure = it }
+        }
+        activity.setContentView(view)
+        val webView = view.currentWebView()
+        webView.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.start) { protocolMessages += 1 }
+                .on(CheckoutProtocol.messagesChange) { protocolMessages += 1 }
+                .on(CheckoutProtocol.complete) { protocolMessages += 1 },
+        )
+        shadowOf(Looper.getMainLooper()).idle()
+
+        webMessageTransport.dispatchMessage(checkoutMessage("ec.messages.change", "before-failure"))
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(protocolMessages).isEqualTo(1)
+        }
+        assertThat(events).containsExactly("update")
+
+        val error = CheckoutException(CheckoutErrorCode.NETWORK_ERROR, "Offline")
+        webView.listener.onCheckoutViewFailedWithError(error)
+        listOf("ec.start", "ec.messages.change", "ec.complete").forEach { method ->
+            webMessageTransport.dispatchMessage(checkoutMessage(method, "after-failure"))
+        }
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(protocolMessages).isEqualTo(4)
+        }
+
+        assertThat(failure!!.error).isSameAs(error)
+        assertThat(events).containsExactly("update")
+        assertThat(view.parent).isNotNull
+        assertThat(shadowOf(webView).wasDestroyCalled()).isFalse()
+        view.destroy()
+    }
+
+    @Test
     fun `unsupported WebView reports failure after construction and creates inert view`() {
         webMessageTransport.supported = false
         var receivedError: CheckoutException? = null
@@ -147,7 +198,7 @@ class ShopifyCheckoutTest {
             webMessageTransport = webMessageTransport,
         ) {
             onFail {
-                receivedError = it
+                receivedError = it.error
                 failureReportedAfterConstruction = constructionComplete
             }
         }
@@ -173,7 +224,7 @@ class ShopifyCheckoutTest {
             checkoutUrl = "http://checkout.shopify.com/cart/123",
             webMessageTransport = webMessageTransport,
         ) {
-            onFail { receivedError = it }
+            onFail { receivedError = it.error }
         }
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
 
@@ -305,6 +356,10 @@ class ShopifyCheckoutTest {
         findViewById<RelativeLayout>(R.id.checkoutKitContainer)
             .children
             .first { it is CheckoutWebView } as CheckoutWebView
+
+    private fun checkoutMessage(method: String, id: String): String =
+        """{"jsonrpc":"2.0","method":"$method","params":{"checkout":{"id":"$id","currency":"USD","status":"incomplete",""" +
+            """"line_items":[],"totals":[],"links":[],"ucp":{"payment_handlers":{},"version":"1.0"}}}}"""
 
     private companion object {
         private const val CHECKOUT_URL = "https://shopify.com/checkouts/c/abc"

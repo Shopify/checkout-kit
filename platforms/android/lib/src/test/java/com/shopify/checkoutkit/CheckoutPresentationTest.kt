@@ -1,7 +1,6 @@
 package com.shopify.checkoutkit
 
 import android.net.Uri
-import android.os.Looper
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
@@ -12,23 +11,24 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class CheckoutPresentationTest {
 
     @Test
     fun `present builder invokes onFail callback`() {
-        var received: CheckoutException? = null
+        var received: CheckoutFailureEvent? = null
 
         val listener = listener {
             onFail { received = it }
         }
 
         val error = CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom")
-        listener.onCheckoutFailed(error)
+        val event = CheckoutFailureEvent(error)
+        listener.onCheckoutFailed(event)
 
-        assertThat(received).isSameAs(error)
+        assertThat(received).isSameAs(event)
+        assertThat(received!!.error).isSameAs(error)
     }
 
     @Test
@@ -44,19 +44,38 @@ class CheckoutPresentationTest {
     }
 
     @Test
-    fun `present builder stores connected client`() {
-        var received = false
-        val client = CheckoutProtocol.Client()
-            .on(CheckoutProtocol.messagesChange) { received = true }
-
-        val presentation = presentation {
-            connect(client)
+    fun `present builder forwards typed checkout events`() {
+        val checkout = mock<Checkout>()
+        val start = CheckoutStartEvent(checkout)
+        val update = CheckoutUpdateEvent(checkout)
+        val complete = CheckoutCompleteEvent(checkout)
+        val received = mutableListOf<Any>()
+        val listener = listener {
+            onStart { received.add(it) }
+            onUpdate { received.add(it) }
+            onComplete { received.add(it) }
         }
 
-        presentation.protocolClient?.process(ecMessagesChangeMessage())
-        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        listener.onCheckoutStarted(start)
+        listener.onCheckoutUpdated(update)
+        listener.onCheckoutCompleted(complete)
 
-        assertThat(received).isTrue()
+        assertThat(received).containsExactly(start, update, complete)
+    }
+
+    @Test
+    fun `present builder returns configured link action`() {
+        val link = CheckoutLink(Uri.parse("https://example.com/privacy"))
+        var received: CheckoutLink? = null
+        val listener = listener {
+            onLinkClick {
+                received = it
+                CheckoutLinkAction.Handled
+            }
+        }
+
+        assertThat(listener.onCheckoutLinkClicked(link)).isEqualTo(CheckoutLinkAction.Handled)
+        assertThat(received).isSameAs(link)
     }
 
     @Test
@@ -139,7 +158,13 @@ class CheckoutPresentationTest {
     fun `present builder with no callbacks is safe`() {
         val listener = listener {}
 
-        listener.onCheckoutFailed(CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom"))
+        val checkout = mock<Checkout>()
+        listener.onCheckoutStarted(CheckoutStartEvent(checkout))
+        listener.onCheckoutUpdated(CheckoutUpdateEvent(checkout))
+        listener.onCheckoutCompleted(CheckoutCompleteEvent(checkout))
+        listener.onCheckoutFailed(
+            CheckoutFailureEvent(CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom"))
+        )
         listener.onCheckoutDismissed()
         listener.onPermissionRequest(mock())
         listener.onGeolocationPermissionsShowPrompt("origin", mock())
@@ -147,6 +172,8 @@ class CheckoutPresentationTest {
         val handled = listener.onShowFileChooser(mock(), mock(), mock())
 
         assertThat(handled).isFalse()
+        assertThat(listener.onCheckoutLinkClicked(CheckoutLink(Uri.parse("https://example.com"))))
+            .isEqualTo(CheckoutLinkAction.Open)
     }
 
     private fun presentation(configure: CheckoutPresentation.() -> Unit): CheckoutPresentation =
@@ -154,13 +181,4 @@ class CheckoutPresentationTest {
 
     private fun listener(configure: CheckoutPresentation.() -> Unit): DefaultCheckoutListener =
         presentation(configure).buildListener()
-
-    private fun ecMessagesChangeMessage(): String =
-        """{"jsonrpc":"2.0","method":"ec.messages.change","params":{"checkout":$CHECKOUT_JSON}}"""
-
-    private companion object {
-        private const val CHECKOUT_JSON =
-            """{"id":"chk1","currency":"USD","status":"incomplete","line_items":[],"totals":[],"links":[],"ucp":""" +
-                """{"payment_handlers":{},"version":"1.0"}}"""
-    }
 }

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.shopify.checkoutkit.ShopifyCheckout
-import com.shopify.checkoutkit.androiddemo.MainActivity
 import com.shopify.checkoutkit.androiddemo.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +38,6 @@ internal fun AppOwnedCheckoutSheet(
 ) {
     val currentOnDismiss by rememberUpdatedState(onDismiss)
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val sampleActivity = activity as? MainActivity
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -52,32 +50,18 @@ internal fun AppOwnedCheckoutSheet(
     ) {
         AndroidView(
             factory = { context ->
-                // Create one ShopifyCheckout for this presentation. Its checkout URL, callbacks, and protocol client
+                // Create one ShopifyCheckout for this presentation. Its checkout URL and callbacks
                 // are fixed at creation, so create a new view when starting a new checkout.
                 ShopifyCheckout.create(
                     context = context,
                     checkoutUrl = checkoutUrl,
                 ) {
-                    onFail { error ->
-                        currentOnDismiss()
-                        cartViewModel.handleCheckoutFailed(error)
-                    }
-                    onDismiss {
-                        currentOnDismiss()
-                        cartViewModel.handleCheckoutDismissed()
-                    }
-                    sampleActivity?.let { mainActivity ->
-                        onShowFileChooser { _, filePathCallback, fileChooserParams ->
-                            mainActivity.onShowFileChooser(filePathCallback, fileChooserParams)
-                        }
-                        onGeolocationPermissionsShowPrompt { origin, callback ->
-                            mainActivity.onGeolocationPermissionsShowPrompt(origin, callback)
-                        }
-                        onGeolocationPermissionsHidePrompt {
-                            mainActivity.onGeolocationPermissionsHidePrompt()
-                        }
-                    }
-                    connect(cartViewModel.buildProtocolClient(navController, activity))
+                    cartViewModel.configureCheckout(
+                        presentation = this,
+                        activity = activity,
+                        navController = navController,
+                        dismissPresentation = { currentOnDismiss() },
+                    )
                 }
             },
             modifier = Modifier
