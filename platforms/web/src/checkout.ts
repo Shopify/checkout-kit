@@ -276,9 +276,10 @@ export class ShopifyCheckout
       this.removeAttribute("telemetry");
       return;
     }
-    // Normalize untyped input to the canonical strings. Strings follow the
-    // attribute contract (anything but "false" enables); other values coerce as booleans.
-    const enabled = typeof value === "string" ? value.toLowerCase() !== "false" : Boolean(value);
+    // JavaScript and React can assign values outside the public boolean type.
+    // Strings follow the attribute contract; other values coerce as booleans.
+    const input: unknown = value;
+    const enabled = typeof input === "string" ? input.toLowerCase() !== "false" : Boolean(input);
     this.setAttribute("telemetry", String(enabled));
   }
 

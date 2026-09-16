@@ -1,5 +1,6 @@
 # Shared changed-file filters for workflows and pipelines that should ignore docs-only changes.
-# Negative patterns need `predicate-quantifier: every` in dorny/paths-filter workflow steps.
+# Use `predicate-quantifier: some-with-excludes` in dorny/paths-filter workflow steps.
+# Like scripts/lib/changed_file_filters.rb, match any inclusion and reject any exclusion.
 android:
   - 'platforms/android/**'
   - &exclude-markdown '!**/*.md'
@@ -29,9 +30,7 @@ protocol:
   - *exclude-markdown
   - *exclude-docs-directory
 # Protocol files outside language bindings can change every language binding,
-# including shared code-generation tooling. This filter uses one inclusive
-# pattern because GitHub Actions evaluates these patterns with
-# `predicate-quantifier: every`.
+# including shared code-generation tooling. Language bindings are matched separately.
 protocolShared:
   - 'protocol/**'
   - '!protocol/languages/**'
