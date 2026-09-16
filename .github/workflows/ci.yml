@@ -44,7 +44,7 @@ jobs:
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: platform
         with:
-          predicate-quantifier: every
+          predicate-quantifier: some-with-excludes
           filters: .ci/changed-file-filters.yml
 
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3

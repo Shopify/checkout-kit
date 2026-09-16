@@ -15,6 +15,44 @@ class ChangedFileFiltersTest < Minitest::Test
     assert @filters.match?("reactNative", ["platforms/react-native/src/index.ts"])
   end
 
+  def test_matches_platform_and_telemetry_paths_independently
+    {
+      "web" => [
+        "platforms/web/src/checkout.ts",
+        "telemetry/languages/typescript/src/types.ts",
+        "telemetry/contract/schema.json"
+      ],
+      "swift" => [
+        "platforms/swift/Sources/Checkout.swift",
+        "telemetry/languages/swift/Sources/Telemetry.swift"
+      ]
+    }.each do |name, paths|
+      paths.each { |path| assert @filters.match?(name, [path]), "#{name} should match #{path}" }
+      refute @filters.match?(name, ["platforms/android/src/Checkout.kt"])
+    end
+    refute @filters.match?("web", ["telemetry/languages/typescript/README.md"])
+    refute @filters.match?("swift", ["telemetry/languages/swift/docs/example.swift"])
+  end
+
+  def test_github_actions_share_the_ruby_inclusion_and_exclusion_semantics
+    workflows = Dir.glob(File.expand_path("../../.github/workflows/*.yml", __dir__))
+    shared_filter_steps = workflows.flat_map do |path|
+      workflow = YAML.safe_load_file(path, aliases: true)
+      workflow.fetch("jobs", {}).values.flat_map { |job| job.fetch("steps", []) }.filter_map do |step|
+        next unless step.fetch("uses", "").start_with?("dorny/paths-filter@")
+        next unless step.dig("with", "filters") == ".ci/changed-file-filters.yml"
+
+        [path, step]
+      end
+    end
+
+    refute_empty shared_filter_steps
+    shared_filter_steps.each do |path, step|
+      assert_equal "some-with-excludes", step.dig("with", "predicate-quantifier"),
+        "#{path}: shared filters must match any inclusion while honoring all exclusions"
+    end
+  end
+
   def test_scopes_protocol_typescript_to_its_own_subtree
     assert @filters.match?("protocolTypescript", ["protocol/languages/typescript/models.ts"])
     refute @filters.match?("protocolTypescript", ["protocol/languages/kotlin/Models.kt"])
