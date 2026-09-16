@@ -9,6 +9,7 @@ import {
 } from "@shopify/checkout-kit-protocol";
 
 import stylesText from "./checkout.css?inline";
+import { openCheckoutWindow } from "./checkout-window";
 import { Logger, coerceLogLevel } from "./logger";
 import { createTelemetry, telemetryProtocolMethod, type CheckoutKitTelemetry } from "./telemetry";
 import { createTemplate, html, safe } from "./utils";
@@ -440,7 +441,7 @@ export class ShopifyCheckout
     switch (target) {
       case "popup": {
         const features = this.#getPopupFeatures();
-        checkoutWindow = window.open(src, "", features);
+        checkoutWindow = openCheckoutWindow(src, "", { features });
         break;
       }
 
@@ -451,9 +452,9 @@ export class ShopifyCheckout
           this.#logger.warn(
             `target="${target}" would navigate the current page; falling back to "auto"`,
           );
-          checkoutWindow = window.open(src, "auto");
+          checkoutWindow = openCheckoutWindow(src, "auto");
         } else {
-          checkoutWindow = window.open(src, target);
+          checkoutWindow = openCheckoutWindow(src, target);
         }
         break;
       }
