@@ -38,44 +38,47 @@ struct ProductView: View {
         ScrollView {
             VStack(spacing: 16) {
                 if let imageURL = product.featuredImage?.url, let url = URL(string: imageURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: UIScreen.main.bounds.width, height: 400)
-                                .overlay(
-                                    ProgressView()
-                                        .scaleEffect(1.2)
-                                        .tint(.gray)
-                                )
-                        case let .success(image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: UIScreen.main.bounds.width, height: 400)
-                                .clipped()
-                                .opacity(imageLoaded ? 1 : 0)
-                                .onAppear {
-                                    withAnimation(.easeIn(duration: 0.3)) {
-                                        imageLoaded = true
+                    GeometryReader { geometry in
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.1))
+                                    .frame(width: geometry.size.width, height: 400)
+                                    .overlay(
+                                        ProgressView()
+                                            .scaleEffect(1.2)
+                                            .tint(.gray)
+                                    )
+                            case let .success(image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: geometry.size.width, height: 400)
+                                    .clipped()
+                                    .opacity(imageLoaded ? 1 : 0)
+                                    .onAppear {
+                                        withAnimation(.easeIn(duration: 0.3)) {
+                                            imageLoaded = true
+                                        }
                                     }
-                                }
-                        case .failure:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: UIScreen.main.bounds.width, height: 400)
-                                .overlay(
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 48))
-                                        .foregroundColor(.gray.opacity(0.6))
-                                )
-                        @unknown default:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: UIScreen.main.bounds.width, height: 400)
+                            case .failure:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.1))
+                                    .frame(width: geometry.size.width, height: 400)
+                                    .overlay(
+                                        Image(systemName: "photo")
+                                            .font(.system(size: 48))
+                                            .foregroundColor(.gray.opacity(0.6))
+                                    )
+                            @unknown default:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.1))
+                                    .frame(width: geometry.size.width, height: 400)
+                            }
                         }
                     }
+                    .frame(height: 400)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -170,7 +173,6 @@ struct ProductView: View {
             }
         }
         .navigationTitle(product.collections.nodes.first?.title ?? product.title)
-        .frame(idealWidth: 200)
     }
 
     // MARK: Methods
