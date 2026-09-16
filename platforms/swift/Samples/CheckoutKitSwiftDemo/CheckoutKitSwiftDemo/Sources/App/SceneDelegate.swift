@@ -112,6 +112,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Settings
         settingsController.tabBarItem.image = UIImage(systemName: "gearshape.2")
         settingsController.tabBarItem.title = "Settings"
+        settingsController.tabBarItem.accessibilityIdentifier = AccessibilityIdentifiers.Tabs.settings
     }
 
     private func subscribeToAuthStateChanges() {

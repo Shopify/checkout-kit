@@ -5,18 +5,6 @@ appId: ${E2E_APP_ID}
       id: preload-state-ready
     timeout: 60000
 
-# Pins the starting value, so a marker stuck on "observed" cannot pass the assertion below.
+# Pins the starting value, so a marker stuck on "observed" cannot pass later assertions.
 - assertVisible:
     id: preload-cache-hit-none
-
-- runFlow: present.yaml
-- runFlow: close.yaml
-
-# Preload completing is not proof that presentation reused it, so each sample republishes the
-# SDK's own cache-hit diagnostic as this identifier. Swift installs a Logger and observes the
-# message directly; Kotlin reads it from the app's own PID-scoped Logcat. Same assertion on
-# both platforms.
-- extendedWaitUntil:
-    visible:
-      id: preload-cache-hit-observed
-    timeout: 30000

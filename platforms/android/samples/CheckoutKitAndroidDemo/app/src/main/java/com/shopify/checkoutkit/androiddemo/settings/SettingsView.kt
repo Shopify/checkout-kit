@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
 import com.shopify.checkoutkit.androiddemo.common.components.BodyMedium
 import com.shopify.checkoutkit.androiddemo.common.components.Header2
 import com.shopify.checkoutkit.androiddemo.common.components.ProgressIndicator
@@ -101,7 +102,8 @@ fun SettingsView(
                         onCheckedChange = settingsViewModel::setCheckoutPreloadingEnabled,
                         modifier = Modifier
                             .background(color = MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
+                            .fillMaxWidth(),
+                        testTag = AccessibilityIdentifiers.Settings.CHECKOUT_PRELOADING_TOGGLE,
                     )
                 }
 
