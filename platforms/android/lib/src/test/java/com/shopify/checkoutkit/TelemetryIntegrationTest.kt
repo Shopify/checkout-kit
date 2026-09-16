@@ -104,6 +104,7 @@ class TelemetryIntegrationTest {
 
         assertThat(recorder.errors).hasSize(1)
         assertThat(recorder.errors.single().category).isEqualTo(TelemetryErrorCategory.Protocol)
+        assertThat(recorder.errors.single().code).isEqualTo(TelemetryErrorCode.TerminalError)
         assertThat(recorder.errors.single().isRetry).isFalse()
         assertThat(recorder.durations).hasSize(1)
         assertThat(recorder.durations.single().result)

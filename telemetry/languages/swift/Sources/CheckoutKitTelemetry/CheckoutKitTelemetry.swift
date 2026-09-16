@@ -25,6 +25,7 @@ package enum TelemetryErrorCode: String, Sendable {
     case connectionLost = "connection_lost"
     case cannotConnect = "cannot_connect"
     case dns
+    case terminalError = "terminal_error"
     case timeout
     case unknown
 }

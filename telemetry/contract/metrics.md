@@ -86,6 +86,11 @@ A lost background preload keep-alive is recorded as
 `category=navigation`, `stage=load`, `code=connection_lost`,
 `retryable=false`, and `is_retry=false`.
 
+A terminal `ec.error` protocol message is recorded as `category=protocol`,
+`stage=message`, `code=terminal_error`, and `retryable=false`. A malformed terminal
+payload additionally records `checkout_kit_protocol_decode_error` with
+`method=ec.error`.
+
 ## Prohibited data
 
 - Checkout, cart, order, shop, customer, or payment identifiers
