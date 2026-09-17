@@ -60,14 +60,75 @@ extension GraphQLDocument {
               currencyCode
             }
           }
-          discountApplications {
-            targetType
-            totalAllocatedAmount {
-              amount
-              currencyCode
+          discountCodes {
+            applicable
+            code
+          }
+          discountAllocations {
+            __typename
+            ... on CartAutomaticDiscountAllocation {
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
             }
-            ... on CartCodeDiscountApplication {
+            ... on CartCodeDiscountAllocation {
               code
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
+            }
+            ... on CartCustomDiscountAllocation {
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
             }
           }
         }
@@ -132,6 +193,73 @@ extension GraphQLDocument {
             subtotalAmount {
               amount
               currencyCode
+            }
+          }
+          discountAllocations {
+            __typename
+            ... on CartAutomaticDiscountAllocation {
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
+            }
+            ... on CartCodeDiscountAllocation {
+              code
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
+            }
+            ... on CartCustomDiscountAllocation {
+              discountedAmount {
+                amount
+                currencyCode
+              }
+              targetType
+              discountApplication {
+                targetSelection
+                targetType
+                value {
+                  __typename
+                  ... on MoneyV2 {
+                    amount
+                    currencyCode
+                  }
+                  ... on PricingPercentageValue {
+                    percentage
+                  }
+                }
+              }
             }
           }
         }

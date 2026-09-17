@@ -587,7 +587,7 @@ final class ApplePayAuthorizationDelegateControllerTests: XCTestCase {
             "\"delivery\":null," +
             "\"lines\":{\"nodes\":[]}," +
             "\"cost\":{\"totalAmount\":{\"amount\":\"0.00\",\"currencyCode\":\"USD\"}}," +
-            "\"discountApplications\":[]}"
+            "\"discountCodes\":[],\"discountAllocations\":[]}"
 
         static let mockCartWithAddressResponse: String = "{" +
             "\"id\":\"gid://shopify/Cart/test\"," +
@@ -610,7 +610,7 @@ final class ApplePayAuthorizationDelegateControllerTests: XCTestCase {
             "\"delivery\":{\"addresses\":[{\"id\":\"gid://shopify/CartSelectableAddress/1\",\"selected\":true,\"address\":{\"countryCode\":\"US\"}}]}," +
             "\"lines\":{\"nodes\":[]}," +
             "\"cost\":{\"totalAmount\":{\"amount\":\"0.00\",\"currencyCode\":\"USD\"}}," +
-            "\"discountApplications\":[]}"
+            "\"discountCodes\":[],\"discountAllocations\":[]}"
 
         private struct State {
             var failReplace = false

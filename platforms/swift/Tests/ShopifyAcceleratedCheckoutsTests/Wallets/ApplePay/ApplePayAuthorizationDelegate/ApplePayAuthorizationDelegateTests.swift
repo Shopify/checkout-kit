@@ -639,7 +639,8 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
                 totalTaxAmount: nil,
                 totalDutyAmount: nil
             ),
-            discountApplications: []
+            discountCodes: [],
+            discountAllocations: []
         )
     }
 

@@ -84,7 +84,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                             "cost": {
                                 "totalAmount": {"amount": "39.98", "currencyCode": "USD"},
                                 "subtotalAmount": {"amount": "39.98", "currencyCode": "USD"}
-                            }
+                            },
+                            "discountAllocations": []
                         }]
                     },
                     "cost": {
@@ -92,7 +93,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                         "subtotalAmount": {"amount": "39.98", "currencyCode": "USD"},
                         "totalTaxAmount": null
                     },
-                    "discountApplications": []
+                    "discountCodes": [],
+                    "discountAllocations": []
                 }
             }
         }
@@ -143,7 +145,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                         "subtotalAmount": null,
                         "totalTaxAmount": null
                     },
-                    "discountApplications": []
+                    "discountCodes": [],
+                    "discountAllocations": []
                 }
             }
         }
@@ -276,7 +279,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                         "subtotalAmount": null,
                         "totalTaxAmount": null
                     },
-                    "discountApplications": []
+                    "discountCodes": [],
+                    "discountAllocations": []
                 }
             },
             "errors": [
@@ -373,7 +377,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                     "cost": {
                         "totalAmount": {"amount": "10.00", "currencyCode": "USD"},
                         "subtotalAmount": {"amount": "10.00", "currencyCode": "USD"}
-                    }
+                    },
+                    "discountAllocations": []
                 }
             """)
         }
@@ -396,7 +401,8 @@ final class StorefrontAPIQueriesTests: XCTestCase {
                         "subtotalAmount": {"amount": "1000.00", "currencyCode": "USD"},
                         "totalTaxAmount": null
                     },
-                    "discountApplications": []
+                    "discountCodes": [],
+                    "discountAllocations": []
                 }
             }
         }
@@ -440,42 +446,5 @@ final class StorefrontAPIQueriesTests: XCTestCase {
         } catch {
             XCTFail("Failed to parse request body: \(error)")
         }
-    }
-
-    func testCartQueryDecodesDiscountApplicationsWithoutLegacyAllocations() async throws {
-        mockJSONResponse("""
-        {"data":{"cart":{
-            "id":"gid://shopify/Cart/discounts",
-            "checkoutUrl":"https://test.myshopify.com/checkout/discounts",
-            "totalQuantity":0,
-            "deliveryGroups":{"nodes":[]},
-            "lines":{"nodes":[]},
-            "cost":{"totalAmount":{"amount":"0.00","currencyCode":"USD"}},
-            "discountApplications":[
-                {"targetType":"LINE_ITEM","totalAllocatedAmount":{"amount":"5.25","currencyCode":"USD"},"code":"SAVE"},
-                {"targetType":"SHIPPING_LINE","totalAllocatedAmount":{"amount":"3.00","currencyCode":"USD"}}
-            ]
-        }}}
-        """)
-
-        let cart = try await storefrontAPI.cart(by: GraphQLScalars.ID("gid://shopify/Cart/discounts"))
-        let discounts = try XCTUnwrap(cart?.discountApplications)
-
-        XCTAssertEqual(discounts.count, 2)
-        XCTAssertEqual(discounts.first?.code, "SAVE")
-        XCTAssertEqual(discounts.first?.totalAllocatedAmount.amount, Decimal(string: "5.25"))
-        XCTAssertEqual(discounts.first?.targetType, .lineItem)
-        XCTAssertNil(discounts.last?.code)
-        XCTAssertEqual(discounts.last?.targetType, .shippingLine)
-
-        let requestBody = try XCTUnwrap(MockURLProtocol.capturedRequestBody)
-        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: requestBody) as? [String: Any])
-        let query = try XCTUnwrap(body["query"] as? String)
-
-        XCTAssertTrue(query.contains("discountApplications {"))
-        XCTAssertTrue(query.contains("totalAllocatedAmount {"))
-        XCTAssertTrue(query.contains("... on CartCodeDiscountApplication"))
-        XCTAssertFalse(query.contains("discountAllocations"))
-        XCTAssertFalse(query.contains("sourceDiscountApplication"))
     }
 }

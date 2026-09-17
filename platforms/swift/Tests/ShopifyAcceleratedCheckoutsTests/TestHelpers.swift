@@ -184,7 +184,8 @@ extension StorefrontAPI.Cart {
                 totalTaxAmount: nil,
                 totalDutyAmount: nil
             ),
-            discountApplications: []
+            discountCodes: [],
+            discountAllocations: []
         )
     }
 
@@ -212,7 +213,8 @@ extension StorefrontAPI.Cart {
                 totalTaxAmount: nil,
                 totalDutyAmount: nil
             ),
-            discountApplications: []
+            discountCodes: [],
+            discountAllocations: []
         )
     }
 
@@ -263,7 +265,8 @@ extension StorefrontAPI.Cart {
                 totalTaxAmount: nil,
                 totalDutyAmount: nil
             ),
-            discountApplications: []
+            discountCodes: [],
+            discountAllocations: []
         )
     }
 }
