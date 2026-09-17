@@ -165,22 +165,22 @@ commands:
     desc: "Apollo GraphQL schema and code generation commands"
     subcommands:
       download_schema:
-        desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [accelerated|swift|all]"
-        syntax: "<android|swift> [accelerated|swift|all]"
+        desc: "Download GraphQL schema. Usage: dev apollo download_schema <android|swift> [swift|all]"
+        syntax: "<android|swift> [swift|all]"
         run: |
           case "$1" in
             android) cd platforms/android && ./scripts/apollo_download_schema ;;
             swift) shift; cd platforms/swift && ./Scripts/apollo_download_schema "$@" ;;
-            *) echo "Usage: dev apollo download_schema <android|swift> [accelerated|swift|all]"; exit 1 ;;
+            *) echo "Usage: dev apollo download_schema <android|swift> [swift|all]"; exit 1 ;;
           esac
       codegen:
-        desc: "Generate Apollo models. Usage: dev apollo codegen <android|swift> [accelerated|swift|all]"
-        syntax: "<android|swift> [accelerated|swift|all]"
+        desc: "Generate Apollo models. Usage: dev apollo codegen <android|swift> [swift|all]"
+        syntax: "<android|swift> [swift|all]"
         run: |
           case "$1" in
             android) cd platforms/android && ./scripts/apollo_codegen ;;
             swift) shift; cd platforms/swift && ./Scripts/apollo_codegen "$@" ;;
-            *) echo "Usage: dev apollo codegen <android|swift> [accelerated|swift|all]"; exit 1 ;;
+            *) echo "Usage: dev apollo codegen <android|swift> [swift|all]"; exit 1 ;;
           esac
 
   # Protocol
@@ -448,13 +448,13 @@ commands:
     desc: "Swift Checkout Kit commands"
     subcommands:
       build:
-        desc: Build all Swift packages and sample apps
+        desc: Build all Swift packages and the sample app
         run: |
           set -e
           cd platforms/swift
           # ShopifyCheckoutKit-Package builds every library target in
-          # Package.swift in one xcodebuild invocation. The sample apps act as
-          # integration compilation checks against the built libraries.
+          # Package.swift in one xcodebuild invocation. The sample app acts as
+          # an integration compilation check against the built libraries.
           ./Scripts/xcode_run build ShopifyCheckoutKit-Package
           ./Scripts/build_samples
         subcommands:
@@ -462,7 +462,7 @@ commands:
             desc: Build Swift package targets
             run: cd platforms/swift && ./Scripts/xcode_run build ShopifyCheckoutKit-Package
           samples:
-            desc: Build all sample applications to verify integration
+            desc: Build the sample application to verify integration
             run: cd platforms/swift && ./Scripts/build_samples
 
       start:
@@ -487,10 +487,10 @@ commands:
           fi
 
           DERIVED_DATA="$PWD/../../.build/swift-start-simulator"
-          cd Samples
+          cd Samples/CheckoutKitSwiftDemo
           build_command=(
             xcodebuild build
-            -workspace Samples.xcworkspace
+            -project CheckoutKitSwiftDemo.xcodeproj
             -scheme CheckoutKitSwiftDemo
             -sdk iphonesimulator
             -destination "id=$DEVICE_ID"
@@ -561,9 +561,9 @@ commands:
 
       test:
         desc: |
-          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package and the sample apps.
+          `dev swift test` - Run all tests for the ShopifyCheckoutKit-Package and sample app.
           `dev swift test <test_class_name>` - Run only the specified package test class.
-          `dev swift test sample [test_class_name]` - Run only the sample app test targets.
+          `dev swift test sample [test_class_name]` - Run only the sample app test target.
         syntax: "[test_class_name]"
         run: |
           set -e
@@ -576,7 +576,7 @@ commands:
           fi
         subcommands:
           sample:
-            desc: Run the sample app test targets
+            desc: Run the sample app test target
             syntax: "[test_class_name]"
             run: cd platforms/swift && ./Scripts/test_samples "${1:-}"
       api:
@@ -618,20 +618,18 @@ commands:
           # library targets in Package.swift (ShopifyCheckoutKit,
           # ShopifyAcceleratedCheckouts, EmbeddedCheckoutProtocol) in one pass.
           ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
-          cd Samples
-          # Sample apps have a "Run Script" build phase that runs during clean
-          # and exits non-zero when there is nothing to delete. Tolerate it so
-          # the second sample still gets cleaned.
-          ../Scripts/xcode_run clean CheckoutKitSwiftDemo || true
-          ../Scripts/xcode_run clean ShopifyAcceleratedCheckoutsApp || true
+          cd Samples/CheckoutKitSwiftDemo
+          # The sample app has a "Run Script" build phase that runs during clean
+          # and exits non-zero when there is nothing to delete.
+          ../../Scripts/xcode_run clean CheckoutKitSwiftDemo || true
 
       open:
         desc: Open the Swift package or sample app in Xcode
         long_desc: |
-          Opens a Swift workspace in Xcode via `xed`.
+          Opens the demo Xcode project by default, or the Swift package when requested.
 
-            dev swift open          Open the demo app workspace (default)
-            dev swift open demo     Open the demo app workspace (aliases: sample, samples)
+            dev swift open          Open the demo app project (default)
+            dev swift open demo     Open the demo app project (aliases: sample, samples)
             dev swift open lib      Open the ShopifyCheckoutKit Swift package (aliases: library, package, module)
         syntax:
           optional: "[lib|demo]"
@@ -644,17 +642,17 @@ commands:
 
           case "${1:-demo}" in
             demo|sample|samples)
-              platforms/swift/Scripts/generate_xcode_projects
-              workspace="platforms/swift/Samples/Samples.xcworkspace"
+              platforms/swift/Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
+              target="platforms/swift/Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj"
               ;;
-            lib|library|package|module) workspace="platforms/swift" ;;
+            lib|library|package|module) target="platforms/swift" ;;
             *)
               echo "Usage: dev swift open [lib|demo]" >&2
               exit 1
               ;;
           esac
 
-          xed "$workspace"
+          xed "$target"
 
   # React Native
   react-native:

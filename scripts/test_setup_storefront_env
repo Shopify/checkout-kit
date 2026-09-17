@@ -43,8 +43,7 @@ make_fixture() {
     "$fixture/scripts" \
     "$fixture/platforms/android/samples/CheckoutKitAndroidDemo" \
     "$fixture/platforms/react-native/sample/ios" \
-    "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo" \
-    "$fixture/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp"
+    "$fixture/platforms/swift/Samples/CheckoutKitSwiftDemo"
 
   cp "$REPO_ROOT/scripts/setup_storefront_env" "$fixture/scripts/setup_storefront_env"
   chmod +x "$fixture/scripts/setup_storefront_env"
@@ -66,10 +65,6 @@ react_native_xcconfig_of() {
 
 swift_demo_xcconfig_of() {
   printf '%s\n' "$1/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
-}
-
-swift_accelerated_xcconfig_of() {
-  printf '%s\n' "$1/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
 }
 
 assert_file_exists() {
@@ -246,13 +241,9 @@ test_sync_and_check() {
   assert_file_exists "$(react_native_env_of "$fixture")"
   assert_file_exists "$(react_native_xcconfig_of "$fixture")"
   assert_file_exists "$(swift_demo_xcconfig_of "$fixture")"
-  assert_file_exists "$(swift_accelerated_xcconfig_of "$fixture")"
 
   assert_not_contains "$(react_native_env_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
   assert_not_contains "$(swift_demo_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_VERSION"
-  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "CUSTOMER_ACCOUNT_API_CLIENT_ID"
-  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "EMAIL"
 
   assert_android_buyer_identity_values "$(android_env_of "$fixture")"
 
@@ -273,7 +264,6 @@ test_sync_and_check() {
   assert_contains "$(android_env_of "$fixture")" "API_VERSION=2026-01"
   assert_contains "$(react_native_env_of "$fixture")" "API_VERSION=\"2026-01\""
   assert_contains "$(swift_demo_xcconfig_of "$fixture")" "API_VERSION = 2026-01"
-  assert_contains "$(swift_accelerated_xcconfig_of "$fixture")" "API_VERSION = 2026-01"
 
   printf '%s\n' "stale" >"$(android_env_of "$fixture")"
   if "$fixture/scripts/setup_storefront_env" --check >"$output" 2>&1; then
@@ -447,34 +437,29 @@ test_blank_customer_account_api_version_defaults() {
 # .env.local has to win so a second Apple team can build the sample, and dropping that
 # override has to blank the xcconfig again rather than recover the team from it.
 test_development_team_follows_env_and_clears() {
-  local fixture output demo_xcconfig accelerated_xcconfig
+  local fixture output demo_xcconfig
   fixture="$(make_fixture)"
   output="$fixture/output.log"
   demo_xcconfig="$(swift_demo_xcconfig_of "$fixture")"
-  accelerated_xcconfig="$(swift_accelerated_xcconfig_of "$fixture")"
 
   write_canonical_root_env "$fixture/.env" synthetic-store.example.myshopify.com
 
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_contains "$demo_xcconfig" "DEVELOPMENT_TEAM ="
-  assert_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM ="
   assert_not_contains "$demo_xcconfig" "DEVELOPMENT_TEAM = A7XGC83MZE"
-  assert_not_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM = A7XGC83MZE"
 
   printf 'DEVELOPMENT_TEAM=SYNTHETIC9\n' >"$fixture/.env.local"
 
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_contains "$demo_xcconfig" "DEVELOPMENT_TEAM = SYNTHETIC9"
-  assert_contains "$accelerated_xcconfig" "DEVELOPMENT_TEAM = SYNTHETIC9"
 
   rm "$fixture/.env.local"
 
   "$fixture/scripts/setup_storefront_env" >"$output" 2>&1
   assert_output_is_sanitized "$output"
   assert_not_contains "$demo_xcconfig" "SYNTHETIC9"
-  assert_not_contains "$accelerated_xcconfig" "SYNTHETIC9"
 }
 
 # Generated platform config is the last fallback, so a checkout that still has it
@@ -620,7 +605,7 @@ EOF
     "STOREFRONT_DOMAIN=overridden-store.example.myshopify.com"
 }
 
-test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env() {
+test_legacy_merchant_identifier_configures_apple_pay_samples_without_rewriting_root_env() {
   local fixture output root_before
   fixture="$(make_fixture)"
   output="$fixture/output.log"
@@ -644,7 +629,6 @@ EOF
   assert_contains "$(swift_demo_xcconfig_of "$fixture")" \
     "APPLE_PAY_MERCHANT_IDENTIFIER = synthetic-merchant"
   assert_not_contains "$(android_env_of "$fixture")" "synthetic-merchant"
-  assert_not_contains "$(swift_accelerated_xcconfig_of "$fixture")" "synthetic-merchant"
 }
 
 test_env_file_selects_an_alternate_source() {
@@ -751,7 +735,7 @@ test_env_local_overrides_root_env
 test_blank_env_local_values_clear_customer_account_config
 test_env_local_warning_names_only_keys
 test_env_local_is_never_baked_into_root_env
-test_legacy_merchant_identifier_configures_both_samples_without_rewriting_root_env
+test_legacy_merchant_identifier_configures_apple_pay_samples_without_rewriting_root_env
 test_env_file_selects_an_alternate_source
 test_env_file_takes_its_own_local_overlay
 test_ignore_generated_excludes_generated_sources

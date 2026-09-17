@@ -6,7 +6,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ANDROID_ENV="${ROOT_DIR}/platforms/android/samples/CheckoutKitAndroidDemo/.env"
 SWIFT_DEMO_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/CheckoutKitSwiftDemo/Storefront.xcconfig"
-SWIFT_ACCELERATED_XCCONFIG="${ROOT_DIR}/platforms/swift/Samples/ShopifyAcceleratedCheckoutsApp/Storefront.xcconfig"
 REACT_NATIVE_ENV="${ROOT_DIR}/platforms/react-native/sample/.env"
 REACT_NATIVE_XCCONFIG="${ROOT_DIR}/platforms/react-native/sample/ios/Storefront.xcconfig"
 
@@ -96,7 +95,7 @@ strip_outer_quotes() {
 # an E2E run is the demo store. --ignore-generated drops them as a source.
 is_generated_file() {
   case "$1" in
-    "$ANDROID_ENV" | "$REACT_NATIVE_ENV" | "$REACT_NATIVE_XCCONFIG" | "$SWIFT_DEMO_XCCONFIG" | "$SWIFT_ACCELERATED_XCCONFIG")
+    "$ANDROID_ENV" | "$REACT_NATIVE_ENV" | "$REACT_NATIVE_XCCONFIG" | "$SWIFT_DEMO_XCCONFIG")
       return 0
       ;;
   esac
@@ -391,16 +390,14 @@ load_values() {
     "$(required_config_value STOREFRONT_DOMAIN)" \
     "$(read_env_value STOREFRONT_DOMAIN "$ANDROID_ENV")" \
     "$(read_env_value STOREFRONT_DOMAIN "$REACT_NATIVE_ENV")" \
-    "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_DEMO_XCCONFIG")" \
-    "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_ACCELERATED_XCCONFIG")")"
+    "$(read_env_value STOREFRONT_DOMAIN "$SWIFT_DEMO_XCCONFIG")")"
   STOREFRONT_DOMAIN_VALUE="$(normalize_storefront_domain "$STOREFRONT_DOMAIN_VALUE")"
 
   STOREFRONT_ACCESS_TOKEN_VALUE="$(first_config_value \
     "$(required_config_value STOREFRONT_ACCESS_TOKEN)" \
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$ANDROID_ENV")" \
     "$(read_env_value STOREFRONT_ACCESS_TOKEN "$REACT_NATIVE_ENV")" \
-    "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_DEMO_XCCONFIG")" \
-    "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_ACCELERATED_XCCONFIG")")"
+    "$(read_env_value STOREFRONT_ACCESS_TOKEN "$SWIFT_DEMO_XCCONFIG")")"
 
   API_VERSION_VALUE="$(first_config_value \
     "$(read_root_value API_VERSION)" \
@@ -411,7 +408,6 @@ load_values() {
     "$(read_env_value API_VERSION "$REACT_NATIVE_ENV")" \
     "$(read_env_value STOREFRONT_VERSION "$REACT_NATIVE_ENV")" \
     "$(read_env_value API_VERSION "$SWIFT_DEMO_XCCONFIG")" \
-    "$(read_env_value API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_API_VERSION")"
 
   REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER_VALUE="$(root_or_source_value REACT_NATIVE_APPLE_PAY_MERCHANT_IDENTIFIER \
@@ -446,7 +442,6 @@ load_values() {
     "$(derive_customer_account_api_version)" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$REACT_NATIVE_ENV")" \
     "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_DEMO_XCCONFIG")" \
-    "$(read_env_value CUSTOMER_ACCOUNT_API_VERSION "$SWIFT_ACCELERATED_XCCONFIG")" \
     "$DEFAULT_CUSTOMER_ACCOUNT_API_VERSION")"
 
   EMAIL_VALUE="$(root_or_source_value EMAIL "$(env_fallback EMAIL)" "$(read_env_value EMAIL "$ANDROID_ENV")" "$(read_env_value PREFILL_EMAIL "$ANDROID_ENV")" "$(read_env_value EMAIL "$REACT_NATIVE_ENV")" "$(read_env_value EMAIL "$SWIFT_DEMO_XCCONFIG")" "checkout-kit@example.com")"
@@ -613,18 +608,9 @@ EOF
   write_xcconfig_assignment PHONE "$PHONE_VALUE"
 }
 
-generate_swift_accelerated_xcconfig() {
-  generate_xcconfig_header
-  write_xcconfig_assignment DEVELOPMENT_TEAM "$DEVELOPMENT_TEAM_VALUE"
-  write_xcconfig_assignment STOREFRONT_DOMAIN "$STOREFRONT_DOMAIN_VALUE"
-  write_xcconfig_assignment STOREFRONT_ACCESS_TOKEN "$STOREFRONT_ACCESS_TOKEN_VALUE"
-  write_xcconfig_assignment API_VERSION "$API_VERSION_VALUE"
-}
-
 write_generated_files() {
   generate_android_env >"$ANDROID_ENV"
   generate_swift_demo_xcconfig >"$SWIFT_DEMO_XCCONFIG"
-  generate_swift_accelerated_xcconfig >"$SWIFT_ACCELERATED_XCCONFIG"
   generate_react_native_env >"$REACT_NATIVE_ENV"
   generate_react_native_xcconfig >"$REACT_NATIVE_XCCONFIG"
 
@@ -654,7 +640,6 @@ check_generated_files() {
 
   check_generated_file "$ANDROID_ENV" generate_android_env || failed="true"
   check_generated_file "$SWIFT_DEMO_XCCONFIG" generate_swift_demo_xcconfig || failed="true"
-  check_generated_file "$SWIFT_ACCELERATED_XCCONFIG" generate_swift_accelerated_xcconfig || failed="true"
   check_generated_file "$REACT_NATIVE_ENV" generate_react_native_env || failed="true"
   check_generated_file "$REACT_NATIVE_XCCONFIG" generate_react_native_xcconfig || failed="true"
 

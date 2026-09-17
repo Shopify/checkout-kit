@@ -1,5 +1,0 @@
-fragment CartUserErrorFragment on CartUserError {
-  code
-  message
-  field
-} 

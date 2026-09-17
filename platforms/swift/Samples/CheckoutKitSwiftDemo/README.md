@@ -7,8 +7,9 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 - Product listing from the Storefront API
 - Cart create, add, update, and fetch operations
 - `cart.checkoutUrl` presentation with `ShopifyCheckoutKit`
+- Configurable Shop Pay and Apple Pay accelerated checkout buttons
 - Checkout lifecycle and completion through `CheckoutProtocol.Client`
-- Buyer identity demo data for checkout prefill
+- Buyer identity demo data and accelerated checkout email/phone overrides
 - Customer Account API sign-in and customer access token cart identity
 - Universal Links entitlements for checkout/offsite-payment returns
 
@@ -42,11 +43,13 @@ CheckoutKitSwiftDemo/
 |   |   |   |   `-- Queries/               GetProductsQuery, GetCartQuery
 |   |   |   `-- Schema/                   Enums, input objects, objects, interfaces, unions
 |   |   |-- App/                         App configuration, cart state, and checkout coordination
+|   |   |   |-- AcceleratedCheckoutsConfiguredView.swift  Accelerated checkout settings environment
 |   |   |   |-- AppConfiguration.swift    Values loaded from Storefront.xcconfig
 |   |   |   |-- CartManager.swift         Cart create, add, update, and fetch operations
 |   |   |   |-- CheckoutCoordinator.swift Checkout presentation
 |   |   |   `-- CartResettingCheckoutDelegate.swift
 |   |   `-- Scenes/                      SwiftUI screens
+|-- Package.resolved                     Swift package dependency pins
 |-- project.yml                          XcodeGen project, Info.plist, and entitlements spec
 `-- Storefront.xcconfig                  Local store configuration, not checked in
 ```
@@ -57,8 +60,9 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
 
 1. `Network.swift` creates an `ApolloClient` that points at the configured Storefront API endpoint and attaches the Storefront access token.
 2. `StorefrontClient.swift` and `CartManager.swift` call Apollo using generated operation types such as `Storefront.CartCreateMutation` and `Storefront.GetCartQuery`.
-3. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CheckoutProtocolClient.swift` handles typed checkout lifecycle events.
-4. Apollo decodes responses into generated Swift types, so schema or operation changes surface as compile errors.
+3. `AcceleratedCheckoutsConfiguredView.swift` injects the storefront, Apple Pay, locale, contact-field, buyer contact, and shipping-country configuration used by accelerated checkout buttons.
+4. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CheckoutProtocolClient.swift` handles typed checkout lifecycle events.
+5. Apollo decodes responses into generated Swift types, so schema or operation changes surface as compile errors.
 
 ## Setup
 
@@ -134,10 +138,10 @@ All commands are run from the **repo root** (`checkout-kit/`):
 |---------|-------------|
 | `dev apollo download_schema swift swift` | Download the Storefront API schema for this sample app |
 | `dev apollo codegen swift swift` | Regenerate Swift types from `.graphql` files |
-| `dev apollo codegen swift all` | Regenerate for all sample apps |
+| `dev apollo codegen swift all` | Regenerate the Swift sample's types |
 | `dev swift lint` | Run SwiftLint + SwiftFormat checks |
 | `dev swift format` | Auto-format and apply safe lint autocorrections |
-| `dev swift build samples` | Build all sample apps |
+| `dev swift build samples` | Build the Swift sample app |
 
 ## Key files
 
@@ -148,7 +152,10 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `apollo-codegen-config.json` | Apollo code generation configuration. |
 | `CheckoutKitSwiftDemo/Sources/Api/Network.swift` | Apollo client setup and authentication interceptor. |
 | `CheckoutKitSwiftDemo/Sources/Api/StorefrontClient.swift` | Cart input creation and buyer identity mapping. |
+| `CheckoutKitSwiftDemo/Sources/App/AcceleratedCheckoutsConfiguredView.swift` | Injects accelerated checkout and Apple Pay configuration into app flows. |
+| `CheckoutKitSwiftDemo/Sources/Scenes/AcceleratedCheckoutsSettingsView.swift` | Dedicated accelerated checkout and Apple Pay settings screen. |
 | `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
 | `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
 | `CheckoutKitSwiftDemo/Sources/CheckoutProtocolClient.swift` | Typed checkout lifecycle handlers. |
+| `Package.resolved` | Dependency pins copied into the generated Xcode project's workspace. |
 | `project.yml` | Generates the Xcode project, Info.plist, and Associated Domains entitlements through XcodeGen. |

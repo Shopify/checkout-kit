@@ -17,9 +17,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var cancellables: Set<AnyCancellable> = []
 
     let uiKitCartController = CartViewController()
-    let swiftUICartController = UIHostingController(rootView: CartView())
-    let productGridController = UIHostingController(rootView: ProductGridView())
-    let productGalleryController = UIHostingController(rootView: ProductGalleryView())
+    let swiftUICartController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: CartView())
+    )
+    let productGridController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: ProductGridView())
+    )
+    let productGalleryController = UIHostingController(
+        rootView: AcceleratedCheckoutsConfiguredView(content: ProductGalleryView())
+    )
     let accountController = UIHostingController(rootView: AccountView())
     let settingsController = UIHostingController(rootView: SettingsView())
 
