@@ -344,6 +344,7 @@ main.events-collapsed #toggle-events svg {
   }
 
   .settings-collapsed #options-form,
+  .settings-collapsed #wallets-form,
   .events-collapsed #component-state,
   .events-collapsed #event-log,
   .events-collapsed #event-log:empty + #event-empty,
@@ -361,13 +362,15 @@ main.events-collapsed #toggle-events svg {
   font-size: 13px;
 }
 
-#options-form {
+#options-form,
+#wallets-form {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
 #options-form label,
+#wallets-form label,
 .manual-card label,
 .computed-source {
   display: flex;
@@ -377,7 +380,8 @@ main.events-collapsed #toggle-events svg {
   font-weight: 500;
 }
 
-#options-form label.checkbox {
+#options-form label.checkbox,
+#wallets-form label.checkbox {
   flex-direction: row;
   align-items: center;
 }
@@ -1057,12 +1061,33 @@ button:disabled {
   padding: 12px 0;
 }
 
+@keyframes event-flash {
+  0% {
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  100% {
+    background: var(--bg);
+    box-shadow: inset 3px 0 0 transparent;
+  }
+}
+
 .event-entry {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 12px;
+}
+
+.event-entry[data-fresh] {
+  animation: event-flash 1.5s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-entry[data-fresh] {
+    animation: none;
+  }
 }
 
 .event-entry-header {
@@ -1118,4 +1143,112 @@ button:disabled {
   .product-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Wallets demo                                                       */
+/* ------------------------------------------------------------------ */
+
+.element-wrapper {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 60px;
+  position: relative;
+}
+
+.element-wrapper::before {
+  content: "<shopify-accelerated-checkout-buttons>";
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-family: var(--font-mono);
+}
+
+.element-mount {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.element-mount details {
+  width: 100%;
+  flex: none;
+  padding: 10px 12px;
+  background: var(--code-bg);
+  border-radius: 6px;
+}
+
+.element-mount summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  list-style: none;
+}
+
+.element-mount summary::before {
+  content: "\25B8";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.15s;
+}
+
+.element-mount details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.element-attrs-dump {
+  margin: 10px 0 0;
+  padding: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Selectable product cards (buynow / select mode) */
+
+.product-card[role="button"] {
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.product-card[role="button"]:hover {
+  border-color: var(--accent);
+}
+
+.product-card[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.product-card[role="button"] .product-card-actions {
+  min-height: 28px;
+}
+
+.product-card-selected {
+  border-color: var(--accent);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }

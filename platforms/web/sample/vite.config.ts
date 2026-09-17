@@ -25,6 +25,12 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2022",
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: resolve(here, "index.html"),
+        wallets: resolve(here, "wallets.html"),
+      },
+    },
   },
   server: {
     port: 5173,

@@ -2,18 +2,40 @@ import {
   fetchProductVariants,
   isLikelyStorefrontDomain,
   normalizeStorefrontDomain,
+  type CartLine,
   type ProductVariantOption,
 } from "./cart";
-import { STORAGE_KEYS, writeStorage } from "./storage";
-import type { Store } from "./state";
+import { STORAGE_KEYS } from "./storage";
+import type { CartStatus } from "./state";
+
+import { writeStorage } from "./storage";
 
 const PRODUCT_LOAD_DEBOUNCE_MS = 500;
 
+function defaultPersistDomain(domain: string): void {
+  writeStorage(STORAGE_KEYS.storefrontDomain, domain);
+}
+
 type ProductFetcher = (domain: string) => Promise<ProductVariantOption[]>;
 
+/** Minimal store shape the product loader needs. */
+export type ProductLoaderStore = {
+  getState(): Record<string, unknown>;
+  setState(
+    partial: Partial<{
+      variants: ProductVariantOption[];
+      cartLines: CartLine[];
+      loadState: string;
+      cartStatus: CartStatus;
+    }>,
+  ): void;
+  subscribe(listener: () => void): void;
+};
+
 type ProductLoaderDeps = {
-  store: Store;
+  store: ProductLoaderStore;
   setDomainInputValue: (domain: string) => void;
+  persistDomain?: (domain: string) => void;
   fetchVariants?: ProductFetcher;
   debounceMs?: number;
 };
@@ -25,6 +47,7 @@ export type ProductLoader = {
 
 export function createProductLoader(deps: ProductLoaderDeps): ProductLoader {
   const { store, setDomainInputValue } = deps;
+  const persistDomain = deps.persistDomain ?? defaultPersistDomain;
   const fetchVariants = deps.fetchVariants ?? ((domain) => fetchProductVariants(domain));
   const debounceMs = deps.debounceMs ?? PRODUCT_LOAD_DEBOUNCE_MS;
 
@@ -72,7 +95,7 @@ export function createProductLoader(deps: ProductLoaderDeps): ProductLoader {
     store.setState({ variants: [], cartLines: [] });
 
     const domain = normalizeStorefrontDomain(rawDomain);
-    writeStorage(STORAGE_KEYS.storefrontDomain, domain);
+    persistDomain(domain);
 
     if (!isLikelyStorefrontDomain(domain)) {
       return;

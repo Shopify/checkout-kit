@@ -50,6 +50,42 @@ The demo relies on the public `/products.json` endpoint. If product loading fail
 
 This sample does not currently call Storefront API `cartCreate`; it uses cart permalinks so the multi-item flow can be exercised without a Storefront access token.
 
+## Wallets (Accelerated Checkout Buttons)
+
+The playground also hosts a **Wallets** view at `/wallets.html` for testing
+the `<shopify-accelerated-checkout-buttons>` element.
+
+The wallets view mirrors the checkout demo's architecture:
+
+- **Settings panel** — storefront domain, country, language, purchase source
+  toggle (Existing cart vs Buy now), cart ID, variant ID + selling plan ID,
+  and wallet count (0 = all). All settings are persisted in local storage
+  under the `checkout-kit:wallets-demo:*` namespace.
+- **Center workspace** — mounts the element and shows a live attribute dump.
+  In Buy now mode, a variant picker loads available variants from the
+  storefront's `products.json`, reusing the same product loader as the
+  checkout demo's cart-permalink flow.
+- **Events panel** — logs every settings update (property writes + reflected
+  attributes) and any future element events (`wallets.render`,
+  `wallets.error`, etc.). Event names are centralised in
+  `wallets-main.ts:WALLETS_EVENT_TYPES` for easy updates while the public
+  contract is under API review.
+
+Source files follow the same conventions as the checkout demo:
+
+| File                        | Purpose                       |
+| --------------------------- | ----------------------------- |
+| `wallets.html`              | HTML page (multi-page Vite)   |
+| `wallets-main.ts`           | Entry point                   |
+| `wallets-state.ts`          | Store and state types         |
+| `wallets-storage.ts`        | Local storage persistence     |
+| `wallets-dom.ts`            | DOM refs                      |
+| `wallets-shell.ts`          | HTML shell for tests          |
+| `wallets-render.ts`         | Top-level render              |
+| `views/wallets-settings.ts` | Settings panel render         |
+| `views/wallets-element.ts`  | Element attribute dump render |
+| `views/wallets-log.ts`      | Event log render              |
+
 ## Build
 
 ```bash

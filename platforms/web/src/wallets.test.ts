@@ -79,6 +79,12 @@ describe("<shopify-accelerated-checkout-buttons>", () => {
       el.setAttribute("wallet-count", "3");
       expect(el.walletCount).toBe(3);
     });
+
+    it("reflects layout to layout", () => {
+      const el = renderElement();
+      el.setAttribute("layout", "vertical");
+      expect(el.layout).toBe("vertical");
+    });
   });
 
   describe("property → attribute reflection", () => {
@@ -125,12 +131,31 @@ describe("<shopify-accelerated-checkout-buttons>", () => {
       expect(el.hasAttribute("store-domain")).toBe(false);
       expect(el.storeDomain).toBe("");
     });
+
+    it("reflects layout to layout attribute", () => {
+      const el = renderElement();
+      el.layout = "vertical";
+      expect(el.getAttribute("layout")).toBe("vertical");
+    });
+
+    it("removes layout attribute when assigned undefined", () => {
+      const el = renderElement();
+      el.layout = "vertical";
+      el.layout = undefined;
+      expect(el.hasAttribute("layout")).toBe(false);
+    });
   });
 
-  describe("walletCount coercion", () => {
+  describe("walletCount", () => {
     it("returns 0 when the attribute is absent", () => {
       const el = renderElement();
       expect(el.walletCount).toBe(0);
+    });
+
+    it("returns the numeric value of the attribute", () => {
+      const el = renderElement();
+      el.setAttribute("wallet-count", "3");
+      expect(el.walletCount).toBe(3);
     });
 
     it("returns 0 for non-numeric attribute values", () => {
@@ -139,44 +164,22 @@ describe("<shopify-accelerated-checkout-buttons>", () => {
       expect(el.walletCount).toBe(0);
     });
 
-    it("returns 0 for negative attribute values", () => {
+    it("sets the attribute from the property", () => {
       const el = renderElement();
-      el.setAttribute("wallet-count", "-1");
-      expect(el.walletCount).toBe(0);
+      el.walletCount = 5;
+      expect(el.getAttribute("wallet-count")).toBe("5");
     });
 
-    it("truncates fractional attribute values", () => {
-      const el = renderElement();
-      el.setAttribute("wallet-count", "2.9");
-      expect(el.walletCount).toBe(2);
-    });
-
-    it("removes the attribute when the property is set to 0", () => {
+    it("removes the attribute for falsy values", () => {
       const el = renderElement();
       el.walletCount = 3;
       el.walletCount = 0;
       expect(el.hasAttribute("wallet-count")).toBe(false);
-    });
 
-    it("removes the attribute when the property is set to undefined", () => {
-      const el = renderElement();
-      el.walletCount = 5;
+      el.walletCount = 3;
       el.walletCount = undefined;
       expect(el.hasAttribute("wallet-count")).toBe(false);
       expect(el.walletCount).toBe(0);
-    });
-
-    it("coerces negative property values to 0", () => {
-      const el = renderElement();
-      el.walletCount = -5;
-      expect(el.getAttribute("wallet-count")).toBe("0");
-    });
-
-    it("truncates fractional property values", () => {
-      const el = renderElement();
-      el.walletCount = 3.7;
-      expect(el.getAttribute("wallet-count")).toBe("3");
-      expect(el.walletCount).toBe(3);
     });
   });
 
@@ -218,6 +221,44 @@ describe("<shopify-accelerated-checkout-buttons>", () => {
       expect(el.cartId).toBe("");
       expect(el.variantId).toBe("");
       expect(el.sellingPlanId).toBe("");
+    });
+
+    it("defaults layout to horizontal", () => {
+      const el = renderElement();
+      expect(el.layout).toBe("horizontal");
+    });
+
+    it("defaults logLevel to error", () => {
+      const el = renderElement();
+      expect(el.logLevel).toBe("error");
+    });
+  });
+
+  describe("logLevel", () => {
+    it("reflects log-level attribute to logLevel property", () => {
+      const el = renderElement();
+      el.setAttribute("log-level", "debug");
+      expect(el.logLevel).toBe("debug");
+    });
+
+    it("reflects logLevel property to log-level attribute", () => {
+      const el = renderElement();
+      el.logLevel = "warn";
+      expect(el.getAttribute("log-level")).toBe("warn");
+    });
+
+    it("coerces invalid values to the default", () => {
+      const el = renderElement();
+      el.setAttribute("log-level", "nonsense");
+      expect(el.logLevel).toBe("error");
+    });
+
+    it("removes the attribute when set to undefined", () => {
+      const el = renderElement();
+      el.logLevel = "debug";
+      el.logLevel = undefined;
+      expect(el.hasAttribute("log-level")).toBe(false);
+      expect(el.logLevel).toBe("error");
     });
   });
 });

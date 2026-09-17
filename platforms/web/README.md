@@ -574,8 +574,22 @@ attributes but contains no wallet logic.
 import '@shopify/checkout-kit/wallets';
 ```
 
-To try the element locally, start the sample dev server and visit
-`/wallets.html`:
+The sample playground includes a dedicated **Wallets** view that mounts one
+`<shopify-accelerated-checkout-buttons>` element and exposes all of its
+configurable properties through a settings panel:
+
+- **Store domain**, **country**, and **language**.
+- **Purchase source** toggle — *Existing cart* (cart ID) or *Buy now*
+  (variant ID with optional selling plan ID). In Buy now mode, the storefront
+  product loader lets you pick a real variant ID from the store's
+  `products.json`.
+- **Wallet count** (0 = show all).
+
+Settings are persisted in local storage. Every property write and attribute
+reflection is logged in the event panel, and the element's current attribute
+state is shown in the center workspace. Future element events
+(e.g. `wallets.render`, `wallets.error`) are wired into the log
+automatically.
 
 ```sh
 pnpm install

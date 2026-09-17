@@ -6,8 +6,32 @@
  * Shop Pay). This scaffold defines the element's attribute/property contract
  * and renders an empty, accessible container. No wallet logic, network calls,
  * or runtime dependencies are included at this stage.
+ *
+ * @attribute store-domain - The storefront domain (e.g. `your-store.myshopify.com`).
+ * @attribute country - Two-letter country code (e.g. `US`, `CA`).
+ * @attribute language - BCP-47 language tag (e.g. `en`, `fr`).
+ * @attribute cart-id - Shopify cart GID for an existing-cart flow.
+ * @attribute variant-id - Product variant GID for a buy-now flow.
+ * @attribute selling-plan-id - Optional selling plan GID (buy-now only).
+ * @attribute wallet-count - Maximum number of wallets to render (0 = all).
+ * @attribute layout - Button layout direction (`horizontal` or `vertical`).
+ * @attribute log-level - Console logging verbosity (debug, warn, error, or none).
  */
-export class ShopifyAcceleratedCheckoutButtons extends HTMLElement {
+
+import { Logger, coerceLogLevel } from "./logger";
+import { createTemplate, html } from "./utils";
+import type { LogLevel, WalletsAttributes, WalletsProperties } from "./wallets.types";
+
+export type { LogLevel };
+
+const SHADOW_TEMPLATE = createTemplate(html`
+  <div role="group" aria-label="Accelerated checkout" data-state="idle"></div>
+`);
+
+export class ShopifyAcceleratedCheckoutButtons
+  extends HTMLElement
+  implements WalletsAttributes, WalletsProperties
+{
   static observedAttributes = [
     "store-domain",
     "country",
@@ -16,19 +40,19 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement {
     "variant-id",
     "selling-plan-id",
     "wallet-count",
+    "layout",
+    "log-level",
   ] as const;
 
   #container: HTMLDivElement;
+  #logger = new Logger("<shopify-accelerated-checkout-buttons>", () => this.logLevel);
 
   constructor() {
     super();
 
     const shadow = this.attachShadow({ mode: "open" });
-    this.#container = document.createElement("div");
-    this.#container.setAttribute("role", "group");
-    this.#container.setAttribute("aria-label", "Accelerated checkout");
-    this.#container.setAttribute("data-state", "idle");
-    shadow.appendChild(this.#container);
+    shadow.appendChild(SHADOW_TEMPLATE.content.cloneNode(true));
+    this.#container = shadow.querySelector("[role='group']") as HTMLDivElement;
   }
 
   /* ------------------------------------------------------------
@@ -84,23 +108,37 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement {
   }
 
   get walletCount(): number {
-    const raw = this.getAttribute("wallet-count");
-    if (raw === null) return 0;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : 0;
+    return Number(this.getAttribute("wallet-count")) || 0;
   }
 
   set walletCount(value: number | undefined) {
-    if (value == null || value === 0) {
+    if (!value) {
       this.removeAttribute("wallet-count");
-      return;
+    } else {
+      this.setAttribute("wallet-count", String(value));
     }
-    const coerced = Number.isFinite(value) && value >= 0 ? Math.trunc(value) : 0;
-    this.setAttribute("wallet-count", String(coerced));
   }
 
-  #setAttribute(name: string, value: string | undefined) {
-    if (value != null) {
+  get layout(): string {
+    return this.getAttribute("layout") ?? "horizontal";
+  }
+
+  set layout(value: string | undefined) {
+    this.#setAttribute("layout", value);
+  }
+
+  get logLevel(): LogLevel {
+    return coerceLogLevel(this.getAttribute("log-level"));
+  }
+
+  set logLevel(value: LogLevel | undefined) {
+    this.#setAttribute("log-level", value);
+  }
+
+  #setAttribute(name: string, value: string | boolean | undefined) {
+    if (value === true) {
+      this.setAttribute(name, "");
+    } else if (value != null && value !== false) {
       this.setAttribute(name, value);
     } else {
       this.removeAttribute(name);
@@ -113,18 +151,21 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement {
 
   connectedCallback(): void {
     this.#container.setAttribute("data-state", "idle");
+    this.#logger.debug("connected");
   }
 
   disconnectedCallback(): void {
     this.#container.setAttribute("data-state", "idle");
+    this.#logger.debug("disconnected");
   }
 
   attributeChangedCallback(
-    _name: (typeof ShopifyAcceleratedCheckoutButtons.observedAttributes)[number],
-    _oldValue: string | null,
-    _newValue: string | null,
+    name: (typeof ShopifyAcceleratedCheckoutButtons.observedAttributes)[number],
+    oldValue: string | null,
+    newValue: string | null,
   ): void {
-    // Attribute changes are tracked for future wallet logic.
-    // The scaffold intentionally has no reactive side effects.
+    if (oldValue !== newValue) {
+      this.#logger.debug(`attribute changed: ${name}`, { oldValue, newValue });
+    }
   }
 }
