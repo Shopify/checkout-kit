@@ -11,8 +11,10 @@ appId: ${E2E_APP_ID}
     when:
       platform: ios
     commands:
-      # iOS exposes the checkmark as "Done" or "selected". Its coordinates can be
-      # stale while the keyboard opens, so look it up again if dismissal misses.
+      # iOS exposes the checkmark as "Done" or "selected". On iOS 27 it is not
+      # inside the Toolbar accessibility subtree, so use Toolbar only to check
+      # visibility. Prefer Done to avoid matching unrelated "selected" content.
+      # Look up the control again if stale coordinates make dismissal miss.
       - repeat:
           times: 2
           while:
@@ -20,10 +22,18 @@ appId: ${E2E_APP_ID}
               id: "^Toolbar$"
           commands:
             - waitForAnimationToEnd
-            - tapOn:
-                text: "^(Done|selected)$"
-                childOf:
-                  id: "^Toolbar$"
+            - runFlow:
+                when:
+                  visible: "^Done$"
+                commands:
+                  - tapOn: "^Done$"
+            - runFlow:
+                when:
+                  visible:
+                    id: "^Toolbar$"
+                  notVisible: "^Done$"
+                commands:
+                  - tapOn: "^selected$"
             - waitForAnimationToEnd
       - extendedWaitUntil:
           notVisible:
