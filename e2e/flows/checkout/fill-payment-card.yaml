@@ -10,7 +10,6 @@ appId: ${E2E_APP_ID}
 - runFlow:
     when:
       platform: ios
-      visible: "^(Done|selected)$"
     commands:
       - runFlow: dismiss-active-field.yaml
 
