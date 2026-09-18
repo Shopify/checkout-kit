@@ -249,14 +249,14 @@ declare module 'react' {
 To present checkout you first need a checkout URL. The most common way is to
 use the [Storefront GraphQL API](https://shopify.dev/docs/api/storefront) to
 assemble a cart (via `cartCreate` and related mutations) and read the
-[`checkoutUrl`](https://shopify.dev/docs/api/storefront/2026-04/objects/Cart#field-cart-checkouturl)
+[`checkoutUrl`](https://shopify.dev/docs/api/storefront/2026-07/objects/Cart#field-cart-checkouturl)
 field. Alternatively, a
 [cart permalink](https://help.shopify.com/en/manual/products/details/cart-permalink)
 can be provided.
 
 ```ts
 const response = await fetch(
-  'https://your-store.myshopify.com/api/2026-04/graphql.json',
+  'https://your-store.myshopify.com/api/2026-07/graphql.json',
   {
     method: 'POST',
     headers: {
@@ -300,7 +300,7 @@ checkout.src = data.cartCreate.cart.checkoutUrl;
 For production use, see the
 [Storefront API GraphiQL Explorer](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started)
 for schema exploration and the
-[`cartCreate`](https://shopify.dev/docs/api/storefront/2026-04/mutations/cartCreate)
+[`cartCreate`](https://shopify.dev/docs/api/storefront/2026-07/mutations/cartCreate)
 mutation reference for the full input shape (buyer identity, attributes,
 discount codes, delivery preferences, etc.).
 
