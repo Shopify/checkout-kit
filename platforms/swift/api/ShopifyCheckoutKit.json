@@ -236,6 +236,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           },
@@ -262,6 +265,9 @@
             "moduleName": "ShopifyCheckoutKit",
             "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
             "protocolReq": true,
+            "declAttributes": [
+              "Custom"
+            ],
             "reqNewWitnessTableEntry": true,
             "funcSelfKind": "NonMutating"
           }
@@ -271,6 +277,9 @@
         "mangledName": "$s18ShopifyCheckoutKit0B8DelegateP",
         "moduleName": "ShopifyCheckoutKit",
         "genericSig": "<Self : AnyObject>",
+        "declAttributes": [
+          "Custom"
+        ],
         "conformances": [
           {
             "kind": "Conformance",
