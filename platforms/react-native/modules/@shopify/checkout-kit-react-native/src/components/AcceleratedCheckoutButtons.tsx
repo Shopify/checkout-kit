@@ -85,9 +85,9 @@ interface CommonAcceleratedCheckoutButtonsProps {
   onFail?: (error: CheckoutException) => void;
 
   /**
-   * Called when checkout is cancelled
+   * Called when the buyer dismisses checkout, including after completion.
    */
-  onCancel?: () => void;
+  onDismiss?: () => void;
 
   /**
    * Called when the render state changes
@@ -169,7 +169,7 @@ export const AcceleratedCheckoutButtons: React.FC<
   cornerRadius,
   wallets,
   onFail,
-  onCancel,
+  onDismiss,
   onRenderStateChange,
   onClickLink,
   events,
@@ -188,9 +188,9 @@ export const AcceleratedCheckoutButtons: React.FC<
     [onFail],
   );
 
-  const handleCancel = useCallback(() => {
-    onCancel?.();
-  }, [onCancel]);
+  const handleDismiss = useCallback(() => {
+    onDismiss?.();
+  }, [onDismiss]);
 
   const handleRenderStateChange = useCallback(
     (event: {nativeEvent: unknown}) => {
@@ -292,7 +292,7 @@ export const AcceleratedCheckoutButtons: React.FC<
       cornerRadius={cornerRadius}
       wallets={wallets}
       onFail={handleFail}
-      onCancel={handleCancel}
+      onDismiss={handleDismiss}
       onRenderStateChange={handleRenderStateChange}
       onClickLink={handleClickLink}
       onDispatch={handleDispatch}

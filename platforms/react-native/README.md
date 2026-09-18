@@ -787,7 +787,7 @@ terminal events; nothing needs to be subscribed or torn down explicitly.
 
 ```tsx
 shopify.present(checkoutUrl, {
-  onClose: () => {
+  onDismiss: () => {
     // The sheet was dismissed without a terminal error
   },
   onFail: (error: CheckoutException) => {
@@ -798,12 +798,16 @@ shopify.present(checkoutUrl, {
 
 | Name                   | Callback                                   | Fires                                                                                                            |
 | ---------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `onClose`              | `() => void`                               | Once, when the buyer dismisses the sheet without a terminal error.                                               |
+| `onDismiss`            | `() => void`                               | Once, when the buyer dismisses the sheet without a terminal error.                                               |
 | `onFail`               | `(error: CheckoutException) => void`       | Once, when the checkout terminates with an error.                                                                |
 | `onGeolocationRequest` | `(event: GeolocationRequestEvent) => void` | Android only. Fired each time the webview requests geolocation permissions. See [Opting out of the default behavior](#opting-out-of-the-default-behavior). |
 
-`onClose` and `onFail` are mutually exclusive — exactly one of them fires
-per `present(...)` call, after which both handles are released.
+`onDismiss` and `onFail` are mutually exclusive. At most one fires per
+`present(...)` call, after which both handles are released. Calling `dismiss()`
+programmatically releases the handles without invoking either callback.
+Completion and dismissal are separate events: `CheckoutProtocol.complete`
+fires when the order completes, while `onDismiss` fires when the buyer later
+dismisses the checkout sheet, including from the confirmation page.
 
 ## Identity & customer accounts
 
@@ -1127,20 +1131,25 @@ The `cornerRadius` prop lets you match the buttons to other calls-to-action in y
 
 ### Handle loading, errors, and lifecycle events
 
-Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an error.
+Attach lifecycle and protocol handlers to respond when buyers complete,
+dismiss, or encounter an error.
 
 ```tsx
+import {CheckoutProtocol} from '@shopify/checkout-kit-react-native';
+
 <AcceleratedCheckoutButtons
   cartId={cartId}
-  onComplete={(event) => {
-    // Clear cart after successful checkout
-    clearCart();
+  events={{
+    [CheckoutProtocol.complete]: () => {
+      // Clear cart after successful checkout
+      clearCart();
+    },
   }}
   onFail={(error) => {
     console.error('Accelerated checkout failed:', error);
   }}
-  onCancel={() => {
-    analytics.track('accelerated_checkout_cancelled');
+  onDismiss={() => {
+    analytics.track('accelerated_checkout_dismissed');
   }}
   onRenderStateChange={(event) => {
     // event.state: 'loading' | 'rendered' | 'error'
@@ -1151,6 +1160,10 @@ Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an
   }}
 />
 ```
+
+`onDismiss` reports the checkout presentation lifecycle, including dismissal
+from the confirmation page after a successful payment. It does not indicate
+whether checkout completed; use `CheckoutProtocol.complete` for that outcome.
 
 ---
 

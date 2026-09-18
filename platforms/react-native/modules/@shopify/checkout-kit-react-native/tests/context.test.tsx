@@ -195,12 +195,12 @@ describe('useShopifyCheckout', () => {
       </Wrapper>,
     );
 
-    const onClose = jest.fn();
+    const onDismiss = jest.fn();
     const onFail = jest.fn();
     const onGeolocationRequest = jest.fn();
 
     act(() => {
-      hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
+      hookValue.present(checkoutUrl, {onDismiss, onFail, onGeolocationRequest});
     });
 
     expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
