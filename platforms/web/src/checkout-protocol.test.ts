@@ -1,12 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+import {
+  EmbeddedCheckoutProtocol,
+  type ErrorResponse,
+  type Message,
+} from "@shopify/checkout-kit-protocol";
 
-import type { CheckoutProtocolMessageMap, ErrorResponse, Message } from "./checkout.types";
+import type { CheckoutProtocolMessageMap } from "./checkout.types";
 import "./checkout-web-component";
 import type { ShopifyCheckout } from "./checkout";
 import { mockTelemetry } from "./telemetry.test-helpers";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
+const CHECKOUT_CHANGE_METHODS = [
+  "ec.line_items.change",
+  "ec.fulfillment.change",
+  "ec.totals.change",
+  "ec.messages.change",
+] as const;
 
 describe("<shopify-checkout>", () => {
   beforeEach(() => {
@@ -154,22 +164,28 @@ describe("<shopify-checkout>", () => {
         expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
       });
 
-      it.each(["customMethod", "ec.buyer.change"])(
+      it.each(["customMethod", "ec.buyer.change", "ec.payment.change"])(
         "ignores unsupported notification %s",
-        (method) => {
+        async (method) => {
           const { checkout, mockCheckoutWindow } = openPopupCheckout();
+          const updateSpy = vi.fn();
+          checkout.addEventListener("update", updateSpy);
 
           simulateRawMessageEvent(
             checkout,
             {
               jsonrpc: "2.0",
               method,
-              params: {},
+              params: makeCheckoutPayload(),
             },
             { source: mockCheckoutWindow },
           );
 
+          await flushProtocolDispatch();
+
           expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
+          expect(updateSpy).not.toHaveBeenCalled();
+          expect(checkout.checkout).toBeUndefined();
         },
       );
 
@@ -197,10 +213,10 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("ec.start", () => {
-      it("updates the checkout property and dispatches an ec.start event", async () => {
+      it("updates the checkout property and dispatches a start event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.start", onStartSpy);
+        const listenForEvent = waitForEvent(checkout, "start", onStartSpy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
@@ -241,10 +257,10 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("ec.complete", () => {
-      it("updates the checkout property and dispatches an ec.complete event", async () => {
+      it("updates the checkout property and dispatches a complete event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onCompleteSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.complete", onCompleteSpy);
+        const listenForEvent = waitForEvent(checkout, "complete", onCompleteSpy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
@@ -258,13 +274,13 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("ec.error", () => {
-      it("updates the error property and dispatches an ec.error event", async () => {
+      it("updates the error property and dispatches an error event", async () => {
         const telemetry = mockTelemetry();
         const telemetrySpy = vi.spyOn(telemetry, "recordError");
         const durationSpy = vi.spyOn(telemetry, "recordNavigationDuration");
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.error", onErrorSpy);
+        const listenForEvent = waitForEvent(checkout, "error", onErrorSpy);
 
         const errorParams = makeErrorParams({ severity: "recoverable" });
         simulateProtocolMessageEvent(checkout, "ec.error", errorParams, {
@@ -272,7 +288,7 @@ describe("<shopify-checkout>", () => {
         });
         await listenForEvent;
 
-        expect(checkout.error).toEqual(decodeError(errorParams));
+        expect(checkout.error).toEqual({ code: "unknown", message: "Session failed" });
         expect(onErrorSpy).toHaveBeenCalledOnce();
         expect(telemetrySpy).toHaveBeenCalledWith({
           category: "protocol",
@@ -288,10 +304,41 @@ describe("<shopify-checkout>", () => {
         });
       });
 
+      it("delivers checkout errors to the element without triggering global error handlers", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onError = vi.fn();
+        const onDocumentError = vi.fn();
+        const onWindowError = vi.fn();
+        const onGlobalError = vi.fn();
+        const originalOnError = window.onerror;
+        checkout.addEventListener("error", onError);
+        document.addEventListener("error", onDocumentError);
+        window.addEventListener("error", onWindowError);
+        // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Exercise the hook used by error-reporting SDKs.
+        window.onerror = onGlobalError;
+
+        try {
+          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+
+          expect(onError).toHaveBeenCalledOnce();
+          expect(onDocumentError).not.toHaveBeenCalled();
+          expect(onWindowError).not.toHaveBeenCalled();
+          expect(onGlobalError).not.toHaveBeenCalled();
+        } finally {
+          document.removeEventListener("error", onDocumentError);
+          window.removeEventListener("error", onWindowError);
+          // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Restore the previous global error hook.
+          window.onerror = originalOnError;
+        }
+      });
+
       it("ignores the old ec.error shape with ucp and messages directly in params", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
-        checkout.addEventListener("ec.error", onErrorSpy);
+        checkout.addEventListener("error", onErrorSpy);
 
         const errorPayload = makeErrorPayload();
         window.dispatchEvent(
@@ -311,6 +358,31 @@ describe("<shopify-checkout>", () => {
         expect(onErrorSpy).not.toHaveBeenCalled();
       });
 
+      it("auto-closes for mixed message severities", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const errorOrder: string[] = [];
+        checkout.addEventListener("error", () => errorOrder.push("error"));
+        checkout.addEventListener("close", () => errorOrder.push("close"));
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.error",
+          {
+            error: {
+              ...makeErrorPayload(),
+              messages: [
+                ...makeErrorPayload({ severity: "recoverable" }).messages,
+                ...makeErrorPayload({ severity: "unrecoverable" }).messages,
+              ],
+            },
+          },
+          { source: mockCheckoutWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(errorOrder).toStrictEqual(["error", "close"]);
+      });
+
       const ERROR_SEVERITIES: ReadonlyArray<Message["severity"]> = [
         "unrecoverable",
         "recoverable",
@@ -323,8 +395,8 @@ describe("<shopify-checkout>", () => {
           const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
           const { checkout, mockCheckoutWindow } = openPopupCheckout();
           const errorOrder: string[] = [];
-          checkout.addEventListener("ec.error", () => errorOrder.push("error"));
-          checkout.addEventListener("ec.close", () => errorOrder.push("close"));
+          checkout.addEventListener("error", () => errorOrder.push("error"));
+          checkout.addEventListener("close", () => errorOrder.push("close"));
 
           simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams({ severity }), {
             source: mockCheckoutWindow,
@@ -345,8 +417,8 @@ describe("<shopify-checkout>", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
         const closeSpy = vi.fn();
-        checkout.addEventListener("ec.error", onErrorSpy);
-        checkout.addEventListener("ec.close", closeSpy);
+        checkout.addEventListener("error", onErrorSpy);
+        checkout.addEventListener("close", closeSpy);
 
         const nodeProcess = (
           globalThis as unknown as {
@@ -389,83 +461,151 @@ describe("<shopify-checkout>", () => {
       });
     });
 
-    describe("ec.line_items.change", () => {
-      it("updates the checkout property and dispatches an ec.line_items.change event", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onLineItemsChangeSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.line_items.change", onLineItemsChangeSpy);
+    describe("checkout updates", () => {
+      it.each(CHECKOUT_CHANGE_METHODS)(
+        "%s updates the checkout property and emits one update event",
+        async (method) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout();
+          const updateSpy = vi.fn();
+          checkout.addEventListener("update", updateSpy);
+          const payload = makeCheckoutPayload();
 
-        const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.line_items.change", payload, {
-          source: mockCheckoutWindow,
+          simulateProtocolMessageEvent(checkout, method, payload, {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+
+          expect(updateSpy).toHaveBeenCalledOnce();
+          expect(checkout.checkout).toEqual(decodeCheckout(payload));
+          expect(updateSpy.mock.calls[0]![0].detail.checkout).toBe(checkout.checkout);
+        },
+      );
+
+      it("deduplicates structurally equal snapshots across change methods", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const updateSpy = vi.fn();
+        checkout.addEventListener("update", updateSpy);
+        const extension = { enabled: true, nested: { first: 1, second: 2 } };
+        const payload = makeCheckoutPayload({ "com.example.extension": extension });
+        const reordered = makeCheckoutPayload({
+          "com.example.extension": { nested: { second: 2, first: 1 }, enabled: true },
         });
-        await listenForEvent;
+        reordered.checkout = {
+          "com.example.extension": reordered.checkout["com.example.extension"],
+          ...reordered.checkout,
+        };
 
+        for (const [index, method] of CHECKOUT_CHANGE_METHODS.entries()) {
+          simulateProtocolMessageEvent(checkout, method, index === 0 ? payload : reordered, {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+        }
+
+        expect(updateSpy).toHaveBeenCalledOnce();
         expect(checkout.checkout).toEqual(decodeCheckout(payload));
-        expect(onLineItemsChangeSpy).toHaveBeenCalledOnce();
       });
-    });
 
-    describe("ec.fulfillment.change", () => {
-      it("updates the checkout property and dispatches an ec.fulfillment.change event", async () => {
+      it("emits each changed snapshot even when it returns to an earlier value", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onFulfillmentChangeSpy = vi.fn();
-        const listenForEvent = waitForEvent(
-          checkout,
-          "ec.fulfillment.change",
-          onFulfillmentChangeSpy,
-        );
+        const updateSpy = vi.fn();
+        checkout.addEventListener("update", updateSpy);
 
-        const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.fulfillment.change", payload, {
-          source: mockCheckoutWindow,
-        });
-        await listenForEvent;
+        for (const amount of [1000, 1200, 1000]) {
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.totals.change",
+            makeCheckoutPayload({ totals: [{ type: "total", amount }] }),
+            { source: mockCheckoutWindow },
+          );
+          await flushProtocolDispatch();
+        }
 
-        expect(checkout.checkout).toEqual(decodeCheckout(payload));
-        expect(onFulfillmentChangeSpy).toHaveBeenCalledOnce();
+        expect(updateSpy).toHaveBeenCalledTimes(3);
+        expect(checkout.checkout?.totals[0]?.amount).toBe(1000);
       });
-    });
 
-    describe("ec.totals.change", () => {
-      it("updates the checkout property and dispatches an ec.totals.change event", async () => {
+      it("uses start and complete snapshots as the update baseline without deduplicating lifecycle events", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onTotalsChangeSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.totals.change", onTotalsChangeSpy);
+        const startSpy = vi.fn();
+        const updateSpy = vi.fn();
+        const completeSpy = vi.fn();
+        checkout.addEventListener("start", startSpy);
+        checkout.addEventListener("update", updateSpy);
+        checkout.addEventListener("complete", completeSpy);
 
+        for (const method of [
+          "ec.start",
+          "ec.start",
+          "ec.totals.change",
+          "ec.complete",
+          "ec.complete",
+          "ec.messages.change",
+        ] as const) {
+          simulateProtocolMessageEvent(checkout, method, makeCheckoutPayload(), {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+        }
+
+        expect(startSpy).toHaveBeenCalledTimes(2);
+        expect(completeSpy).toHaveBeenCalledTimes(2);
+        expect(updateSpy).not.toHaveBeenCalled();
+      });
+
+      it("resets update deduplication when a new checkout session opens", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const updateSpy = vi.fn();
+        checkout.addEventListener("update", updateSpy);
         const payload = makeCheckoutPayload();
+
         simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
           source: mockCheckoutWindow,
         });
-        await listenForEvent;
-
-        expect(checkout.checkout).toEqual(decodeCheckout(payload));
-        expect(onTotalsChangeSpy).toHaveBeenCalledOnce();
-      });
-    });
-
-    describe("ec.messages.change", () => {
-      it("updates the checkout property and dispatches an ec.messages.change event", async () => {
-        const { checkout, mockCheckoutWindow } = openPopupCheckout();
-        const onMessagesChangeSpy = vi.fn();
-        const listenForEvent = waitForEvent(checkout, "ec.messages.change", onMessagesChangeSpy);
-
-        const payload = makeCheckoutPayload();
-        simulateProtocolMessageEvent(checkout, "ec.messages.change", payload, {
+        await flushProtocolDispatch();
+        checkout.open();
+        simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
           source: mockCheckoutWindow,
         });
-        await listenForEvent;
+        await flushProtocolDispatch();
 
-        expect(checkout.checkout).toEqual(decodeCheckout(payload));
-        expect(onMessagesChangeSpy).toHaveBeenCalledOnce();
+        expect(updateSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it("does not dispatch raw protocol names as public DOM events", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const rawEventSpy = vi.fn();
+        const snapshotMethods = ["ec.start", ...CHECKOUT_CHANGE_METHODS, "ec.complete"] as const;
+        for (const method of [...snapshotMethods, "ec.error", "ec.close"]) {
+          (checkout as HTMLElement).addEventListener(method, rawEventSpy);
+        }
+
+        for (const method of snapshotMethods) {
+          simulateProtocolMessageEvent(checkout, method, makeCheckoutPayload(), {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+        }
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.error",
+          makeErrorParams({ severity: "recoverable" }),
+          {
+            source: mockCheckoutWindow,
+          },
+        );
+        await flushProtocolDispatch();
+        checkout.close();
+
+        expect(rawEventSpy).not.toHaveBeenCalled();
       });
     });
 
     describe("event.detail payloads", () => {
-      it("ec.start carries {checkout}", async () => {
+      it("start carries {checkout}", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.start", spy);
+        const wait = waitForEvent(checkout, "start", spy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
@@ -477,10 +617,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail).toStrictEqual({ checkout: decodeCheckout(payload) });
       });
 
-      it("ec.complete carries {checkout} with order nested in checkout", async () => {
+      it("complete carries {checkout} with order nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.complete", spy);
+        const wait = waitForEvent(checkout, "complete", spy);
 
         const order = {
           id: "order-1",
@@ -498,10 +638,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.order).toEqual(decoded.order);
       });
 
-      it("ec.complete keeps an absent order nested in checkout", async () => {
+      it("complete keeps an absent order nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.complete", spy);
+        const wait = waitForEvent(checkout, "complete", spy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
@@ -515,10 +655,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.order).toBeUndefined();
       });
 
-      it("ec.error carries {error}", async () => {
+      it("error carries {error}", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.error", spy);
+        const wait = waitForEvent(checkout, "error", spy);
 
         const errorParams = makeErrorParams();
         simulateProtocolMessageEvent(checkout, "ec.error", errorParams, {
@@ -527,13 +667,16 @@ describe("<shopify-checkout>", () => {
         await wait;
 
         const event = spy.mock.calls[0]![0] as CustomEvent;
-        expect(event.detail).toStrictEqual({ error: decodeError(errorParams) });
+        expect(event.detail).toStrictEqual({
+          error: { code: "unknown", message: "Session failed" },
+        });
+        expect(event.detail.error).toBe(checkout.error);
       });
 
-      it("ec.line_items.change carries {checkout} with lineItems nested in checkout", async () => {
+      it("update from ec.line_items.change carries {checkout} with lineItems nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.line_items.change", spy);
+        const wait = waitForEvent(checkout, "update", spy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.line_items.change", payload, {
@@ -547,10 +690,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.lineItems).toEqual(decoded.lineItems);
       });
 
-      it("ec.fulfillment.change carries {checkout} with fulfillment nested in checkout", async () => {
+      it("update from ec.fulfillment.change carries {checkout} with fulfillment nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.fulfillment.change", spy);
+        const wait = waitForEvent(checkout, "update", spy);
 
         const fulfillment = {
           methods: [
@@ -581,10 +724,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.fulfillment).toEqual(decoded.fulfillment);
       });
 
-      it("ec.totals.change carries {checkout} with totals nested in checkout", async () => {
+      it("update from ec.totals.change carries {checkout} with totals nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.totals.change", spy);
+        const wait = waitForEvent(checkout, "update", spy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
@@ -598,10 +741,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.totals).toEqual(decoded.totals);
       });
 
-      it("ec.messages.change carries {checkout} with messages nested in checkout", async () => {
+      it("update from ec.messages.change carries {checkout} with messages nested in checkout", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const spy = vi.fn();
-        const wait = waitForEvent(checkout, "ec.messages.change", spy);
+        const wait = waitForEvent(checkout, "update", spy);
 
         const payload = makeCheckoutPayload();
         simulateProtocolMessageEvent(checkout, "ec.messages.change", payload, {
@@ -615,10 +758,10 @@ describe("<shopify-checkout>", () => {
         expect(event.detail.checkout.messages).toEqual(decoded.messages);
       });
 
-      it("ec.close carries no detail", () => {
+      it("close carries no detail", () => {
         const { checkout } = openPopupCheckout();
         const spy = vi.fn();
-        checkout.addEventListener("ec.close", spy);
+        checkout.addEventListener("close", spy);
 
         checkout.close();
 
@@ -846,7 +989,7 @@ describe("<shopify-checkout>", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -862,7 +1005,7 @@ describe("<shopify-checkout>", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -877,7 +1020,7 @@ describe("<shopify-checkout>", () => {
       it("drops protocol messages from an untrusted HTTPS origin by default", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -895,7 +1038,7 @@ describe("<shopify-checkout>", () => {
         });
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -912,7 +1055,7 @@ describe("<shopify-checkout>", () => {
           "allowed-origins": "https://other.example.com/",
         });
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -933,7 +1076,7 @@ describe("<shopify-checkout>", () => {
           "allowed-origins": pattern,
         });
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -948,7 +1091,7 @@ describe("<shopify-checkout>", () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -966,7 +1109,7 @@ describe("<shopify-checkout>", () => {
         });
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -983,7 +1126,7 @@ describe("<shopify-checkout>", () => {
           "allowed-origins": "https://*.example.com:443",
         });
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -999,7 +1142,7 @@ describe("<shopify-checkout>", () => {
           "allowed-origins": "https://other.example.com:443",
         });
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -1019,7 +1162,7 @@ describe("<shopify-checkout>", () => {
             "allowed-origins": "https://other.example.com",
           });
           const onStartSpy = vi.fn();
-          checkout.addEventListener("ec.start", onStartSpy);
+          checkout.addEventListener("start", onStartSpy);
 
           simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
             source: mockCheckoutWindow,
@@ -1038,7 +1181,7 @@ describe("<shopify-checkout>", () => {
           "allowed-origins": "https://*.example.com",
         });
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -1056,7 +1199,7 @@ describe("<shopify-checkout>", () => {
         });
         const onStartSpy = vi.fn();
         const payload = makeCheckoutPayload();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", payload, {
           source: mockCheckoutWindow,
@@ -1072,7 +1215,7 @@ describe("<shopify-checkout>", () => {
         const { checkout } = openPopupCheckout();
         const otherWindow = createMockWindow();
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(
           checkout,
@@ -1099,7 +1242,7 @@ describe("<shopify-checkout>", () => {
         checkout.removeAttribute("src");
 
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         const event = new MessageEvent("message", {
           data: {
@@ -1120,7 +1263,7 @@ describe("<shopify-checkout>", () => {
       it("drops protocol messages when the event origin is not HTTPS", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -1135,7 +1278,7 @@ describe("<shopify-checkout>", () => {
       it("drops protocol messages when the event origin is opaque", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -1150,7 +1293,7 @@ describe("<shopify-checkout>", () => {
       it("ignores window 'message' events that aren't JSON-RPC checkout protocol messages", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         window.dispatchEvent(
@@ -1173,7 +1316,7 @@ describe("<shopify-checkout>", () => {
         const onMessageRejected = vi.fn();
         checkout.onMessageRejected = onMessageRejected;
         const onStartSpy = vi.fn();
-        checkout.addEventListener("ec.start", onStartSpy);
+        checkout.addEventListener("start", onStartSpy);
 
         simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
           source: mockCheckoutWindow,
@@ -1224,7 +1367,7 @@ describe("<shopify-checkout>", () => {
       it("is a no-op when called with a null listener", () => {
         const checkout = renderCheckout();
         expect(() => {
-          checkout.addEventListener("ec.start", null as unknown as EventListener);
+          checkout.addEventListener("start", null as unknown as EventListener);
         }).not.toThrow();
       });
     });
@@ -1312,7 +1455,7 @@ describe("<shopify-checkout>", () => {
     it("drops protocol messages while the element is disconnected", async () => {
       const { checkout, mockCheckoutWindow } = openPopupCheckout();
       const onStartSpy = vi.fn();
-      checkout.addEventListener("ec.start", onStartSpy);
+      checkout.addEventListener("start", onStartSpy);
 
       checkout.remove();
 
@@ -1327,7 +1470,7 @@ describe("<shopify-checkout>", () => {
     it("re-attaches the message listener on reconnect without duplicating it", async () => {
       const { checkout, mockCheckoutWindow } = openPopupCheckout();
       const onStartSpy = vi.fn();
-      checkout.addEventListener("ec.start", onStartSpy);
+      checkout.addEventListener("start", onStartSpy);
 
       simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
         source: mockCheckoutWindow,
@@ -1354,8 +1497,8 @@ describe("<shopify-checkout>", () => {
 
       const firstSpy = vi.fn();
       const secondSpy = vi.fn();
-      first.checkout.addEventListener("ec.start", firstSpy);
-      second.checkout.addEventListener("ec.start", secondSpy);
+      first.checkout.addEventListener("start", firstSpy);
+      second.checkout.addEventListener("start", secondSpy);
 
       const firstPayload = makeCheckoutPayload();
       simulateProtocolMessageEvent(first.checkout, "ec.start", firstPayload, {
@@ -1539,12 +1682,8 @@ function openPopupCheckout(attributes: Record<string, string | undefined> = {}):
  * equality with the fixture).
  */
 function decodeCheckout(payload: { checkout: unknown }) {
-  return EmbeddedCheckoutProtocol.Event.start.decode(payload).checkout;
-}
-
-/** Wire → decoded `ErrorResponse`, mirroring the client's `ec.error` handling. */
-function decodeError(params: { error: unknown }) {
-  return EmbeddedCheckoutProtocol.Event.error.decode(params).error;
+  const { ucp: _ucp, ...checkout } = EmbeddedCheckoutProtocol.Event.start.decode(payload).checkout;
+  return checkout;
 }
 
 /**
