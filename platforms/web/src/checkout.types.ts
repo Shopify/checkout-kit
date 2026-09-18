@@ -1,4 +1,4 @@
-// Types for this component are derived from the 2026-04-08 UCP embedded
+// Types for this component are derived from the 2026-08-25 UCP embedded
 // checkout protocol. Payload shapes come from the shared
 // `@shopify/checkout-kit-protocol` package (decoded to camelCase).
 
@@ -155,7 +155,7 @@ export type TypedEventListener<Event> =
  */
 
 /**
- * Mapping of the 2026-04-08 ECP messages this component handles to their
+ * Mapping of the 2026-08-25 ECP messages this component handles to their
  * wire-format payloads. Delegation methods (fulfillment.address_change_request,
  * payment.instruments_change_request, payment.credential_request) and the
  * embedder→embedded `ec.submit` are intentionally omitted — this component

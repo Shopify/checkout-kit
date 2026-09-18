@@ -35,10 +35,61 @@ import {
   requireQuicktype,
   run,
 } from "./codegen_tools.mjs";
+import {
+  assertSemanticConstraintModelNames,
+  removeUnreferencedInternalDeclaration,
+} from "./codegen_guards.mjs";
 import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
+// Generated models whose openness is part of the public compatibility surface.
+// Each one receives a native `additionalProperties` bag so business extension
+// fields survive a decode/encode round trip. Openness is still discovered from
+// the schemas; this set is the invariant, so a protocol upgrade cannot quietly
+// shrink or reshape that API. Keep it sorted.
+const EXPECTED_NATIVE_OPEN_MODELS = [
+  "Buyer",
+  "Checkout",
+  "Context",
+  "FulfillmentAvailableMethod",
+  "FulfillmentGroup",
+  "FulfillmentMethod",
+  "FulfillmentOption",
+  "PaymentCredential",
+  "Policy",
+  "SelectedPaymentInstrument",
+];
+
+// Fails codegen when the models that actually received the additionalProperties
+// preservation layer stop matching EXPECTED_NATIVE_OPEN_MODELS -- a model that
+// stopped being open upstream, was renamed, or newly became open.
+function assertExpectedNativeOpenModels(language, injectedModelNames) {
+  const expected = [...EXPECTED_NATIVE_OPEN_MODELS].sort();
+  const actual = [...injectedModelNames].sort();
+  if (expected.join("\u0000") === actual.join("\u0000")) {
+    return;
+  }
+
+  const missing = expected.filter((name) => !injectedModelNames.has(name));
+  const added = actual.filter((name) => !EXPECTED_NATIVE_OPEN_MODELS.includes(name));
+
+  throw new Error(
+    [
+      `${language} additionalProperties injection no longer matches the expected open-model set.`,
+      missing.length > 0
+        ? `  Lost openness, renamed, or not injected: ${missing.join(", ")}`
+        : undefined,
+      added.length > 0 ? `  Newly open: ${added.join(", ")}` : undefined,
+      "  These models are open on purpose: consumers rely on additionalProperties to keep",
+      "  business extension fields. If this protocol upgrade intends the change, confirm the",
+      "  consumer impact and update EXPECTED_NATIVE_OPEN_MODELS in this file.",
+    ]
+      .filter((line) => line !== undefined)
+      .join("\n"),
+  );
+}
+
 const SWIFT_JSON_HELPER_MARKER = "// MARK: - Encode/decode helpers";
 const SWIFT_JSON_HELPER_REPLACEMENT = `// MARK: - Encode/decode helpers
 // quicktype's JSONAny/JSONNull helper suffix is intentionally replaced here.
@@ -173,13 +224,62 @@ async function prepareCodegenSchemas(tempDir) {
 
   // Preserve the existing shared line-item total model name after checkout
   // fulfillment adds another reference from fulfillment option totals.
-  const total = await readJson(path.join(specDir, "types", "total.json"));
+  const total = await readJson(path.join(schemaDir, "common", "types", "total.json"));
   total.title = "LineItemTotal";
-  await writeJson(path.join(specDir, "types", "total.json"), total);
+  await writeJson(path.join(schemaDir, "common", "types", "total.json"), total);
 
-  const totals = await readJson(path.join(specDir, "types", "totals.json"));
+  const totals = await readJson(path.join(schemaDir, "common", "types", "totals.json"));
   totals.items.title = "CheckoutTotal";
-  await writeJson(path.join(specDir, "types", "totals.json"), totals);
+  await writeJson(path.join(schemaDir, "common", "types", "totals.json"), totals);
+
+  // Keep new anonymous payment/measure shapes from renaming existing public models.
+  const contextPath = path.join(schemaDir, "common", "types", "context.json");
+  const context = await readJson(contextPath);
+  context.allOf[1].properties.payment.items.title = "PreferredPaymentHandler";
+  await writeJson(contextPath, context);
+
+  // Name both positions in the recursive constraint grammar explicitly. quicktype
+  // otherwise derives `ConstraintsElement` from an array position and
+  // `PropertyValue` from a map position. The latter is a merged representation of
+  // an object constraint or an enum/const value constraint, so ConstraintProperty
+  // is more accurate than ValueConstraint.
+  const constraintExpressionPath = path.join(
+    schemaDir,
+    "common",
+    "types",
+    "constraint_expression.json",
+  );
+  const constraintExpression = await readJson(constraintExpressionPath);
+  constraintExpression.title = "ConstraintExpression";
+  constraintExpression.properties.anyOf.items.title = "ConstraintExpression";
+  constraintExpression.properties.properties.additionalProperties.title = "ConstraintProperty";
+  await writeJson(constraintExpressionPath, constraintExpression);
+
+  const availablePaymentInstrumentPath = path.join(
+    schemaDir,
+    "common",
+    "types",
+    "available_payment_instrument.json",
+  );
+  const availablePaymentInstrument = await readJson(availablePaymentInstrumentPath);
+  availablePaymentInstrument.properties.constraints.title = "ConstraintExpression";
+  await writeJson(availablePaymentInstrumentPath, availablePaymentInstrument);
+
+  // Point both unit-price measures straight at the shared measure definition so
+  // quicktype reuses the existing `Measure` model. Titling the `allOf` wrappers
+  // instead made quicktype emit suffixed duplicates (`ProductMeasureClass` /
+  // `ReferenceMeasureClass`) with the same fields as `Measure`. The wrappers only
+  // narrowed `value` with a `minimum`, which generated models do not express;
+  // the property descriptions are worth keeping, so they carry over.
+  const unitPricePath = path.join(specDir, "types", "unit_price.json");
+  const unitPrice = await readJson(unitPricePath);
+  for (const property of ["measure", "reference"]) {
+    unitPrice.properties[property] = {
+      $ref: "../../common/types/measure.json",
+      description: unitPrice.properties[property].description,
+    };
+  }
+  await writeJson(unitPricePath, unitPrice);
 
   const embeddedConfig = await readJson(path.join(schemaDir, "transports", "embedded_config.json"));
   embeddedConfig.properties.color_scheme.items.title = "EmbeddedColorScheme";
@@ -203,11 +303,35 @@ async function prepareCodegenSchemas(tempDir) {
   discount.$defs.allocation.title = "DiscountAllocation";
   await writeJson(path.join(specDir, "discount.json"), discount);
 
-  for (const fulfillmentSchema of ["fulfillment_available_method", "fulfillment_method"]) {
-    const schema = await readJson(path.join(specDir, "types", `${fulfillmentSchema}.json`));
-    schema.properties.type.title = "FulfillmentMethodType";
-    await writeJson(path.join(specDir, "types", `${fulfillmentSchema}.json`), schema);
+  // August leaves fulfillment methods implicitly open. Make that explicit so the
+  // native extension generator keeps the existing additionalProperties API.
+  // `fulfillment_available_method` already declares `additionalProperties`, so
+  // only `fulfillment_method` needs the flag.
+  const fulfillmentMethodPath = path.join(specDir, "types", "fulfillment_method.json");
+  const fulfillmentMethod = await readJson(fulfillmentMethodPath);
+  fulfillmentMethod.additionalProperties = true;
+  await writeJson(fulfillmentMethodPath, fulfillmentMethod);
+
+  // quicktype does not materialize the destination's conditional address/location
+  // branches. Expose their fields explicitly, and allow the absent discriminator
+  // used by April responses. The pinned August schema remains unchanged.
+  const destinationPath = path.join(specDir, "types", "fulfillment_destination.json");
+  const destination = await readJson(destinationPath);
+  const postalAddress = await readJson(path.join(schemaDir, "common", "types", "postal_address.json"));
+  const locationSummary = await readJson(path.join(schemaDir, "common", "types", "location_summary.json"));
+  const destinationFields = {...postalAddress.properties, ...locationSummary.properties};
+  function relocateCommonRefs(value) {
+    if (value === null || typeof value !== "object") return;
+    if (typeof value.$ref === "string" && !value.$ref.startsWith("#")) {
+      value.$ref = path.posix.join("../../common/types", value.$ref);
+    }
+    for (const child of Object.values(value)) relocateCommonRefs(child);
   }
+  relocateCommonRefs(destinationFields);
+  destination.properties = {...destinationFields, ...destination.properties};
+  destination.required = ["id"];
+  delete destination.allOf;
+  await writeJson(destinationPath, destination);
 
   const fulfillment = await readJson(path.join(specDir, "types", "fulfillment.json"));
   fulfillment.title = "CheckoutFulfillment";
@@ -353,6 +477,7 @@ async function normalizeGeneratedFile(output, transform = (source) => source) {
   await replaceInFile(output, (source) => {
     const result = transform(source);
     assertNoQuicktypeFallbacks(result, output);
+    assertSemanticConstraintModelNames(result, output);
     return result;
   });
 }
@@ -524,16 +649,28 @@ function parseKotlinFields(inner) {
   return fields;
 }
 
+function kotlinDecodeField(name, field) {
+  if (name === "FulfillmentOption" && field.name === "description") {
+    return [
+      `            ${field.name} = obj["${field.wire}"]?.let { element ->`,
+      "                if (element is JsonPrimitive && element.isString) {",
+      "                    Description(plain = element.content)",
+      "                } else {",
+      `                    json.decodeFromJsonElement(serializer<${field.baseType}>(), element)`,
+      "                }",
+      "            },",
+    ].join("\n");
+  }
+
+  return field.optional
+    ? `            ${field.name} = obj["${field.wire}"]?.let { json.decodeFromJsonElement(serializer<${field.baseType}>(), it) },`
+    : `            ${field.name} = json.decodeFromJsonElement(serializer<${field.type}>(), obj["${field.wire}"] ?: throw SerializationException("Missing ${field.wire} for ${name}")),`;
+}
+
 function kotlinSerializerObject(name, fields) {
   const knownList = fields.map((field) => `"${field.wire}"`).join(", ");
 
-  const ctorArgs = fields
-    .map((field) =>
-      field.optional
-        ? `            ${field.name} = obj["${field.wire}"]?.let { json.decodeFromJsonElement(serializer<${field.baseType}>(), it) },`
-        : `            ${field.name} = json.decodeFromJsonElement(serializer<${field.type}>(), obj["${field.wire}"] ?: throw SerializationException("Missing ${field.wire} for ${name}")),`,
-    )
-    .join("\n");
+  const ctorArgs = fields.map((field) => kotlinDecodeField(name, field)).join("\n");
 
   const serLines = fields
     .map((field) =>
@@ -581,6 +718,7 @@ function kotlinSerializerObject(name, fields) {
 
 function injectKotlinAdditionalProperties(source, openModelNames) {
   const serializers = [];
+  const injectedModelNames = new Set();
   const generatedModelNames = new Set([...source.matchAll(/^public data class (\w+) \(/gm)].map((entry) => entry[1]));
   const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
 
@@ -592,6 +730,7 @@ function injectKotlinAdditionalProperties(source, openModelNames) {
       }
 
       missingOpenModels.delete(name);
+      injectedModelNames.add(name);
       const fields = parseKotlinFields(inner);
       serializers.push(kotlinSerializerObject(name, fields));
 
@@ -603,6 +742,8 @@ function injectKotlinAdditionalProperties(source, openModelNames) {
   if (missingOpenModels.size > 0) {
     throw new Error(`Kotlin additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
   }
+
+  assertExpectedNativeOpenModels("Kotlin", injectedModelNames);
 
   return `${result}\n${serializers.join("\n")}\n`;
 }
@@ -668,7 +809,7 @@ async function generateKotlin(specDir, output, {openModelNames, mapModelNames}) 
 }
 
 function injectSwiftAdditionalProperties(source, openModelNames) {
-  let injected = 0;
+  const injectedModelNames = new Set();
   const generatedModelNames = new Set([...source.matchAll(/^public struct (\w+): Codable, Sendable \{$/gm)].map((entry) => entry[1]));
   const missingOpenModels = new Set([...openModelNames].filter((name) => generatedModelNames.has(name)));
 
@@ -710,11 +851,19 @@ function injectSwiftAdditionalProperties(source, openModelNames) {
       lines.push("    public init(from decoder: Decoder) throws {");
       lines.push("        let container = try decoder.container(keyedBy: CodingKeys.self)");
       for (const prop of props) {
-        lines.push(
-          prop.optional
-            ? `        self.${prop.name} = try container.decodeIfPresent(${prop.baseType}.self, forKey: .${prop.name})`
-            : `        self.${prop.name} = try container.decode(${prop.baseType}.self, forKey: .${prop.name})`,
-        );
+        if (name === "FulfillmentOption" && prop.name === "description") {
+          lines.push("        if let legacyDescription = try? container.decode(String.self, forKey: .description) {");
+          lines.push("            self.description = Description(html: nil, markdown: nil, plain: legacyDescription)");
+          lines.push("        } else {");
+          lines.push("            self.description = try container.decodeIfPresent(Description.self, forKey: .description)");
+          lines.push("        }");
+        } else {
+          lines.push(
+            prop.optional
+              ? `        self.${prop.name} = try container.decodeIfPresent(${prop.baseType}.self, forKey: .${prop.name})`
+              : `        self.${prop.name} = try container.decode(${prop.baseType}.self, forKey: .${prop.name})`,
+          );
+        }
       }
       lines.push("        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)");
       lines.push("        var extras: [String: JSONAny] = [:]");
@@ -739,7 +888,7 @@ function injectSwiftAdditionalProperties(source, openModelNames) {
       lines.push("        }");
       lines.push("    }");
 
-      injected += 1;
+      injectedModelNames.add(name);
       return `public struct ${name}: Codable, Sendable {\n${inner}${lines.join("\n")}\n}`;
     },
   );
@@ -747,6 +896,8 @@ function injectSwiftAdditionalProperties(source, openModelNames) {
   if (missingOpenModels.size > 0) {
     throw new Error(`Swift additionalProperties injection missed open models:\n${[...missingOpenModels].sort().join("\n")}`);
   }
+
+  assertExpectedNativeOpenModels("Swift", injectedModelNames);
 
   return result;
 }
@@ -840,6 +991,32 @@ function useTypescriptMapsForModels(source, mapModelNames) {
   return result;
 }
 
+function injectTypescriptLegacyDescriptionCompatibility(source) {
+  const marker = `    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }`;
+  const replacement = `    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        if (
+            ref === "FulfillmentOption" &&
+            getProps === jsonToJSProps &&
+            val !== null &&
+            typeof val === "object" &&
+            !Array.isArray(val) &&
+            typeof val.description === "string"
+        ) {
+            val = {...val, description: {plain: val.description}};
+        }
+        typ = typeMap[typ.ref];
+    }`;
+
+  if (!source.includes(marker)) {
+    throw new Error("TypeScript legacy fulfillment-description injection failed; quicktype output may have changed");
+  }
+  return source.replace(marker, replacement);
+}
+
 async function generateTypescript(specDir, output, {mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -857,9 +1034,10 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
     output,
   ]);
 
-  await normalizeGeneratedFile(output, (source) =>
-    useTypescriptMapsForModels(source.replace(/^type /gm, "export type "), mapModelNames),
-  );
+  await normalizeGeneratedFile(output, (source) => {
+    const withCompatibility = injectTypescriptLegacyDescriptionCompatibility(source);
+    return useTypescriptMapsForModels(withCompatibility.replace(/^type /gm, "export type "), mapModelNames);
+  });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_rename_map.mjs")]);
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_codecs.mjs")]);
@@ -885,6 +1063,14 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
     "false",
     indexOutput,
   ]);
+
+  // The rename spine is runtime-only; tsc follows its import but it must not leak
+  // into the public declaration graph or remain as a generated package artifact.
+  await removeUnreferencedInternalDeclaration({
+    declarationDir: path.dirname(declarationOutput),
+    internalDeclaration: path.join(path.dirname(output), "ProtocolRenameMap.d.ts"),
+    symbol: "ProtocolRenameMap",
+  });
 
   return declarationOutput;
 }

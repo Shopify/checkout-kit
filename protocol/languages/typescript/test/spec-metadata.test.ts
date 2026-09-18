@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {describe, test, expect} from 'vitest';
 
 import {
@@ -7,9 +8,31 @@ import {
   embeddedCheckoutMethods,
 } from '../src/generated/ProtocolNotifications';
 
+const {protocolVersion} = JSON.parse(
+  readFileSync(new URL('../../../source-lock.json', import.meta.url), 'utf8'),
+);
+
 describe('spec metadata', () => {
-  test('exposes the spec version', () => {
-    expect(SPEC_VERSION).toBe('2026-04-08');
+  test('exposes the pinned spec version', () => {
+    expect(SPEC_VERSION).toBe(protocolVersion);
+  });
+
+  // Catch skipped regeneration even when a native test still expects an older
+  // revision. These files are emitted by the same codegen commands used in CI.
+  test.each([
+    [
+      'Swift',
+      '../../swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
+      'public static let specVersion =',
+    ],
+    [
+      'Kotlin',
+      '../../kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt',
+      'public const val SPEC_VERSION: String =',
+    ],
+  ])('keeps the generated %s version aligned with the lockfile', (_language, file, declaration) => {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+    expect(source).toContain(`${declaration} "${protocolVersion}"`);
   });
 
   test('exposes the declared delegations', () => {
