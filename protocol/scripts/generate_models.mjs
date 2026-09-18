@@ -40,16 +40,16 @@ import {namespaceSwiftPayloadModels} from "./swift_namespacing.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
 const SERVICES_DIR = path.join(PROTOCOL_DIR, "services", "shopping");
-const SWIFT_JSON_HELPER_MARKER = "// MARK: - Encode/decode helpers";
+const SWIFT_JSON_HELPER_MARKER = "// MARK: - Helper functions for creating encoders and decoders";
 const SWIFT_JSON_HELPER_REPLACEMENT = `// MARK: - Encode/decode helpers
-// quicktype's JSONAny/JSONNull helper suffix is intentionally replaced here.
-// See ../JSONAny.swift for the maintained Swift implementation.
+// quicktype's encoder/decoder and JSONAny/JSONNull helper suffix is intentionally replaced here.
+// See ../JSONCoding.swift and ../JSONAny.swift for the maintained Swift implementations.
 `;
 // quicktype 23.2.6's Swift helper suffix for:
 // --lang swift --swift-5-support --access-level public --sendable
 // Guarding the whole suffix keeps this normalization fail-fast if quicktype fixes
 // or changes the helper block instead of silently clobbering future output.
-const QUICKTYPE_23_2_6_SWIFT_JSON_HELPER_SHA256 = "02b7721a424fdb5a586a773116130f0b273551f9bfd5d9111a1c700581ec5e7e";
+const QUICKTYPE_23_2_6_SWIFT_JSON_HELPER_SHA256 = "77d7a14bb3da060e2c1fb2bf9e5e844c5c6c441c41b79d0a7e4a7f1695bbe7ea";
 
 function usage() {
   console.error("Usage: generate_models.sh --lang <kotlin|swift|typescript> [--output <path>]");
@@ -796,9 +796,10 @@ async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
   await normalizeGeneratedFile(output, (source) => {
     // quicktype's --sendable option marks generated models as Sendable, but quicktype 23.2.6
     // still emits dynamic JSON helper types that are not fully Swift 6 concurrency-safe.
+    // Its decoder also rejects fractional ISO 8601 timestamps on older OS versions.
     // Drop only the exact helper suffix quicktype 23.2.6 emits. Maintained helper
-    // implementations live in UniversalCommerceProtocol/EmbeddedCheckoutProtocol/JSONAny.swift so Swift tooling can
-    // lint, format, and type-check them normally.
+    // implementations live in JSONCoding.swift and JSONAny.swift beside Generated/
+    // so Swift tooling can lint, format, and type-check them normally.
     const helperStart = source.indexOf(SWIFT_JSON_HELPER_MARKER);
     if (helperStart === -1) {
       throw new Error("Swift JSON helper normalization failed; quicktype output may have changed");
