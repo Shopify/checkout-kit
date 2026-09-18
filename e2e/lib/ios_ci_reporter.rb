@@ -1,44 +1,35 @@
 # frozen_string_literal: true
 
-require_relative "../../scripts/lib/json_http_client"
+require_relative "github_sticky_comment"
 require_relative "bitrise_pipeline_stages"
 
-# Publishes the macOS CI pipeline outcome to GitHub as one check run.
-#
-# Bitrise's own commit status covers the whole pipeline, which is the wrong shape for a
-# merge gate: a job the change does not need is skipped, and a skipped Bitrise workflow
-# is indistinguishable from one the pipeline never reached. Only the gate's own selection
-# separates the two, so the pipeline reports its own check instead.
 class IOSCIReporter
-  CHECK_NAME = "Checkout Kit iOS"
+  REPORT_NAME = "Checkout Kit iOS"
+  COMMENT_MARKER = "<!-- checkout-kit-ios-ci-report -->"
   PLAN_STAGE_NAME = "ci-ios-plan"
   WORKFLOW_PREFIX = "ci-ios-"
 
-  def initialize(job_ids:, selected_job_ids:, repository:, sha:, token:, stages:, pipeline_url: nil)
+  def initialize(job_ids:, selected_job_ids:, repository:, pr_number:, stages:, token: nil, pipeline_url: nil)
     @job_ids = job_ids
     @selected_job_ids = selected_job_ids
     @repository = repository
-    @sha = sha
+    @pr_number = pr_number
     @token = token
     @stages = stages
     @pipeline_url = pipeline_url
   end
 
   def publish!
-    client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
+    GitHubStickyComment.new(
+      repository: @repository,
+      pr_number: @pr_number,
+      token: @token,
+      marker: COMMENT_MARKER
+    ).publish!(comment_body)
   end
 
-  def check_run_payload
-    {
-      name: CHECK_NAME,
-      head_sha: @sha,
-      status: "completed",
-      conclusion: conclusion,
-      output: {
-        title: "#{CHECK_NAME} #{conclusion}",
-        summary: markdown_summary
-      }
-    }
+  def comment_body
+    [COMMENT_MARKER, markdown_summary].join("\n\n")
   end
 
   def conclusion
@@ -46,7 +37,7 @@ class IOSCIReporter
   end
 
   def markdown_summary
-    lines = ["## #{CHECK_NAME}", ""]
+    lines = ["## #{REPORT_NAME}", ""]
     lines.concat(plan_failure_lines)
     lines.concat(@job_ids.empty? ? [] : job_table)
     if @selected_job_ids.empty?
@@ -59,9 +50,6 @@ class IOSCIReporter
 
   private
 
-  # ci-ios-report is still running while it writes this check, so its own stage always
-  # looks unexecuted. Reasoning only over expected stages leaves it out, along with every
-  # job the gate deliberately skipped.
   def expected_stage_names
     [PLAN_STAGE_NAME] + @selected_job_ids.map { |id| "#{WORKFLOW_PREFIX}#{id}" }
   end
@@ -121,11 +109,4 @@ class IOSCIReporter
     ["", "[Pipeline build](#{@pipeline_url})"]
   end
 
-  def client
-    @client ||= JsonHttpClient.new(host: "api.github.com", error_label: "GitHub", default_headers: {"Accept" => "application/vnd.github+json"}) do |request|
-      raise "GitHub token is required" unless @token
-
-      request["Authorization"] = "Bearer #{@token}"
-    end
-  end
 end

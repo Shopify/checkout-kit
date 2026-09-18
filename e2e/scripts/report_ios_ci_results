@@ -11,7 +11,6 @@ require_relative "../lib/ios_ci_run_plan"
 options = {
   config: File.expand_path("../config/ios_ci.yml", __dir__),
   repository: ENV["GITHUB_REPOSITORY"] || "Shopify/checkout-kit",
-  sha: ENV["BITRISE_GIT_COMMIT"],
   pr_number: ENV["BITRISE_PULL_REQUEST"],
   token: GitHubToken.resolve,
   selected_jobs: ENV["CI_IOS_SELECTED_JOBS"],
@@ -22,7 +21,6 @@ options = {
 OptionParser.new do |opts|
   opts.on("--config PATH") { |path| options[:config] = path }
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
-  opts.on("--sha SHA") { |sha| options[:sha] = sha }
   opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
   opts.on("--selected-jobs LIST") { |list| options[:selected_jobs] = list }
   opts.on("--finished-workflows JSON") { |json| options[:finished_workflows] = json }
@@ -31,14 +29,11 @@ end.parse!
 
 pr_number = options[:pr_number].to_s.strip
 if pr_number.empty? || pr_number == "false" || pr_number == "0"
-  warn "No pull request associated with this build; skipping GitHub iOS CI report"
-  exit 0
-end
+  pr_number = nil
+else
+  abort "token is required" if options[:token].to_s.strip.empty?
 
-%i[sha token].each do |key|
-  next unless options[key].nil? || options[key].to_s.strip.empty?
-
-  abort "#{key} is required"
+  pr_number = Integer(pr_number)
 end
 
 run_plan = IOSCIRunPlan.load(options.fetch(:config))
@@ -53,10 +48,15 @@ reporter = IOSCIReporter.new(
   job_ids: run_plan.job_ids,
   selected_job_ids: options[:selected_jobs].to_s.split(",").map(&:strip).reject(&:empty?),
   repository: options.fetch(:repository),
-  sha: options.fetch(:sha),
+  pr_number: pr_number,
   token: options.fetch(:token),
   stages: stages,
   pipeline_url: options[:pipeline_url]
 )
-reporter.publish!
 puts reporter.markdown_summary
+if pr_number
+  reporter.publish!
+else
+  warn "No pull request associated with this build; skipping GitHub iOS CI report"
+end
+exit(reporter.conclusion == "success" ? 0 : 1)

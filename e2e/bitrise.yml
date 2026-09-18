@@ -122,8 +122,6 @@ pipelines:
           expression: '{{ enveq "CI_IOS_REACT_NATIVE_TEST_IOS" "true" }}'
         depends_on:
           - ci-ios-plan
-      # No run_if: this workflow is the required check, so it posts on every build,
-      # including one where ci-ios-plan selected nothing and every job was skipped.
       ci-ios-report:
         depends_on:
           - ci-ios-swift-package-tests
@@ -482,7 +480,7 @@ workflows:
     steps:
       - git-clone@8: {}
       - script@1:
-          title: Report iOS CI results to GitHub
+          title: Report iOS CI results
           timeout: 900
           no_output_timeout: 450
           inputs:
@@ -490,12 +488,11 @@ workflows:
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
                 e2e_export_github_token
-                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
                 # The report names the stages that failed from this roster. Bitrise documents no
                 # enum for its status field, so log the payload to confirm the literals it uses.
                 e2e_log "Pipeline stage roster"
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
-                e2e_log "Reporting iOS CI results to GitHub"
+                e2e_log "Reporting iOS CI results"
                 ruby e2e/scripts/report_ios_ci_results
 
   e2e-produce-browserstack-run-plan:
@@ -703,7 +700,7 @@ workflows:
           inputs:
             - artifact_sources: e2e-produce-browserstack-run-plan,e2e-execute-browserstack-run.*
       - script@1:
-          title: Report E2E results to GitHub
+          title: Report E2E results
           timeout: 900
           no_output_timeout: 450
           inputs:
@@ -711,13 +708,12 @@ workflows:
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
                 e2e_export_github_token
-                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
                 results_root="${E2E_BROWSERSTACK_RESULTS_DIR:-$BITRISE_DEPLOY_DIR/e2e/results}"
                 # The report names the stages that failed from this roster. Bitrise documents no
                 # enum for its status field, so log the payload to confirm the literals it uses.
                 e2e_log "Pipeline stage roster"
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
-                e2e_log "Reporting E2E results to GitHub"
+                e2e_log "Reporting E2E results"
                 e2e/scripts/report_e2e_results --results-root "$results_root"
 
   # Shared by every nightly pipeline. Runs on the cheap default Linux stack so a
