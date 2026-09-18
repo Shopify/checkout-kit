@@ -170,4 +170,24 @@ class CheckoutConfigurableTests: XCTestCase {
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
+
+    func testModifiersApplyToAnyConformerWithoutCasts() {
+        let fixture = ConfigurableFixture()
+            .backgroundColor(.red)
+            .appearance(.app(.dark))
+            .tintColor(.blue)
+            .title("Fixture checkout")
+            .closeButtonTintColor(.green)
+
+        XCTAssertEqual(fixture.configuration.backgroundColor, .red)
+        XCTAssertEqual(fixture.configuration.appearance, .app(.dark))
+        XCTAssertEqual(fixture.configuration.tintColor, .blue)
+        XCTAssertEqual(fixture.configuration.title, "Fixture checkout")
+        XCTAssertEqual(fixture.configuration.closeButtonTintColor, .green)
+        XCTAssertNotEqual(ShopifyCheckoutKit.configuration.title, "Fixture checkout")
+    }
+}
+
+private struct ConfigurableFixture: CheckoutConfigurable {
+    var configuration = Configuration()
 }
