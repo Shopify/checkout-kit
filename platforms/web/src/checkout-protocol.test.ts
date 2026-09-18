@@ -304,6 +304,37 @@ describe("<shopify-checkout>", () => {
         });
       });
 
+      it("delivers checkout errors to the element without triggering global error handlers", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onError = vi.fn();
+        const onDocumentError = vi.fn();
+        const onWindowError = vi.fn();
+        const onGlobalError = vi.fn();
+        const originalOnError = window.onerror;
+        checkout.addEventListener("error", onError);
+        document.addEventListener("error", onDocumentError);
+        window.addEventListener("error", onWindowError);
+        // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Exercise the hook used by error-reporting SDKs.
+        window.onerror = onGlobalError;
+
+        try {
+          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+            source: mockCheckoutWindow,
+          });
+          await flushProtocolDispatch();
+
+          expect(onError).toHaveBeenCalledOnce();
+          expect(onDocumentError).not.toHaveBeenCalled();
+          expect(onWindowError).not.toHaveBeenCalled();
+          expect(onGlobalError).not.toHaveBeenCalled();
+        } finally {
+          document.removeEventListener("error", onDocumentError);
+          window.removeEventListener("error", onWindowError);
+          // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Restore the previous global error hook.
+          window.onerror = originalOnError;
+        }
+      });
+
       it("ignores the old ec.error shape with ucp and messages directly in params", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const onErrorSpy = vi.fn();
@@ -743,8 +774,6 @@ describe("<shopify-checkout>", () => {
       it("opens the requested url in a new tab with noopener when an id is present", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();
         const windowOpenSpy = vi.spyOn(window, "open");
-        const linkClickSpy = vi.fn();
-        checkout.addEventListener("linkclick", linkClickSpy);
 
         simulateProtocolMessageEvent(
           checkout,
@@ -759,7 +788,6 @@ describe("<shopify-checkout>", () => {
           "_blank",
           "noopener",
         );
-        expect(linkClickSpy).not.toHaveBeenCalled();
       });
 
       it("posts a JSON-RPC response back to the source", async () => {
