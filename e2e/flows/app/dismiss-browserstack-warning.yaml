@@ -1,0 +1,14 @@
+appId: ${E2E_APP_ID}
+---
+# Android can cover the running sample with a compatibility warning for
+# BrowserStack's helper app. Dismiss only that known dialog during launch recovery.
+- runFlow:
+    when:
+      platform: android
+      visible: "^BrowserStack_v2$"
+    commands:
+      - runFlow:
+          when:
+            visible: "^This app was built for an older version of Android\\..*$"
+          commands:
+            - tapOn: "^OK$"

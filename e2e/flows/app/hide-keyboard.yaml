@@ -11,5 +11,32 @@ appId: ${E2E_APP_ID}
     when:
       platform: ios
     commands:
-      - tapOn: "^(Done|selected)$"
-      - waitForAnimationToEnd
+      # Toolbar can remain in the iOS 27 accessibility tree after dismissal.
+      # Use the delete key label: numeric keyboards expose Delete without an ID,
+      # while text keyboards expose delete. A successful dismissal ends retries.
+      # Prefer Done to avoid matching unrelated "selected" content, and look up
+      # the control again if stale coordinates make the first dismissal miss.
+      - repeat:
+          times: 2
+          while:
+            visible:
+              text: "^[Dd]elete$"
+          commands:
+            - waitForAnimationToEnd
+            - runFlow:
+                when:
+                  visible: "^Done$"
+                commands:
+                  - tapOn: "^Done$"
+            - runFlow:
+                when:
+                  visible:
+                    text: "^[Dd]elete$"
+                  notVisible: "^Done$"
+                commands:
+                  - tapOn: "^selected$"
+            - waitForAnimationToEnd
+      - extendedWaitUntil:
+          notVisible:
+            text: "^[Dd]elete$"
+          timeout: 5000

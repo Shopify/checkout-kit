@@ -5,13 +5,33 @@ appId: ${E2E_APP_ID}
       text: "${LOCATOR}"
     direction: DOWN
     centerElement: true
-- tapOn:
-    text: "${LOCATOR}"
-- waitForAnimationToEnd
-- inputText: "${TEXT_TO_INPUT}"
+# iOS can drop the first character after focusing a WebView field. Replace the
+# partial value on retry, and check the field while it still owns focus: checkout
+# can show the expected ZIP in a suggestion even when the input is incorrect.
+- evalScript: ${output.checkoutFieldMatches = false}
+- repeat:
+    times: 2
+    while:
+      true: ${!output.checkoutFieldMatches}
+    commands:
+      - tapOn:
+          text: "${LOCATOR}"
+      - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            text: "${LOCATOR}"
+            focused: true
+          timeout: 5000
+      - eraseText: 100
+      - inputText: "${TEXT_TO_INPUT}"
+      - copyTextFrom:
+          text: "${LOCATOR}"
+          focused: true
+      - evalScript: ${output.checkoutFieldMatches = maestro.copiedText === TEXT_TO_INPUT}
+- assertTrue:
+    condition: ${output.checkoutFieldMatches}
+    label: Verify the field contains the complete value
 - runFlow: dismiss-active-field.yaml
-- extendedWaitUntil:
-    visible: "^${TEXT_TO_INPUT}$"
 - runFlow:
     when:
       true: ${typeof DISMISS_SUGGESTIONS !== 'undefined' && DISMISS_SUGGESTIONS == 'true'}
