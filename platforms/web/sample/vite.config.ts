@@ -13,45 +13,30 @@ const { SERVER_HOST, PORT } = process.env;
 /**
  * The dev proxy URL (checkout-kit.shop.dev) is a shared dev proxy that
  * forwards to whichever worktree last ran `dev server`. Dev exposes no
- * env var for that target, so we read it from the generated nginx vhost
- * and bind Vite to it — keeping shop.dev pointed at the running server
- * in both roots and worktrees.
+ * env var for that target, so we read the host and port it forwards to
+ * from the generated nginx vhost and bind Vite to them — keeping
+ * shop.dev pointed at the running server in both roots and worktrees.
+ *
+ * The proxy terminates TLS and forwards plain HTTP, so the sample server
+ * stays HTTP. Serving HTTPS here fails the upstream handshake and the
+ * proxied URL answers 502.
  */
 const DEV_NGINX_CONFIG_PATH = "/opt/nginx/etc/projects/checkout-kit/nginx.conf";
 
-function readDevNginxProxyHost(): string | undefined {
+function readDevNginxProxyTarget(): { host: string; port: number } | undefined {
   try {
     const config = readFileSync(DEV_NGINX_CONFIG_PATH, "utf8");
-    return config.match(/proxy_pass\s+http:\/\/([^/:;\s]+):\d+;/)?.[1];
+    const [, host, port] = config.match(/proxy_pass\s+http:\/\/([^/:;\s]+):(\d+);/) ?? [];
+    return host && port ? { host, port: Number(port) } : undefined;
   } catch {
     return undefined;
   }
 }
 
-const devServerProxyHost = readDevNginxProxyHost();
-const devServerHost = devServerProxyHost ?? SERVER_HOST;
-const devServerStrictPort = devServerProxyHost != null;
-
-/**
- * Read the dev SSL certificates so the sample server can serve HTTPS
- * locally behind the shop.dev proxy.
- */
-function readDevHttpsConfig(): { key: Buffer; cert: Buffer } | undefined {
-  try {
-    return {
-      key: readFileSync(
-        resolve(process.env.HOME ?? "~", ".local/share/dev/ssl/shop.dev/star.shop.dev.key"),
-      ),
-      cert: readFileSync(
-        resolve(process.env.HOME ?? "~", ".local/share/dev/ssl/shop.dev/combined.cer"),
-      ),
-    };
-  } catch {
-    return undefined;
-  }
-}
-
-const httpsConfig = devServerHost ? readDevHttpsConfig() : undefined;
+const devServerProxyTarget = readDevNginxProxyTarget();
+const devServerHost = devServerProxyTarget?.host ?? SERVER_HOST;
+const devServerPort = devServerProxyTarget?.port ?? Number(PORT || 5173);
+const devServerStrictPort = devServerProxyTarget != null;
 
 export default defineConfig({
   define: {
@@ -80,10 +65,9 @@ export default defineConfig({
   },
   server: {
     host: devServerHost,
-    port: Number(PORT || 5173),
+    port: devServerPort,
     strictPort: devServerStrictPort,
     open: !devServerHost,
-    https: httpsConfig,
     cors: devServerHost ? { origin: "*" } : undefined,
     allowedHosts: [
       ...(devServerHost ? [".shop.dev", ".shopifycloud.tech"] : []),
