@@ -459,6 +459,17 @@ export class ShopifyCheckout
       }
     }
 
+    if (!checkoutWindow) {
+      this.#recorder?.recordError({
+        category: "navigation",
+        stage: "presentation",
+        code: "blocked",
+        retryable: false,
+        isRetry: false,
+      });
+      return;
+    }
+
     const abortController = new AbortController();
 
     //  Opens a dialog element to act as a scrim over the current window while the popup is open.
@@ -554,17 +565,7 @@ export class ShopifyCheckout
 
     this.#currentOpen = { controller: abortController };
     this.#checkoutWindow = checkoutWindow;
-    this.#navigationStartedAt = checkoutWindow && this.telemetry ? navigationStartedAt : undefined;
-
-    if (!checkoutWindow) {
-      this.#recorder?.recordError({
-        category: "navigation",
-        stage: "presentation",
-        code: "blocked",
-        retryable: false,
-        isRetry: false,
-      });
-    }
+    this.#navigationStartedAt = this.telemetry ? navigationStartedAt : undefined;
   }
 
   close(): void {
