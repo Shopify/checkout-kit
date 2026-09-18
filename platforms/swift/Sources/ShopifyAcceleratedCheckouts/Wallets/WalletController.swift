@@ -3,7 +3,8 @@ import SwiftUI
 
 @available(iOS 16.0, *)
 @MainActor
-class WalletController: ObservableObject {
+class WalletController: ObservableObject, CheckoutDelegate {
+    var eventHandlers: EventHandlers = .init()
     @Published var identifier: CheckoutIdentifier
     @Published var storefront: StorefrontAPIProtocol
     @Published var checkoutViewController: CheckoutViewController?
@@ -35,7 +36,7 @@ class WalletController: ObservableObject {
         }
     }
 
-    func present(url: URL, client: (any CheckoutCommunicationProtocol)?) async throws {
+    func present(url: URL) async throws {
         guard let topViewController = getTopViewController() else {
             throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "topViewController")
         }
@@ -43,8 +44,32 @@ class WalletController: ObservableObject {
             checkout: url,
             from: topViewController,
             entryPoint: .acceleratedCheckouts,
-            client: client
+            delegate: self
         )
+    }
+
+    func checkoutDidStart(_ event: CheckoutStartEvent) {
+        eventHandlers.checkoutDidStart?(event)
+    }
+
+    func checkoutDidUpdate(_ event: CheckoutUpdateEvent) {
+        eventHandlers.checkoutDidUpdate?(event)
+    }
+
+    func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        eventHandlers.checkoutDidComplete?(event)
+    }
+
+    func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
+        eventHandlers.checkoutAction?(link) ?? .open
+    }
+
+    func checkoutDidFail(_ event: CheckoutFailureEvent) {
+        eventHandlers.checkoutDidFail?(event.error)
+    }
+
+    func checkoutDidDismiss() {
+        eventHandlers.checkoutDidDismiss?()
     }
 
     func getTopViewController() -> UIViewController? {

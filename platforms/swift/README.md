@@ -72,7 +72,6 @@ Then add the products you need to your app target:
   name: "YourApp",
   dependencies: [
     "ShopifyCheckoutKit",
-    "EmbeddedCheckoutProtocol",
     "ShopifyAcceleratedCheckouts" // Only needed for accelerated checkout buttons.
   ]
 )
@@ -120,8 +119,8 @@ final class CartViewController: UIViewController, CheckoutDelegate {
     // The buyer dismissed checkout.
   }
 
-  func checkoutDidFail(error: CheckoutError) {
-    // Show an error state, retry with a new cart, or log the SDK error.
+  func checkoutDidFail(_ event: CheckoutFailureEvent) {
+    // Use event.error to show an error state, retry with a new cart, or log the SDK error.
   }
 }
 ```
@@ -150,8 +149,8 @@ struct CartView: View {
         .onDismiss {
           isPresented = false
         }
-        .onFail { error in
-          handleCheckoutError(error)
+        .onFail { event in
+          handleCheckoutError(event.error)
         }
         .ignoresSafeArea()
     }
@@ -302,7 +301,7 @@ must not include credentials, paths, queries, or fragments. For example,
 
 Rejected messages are dropped and logged at warning level. A rejected message is
 untrusted input, not evidence that checkout failed, so it does not fail a preload
-or call `.onFail` or `checkoutDidFail(error:)` during presentation. The message
+or call `.onFail` or `checkoutDidFail(_:)` during presentation. The message
 body is untrusted and is not logged.
 
 ### Current configuration
@@ -313,60 +312,72 @@ let configuration = ShopifyCheckoutKit.configuration
 
 ## Checkout lifecycle
 
-`CheckoutDelegate` reports native presentation outcomes:
+Use `CheckoutDelegate` with UIKit and view modifiers with SwiftUI. Start, update,
+and completion callbacks receive typed events with a `checkout` property containing
+the current `ShopifyCheckoutKit.Checkout` snapshot. Callbacks run on the main actor.
 
-- `checkoutDidDismiss()` fires when the buyer dismisses the checkout sheet.
-- `checkoutDidFail(error:)` fires when checkout cannot continue.
+| Event | UIKit delegate method | SwiftUI modifier |
+| --- | --- | --- |
+| Checkout is visible and ready for interaction. | `checkoutDidStart(_:)` | `.onStart` |
+| Checkout totals, line items, fulfillment, or messages change. | `checkoutDidUpdate(_:)` | `.onUpdate` |
+| Checkout completes. | `checkoutDidComplete(_:)` | `.onComplete` |
+| The buyer dismisses checkout. | `checkoutDidDismiss()` | `.onDismiss` |
+| Checkout cannot continue. | `checkoutDidFail(_:)` | `.onFail` |
 
-Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.
+UIKit delegates must implement `checkoutDidDismiss()` and `checkoutDidFail(_:)`.
+The other lifecycle methods have default implementations. When migrating from `checkoutDidFail(error:)`, implement
+`checkoutDidFail(_ event: CheckoutFailureEvent)` and read the error from `event.error`.
+
+Add the optional lifecycle methods to the UIKit delegate shown in [Present checkout](#uikit):
 
 ```swift
-import ShopifyCheckoutKit
-import EmbeddedCheckoutProtocol
-
-let client = CheckoutProtocol.Client()
-  .on(CheckoutProtocol.start) { checkout in
-    // Checkout is loaded and interactive.
-  }
-  .on(CheckoutProtocol.complete) { checkout in
-    // The order was completed. Clear or refresh the local cart.
-  }
-  .on(CheckoutProtocol.totalsChange) { checkout in
-    // React to updated totals.
-  }
-  .on(CheckoutProtocol.lineItemsChange) { checkout in
-    // React to line item changes.
-  }
-  .on(CheckoutProtocol.fulfillmentChange) { checkout in
-    // React to fulfillment changes.
-  }
-  .on(CheckoutProtocol.messagesChange) { checkout in
-    // React to checkout messages.
+extension CartViewController {
+  func checkoutDidStart(_ event: CheckoutStartEvent) {
+    // Checkout is ready. Read the initial state from event.checkout.
   }
 
-ShopifyCheckoutKit.present(
-  checkout: checkoutURL,
-  from: viewController,
-  delegate: checkoutDelegate,
-  client: client
-)
+  func checkoutDidUpdate(_ event: CheckoutUpdateEvent) {
+    // Update your UI from event.checkout.totals, lineItems, fulfillment, or messages.
+  }
+
+  func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+    // Record completion from event.checkout; reset the cart after dismissal.
+  }
+}
 ```
 
-For SwiftUI, attach the same client with `.connect(client)`.
+For SwiftUI, attach handlers directly to `ShopifyCheckout`:
 
 ```swift
 ShopifyCheckout(checkout: checkoutURL)
-  .connect(client)
+  .onStart { event in
+    // Checkout is ready. Read the initial state from event.checkout.
+  }
+  .onUpdate { event in
+    // Update your UI from event.checkout.totals, lineItems, fulfillment, or messages.
+  }
+  .onComplete { event in
+    // Record completion from event.checkout; reset the cart after dismissal.
+  }
+  .onDismiss {
+    // Clear or refresh the cart if checkout completed.
+  }
+  .onFail { event in
+    handleCheckoutError(event.error)
+  }
 ```
 
-The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout messages.
-See the [UCP shopping embedded protocol schema](../../protocol/services/shopping/embedded.openrpc.json) for method and payload definitions.
-Kit-owned link delegations such as `window.open` are offered to your connected protocol client first and fall back to Checkout Kit's default handler if unhandled. The default handler opens web links in `SFSafariViewController` and non-web links through `UIApplication.shared.open(_:)`.
+Update callbacks combine changes to totals, line items, fulfillment, and messages;
+identical checkout snapshots do not trigger another update. Read the fields your
+app needs from `event.checkout`.
+
+Completion does not dismiss checkout. Record completion, then clear or refresh the
+cart when checkout is dismissed so the confirmation page remains visible.
 
 ### Error handling
 
-A checkout lifecycle failure is delivered as a `CheckoutError` to `checkoutDidFail(error:)`
-or `.onFail`. It has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
+A checkout lifecycle failure is delivered as a `CheckoutFailureEvent` to `checkoutDidFail(_:)`
+or `.onFail`. Its `error` has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
 optional native `underlyingError`. Use the stable code for recovery and analytics. Use diagnostic
 text and underlying errors only for debugging and logging.
 
@@ -404,22 +415,14 @@ opening a browser fallback, and re-presenting checkout.
 
 #### Checkout session errors
 
-`ec.error` ends the embedded checkout session. Checkout Kit first forwards it to
-`CheckoutProtocol.error`, then reports one lifecycle failure for a presented checkout. The first
+`ec.error` ends the embedded checkout session. Checkout Kit reports one lifecycle
+failure through `checkoutDidFail(_:)` or `.onFail` for a presented checkout. The first
 unrecoverable error message determines the lifecycle code; if none is present, the code is
-`.unknown`. `ec.messages.change` reports checkout state only and never calls `.onFail` or
-`checkoutDidFail(error:)`.
+`.unknown`. Read the mapped error from `event.error`. In-checkout messages are
+available at `event.checkout.messages` in `checkoutDidUpdate(_:)` or `.onUpdate`;
+`ec.messages.change` never calls `.onFail` or `checkoutDidFail(_:)`.
 
-Add a protocol handler when you need the complete protocol payload; it runs before the lifecycle failure:
-
-```swift
-let client = CheckoutProtocol.Client()
-  .on(CheckoutProtocol.error) { terminalError in
-    // Inspect the complete ECP terminal payload for advanced diagnostics.
-  }
-```
-
-Failures during preload do not call `.onFail` or `checkoutDidFail(error:)`. Monitor them as
+Failures during preload do not call `.onFail` or `checkoutDidFail(_:)`. Monitor them as
 `PreloadState.failed` through the `CheckoutPreload` returned by `preload`, using `onStateChange`
 or its published `state`. A later `present` can load normally.
 
@@ -448,7 +451,21 @@ Some payment providers redirect buyers to external banking apps or web pages. Co
 
 See [Universal Links](documentation/universal_links.md) for setup and testing details.
 
-Checkout Kit opens delegated external HTTPS links in `SFSafariViewController` by default. Deep links, `mailto:`, and `tel:` links still open through `UIApplication.shared.open(_:)`. If you want delegated web links to leave your app, register a `CheckoutProtocol.windowOpen` handler and call `UIApplication.shared.open(_:)` yourself.
+Checkout Kit opens delegated external HTTP(S) links in `SFSafariViewController` by
+default. Deep links, `mailto:`, and `tel:` links open through `UIApplication.shared.open(_:)`.
+
+Use `checkoutAction(for:)` on your UIKit delegate or `.onLinkClick` in SwiftUI to
+customize this behavior. Return `.open` to use the default handling, `.handled`
+when your app handled the link, or `.cancel` to prevent it from opening. For example,
+to open delegated links through the system:
+
+```swift
+ShopifyCheckout(checkout: checkoutURL)
+  .onLinkClick { link in
+    UIApplication.shared.open(link.url)
+    return .handled
+  }
+```
 
 ## Geolocation and pickup points
 
@@ -530,13 +547,24 @@ AcceleratedCheckoutButtons(cartID: cartID)
   .onRenderStateChange { state in
     // loading, rendered, or error(reason:)
   }
+  .onStart { event in
+    // Checkout started: event.checkout.
+  }
+  .onUpdate { event in
+    // Buyer-visible checkout data changed: event.checkout.
+  }
+  .onComplete { event in
+    // Mark checkout as completed; reset the cart after dismissal.
+  }
+  .onLinkClick { link in
+    .open
+  }
   .onFail { error in
     // Handle checkout failure.
   }
   .onDismiss {
     // The buyer dismissed the accelerated checkout flow.
   }
-  .connect(client)
 ```
 
 You can also render buttons for a single product variant:
@@ -548,7 +576,7 @@ AcceleratedCheckoutButtons(
 )
 ```
 
-Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout completion and state changes. Clear or refresh the cart when `CheckoutProtocol.complete` fires to avoid reusing an expired cart ID.
+Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
 
 ## Troubleshooting
 
@@ -561,7 +589,7 @@ Use `CheckoutProtocol.Client` through `.connect(client)` to observe checkout com
 
 See [Samples](Samples/README.md):
 
-- `CheckoutKitSwiftDemo` demonstrates a Storefront API cart flow, buyer identity modes, Customer Account API, checkout presentation, and protocol events.
+- `CheckoutKitSwiftDemo` demonstrates a Storefront API cart flow, buyer identity modes, Customer Account API, checkout presentation, and checkout lifecycle events.
 - `ShopifyAcceleratedCheckoutsApp` demonstrates Shop Pay and Apple Pay accelerated checkout buttons.
 
 ## Contributing

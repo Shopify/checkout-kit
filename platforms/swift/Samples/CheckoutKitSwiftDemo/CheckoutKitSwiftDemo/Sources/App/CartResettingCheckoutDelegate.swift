@@ -4,17 +4,16 @@ import ShopifyCheckoutKit
 final class CartResettingCheckoutDelegate: CheckoutDelegate {
     private var completed = false
 
-    func markCompleted() {
+    func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        print("[CheckoutKitSwiftDemo] Checkout completed: \(event.checkout.order?.id ?? "unknown")")
         completed = true
     }
 
-    nonisolated func checkoutDidDismiss() {
-        MainActor.assumeIsolated {
-            guard completed else { return }
-            completed = false
-            CartManager.shared.resetCart()
-        }
+    func checkoutDidDismiss() {
+        guard completed else { return }
+        completed = false
+        CartManager.shared.resetCart()
     }
 
-    nonisolated func checkoutDidFail(error _: CheckoutError) {}
+    func checkoutDidFail(_: CheckoutFailureEvent) {}
 }
