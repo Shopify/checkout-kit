@@ -30,7 +30,7 @@ class IOSCIReporterTest < Minitest::Test
     )
   end
 
-  def test_the_check_name_is_the_literal_the_ruleset_pins
+  def test_the_check_name_identifies_the_ios_diagnostic
     assert_equal "Checkout Kit iOS", IOSCIReporter::CHECK_NAME
     assert_equal "Checkout Kit iOS", reporter(selected_job_ids: [], stages: stage_roster).check_run_payload.fetch(:name)
   end
@@ -72,11 +72,15 @@ class IOSCIReporterTest < Minitest::Test
 
   def test_an_absent_plan_stage_fails
     stages = stage_roster(workflow("ci-ios-swift-package-tests"))
-    report = reporter(selected_job_ids: ["swift-package-tests"], stages: stages)
 
-    assert_equal "failure", report.conclusion
-    assert_includes report.markdown_summary, "ci-ios-plan"
-    assert_includes report.markdown_summary, "did not run"
+    [[], ["swift-package-tests"]].each do |selected_job_ids|
+      report = reporter(selected_job_ids: selected_job_ids, stages: stages)
+
+      assert_equal "failure", report.conclusion
+      refute_predicate report, :nothing_to_report?
+      assert_includes report.markdown_summary, "ci-ios-plan"
+      assert_includes report.markdown_summary, "did not run"
+    end
   end
 
   def test_an_absent_selected_job_stage_fails
@@ -124,14 +128,27 @@ class IOSCIReporterTest < Minitest::Test
     report = reporter(selected_job_ids: [], stages: stages)
 
     assert_equal "failure", report.conclusion
+    refute_predicate report, :nothing_to_report?
     assert_includes report.markdown_summary, "ci-ios-plan"
+    assert_includes report.markdown_summary, "No iOS job was selected for this change."
   end
 
-  def test_no_selected_job_with_a_green_plan_passes
+  def test_no_selected_job_with_a_green_plan_posts_nothing
     report = reporter(selected_job_ids: [], stages: stage_roster(workflow("ci-ios-plan")))
 
     assert_equal "success", report.conclusion
-    assert_includes report.markdown_summary, "No iOS job ran for this change"
+    assert_predicate report, :nothing_to_report?
+    refute report.publish!
+  end
+
+  def test_a_selected_job_is_always_reported
+    stages = stage_roster(
+      workflow("ci-ios-plan"),
+      workflow("ci-ios-swift-package-tests")
+    )
+    report = reporter(selected_job_ids: ["swift-package-tests"], stages: stages)
+
+    refute_predicate report, :nothing_to_report?
   end
 
   # ci-ios-report is still running while it writes this check, so its own stage always
