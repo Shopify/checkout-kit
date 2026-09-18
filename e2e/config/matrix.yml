@@ -1,7 +1,7 @@
 version: 1
 changed_file_filters: .ci/changed-file-filters.yml
 tests_path: tests
-# Every run executes the whole tests folder and lets tags decide what runs there.
+# Every run executes the whole tests folder and uses tags to select coverage.
 # Applications append coverage that is not part of the shared defaults.
 tags:
   include:
