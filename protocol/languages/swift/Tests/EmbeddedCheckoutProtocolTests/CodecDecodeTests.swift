@@ -4,8 +4,9 @@ import Testing
 
 @Suite("Codec Decode Tests")
 struct CodecDecodeTests {
-    @Test func decodesNotification() throws {
-        let json = try fixtureString("notification")
+    @Test(arguments: ["notification", "notification_with_dates"])
+    func decodesNotification(fixture: String) throws {
+        let json = try fixtureString(fixture)
         let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
         guard case let .notification(method, params) = message else {
@@ -13,7 +14,7 @@ struct CodecDecodeTests {
             return
         }
         let checkout = try #require(
-            try? JSONDecoder().decode(JSONRPCCheckoutParams.self, from: params).checkout
+            try? newJSONDecoder().decode(EmbeddedCheckoutProtocol.JSONRPCCheckoutParams.self, from: params).checkout
         )
 
         #expect(method == "ec.start")
@@ -21,6 +22,7 @@ struct CodecDecodeTests {
         #expect(checkout.currency == "USD")
         #expect(checkout.lineItems.count == 1)
         #expect(checkout.lineItems[0].item.title == "Test Product")
+        #expect((checkout.expiresAt != nil) == (fixture == "notification_with_dates"))
     }
 
     @Test func decodesErrorNotification() throws {
@@ -34,7 +36,7 @@ struct CodecDecodeTests {
             return
         }
         let error = try #require(
-            try? JSONDecoder().decode(JSONRPCErrorParams.self, from: params).error
+            try? JSONDecoder().decode(EmbeddedCheckoutProtocol.JSONRPCErrorParams.self, from: params).error
         )
 
         #expect(method == "ec.error")

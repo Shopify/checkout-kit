@@ -107,8 +107,8 @@ function decodeClosure(entry) {
 }
 
 const conformances = [
-  ...eventPayloadTypes.map(type => `extension ${type}: EventPayload {}`),
-  ...responsePayloadTypes.map(type => `extension ${type}: ResponsePayload {}`),
+  ...eventPayloadTypes.map(type => `extension EmbeddedCheckoutProtocol.${type}: EventPayload {}`),
+  ...responsePayloadTypes.map(type => `extension EmbeddedCheckoutProtocol.${type}: ResponsePayload {}`),
 ].join('\n');
 
 const notificationCatalog = notifications
