@@ -42,6 +42,7 @@ appId: ${E2E_APP_ID}
                   preloadObservabilityEnabled: true
                   AppleLocale: en_US
                   AppleLanguages: "(en)"
+            - runFlow: dismiss-browserstack-warning.yaml
             - extendedWaitUntil:
                 visible:
                   id: ${E2E_READY_MARKER}
