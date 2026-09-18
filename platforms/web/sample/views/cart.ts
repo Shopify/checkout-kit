@@ -1,12 +1,25 @@
 import { cartLineTotalQuantity, type CartLine, type ProductVariantOption } from "../cart";
-import { quantityButton, type Refs } from "../dom";
-import { selectGeneratedCartUrl, type AppState } from "../state";
+import { quantityButton } from "../dom";
+import { selectGeneratedCartUrl } from "../state";
 
-function variantForLine(state: AppState, line: CartLine): ProductVariantOption | undefined {
+export interface CartViewRefs {
+  cartCount: HTMLElement;
+  selectedLines: HTMLElement;
+  cartSummaryText: HTMLElement;
+  generatedSrcLink: HTMLAnchorElement;
+}
+
+export interface CartViewState {
+  storefrontDomain: string;
+  variants: readonly ProductVariantOption[];
+  cartLines: readonly CartLine[];
+}
+
+function variantForLine(state: CartViewState, line: CartLine): ProductVariantOption | undefined {
   return state.variants.find((variant) => variant.id === line.variantId);
 }
 
-function renderGeneratedPermalink(refs: Refs, state: AppState): void {
+function renderGeneratedPermalink(refs: CartViewRefs, state: CartViewState): void {
   const url = selectGeneratedCartUrl(state);
   if (url) {
     refs.generatedSrcLink.href = url;
@@ -19,7 +32,7 @@ function renderGeneratedPermalink(refs: Refs, state: AppState): void {
   }
 }
 
-export function renderCart(refs: Refs, state: AppState): void {
+export function renderCart(refs: CartViewRefs, state: CartViewState): void {
   const lines = state.cartLines;
   const totalQuantity = cartLineTotalQuantity(lines);
 

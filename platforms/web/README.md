@@ -563,6 +563,40 @@ pnpm sample
 Then open the dev server URL and paste a valid checkout URL into the `src`
 field to try `open()` / `close()` / `focus()` and see the live event stream.
 
+## Accelerated Checkout Buttons (scaffold)
+
+The package also exports a `<shopify-accelerated-checkout-buttons>` element
+under the `@shopify/checkout-kit/wallets` subpath. This is an early scaffold
+— it renders an empty accessible placeholder and reflects configuration
+attributes but contains no wallet logic.
+
+```ts
+import '@shopify/checkout-kit/wallets';
+```
+
+The sample playground includes a dedicated **Wallets** view that mounts one
+`<shopify-accelerated-checkout-buttons>` element and exposes all of its
+configurable properties through a settings panel:
+
+- **Store domain**, **country**, and **language**.
+- **Purchase source** toggle — *Existing cart* (cart ID) or *Buy now*
+  (variant ID with optional selling plan ID). In Buy now mode, the storefront
+  product loader lets you pick a real variant ID from the store's
+  `products.json`.
+- **Wallet count** (0 = show all).
+
+Settings are persisted in local storage. Every property write and attribute
+reflection is logged in the event panel, and the element's current attribute
+state is shown in the center workspace. Future element events
+(e.g. `wallets.render`, `wallets.error`) are wired into the log
+automatically.
+
+```sh
+pnpm install
+pnpm sample
+# open http://localhost:5173/wallets.html
+```
+
 ## Contributing
 
 We welcome code contributions, feature requests, and reporting of issues.

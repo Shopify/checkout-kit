@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Same entry consumers use from npm (`import '@shopify/checkout-kit'`).
+      "@shopify/checkout-kit/wallets": resolve(here, "../src/wallets-index.ts"),
       "@shopify/checkout-kit": resolve(here, "../src/index.ts"),
     },
   },
@@ -24,6 +25,12 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2022",
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: resolve(here, "index.html"),
+        wallets: resolve(here, "wallets.html"),
+      },
+    },
   },
   server: {
     port: 5173,

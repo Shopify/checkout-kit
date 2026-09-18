@@ -3,6 +3,11 @@
   "dist/index.d.ts",
   "dist/index.js",
   "dist/index.js.map",
+  "dist/utils-CZDbgX48.js",
+  "dist/utils-CZDbgX48.js.map",
+  "dist/wallets.d.ts",
+  "dist/wallets.js",
+  "dist/wallets.js.map",
   "LICENSE",
   "package.json",
   "README.md"

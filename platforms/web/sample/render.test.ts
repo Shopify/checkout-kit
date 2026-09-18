@@ -84,6 +84,38 @@ describe("renderProducts", () => {
     expect(refs.cartStatus.hidden).toBe(true);
     expect(refs.cartStatus.dataset["tone"]).toBe("success");
   });
+
+  it("renders selectable cards in select mode without add-to-cart buttons", () => {
+    renderProducts(
+      refs,
+      state({ variants: [variant(), variant({ id: "456", title: "Second" })] }),
+      "select",
+    );
+    const cards = refs.productList.querySelectorAll(".product-card");
+    expect(cards).toHaveLength(2);
+    expect(refs.productList.querySelector("button[data-cart-action]")).toBeNull();
+    expect(cards[0]!.getAttribute("role")).toBe("button");
+  });
+
+  it("marks the selected variant in select mode", () => {
+    renderProducts(
+      refs,
+      state({ variants: [variant(), variant({ id: "456", title: "Second" })] }),
+      "select",
+      { selectedVariantId: "456" },
+    );
+    const selected = refs.productList.querySelectorAll(".product-card-selected");
+    expect(selected).toHaveLength(1);
+    expect((selected[0] as HTMLElement).dataset["variantId"]).toBe("456");
+    expect(selected[0]!.getAttribute("aria-current")).toBe("true");
+    expect(selected[0]!.querySelector(".selected-badge")).not.toBeNull();
+  });
+
+  it("shows unavailable in select mode for unavailable variants", () => {
+    renderProducts(refs, state({ variants: [variant({ available: false })] }), "select");
+    expect(refs.productList.querySelector(".unavailable")).not.toBeNull();
+    expect(refs.productList.querySelector(".product-card[role='button']")).toBeNull();
+  });
 });
 
 describe("renderCart", () => {

@@ -84,7 +84,10 @@ export function createStore(initial: AppState): Store {
   };
 }
 
-export function selectGeneratedCartUrl(state: AppState): string {
+export function selectGeneratedCartUrl(state: {
+  storefrontDomain: string;
+  cartLines: readonly CartLine[];
+}): string {
   if (state.cartLines.length === 0) return "";
 
   try {
