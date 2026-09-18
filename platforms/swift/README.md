@@ -120,8 +120,8 @@ final class CartViewController: UIViewController, CheckoutDelegate {
     // The buyer dismissed checkout.
   }
 
-  func checkoutDidFail(error: CheckoutError) {
-    // Show an error state, retry with a new cart, or log the SDK error.
+  func checkoutDidFail(_ event: CheckoutFailureEvent) {
+    // Use event.error to show an error state, retry with a new cart, or log the SDK error.
   }
 }
 ```
@@ -150,8 +150,8 @@ struct CartView: View {
         .onDismiss {
           isPresented = false
         }
-        .onFail { error in
-          handleCheckoutError(error)
+        .onFail { event in
+          handleCheckoutError(event.error)
         }
         .ignoresSafeArea()
     }
@@ -302,7 +302,7 @@ must not include credentials, paths, queries, or fragments. For example,
 
 Rejected messages are dropped and logged at warning level. A rejected message is
 untrusted input, not evidence that checkout failed, so it does not fail a preload
-or call `.onFail` or `checkoutDidFail(error:)` during presentation. The message
+or call `.onFail` or `checkoutDidFail(_:)` during presentation. The message
 body is untrusted and is not logged.
 
 ### Current configuration
@@ -316,7 +316,10 @@ let configuration = ShopifyCheckoutKit.configuration
 `CheckoutDelegate` reports native presentation outcomes:
 
 - `checkoutDidDismiss()` fires when the buyer dismisses the checkout sheet.
-- `checkoutDidFail(error:)` fires when checkout cannot continue.
+- `checkoutDidFail(_:)` fires when checkout cannot continue.
+
+Both callbacks are required. When migrating from `checkoutDidFail(error:)`, implement
+`checkoutDidFail(_ event: CheckoutFailureEvent)` and read the error from `event.error`.
 
 Typed checkout state, including completion, flows through `EmbeddedCheckoutProtocol`.
 
@@ -365,8 +368,8 @@ Kit-owned link delegations such as `window.open` are offered to your connected p
 
 ### Error handling
 
-A checkout lifecycle failure is delivered as a `CheckoutError` to `checkoutDidFail(error:)`
-or `.onFail`. It has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
+A checkout lifecycle failure is delivered as a `CheckoutFailureEvent` to `checkoutDidFail(_:)`
+or `.onFail`. Its `error` has a stable `code`, diagnostic `message`, optional `httpStatusCode`, and an
 optional native `underlyingError`. Use the stable code for recovery and analytics. Use diagnostic
 text and underlying errors only for debugging and logging.
 
@@ -408,7 +411,7 @@ opening a browser fallback, and re-presenting checkout.
 `CheckoutProtocol.error`, then reports one lifecycle failure for a presented checkout. The first
 unrecoverable error message determines the lifecycle code; if none is present, the code is
 `.unknown`. `ec.messages.change` reports checkout state only and never calls `.onFail` or
-`checkoutDidFail(error:)`.
+`checkoutDidFail(_:)`.
 
 Add a protocol handler when you need the complete protocol payload; it runs before the lifecycle failure:
 
@@ -419,7 +422,7 @@ let client = CheckoutProtocol.Client()
   }
 ```
 
-Failures during preload do not call `.onFail` or `checkoutDidFail(error:)`. Monitor them as
+Failures during preload do not call `.onFail` or `checkoutDidFail(_:)`. Monitor them as
 `PreloadState.failed` through the `CheckoutPreload` returned by `preload`, using `onStateChange`
 or its published `state`. A later `present` can load normally.
 

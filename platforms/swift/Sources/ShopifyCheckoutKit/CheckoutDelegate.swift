@@ -31,7 +31,4 @@ extension CheckoutDelegate {
     public func checkoutAction(for _: CheckoutLink) -> CheckoutLinkAction {
         .open
     }
-
-    public func checkoutDidDismiss() {}
-    public func checkoutDidFail(_: CheckoutFailureEvent) {}
 }

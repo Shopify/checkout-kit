@@ -2729,28 +2729,6 @@
           },
           {
             "kind": "Function",
-            "name": "checkoutDidDismiss",
-            "printedName": "checkoutDidDismiss()",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B8DelegatePAAE18checkoutDidDismissyyF",
-            "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE18checkoutDidDismissyyF",
-            "moduleName": "ShopifyCheckoutKit",
-            "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
-            "declAttributes": [
-              "Custom"
-            ],
-            "isFromExtension": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Function",
             "name": "checkoutDidFail",
             "printedName": "checkoutDidFail(_:)",
             "children": [
@@ -2776,34 +2754,6 @@
               "Custom"
             ],
             "reqNewWitnessTableEntry": true,
-            "funcSelfKind": "NonMutating"
-          },
-          {
-            "kind": "Function",
-            "name": "checkoutDidFail",
-            "printedName": "checkoutDidFail(_:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "CheckoutFailureEvent",
-                "printedName": "ShopifyCheckoutKit.CheckoutFailureEvent",
-                "usr": "s:18ShopifyCheckoutKit0B12FailureEventV"
-              }
-            ],
-            "declKind": "Func",
-            "usr": "s:18ShopifyCheckoutKit0B8DelegatePAAE15checkoutDidFailyyAA0B12FailureEventVF",
-            "mangledName": "$s18ShopifyCheckoutKit0B8DelegatePAAE15checkoutDidFailyyAA0B12FailureEventVF",
-            "moduleName": "ShopifyCheckoutKit",
-            "genericSig": "<Self where Self : ShopifyCheckoutKit.CheckoutDelegate>",
-            "declAttributes": [
-              "Custom"
-            ],
-            "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
           {
