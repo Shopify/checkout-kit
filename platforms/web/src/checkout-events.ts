@@ -53,7 +53,8 @@ export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorE
   declare type: "error";
 
   constructor(detail: ShopifyCheckoutErrorEventDetail) {
-    super("error", { detail, bubbles: true });
+    // Keep checkout failures out of window.onerror.
+    super("error", { detail, bubbles: false });
   }
 }
 
