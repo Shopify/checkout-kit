@@ -40,9 +40,9 @@ export function renderWalletsSettings(
   if (isBuynow) {
     element.variantId = state.variantId || undefined;
     element.sellingPlanId = state.sellingPlanId || undefined;
-    element.cartId = undefined;
   } else {
-    element.cartId = state.cartId || undefined;
+    // Cart mode: the element resolves the cart internally.
+    // Clear product-flow attributes.
     element.variantId = undefined;
     element.sellingPlanId = undefined;
   }

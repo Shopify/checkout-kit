@@ -15,7 +15,6 @@ function settings(overrides: Partial<WalletsSettingsSlice> = {}): WalletsSetting
     country: "",
     language: "",
     purchaseSource: "cart",
-    cartId: "",
     variantId: "",
     sellingPlanId: "",
     walletCount: 0,

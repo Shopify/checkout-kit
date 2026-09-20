@@ -6,7 +6,6 @@ export type WalletsPersistedSettings = {
   country: string;
   language: string;
   purchaseSource: WalletsPurchaseSource;
-  cartId: string;
   variantId: string;
   sellingPlanId: string;
   walletCount: number;
@@ -21,7 +20,6 @@ export const WALLETS_STORAGE_KEYS = {
   country: "checkout-kit:wallets-demo:country",
   language: "checkout-kit:wallets-demo:language",
   purchaseSource: "checkout-kit:wallets-demo:purchase-source",
-  cartId: "checkout-kit:wallets-demo:cart-id",
   variantId: "checkout-kit:wallets-demo:variant-id",
   sellingPlanId: "checkout-kit:wallets-demo:selling-plan-id",
   walletCount: "checkout-kit:wallets-demo:wallet-count",
@@ -65,7 +63,6 @@ export function loadWalletsPersistedSettings(): WalletsPersistedSettings {
     language: readStorage(WALLETS_STORAGE_KEYS.language),
     purchaseSource:
       readStorage(WALLETS_STORAGE_KEYS.purchaseSource) === "buynow" ? "buynow" : "cart",
-    cartId: readStorage(WALLETS_STORAGE_KEYS.cartId),
     variantId: readStorage(WALLETS_STORAGE_KEYS.variantId),
     sellingPlanId: readStorage(WALLETS_STORAGE_KEYS.sellingPlanId),
     walletCount: coerceWalletCount(readStorage(WALLETS_STORAGE_KEYS.walletCount)),
@@ -90,9 +87,6 @@ export function persistWalletsSettings(settings: Partial<WalletsPersistedSetting
   }
   if (settings.purchaseSource !== undefined) {
     writeStorage(WALLETS_STORAGE_KEYS.purchaseSource, settings.purchaseSource);
-  }
-  if (settings.cartId !== undefined) {
-    writeStorage(WALLETS_STORAGE_KEYS.cartId, settings.cartId);
   }
   if (settings.variantId !== undefined) {
     writeStorage(WALLETS_STORAGE_KEYS.variantId, settings.variantId);

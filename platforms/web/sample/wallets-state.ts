@@ -10,7 +10,6 @@ export type WalletsSettingsSlice = {
   country: string;
   language: string;
   purchaseSource: WalletsPurchaseSource;
-  cartId: string;
   variantId: string;
   sellingPlanId: string;
   walletCount: number;

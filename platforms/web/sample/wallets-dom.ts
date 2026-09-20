@@ -17,7 +17,6 @@ export type WalletsRefs = {
   layoutSelect: HTMLSelectElement;
   cartSourceFields: HTMLFieldSetElement;
   buynowSourceFields: HTMLFieldSetElement;
-  cartIdInput: HTMLInputElement;
   variantIdInput: HTMLInputElement;
   sellingPlanIdInput: HTMLInputElement;
 
@@ -71,7 +70,6 @@ export function queryWalletsRefs(): WalletsRefs {
     layoutSelect: $<HTMLSelectElement>("#wallets-layout"),
     cartSourceFields: $<HTMLFieldSetElement>("#wallets-cart-source"),
     buynowSourceFields: $<HTMLFieldSetElement>("#wallets-buynow-source"),
-    cartIdInput: $<HTMLInputElement>("#wallets-cart-id"),
     variantIdInput: $<HTMLInputElement>("#wallets-variant-id"),
     sellingPlanIdInput: $<HTMLInputElement>("#wallets-selling-plan-id"),
 

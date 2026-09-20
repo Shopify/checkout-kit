@@ -48,7 +48,6 @@ describe("loadWalletsPersistedSettings", () => {
       country: "",
       language: "",
       purchaseSource: "cart",
-      cartId: "",
       variantId: "",
       sellingPlanId: "",
       walletCount: 0,
@@ -64,7 +63,6 @@ describe("loadWalletsPersistedSettings", () => {
     localStorage.setItem(WALLETS_STORAGE_KEYS.country, "CA");
     localStorage.setItem(WALLETS_STORAGE_KEYS.language, "fr");
     localStorage.setItem(WALLETS_STORAGE_KEYS.purchaseSource, "buynow");
-    localStorage.setItem(WALLETS_STORAGE_KEYS.cartId, "gid://shopify/Cart/123");
     localStorage.setItem(WALLETS_STORAGE_KEYS.variantId, "gid://shopify/ProductVariant/456");
     localStorage.setItem(WALLETS_STORAGE_KEYS.sellingPlanId, "gid://shopify/SellingPlan/789");
     localStorage.setItem(WALLETS_STORAGE_KEYS.walletCount, "3");
@@ -78,7 +76,6 @@ describe("loadWalletsPersistedSettings", () => {
       country: "CA",
       language: "fr",
       purchaseSource: "buynow",
-      cartId: "gid://shopify/Cart/123",
       variantId: "gid://shopify/ProductVariant/456",
       sellingPlanId: "gid://shopify/SellingPlan/789",
       walletCount: 3,
@@ -102,7 +99,6 @@ describe("persistWalletsSettings", () => {
       country: "US",
       language: "en",
       purchaseSource: "buynow",
-      cartId: "gid://shopify/Cart/123",
       variantId: "gid://shopify/ProductVariant/456",
       sellingPlanId: "gid://shopify/SellingPlan/789",
       walletCount: 5,
@@ -118,7 +114,6 @@ describe("persistWalletsSettings", () => {
     expect(localStorage.getItem(WALLETS_STORAGE_KEYS.country)).toBe("US");
     expect(localStorage.getItem(WALLETS_STORAGE_KEYS.language)).toBe("en");
     expect(localStorage.getItem(WALLETS_STORAGE_KEYS.purchaseSource)).toBe("buynow");
-    expect(localStorage.getItem(WALLETS_STORAGE_KEYS.cartId)).toBe("gid://shopify/Cart/123");
     expect(localStorage.getItem(WALLETS_STORAGE_KEYS.variantId)).toBe(
       "gid://shopify/ProductVariant/456",
     );

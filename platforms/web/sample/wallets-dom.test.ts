@@ -20,7 +20,6 @@ describe("queryWalletsRefs", () => {
     expect(refs.layoutSelect.id).toBe("wallets-layout");
     expect(refs.cartSourceFields.id).toBe("wallets-cart-source");
     expect(refs.buynowSourceFields.id).toBe("wallets-buynow-source");
-    expect(refs.cartIdInput.id).toBe("wallets-cart-id");
     expect(refs.variantIdInput.id).toBe("wallets-variant-id");
     expect(refs.sellingPlanIdInput.id).toBe("wallets-selling-plan-id");
 

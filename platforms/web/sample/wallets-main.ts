@@ -103,7 +103,6 @@ function readSettings(settingsCollapsed: boolean, eventsCollapsed: boolean): Wal
     country: refs.countryInput.value,
     language: refs.languageInput.value,
     purchaseSource: currentPurchaseSource(),
-    cartId: refs.cartIdInput.value,
     variantId: refs.variantIdInput.value,
     sellingPlanId: refs.sellingPlanIdInput.value,
     walletCount: coerceWalletCount(refs.walletCountInput.value),
@@ -123,7 +122,6 @@ function hydrateForm(settings: WalletsPersistedSettings): void {
   refs.accessTokenInput.value = settings.storefrontAccessToken;
   refs.countryInput.value = settings.country;
   refs.languageInput.value = settings.language;
-  refs.cartIdInput.value = settings.cartId;
   refs.variantIdInput.value = settings.variantId;
   refs.sellingPlanIdInput.value = settings.sellingPlanId;
   refs.walletCountInput.value = String(settings.walletCount);
@@ -172,10 +170,8 @@ async function createCart(lines: readonly CartLine[]): Promise<void> {
       lines,
     );
 
-    // Write the GID into the cart-id input and push it to the element.
-    refs.cartIdInput.value = result.cartId;
-    captureSettings();
-
+    // Log the result. The cart ID is NOT set on the element — the
+    // production contract resolves carts internally via /api/cart.
     const successJson = JSON.stringify({ cartId: result.cartId }, null, 2);
     store.setState({
       log: [
@@ -204,7 +200,6 @@ function logPropertyWrites(settings: WalletsSettingsSlice): void {
     language: settings.language || undefined,
     walletCount: settings.walletCount,
     layout: settings.layout || undefined,
-    cartId: isBuynow ? undefined : settings.cartId || undefined,
     variantId: isBuynow ? settings.variantId || undefined : undefined,
     sellingPlanId: isBuynow ? settings.sellingPlanId || undefined : undefined,
   };
@@ -215,7 +210,6 @@ function logPropertyWrites(settings: WalletsSettingsSlice): void {
     language: element.getAttribute("language"),
     "wallet-count": element.getAttribute("wallet-count"),
     layout: element.getAttribute("layout"),
-    "cart-id": element.getAttribute("cart-id"),
     "variant-id": element.getAttribute("variant-id"),
     "selling-plan-id": element.getAttribute("selling-plan-id"),
   };
@@ -234,7 +228,6 @@ function recordEvent(type: string, detail: unknown): void {
         storeDomain: element.storeDomain,
         country: element.country,
         language: element.language,
-        cartId: element.cartId,
         variantId: element.variantId,
         sellingPlanId: element.sellingPlanId,
         walletCount: element.walletCount,

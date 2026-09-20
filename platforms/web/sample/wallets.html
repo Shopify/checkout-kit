@@ -83,16 +83,8 @@
           </fieldset>
 
           <fieldset id="wallets-cart-source" class="source-group source-fields">
-            <legend>Cart override</legend>
-            <label>
-              <span>Cart ID <small>(leave empty to use the product selection)</small></span>
-              <input
-                id="wallets-cart-id"
-                type="text"
-                name="cart-id"
-                placeholder="gid://shopify/Cart/..."
-              />
-            </label>
+            <legend>Cart</legend>
+            <p class="muted">Cart is resolved internally via <code>/api/cart</code>.</p>
           </fieldset>
 
           <fieldset id="wallets-buynow-source" class="source-group source-fields" hidden>
@@ -266,7 +258,7 @@
               <dd id="wallets-state-country">—</dd>
               <dt>language</dt>
               <dd id="wallets-state-language">—</dd>
-              <dt>cart-id</dt>
+              <dt>cart (internal)</dt>
               <dd id="wallets-state-cart-id">—</dd>
               <dt>variant-id</dt>
               <dd id="wallets-state-variant-id">—</dd>

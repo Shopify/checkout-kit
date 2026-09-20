@@ -10,9 +10,7 @@ export const WALLETS_SHELL = `
         <label><input type="radio" name="purchase-source" value="cart" checked /></label>
         <label><input type="radio" name="purchase-source" value="buynow" /></label>
       </fieldset>
-      <fieldset id="wallets-cart-source">
-        <input id="wallets-cart-id" type="text" name="cart-id" />
-      </fieldset>
+      <fieldset id="wallets-cart-source"></fieldset>
       <fieldset id="wallets-buynow-source" hidden>
         <input id="wallets-variant-id" type="text" name="variant-id" />
         <input id="wallets-selling-plan-id" type="text" name="selling-plan-id" />

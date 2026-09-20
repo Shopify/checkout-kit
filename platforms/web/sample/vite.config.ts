@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 
 import packageJson from "../package.json";
 
@@ -38,6 +38,67 @@ const devServerHost = devServerProxyTarget?.host ?? SERVER_HOST;
 const devServerPort = devServerProxyTarget?.port ?? Number(PORT || 5173);
 const devServerStrictPort = devServerProxyTarget != null;
 
+/**
+ * Vite plugin that serves `/wallets.js` as a browser-importable ESM
+ * module endpoint. Hydrogen (or any cross-origin consumer) loads:
+ *
+ *   <script type="module" src="https://checkout-kit.shop.dev/wallets.js">
+ *
+ * The endpoint transforms `src/wallets-index.ts` through Vite's full
+ * module pipeline (aliases, HMR, source maps) and returns it as
+ * `application/javascript` with CORS headers.
+ *
+ * The module self-registers `<shopify-accelerated-checkout-buttons>` as
+ * a side effect (idempotent). It privately loads the PW runtime from
+ * portable-wallets.shop.dev — Hydrogen never sees that URL.
+ */
+function walletsModuleEndpoint() {
+  const WALLETS_ENTRY = resolve(here, "../src/wallets-index.ts");
+  return {
+    name: "wallets-module-endpoint",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== "/wallets.js") return next();
+
+        // CORS — this endpoint is the cross-origin delivery boundary.
+        const origin = req.headers.origin;
+        if (origin) {
+          res.setHeader("Access-Control-Allow-Origin", origin);
+          res.setHeader("Vary", "Origin");
+        }
+
+        if (req.method === "OPTIONS") {
+          res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+          res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+          res.setHeader("Access-Control-Max-Age", "86400");
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+
+        // Transform the wallets entry through Vite's module graph.
+        server
+          .transformRequest(WALLETS_ENTRY)
+          .then((result) => {
+            if (!result) {
+              res.statusCode = 500;
+              res.end("Transform failed");
+              return undefined;
+            }
+            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+            res.setHeader("Cache-Control", "no-cache");
+            res.end(result.code);
+            return undefined;
+          })
+          .catch((err: Error) => {
+            res.statusCode = 500;
+            res.end(err.message);
+          });
+      });
+    },
+  };
+}
+
 export default defineConfig({
   define: {
     CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
@@ -51,6 +112,7 @@ export default defineConfig({
       "@shopify/checkout-kit": resolve(here, "../src/index.ts"),
     },
   },
+  plugins: [walletsModuleEndpoint()],
   build: {
     outDir: resolve(here, "dist"),
     emptyOutDir: true,
@@ -68,7 +130,9 @@ export default defineConfig({
     port: devServerPort,
     strictPort: devServerStrictPort,
     open: !devServerHost,
-    cors: devServerHost ? { origin: "*" } : undefined,
+    // CORS on all responses so cross-origin module imports resolve
+    // their sub-dependencies (/@fs/ paths) from the same server.
+    cors: true,
     allowedHosts: [
       ...(devServerHost ? [".shop.dev", ".shopifycloud.tech"] : []),
       ...(SERVER_HOST ? [SERVER_HOST] : []),

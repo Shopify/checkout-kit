@@ -27,7 +27,6 @@ function settings(overrides: Partial<WalletsSettingsSlice> = {}): WalletsSetting
     country: "US",
     language: "en",
     purchaseSource: "cart",
-    cartId: "",
     variantId: "",
     sellingPlanId: "",
     walletCount: 0,
@@ -101,17 +100,11 @@ describe("renderWalletsSettings", () => {
     expect(el.walletCount).toBe(3);
   });
 
-  it("sets cartId from state and clears variantId/sellingPlanId in cart mode", () => {
+  it("clears product attributes in cart mode", () => {
     const el = createElement();
-    renderWalletsSettings(
-      refs,
-      state({
-        purchaseSource: "cart",
-        cartId: "https://your-store.myshopify.com/cart/123:1",
-      }),
-      el,
-    );
-    expect(el.cartId).toBe("https://your-store.myshopify.com/cart/123:1");
+    el.variantId = "v1";
+    el.sellingPlanId = "sp1";
+    renderWalletsSettings(refs, state({ purchaseSource: "cart" }), el);
     expect(el.variantId).toBe("");
     expect(el.sellingPlanId).toBe("");
   });
@@ -146,7 +139,7 @@ describe("renderWalletsSettings", () => {
     expect(refs.createCartButton.disabled).toBe(true);
   });
 
-  it("sets variantId/sellingPlanId and clears cartId in buynow mode", () => {
+  it("sets variantId/sellingPlanId in buynow mode", () => {
     const el = createElement();
     renderWalletsSettings(
       refs,
@@ -157,7 +150,6 @@ describe("renderWalletsSettings", () => {
       }),
       el,
     );
-    expect(el.cartId).toBe("");
     expect(el.variantId).toBe("gid://shopify/ProductVariant/456");
     expect(el.sellingPlanId).toBe("gid://shopify/SellingPlan/789");
   });
@@ -180,23 +172,16 @@ describe("renderWalletsElement", () => {
     expect(refs.elementAttrs.textContent).toContain("your-store.myshopify.com");
   });
 
-  it("shows cartId from state in cart mode", () => {
+  it("shows internal resolution note in cart mode", () => {
     const el = createElement();
-    renderWalletsElement(
-      refs,
-      state({
-        purchaseSource: "cart",
-        cartId: "https://your-store.myshopify.com/cart/123:2",
-      }),
-      el,
-    );
-    expect(refs.stateCartId.textContent).toBe("https://your-store.myshopify.com/cart/123:2");
+    renderWalletsElement(refs, state({ purchaseSource: "cart" }), el);
+    expect(refs.stateCartId.textContent).toBe("(resolved internally)");
     expect(refs.stateVariantId.textContent).toBe("—");
   });
 
-  it("shows em dash for cartId when not in cart mode", () => {
+  it("shows em dash for cart state in buynow mode", () => {
     const el = createElement();
-    renderWalletsElement(refs, state({ purchaseSource: "buynow", cartId: "" }), el);
+    renderWalletsElement(refs, state({ purchaseSource: "buynow" }), el);
     expect(refs.stateCartId.textContent).toBe("—");
   });
 

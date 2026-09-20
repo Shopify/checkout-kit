@@ -8,4 +8,8 @@ declare global {
   }
 }
 
-customElements.define("shopify-accelerated-checkout-buttons", ShopifyAcceleratedCheckoutButtons);
+// Idempotent: guard against double-registration when loaded from
+// multiple sources (Vite dev + direct module URL, HMR reload, etc.).
+if (!customElements.get("shopify-accelerated-checkout-buttons")) {
+  customElements.define("shopify-accelerated-checkout-buttons", ShopifyAcceleratedCheckoutButtons);
+}

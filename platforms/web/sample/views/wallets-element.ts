@@ -9,7 +9,6 @@ function dumpAttributes(element: ShopifyAcceleratedCheckoutButtons): string {
     ["store-domain", element.getAttribute("store-domain")],
     ["country", element.getAttribute("country")],
     ["language", element.getAttribute("language")],
-    ["cart-id", element.getAttribute("cart-id")],
     ["variant-id", element.getAttribute("variant-id")],
     ["selling-plan-id", element.getAttribute("selling-plan-id")],
     ["wallet-count", element.getAttribute("wallet-count")],
@@ -32,7 +31,7 @@ export function renderWalletsElement(
   refs.stateCountry.textContent = formatValue(state.country);
   refs.stateLanguage.textContent = formatValue(state.language);
   refs.stateCartId.textContent = formatValue(
-    state.purchaseSource === "cart" ? state.cartId : undefined,
+    state.purchaseSource === "cart" ? "(resolved internally)" : undefined,
   );
   refs.stateVariantId.textContent = formatValue(
     state.purchaseSource === "buynow" ? state.variantId : undefined,
