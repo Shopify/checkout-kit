@@ -470,7 +470,11 @@ export class ShopifyCheckout
       }
     }
 
+    // The browser refused to open the window (typically a popup blocker, or
+    // `open()` was called outside a user gesture). There is no window to focus
+    // and nothing for the buyer to return to, so no overlay or session is created.
     if (!checkoutWindow) {
+      this.#logger.warn("checkout window could not be opened; the browser may have blocked it");
       this.#recorder?.recordError({
         category: "navigation",
         stage: "presentation",

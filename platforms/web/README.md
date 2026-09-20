@@ -352,6 +352,12 @@ Where the checkout is presented. Defaults to `"auto"`.
 > the host page away. The component falls back to `"auto"` if you set one,
 > and logs a warning at `log-level="warn"` or more verbose.
 
+> [!NOTE]
+> If the browser refuses to open the window (for example, a popup blocker, or
+> `open()` called outside a user gesture), `open()` does nothing: no overlay is
+> shown, no session starts, and `ec.close` does not fire. The component logs a
+> warning at `log-level="warn"` or more verbose.
+
 ### `appearance`
 
 Sets the checkout appearance preference. Defaults to `"storefront"`.

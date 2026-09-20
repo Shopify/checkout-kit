@@ -244,8 +244,9 @@ describe("<shopify-checkout>", () => {
         it("does not open an overlay or session when the popup is blocked", () => {
           POPUP_TARGETS.forEach((target) => {
             const telemetrySpy = vi.spyOn(mockTelemetry(), "recordError");
-            const checkout = renderCheckout({ target });
+            const checkout = renderCheckout({ target, "log-level": "warn" });
             const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null);
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
             const dialogShowModalSpy = vi
               .spyOn(HTMLDialogElement.prototype, "showModal")
               .mockImplementation(() => {});
@@ -258,6 +259,9 @@ describe("<shopify-checkout>", () => {
             expect(windowOpenSpy).toHaveBeenCalled();
             expect(dialogShowModalSpy).not.toHaveBeenCalled();
             expect(closeEventSpy).not.toHaveBeenCalled();
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+              "<shopify-checkout>: checkout window could not be opened; the browser may have blocked it",
+            );
             expect(telemetrySpy).toHaveBeenCalledWith({
               category: "navigation",
               stage: "presentation",
@@ -265,6 +269,36 @@ describe("<shopify-checkout>", () => {
               retryable: false,
               isRetry: false,
             });
+          });
+        });
+
+        it("can open successfully after a blocked popup", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            const mockWindow = createMockWindow();
+            const windowOpenSpy = vi
+              .spyOn(window, "open")
+              .mockReturnValueOnce(null)
+              .mockReturnValueOnce(mockWindow);
+            const dialogShowModalSpy = vi
+              .spyOn(HTMLDialogElement.prototype, "showModal")
+              .mockImplementation(() => {});
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("ec.close", closeEventSpy);
+
+            checkout.open();
+            expect(dialogShowModalSpy).not.toHaveBeenCalled();
+
+            checkout.open();
+            expect(windowOpenSpy).toHaveBeenCalledTimes(2);
+            expect(dialogShowModalSpy).toHaveBeenCalledTimes(1);
+
+            checkout.focus();
+            expect(mockWindow.focus).toHaveBeenCalled();
+
+            checkout.close();
+            expect(mockWindow.close).toHaveBeenCalled();
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
           });
         });
 
