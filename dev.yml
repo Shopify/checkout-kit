@@ -67,6 +67,7 @@ open:
   "GitHub": "https://github.com/Shopify/checkout-kit"
   "Issues": "https://github.com/Shopify/checkout-kit/issues"
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
+  dev: https://checkout-kit.shop.dev
 
 check:
   ejson-plaintext: ./scripts/ejson_lint
@@ -89,6 +90,10 @@ check:
   e2e-bitrise-validate: bitrise validate --config=e2e/bitrise.yml
 
 commands:
+  server:
+    desc: Start the web component playground at checkout-kit.shop.dev
+    run: cd platforms/web && pnpm sample
+
   # Repo-wide
   build:
     desc: Build all supported workspaces
