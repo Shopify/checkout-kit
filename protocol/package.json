@@ -23,7 +23,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^10.6.0",
     "quicktype": "23.2.6",
     "typescript": "^6.0.3",
