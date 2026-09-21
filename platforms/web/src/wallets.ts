@@ -88,6 +88,10 @@ export class ShopifyAcceleratedCheckoutButtons
   #generation = 0;
   #controller: AbortController | undefined;
   #startedKey: string | undefined;
+  #cartUpdateGeneration = 0;
+  #cartUpdatePending = false;
+  #cartUpdateScheduled = false;
+  #cartUpdateRunning = false;
 
   constructor() {
     super();
@@ -161,6 +165,7 @@ export class ShopifyAcceleratedCheckoutButtons
   set cartId(value: CartIdentifier | null | undefined) {
     const normalized = value ?? undefined;
     if (this.#cartId === normalized) return;
+    this.#invalidateCartUpdates();
     this.#cartId = normalized;
     this.#startedKey = undefined;
     this.#scheduleReconcile();
@@ -250,6 +255,78 @@ export class ShopifyAcceleratedCheckoutButtons
     this.#scheduleReconcile();
   }
 
+  cartUpdated(): void {
+    if (
+      !this.#connected ||
+      !this.cartId ||
+      this.#startedKey === undefined ||
+      !this.#adapter?.cartUpdated
+    ) {
+      return;
+    }
+
+    this.#cartUpdatePending = true;
+    this.#scheduleCartUpdate();
+  }
+
+  #scheduleCartUpdate(): void {
+    if (
+      this.#availability.state !== "ready" ||
+      this.#cartUpdateScheduled ||
+      this.#cartUpdateRunning
+    ) {
+      return;
+    }
+
+    const generation = this.#cartUpdateGeneration;
+    const cartId = this.cartId;
+    if (!cartId) return;
+
+    this.#cartUpdateScheduled = true;
+    queueMicrotask(() => {
+      this.#cartUpdateScheduled = false;
+      void this.#drainCartUpdates(generation, cartId);
+    });
+  }
+
+  async #drainCartUpdates(generation: number, cartId: CartIdentifier): Promise<void> {
+    if (this.#cartUpdateRunning || !this.#isCartUpdateCurrent(generation, cartId)) return;
+
+    this.#cartUpdateRunning = true;
+    this.#clearError();
+
+    try {
+      while (this.#cartUpdatePending && this.#isCartUpdateCurrent(generation, cartId)) {
+        this.#cartUpdatePending = false;
+        await this.#adapter?.cartUpdated?.();
+      }
+    } catch {
+      if (this.#isCartUpdateCurrent(generation, cartId)) {
+        this.#cartUpdatePending = false;
+        this.#setError({ phase: "interaction", code: "unexpected_error" });
+      }
+    } finally {
+      this.#cartUpdateRunning = false;
+      if (this.#cartUpdatePending) this.#scheduleCartUpdate();
+    }
+  }
+
+  #isCartUpdateCurrent(generation: number, cartId: CartIdentifier): boolean {
+    return (
+      this.#connected &&
+      this.#cartUpdateGeneration === generation &&
+      this.cartId === cartId &&
+      this.#startedKey !== undefined &&
+      this.#availability.state === "ready"
+    );
+  }
+
+  #invalidateCartUpdates(): void {
+    this.#cartUpdateGeneration += 1;
+    this.#cartUpdatePending = false;
+    this.#cartUpdateScheduled = false;
+  }
+
   #scheduleReconcile(): void {
     if (!this.#connected || this.#reconcileScheduled) return;
     this.#reconcileScheduled = true;
@@ -313,6 +390,7 @@ export class ShopifyAcceleratedCheckoutButtons
         this.#setAvailability(availability, false);
         this.#call(() => this.#callbacks?.ready?.());
         this.#dispatchRender(availability);
+        if (this.#cartUpdatePending) this.#scheduleCartUpdate();
         return;
       }
 
@@ -373,6 +451,7 @@ export class ShopifyAcceleratedCheckoutButtons
   }
 
   #stopAdapter(): void {
+    this.#invalidateCartUpdates();
     if (this.#startedKey === undefined && !this.#controller) return;
 
     this.#generation += 1;
