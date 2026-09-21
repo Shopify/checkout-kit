@@ -16,6 +16,7 @@ function fakeFactory(): PortableWalletsFactory {
     createCheckoutClient: vi.fn(),
     createDatasource: vi.fn(),
     createSurfaceAdapter: vi.fn(),
+    resolveCartContext: vi.fn(),
     createProductCart: vi.fn(),
   };
 }

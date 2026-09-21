@@ -32,6 +32,7 @@ import type {
   WalletConfig,
   WalletConfigureInput,
   WalletDisplayError,
+  WalletPurchaseContext,
   WalletRuntime,
   WalletsAttributes,
   WalletsProperties,
@@ -405,6 +406,12 @@ export class ShopifyAcceleratedCheckoutButtons
 
       /* ---- Create and wire child ---- */
 
+      const currentCartId = flow === "cart" ? await this.#runtime.resolveCurrentCart() : null;
+      if (generation !== this.#generation || this.#disconnected) return;
+      if (flow === "cart" && !currentCartId) {
+        throw new Error("No current cart is available");
+      }
+
       const checkoutClient = this.#runtime.createCheckoutClient({
         storeDomain,
         accessToken,
@@ -434,10 +441,22 @@ export class ShopifyAcceleratedCheckoutButtons
         createCart: activationCreateCart,
       });
 
-      const surfaceAdapter = this.#runtime.createSurfaceAdapter(() => null);
+      const surfaceAdapter = this.#runtime.createSurfaceAdapter(() => currentCartId);
+      let purchaseContext: WalletPurchaseContext;
+      if (flow === "cart") {
+        if (!currentCartId) throw new Error("No current cart is available");
+        purchaseContext = await this.#runtime.resolveCartContext({
+          checkoutClient,
+          cartId: currentCartId,
+        });
+      } else {
+        purchaseContext = this.#productContext(bootstrap);
+      }
+      if (generation !== this.#generation || this.#disconnected) return;
 
       const child = this.#buildChild(mode, bootstrap, accessToken, country);
 
+      child.updateContext(purchaseContext);
       child.setCheckoutClient(checkoutClient);
       child.setDatasource(datasource);
       child.setSurfaceAdapter(surfaceAdapter);
@@ -558,29 +577,28 @@ export class ShopifyAcceleratedCheckoutButtons
         JSON.stringify(this.#capWallets(bootstrap.walletConfigs)),
       );
       // (6) NO cart-id attribute. The datasource supplies identity.
-      if (this.sellingPlanId) child.setAttribute("has-selling-plan", "");
-      // (2) Check BOTH id match AND requiresShipping === true.
-      if (this.#variantRequiresShipping(bootstrap.variantParams))
-        child.setAttribute("requires-shipping", "");
     } else {
       if (bootstrap.recommendedWallet)
         child.setAttribute("recommended", JSON.stringify(bootstrap.recommendedWallet));
       if (bootstrap.fallbackWallet)
         child.setAttribute("fallback", JSON.stringify(bootstrap.fallbackWallet));
-      if (this.sellingPlanId) child.setAttribute("has-selling-plan", "");
-      if (this.#variantRequiresShipping(bootstrap.variantParams))
-        child.setAttribute("requires-shipping", "");
     }
 
     return child;
   }
 
-  // (2) Fixed: require BOTH an ID match AND requiresShipping === true.
-  #variantRequiresShipping(variantParams: WalletBootstrap["variantParams"]): boolean {
-    const vid = this.variantId;
-    if (!vid) return false;
-    const bareId = vid.replace(/^gid:\/\/shopify\/ProductVariant\//, "");
-    return variantParams.some((v) => (v.id === vid || v.id === bareId) && v.requiresShipping);
+  #productContext(bootstrap: WalletBootstrap): WalletPurchaseContext {
+    if (bootstrap.purchaseContext) return bootstrap.purchaseContext;
+
+    const variant = bootstrap.variantParams.find((candidate) => candidate.id === this.variantId);
+    if (!variant) {
+      throw new Error("Wallet bootstrap did not resolve the selected variant");
+    }
+
+    return {
+      requiresShipping: variant.requiresShipping,
+      hasSellingPlan: Boolean(this.sellingPlanId),
+    };
   }
 
   #capWallets(walletConfigs: WalletConfig[]): WalletConfig[] {

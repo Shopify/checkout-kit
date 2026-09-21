@@ -127,6 +127,7 @@ export interface WalletBootstrap {
   walletConfigs: WalletConfig[];
   recommendedWallet: WalletConfig | null;
   fallbackWallet: WalletConfig | null;
+  purchaseContext?: WalletPurchaseContext;
   variantParams: VariantParams[];
   enabledFlags: string[];
 }
@@ -148,6 +149,11 @@ export interface ChildRenderOutcome {
   failed: string[];
 }
 
+export interface WalletPurchaseContext {
+  requiresShipping: boolean;
+  hasSellingPlan: boolean;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Portable Wallets runtime boundary                                  */
 /* ------------------------------------------------------------------ */
@@ -163,6 +169,7 @@ export interface WalletChild extends HTMLElement {
    * until this fires.
    */
   setRenderOutcomeHandler(handler: (outcome: ChildRenderOutcome) => void): void;
+  updateContext(context: WalletPurchaseContext): void;
   checkoutChanged(change: { type: string }): void;
 }
 
@@ -198,6 +205,11 @@ export interface WalletRuntime {
   }): unknown;
 
   createSurfaceAdapter(cartTokenSource: () => string | null): unknown;
+
+  resolveCartContext(options: {
+    checkoutClient: unknown;
+    cartId: string;
+  }): Promise<WalletPurchaseContext>;
 
   /**
    * Runtime-owned cart resolver for the existing-cart flow. Fetches the

@@ -72,6 +72,7 @@ describe("fetchWalletConfigs", () => {
         recommendedWallet: { name: "shop_pay", wallet_params: {} },
         fallbackWallet: null,
         flags: ["flag_a"],
+        purchaseContext: { requiresShipping: true, hasSellingPlan: false },
         variantConfigs: [{ id: "42", requiresShipping: true }],
       }),
     );
@@ -93,8 +94,31 @@ describe("fetchWalletConfigs", () => {
     expect(result.walletConfigs).toHaveLength(1);
     expect(result.recommendedWallet?.name).toBe("shop_pay");
     expect(result.fallbackWallet).toBeNull();
+    expect(result.purchaseContext).toEqual({ requiresShipping: true, hasSellingPlan: false });
     expect(result.enabledFlags).toEqual(["flag_a"]);
     expect(result.variantParams[0]).toStrictEqual({ id: "42", requiresShipping: true });
+  });
+
+  it("rejects malformed purchase context instead of assuming digital", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      okResponse({
+        purchaseContext: { requiresShipping: undefined, hasSellingPlan: false },
+      }),
+    );
+
+    await expect(
+      fetchWalletConfigs(
+        {
+          storeDomain: "shop.myshopify.com",
+          accessToken: "token",
+          country: "US",
+          language: "en",
+          flow: "product",
+          variantId: "gid://shopify/ProductVariant/99",
+        },
+        fetcher,
+      ),
+    ).rejects.toThrow("invalid purchase context");
   });
 
   it("keeps variant ids as strings (avoids Number(gid) bug)", async () => {

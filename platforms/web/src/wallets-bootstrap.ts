@@ -1,4 +1,9 @@
-import type { WalletBootstrap, WalletConfig, VariantParams } from "./wallets.types";
+import type {
+  WalletBootstrap,
+  WalletConfig,
+  WalletPurchaseContext,
+  VariantParams,
+} from "./wallets.types";
 
 export interface FetchWalletConfigsRequest {
   storeDomain: string;
@@ -20,6 +25,7 @@ interface WalletConfigsResponse {
   recommendedWallet?: WalletConfig | null;
   fallbackWallet?: WalletConfig | null;
   flags?: string[];
+  purchaseContext?: WalletPurchaseContext | null;
   variantConfigs?: Array<{ id: string; requiresShipping: boolean }>;
 }
 
@@ -88,6 +94,7 @@ function mapResponse(data: WalletConfigsResponse): WalletBootstrap {
     walletConfigs: data.walletConfigs ?? [],
     recommendedWallet: data.recommendedWallet ?? null,
     fallbackWallet: data.fallbackWallet ?? null,
+    purchaseContext: mapPurchaseContext(data.purchaseContext),
     // Use string ids (avoid Number(gid) — the PR bug).
     variantParams: (data.variantConfigs ?? []).map(
       (v): VariantParams => ({
@@ -97,6 +104,20 @@ function mapResponse(data: WalletConfigsResponse): WalletBootstrap {
     ),
     enabledFlags: data.flags ?? [],
   };
+}
+
+function mapPurchaseContext(
+  context: WalletPurchaseContext | null | undefined,
+): WalletPurchaseContext | undefined {
+  if (context == null) return undefined;
+  if (
+    typeof context.requiresShipping !== "boolean" ||
+    typeof context.hasSellingPlan !== "boolean"
+  ) {
+    throw new Error("[checkout-kit] wallet bootstrap returned invalid purchase context");
+  }
+
+  return context;
 }
 
 function normalizeHost(storeDomain: string): string {

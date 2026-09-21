@@ -1,4 +1,9 @@
-import type { ChildRenderOutcome, WalletChild, WalletRuntime } from "./wallets.types";
+import type {
+  ChildRenderOutcome,
+  WalletChild,
+  WalletPurchaseContext,
+  WalletRuntime,
+} from "./wallets.types";
 import {
   getPortableWalletsRuntime,
   type PortableWalletsFactory,
@@ -67,6 +72,13 @@ export class DefaultWalletRuntime implements WalletRuntime {
     return this.#f().createSurfaceAdapter(cartTokenSource);
   }
 
+  resolveCartContext(options: {
+    checkoutClient: unknown;
+    cartId: string;
+  }): Promise<WalletPurchaseContext> {
+    return this.#f().resolveCartContext(options);
+  }
+
   async resolveCurrentCart(): Promise<string | null> {
     try {
       const response = await fetch("/api/cart", {
@@ -91,6 +103,11 @@ export class FakeWalletRuntime implements WalletRuntime {
   datasources: unknown[] = [];
   surfaceAdapters: unknown[] = [];
   currentCartResult: string | null = "gid://shopify/Cart/fake-current-cart";
+  cartContextResult: WalletPurchaseContext = {
+    requiresShipping: true,
+    hasSellingPlan: false,
+  };
+  cartContextRequests: Array<{ checkoutClient: unknown; cartId: string }> = [];
   /** Tracks how many times ensureLoaded was called (PW import gate). */
   ensureLoadedCalls = 0;
 
@@ -132,6 +149,14 @@ export class FakeWalletRuntime implements WalletRuntime {
     return adapter;
   }
 
+  async resolveCartContext(options: {
+    checkoutClient: unknown;
+    cartId: string;
+  }): Promise<WalletPurchaseContext> {
+    this.cartContextRequests.push(options);
+    return this.cartContextResult;
+  }
+
   async resolveCurrentCart(): Promise<string | null> {
     return this.currentCartResult;
   }
@@ -149,6 +174,7 @@ export class FakeWalletChild extends HTMLElement {
   errorHandler: ((code: string, message: string) => void) | null = null;
   renderOutcomeHandler: ((outcome: ChildRenderOutcome) => void) | null = null;
   changes: Array<{ type: string }> = [];
+  contexts: WalletPurchaseContext[] = [];
 
   constructor(mode: "single" | "multi" = "multi") {
     super();
@@ -169,6 +195,9 @@ export class FakeWalletChild extends HTMLElement {
   }
   setRenderOutcomeHandler(handler: (outcome: ChildRenderOutcome) => void): void {
     this.renderOutcomeHandler = handler;
+  }
+  updateContext(context: WalletPurchaseContext): void {
+    this.contexts.push(context);
   }
   checkoutChanged(change: { type: string }): void {
     this.changes.push(change);

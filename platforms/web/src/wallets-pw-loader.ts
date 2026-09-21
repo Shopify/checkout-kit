@@ -29,6 +29,10 @@ export interface PortableWalletsFactory {
     createCart?: (wallet: string) => Promise<string>;
   }): unknown;
   createSurfaceAdapter(source: () => string | null): unknown;
+  resolveCartContext(options: {
+    checkoutClient: unknown;
+    cartId: string;
+  }): Promise<{ requiresShipping: boolean; hasSellingPlan: boolean }>;
   createProductCart(options: {
     signal: AbortSignal;
     getCart: (wallet: string) => Promise<string>;

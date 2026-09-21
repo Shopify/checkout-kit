@@ -131,6 +131,15 @@ describe("runtime-owned cart paths", () => {
     expect(ds.createCart).toBeDefined();
     const cartId = await ds.createCart!("shop_pay");
     expect(cartId).toBe("gid://shopify/Cart/resolved-from-api");
+    expect(runtime.cartContextRequests).toStrictEqual([
+      {
+        checkoutClient: runtime.checkoutClients[0],
+        cartId: "gid://shopify/Cart/resolved-from-api",
+      },
+    ]);
+    expect(runtime.lastChild!.contexts).toStrictEqual([
+      { requiresShipping: true, hasSellingPlan: false },
+    ]);
     expect(element.hasAttribute("cart-id")).toBe(false);
   });
 
@@ -278,7 +287,13 @@ describe("child render outcome", () => {
     const firstFetch = new Promise<WalletBootstrap>((r) => {
       resolveFirst = r;
     });
-    const fetcher = vi.fn().mockReturnValueOnce(firstFetch).mockResolvedValueOnce(BOOTSTRAP);
+    const fetcher = vi
+      .fn()
+      .mockReturnValueOnce(firstFetch)
+      .mockResolvedValueOnce({
+        ...BOOTSTRAP,
+        variantParams: [{ id: "99", requiresShipping: true }],
+      });
     const runtime = new FakeWalletRuntime();
 
     const { element } = mount(
@@ -545,7 +560,64 @@ describe("regressions", () => {
     ctx.element.configure({ storeDomain: "s.myshopify.com", country: "US", accessToken: "tok" });
     await tick();
 
+    expect(runtime.lastChild!.contexts).toStrictEqual([
+      { requiresShipping: false, hasSellingPlan: false },
+    ]);
     expect(runtime.lastChild?.hasAttribute("requires-shipping")).toBe(false);
+  });
+
+  it("uses the authoritative selected-purchase context from bootstrap", async () => {
+    const bootstrap = {
+      ...BOOTSTRAP,
+      purchaseContext: { requiresShipping: false, hasSellingPlan: true },
+      variantParams: [{ id: "42", requiresShipping: true }],
+    };
+    const fetcher = vi.fn().mockResolvedValue(bootstrap);
+    const runtime = new FakeWalletRuntime();
+    const ctx = create(runtime, fetcher);
+    document.body.appendChild(ctx.element);
+    ctx.element.variantId = "42";
+    ctx.element.configure({ storeDomain: "s.myshopify.com", country: "US", accessToken: "tok" });
+    await tick();
+
+    expect(runtime.lastChild!.contexts).toStrictEqual([
+      { requiresShipping: false, hasSellingPlan: true },
+    ]);
+  });
+
+  it("forwards selling-plan context without reflecting private PW attributes", async () => {
+    const runtime = new FakeWalletRuntime();
+    const { element } = mount(
+      {
+        storeDomain: "s.myshopify.com",
+        country: "US",
+        variantId: "42",
+        sellingPlanId: "gid://shopify/SellingPlan/1",
+      },
+      runtime,
+    );
+    await tick();
+
+    expect(runtime.lastChild!.contexts).toStrictEqual([
+      { requiresShipping: true, hasSellingPlan: true },
+    ]);
+    expect(element.hasAttribute("requires-shipping")).toBe(false);
+    expect(element.hasAttribute("has-selling-plan")).toBe(false);
+  });
+
+  it("forwards authoritative mixed-cart context before mounting PW", async () => {
+    const runtime = new FakeWalletRuntime();
+    runtime.cartContextResult = {
+      requiresShipping: true,
+      hasSellingPlan: true,
+    };
+
+    mount({ storeDomain: "s.myshopify.com", country: "US" }, runtime);
+    await tick();
+
+    expect(runtime.lastChild!.contexts).toStrictEqual([
+      { requiresShipping: true, hasSellingPlan: true },
+    ]);
   });
 
   // (3) createCart is read at invocation time, not captured during reconcile.
@@ -581,8 +653,8 @@ describe("regressions", () => {
     expect(ctx.element.hasAttribute("cart-id")).toBe(false);
   });
 
-  // (5) Cart is not resolved during initial render / reconcile.
-  it("does not call resolveCurrentCart during reconcile", async () => {
+  // (5) Current-cart context is resolved before PW can render wallet buttons.
+  it("resolves the current cart during reconcile", async () => {
     const runtime = new FakeWalletRuntime();
     const spy = vi.spyOn(runtime, "resolveCurrentCart");
     const ctx = create(runtime);
@@ -590,8 +662,8 @@ describe("regressions", () => {
     ctx.element.configure({ storeDomain: "s.myshopify.com", country: "US", accessToken: "tok" });
     await tick();
 
-    // resolveCurrentCart is deferred to the datasource, not called in reconcile.
-    expect(spy).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledOnce();
+    expect(runtime.cartContextRequests).toHaveLength(1);
   });
 
   // (6) PW children are mounted in shadow DOM, not the light DOM.
@@ -708,7 +780,13 @@ describe("PW import gate", () => {
     const firstFetch = new Promise<typeof BOOTSTRAP>((r) => {
       resolveFirst = r;
     });
-    const fetcher = vi.fn().mockReturnValueOnce(firstFetch).mockResolvedValueOnce(BOOTSTRAP);
+    const fetcher = vi
+      .fn()
+      .mockReturnValueOnce(firstFetch)
+      .mockResolvedValueOnce({
+        ...BOOTSTRAP,
+        variantParams: [{ id: "99", requiresShipping: true }],
+      });
     const runtime = new FakeWalletRuntime();
     const ctx = create(runtime, fetcher);
     document.body.appendChild(ctx.element);
