@@ -28,13 +28,21 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./wallets": {
+      "types": "./dist/wallets.d.ts",
+      "import": "./dist/wallets.js",
+      "default": "./dist/wallets.js"
+    },
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
   "sideEffects": [
     "./src/index.ts",
     "./src/checkout-web-component.ts",
-    "./dist/index.js"
+    "./src/wallets-index.ts",
+    "./src/wallets-web-component.ts",
+    "./dist/index.js",
+    "./dist/wallets.js"
   ],
   "files": [
     "LICENSE",
