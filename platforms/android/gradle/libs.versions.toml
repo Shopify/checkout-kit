@@ -19,7 +19,7 @@ kotlinxSerializationJsonDemo = "1.11.0"
 ksp = "2.3.11"
 mockitoCore = "5.23.0"
 mockitoKotlin = "6.3.0"
-robolectric = "4.16.1"
+robolectric = "4.17"
 timber = "5.0.1"
 tink = "1.23.0"
 
