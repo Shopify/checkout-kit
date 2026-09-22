@@ -72,6 +72,7 @@
     "format:check": "oxfmt --check src sample '!sample/dist/**'",
     "typecheck": "tsc --noEmit",
     "sample": "vite --config sample/vite.config.ts",
+    "sample:wallets": "vite --config sample/wallets-lab.vite.config.ts",
     "sample:build": "vite build --config sample/vite.config.ts",
     "sample:preview": "vite preview --config sample/vite.config.ts",
     "sample:typecheck": "tsc --noEmit -p sample/tsconfig.json",

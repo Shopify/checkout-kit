@@ -11,6 +11,14 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`.
 
+Run the deterministic wallet lab on its isolated local port with:
+
+```bash
+pnpm sample:wallets
+```
+
+The lab opens at `http://127.0.0.1:4178/wallets.html`. It intentionally does not bind `checkout-kit.shop.dev`, because Hydrogen uses that origin for the integrated `/wallets.js` runtime.
+
 ## What the demo shows
 
 The default flow highlights a multi-item cart use case:

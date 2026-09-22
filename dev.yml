@@ -94,6 +94,10 @@ commands:
     desc: Start the web component playground at checkout-kit.shop.dev
     run: cd platforms/web && pnpm sample
 
+  wallets-lab:
+    desc: Start the deterministic wallet lab without replacing the Hydrogen runtime
+    run: cd platforms/web && pnpm sample:wallets
+
   # Repo-wide
   build:
     desc: Build all supported workspaces
