@@ -38,6 +38,20 @@ You can also choose **Use existing checkout source** in Settings. In that mode, 
 
 The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is mostly the overlay scrim while checkout is open in a separate window or tab.
 
+## Accelerated Checkout Lab
+
+Open `/wallets.html` to exercise `<shopify-accelerated-checkout-buttons>` without Core, Portable Wallets, provider SDKs, or storefront credentials. The lab uses a deterministic private adapter and supports:
+
+- Product and existing-cart flows
+- `configure()`, JavaScript property, and attribute configuration
+- Loading, ready, partial success, unavailable, and failure scenarios
+- A manually held loading state for skeleton development
+- Existing-cart refresh bursts and refresh failures
+- Disconnect and remount behavior
+- Callback, DOM event, and adapter lifecycle inspection
+
+Fixture cart references remain property-only and are never included in the runtime timeline. The buttons are non-payment fixtures. Activating a product-flow fixture button invokes the local `getCart` callback but does not contact Shopify or a payment provider.
+
 ## Troubleshooting product loading
 
 The demo relies on the public `/products.json` endpoint. If product loading fails:

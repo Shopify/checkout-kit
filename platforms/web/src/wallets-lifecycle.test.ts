@@ -107,6 +107,7 @@ describe("accelerated checkout lifecycle", () => {
         walletCount: 2,
         layout: "vertical",
         getCart,
+        mount: expect.any(HTMLElement),
         signal: expect.any(AbortSignal),
       }),
     );
@@ -120,9 +121,58 @@ describe("accelerated checkout lifecycle", () => {
       failed: ["paypal"],
     });
     expect(observations).toEqual(["callback:ready", "event:ready"]);
-    expect(element.shadowRoot?.querySelector('[part="root"]')?.getAttribute("data-state")).toBe(
-      "ready",
-    );
+    const root = element.shadowRoot?.querySelector<HTMLElement>('[part="root"]');
+    expect(root?.getAttribute("data-state")).toBe("ready");
+    expect(root?.getAttribute("aria-busy")).toBe("false");
+  });
+
+  it("provides a stable private mount and clears adapter content on disconnect", async () => {
+    const adapter = {
+      start: vi.fn(async (request: WalletAdapterRequest) => {
+        const marker = document.createElement("button");
+        marker.textContent = "Fixture wallet";
+        request.mount.append(marker);
+        return { status: "ready" as const, wallets: ["fixture_wallet"] };
+      }),
+      stop: vi.fn(),
+    } satisfies WalletAdapter;
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    configureProduct(element);
+    document.body.append(element);
+    await vi.waitFor(() => expect(element.availability.state).toBe("ready"));
+
+    const root = element.shadowRoot?.querySelector<HTMLElement>('[part="root"]');
+    expect(adapter.start.mock.calls[0]![0].mount).toBe(root);
+    expect(root?.textContent).toContain("Fixture wallet");
+
+    element.remove();
+
+    expect(adapter.stop).toHaveBeenCalledOnce();
+    expect(root?.childElementCount).toBe(0);
+    expect(root?.getAttribute("data-state")).toBe("loading");
+    expect(root?.getAttribute("aria-busy")).toBe("true");
+  });
+
+  it("clears partially mounted adapter content when initialization fails", async () => {
+    const adapter = {
+      start: vi.fn(async (request: WalletAdapterRequest) => {
+        request.mount.append(document.createElement("button"));
+        throw new Error("private adapter failure");
+      }),
+      stop: vi.fn(),
+    } satisfies WalletAdapter;
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    configureProduct(element);
+    document.body.append(element);
+    await vi.waitFor(() => expect(element.availability.state).toBe("unavailable"));
+
+    const root = element.shadowRoot?.querySelector<HTMLElement>('[part="root"]');
+    expect(root?.childElementCount).toBe(0);
+    expect(element.error).toEqual({ phase: "initialization", code: "unexpected_error" });
   });
 
   it("coalesces updates, cancels stale work, and ignores stale outcomes", async () => {

@@ -3,16 +3,230 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Checkout Kit wallet element</title>
-    <script type="module">
-      import "@shopify/checkout-kit/wallets";
-    </script>
+    <title>Checkout Kit Accelerated Checkout Lab</title>
+    <link rel="stylesheet" href="./wallets.css" />
   </head>
   <body>
-    <main>
-      <h1>Accelerated checkout buttons</h1>
-      <p>This fixture exercises the component shell without wallet runtime behavior.</p>
-      <shopify-accelerated-checkout-buttons></shopify-accelerated-checkout-buttons>
+    <header class="lab-header">
+      <div>
+        <p class="eyebrow">Checkout Kit local development</p>
+        <h1>Accelerated Checkout Lab</h1>
+        <p class="subtitle">Exercise the public element with a deterministic private adapter.</p>
+      </div>
+      <nav aria-label="Playground pages">
+        <a href="./index.html">Checkout playground</a>
+        <a href="./wallets.html" aria-current="page">Accelerated checkout</a>
+      </nav>
+    </header>
+
+    <div class="fixture-notice" role="note">
+      <strong>Fixture mode</strong>
+      No provider SDK, payment, or keyed cart identifier is used on this page.
+    </div>
+
+    <main class="lab-layout">
+      <aside class="panel controls-panel" aria-labelledby="controls-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="step">01</p>
+            <h2 id="controls-heading">Configuration</h2>
+          </div>
+          <button id="reset-lab" type="button" class="text-button">Reset</button>
+        </div>
+
+        <form id="wallet-lab-form">
+          <fieldset>
+            <legend>Purchase flow</legend>
+            <label class="choice-card">
+              <input type="radio" name="flow" value="product" checked />
+              <span
+                ><strong>Buy now</strong><small>Variant with activation-time getCart</small></span
+              >
+            </label>
+            <label class="choice-card">
+              <input type="radio" name="flow" value="cart" />
+              <span
+                ><strong>Existing cart</strong
+                ><small>Opaque property-only cart reference</small></span
+              >
+            </label>
+          </fieldset>
+
+          <fieldset class="field-grid">
+            <legend>Merchant inputs</legend>
+            <label>
+              <span>Configuration API</span>
+              <select id="configuration-api">
+                <option value="configure">configure()</option>
+                <option value="properties">JavaScript properties</option>
+                <option value="attributes">Attributes and properties</option>
+              </select>
+            </label>
+            <label>
+              <span>Country</span>
+              <select id="country">
+                <option value="CA">Canada</option>
+                <option value="US">United States</option>
+                <option value="GB">United Kingdom</option>
+              </select>
+            </label>
+            <label>
+              <span>Locale</span>
+              <select id="locale">
+                <option value="en-CA">en-CA</option>
+                <option value="en-US">en-US</option>
+                <option value="fr-CA">fr-CA</option>
+              </select>
+            </label>
+            <label>
+              <span>Currency</span>
+              <select id="currency">
+                <option value="CAD">CAD</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </label>
+            <label>
+              <span>Layout</span>
+              <select id="layout">
+                <option value="horizontal">Horizontal</option>
+                <option value="vertical">Vertical</option>
+              </select>
+            </label>
+            <label>
+              <span>Wallet count</span>
+              <select id="wallet-count">
+                <option value="0">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
+            <label class="checkbox-row">
+              <input id="selling-plan" type="checkbox" />
+              <span>Selected selling plan</span>
+            </label>
+          </fieldset>
+
+          <fieldset class="field-grid">
+            <legend>Adapter scenario</legend>
+            <label>
+              <span>Outcome</span>
+              <select id="scenario">
+                <option value="ready">Three wallets ready</option>
+                <option value="partial">Partial provider failure</option>
+                <option value="slow-ready">Hold loading state</option>
+                <option value="no-wallet">No eligible wallet</option>
+                <option value="setup-error">Initialization failure</option>
+                <option value="cart-refresh-error">Cart refresh failure</option>
+              </select>
+            </label>
+            <label>
+              <span>Adapter delay</span>
+              <select id="adapter-delay">
+                <option value="0">None</option>
+                <option value="400" selected>400 ms</option>
+                <option value="1200">1.2 seconds</option>
+                <option value="3000">3 seconds</option>
+              </select>
+            </label>
+          </fieldset>
+        </form>
+      </aside>
+
+      <section class="panel preview-panel" aria-labelledby="preview-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="step">02</p>
+            <h2 id="preview-heading">Storefront preview</h2>
+          </div>
+          <span id="availability-badge" class="state-badge" data-state="loading">loading</span>
+        </div>
+
+        <article class="product-card">
+          <div class="product-image" aria-hidden="true">
+            <span>CK</span>
+          </div>
+          <div class="product-copy">
+            <p class="product-kicker">Fixture product</p>
+            <h3>Checkout Kit travel wallet</h3>
+            <p id="flow-description">
+              Buy now creates a fixture cart only after wallet activation.
+            </p>
+            <div class="product-meta">
+              <span>CAD $48.00</span>
+              <span>Available</span>
+            </div>
+          </div>
+        </article>
+
+        <section class="wallet-surface" aria-labelledby="surface-heading">
+          <div class="surface-heading">
+            <div>
+              <p class="product-kicker">Public merchant surface</p>
+              <h3 id="surface-heading">Accelerated checkout</h3>
+            </div>
+            <code>&lt;shopify-accelerated-checkout-buttons&gt;</code>
+          </div>
+          <div id="wallet-element-mount"></div>
+          <p id="surface-help" class="surface-help" role="status">
+            The adapter is resolving wallet availability.
+          </p>
+        </section>
+
+        <div class="action-grid" aria-label="Lifecycle actions">
+          <button id="release-loading" type="button" disabled>Release loading</button>
+          <button id="notify-cart" type="button">Notify cart updated</button>
+          <button id="burst-cart" type="button">Burst 5 cart updates</button>
+          <button id="remount-element" type="button">Disconnect and remount</button>
+          <button id="invalid-config" type="button">Apply invalid configuration</button>
+        </div>
+      </section>
+
+      <aside class="panel inspector-panel" aria-labelledby="inspector-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="step">03</p>
+            <h2 id="inspector-heading">Runtime inspector</h2>
+          </div>
+          <button id="clear-events" type="button" class="text-button">Clear</button>
+        </div>
+
+        <dl class="state-list">
+          <div>
+            <dt>availability</dt>
+            <dd id="state-availability">loading</dd>
+          </div>
+          <div>
+            <dt>error</dt>
+            <dd id="state-error">none</dd>
+          </div>
+          <div>
+            <dt>flow</dt>
+            <dd id="state-flow">product</dd>
+          </div>
+          <div>
+            <dt>configuration</dt>
+            <dd id="state-api">configure()</dd>
+          </div>
+        </dl>
+
+        <div class="configuration-preview">
+          <h3>Public configuration</h3>
+          <pre id="configuration-preview"></pre>
+        </div>
+
+        <div class="event-heading">
+          <h3>Lifecycle timeline</h3>
+          <span id="event-count">0 events</span>
+        </div>
+        <ol id="event-log" class="event-log"></ol>
+        <p id="event-empty" class="empty-events">
+          Callbacks, events, and adapter activity appear here.
+        </p>
+      </aside>
     </main>
+
+    <script type="module" src="./wallets-lab.ts"></script>
   </body>
 </html>

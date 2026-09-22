@@ -5,6 +5,8 @@ export interface WalletAdapterRequest {
   walletCount: number;
   layout?: WalletLayout;
   getCart?: GetCart;
+  /** Private mount owned by Checkout Kit. Adapter content is cleared on stop. */
+  mount: HTMLElement;
   signal: AbortSignal;
 }
 
@@ -28,4 +30,9 @@ export function createWalletAdapter(): WalletAdapter | undefined {
 
 export function setWalletAdapterFactoryForTesting(nextFactory?: WalletAdapterFactory): void {
   factory = nextFactory ?? (() => undefined);
+}
+
+/** Installs a deterministic adapter for the local sample only. */
+export function setWalletAdapterFactoryForDevelopment(nextFactory: WalletAdapterFactory): void {
+  factory = nextFactory;
 }

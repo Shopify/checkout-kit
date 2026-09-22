@@ -384,6 +384,7 @@ export class ShopifyAcceleratedCheckoutButtons
         walletCount: this.walletCount,
         layout: this.layout,
         getCart: configuration.getCart,
+        mount: this.#root,
         signal: controller.signal,
       });
       if (!this.#isCurrent(generation, controller)) return;
@@ -401,12 +402,14 @@ export class ShopifyAcceleratedCheckoutButtons
         return;
       }
 
+      this.#root.replaceChildren();
       this.#setAvailability({
         state: "unavailable",
         reason: outcome.status === "ready" ? "no_wallet" : outcome.reason,
       });
     } catch {
       if (!this.#isCurrent(generation, controller)) return;
+      this.#root.replaceChildren();
       const availability: WalletAvailability = { state: "unavailable", reason: "setup_error" };
       this.#setAvailability(availability, false);
       this.#setError({ phase: "initialization", code: "unexpected_error" });
@@ -459,17 +462,22 @@ export class ShopifyAcceleratedCheckoutButtons
 
   #stopAdapter(): void {
     this.#invalidateCartUpdates();
-    if (this.#startedKey === undefined && !this.#controller) return;
+    const active = this.#startedKey !== undefined || this.#controller !== undefined;
 
-    this.#generation += 1;
-    this.#controller?.abort();
-    this.#controller = undefined;
-    this.#adapter?.stop?.();
+    if (active) {
+      this.#generation += 1;
+      this.#controller?.abort();
+      this.#controller = undefined;
+      this.#adapter?.stop?.();
+    }
+
+    this.#root.replaceChildren();
   }
 
   #setAvailability(availability: WalletAvailability, notify = true): void {
     this.#availability = Object.freeze(availability);
     this.#root.setAttribute("data-state", availability.state);
+    this.#root.setAttribute("aria-busy", String(availability.state === "loading"));
     if (notify) this.#dispatchRender(this.#availability);
   }
 
