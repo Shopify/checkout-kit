@@ -119,6 +119,11 @@ export class WalletLabAdapter implements WalletAdapter {
       .fixture-wallet:hover { background: #333638; }
       .fixture-wallet:focus-visible { outline: 3px solid #2c6ecb; outline-offset: 2px; }
       .fixture-wallet[disabled] { cursor: wait; opacity: 0.58; }
+      .fixture-wallet-status {
+        margin: 0.65rem 0 0;
+        color: #4a4e52;
+        font: 500 0.78rem/1.4 system-ui, sans-serif;
+      }
     `;
 
     const grid = document.createElement("div");
@@ -126,19 +131,31 @@ export class WalletLabAdapter implements WalletAdapter {
     const columns = request.layout === "vertical" ? 1 : Math.max(wallets.length, 1);
     grid.style.setProperty("--fixture-columns", String(columns));
 
+    const status = document.createElement("p");
+    status.className = "fixture-wallet-status";
+    status.setAttribute("role", "status");
+    status.textContent = "Select a fixture wallet to exercise activation.";
+
     for (const wallet of wallets) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "fixture-wallet";
       button.textContent = WALLET_LABELS[wallet] ?? wallet;
-      button.addEventListener("click", () => void this.#activate(request, wallet, grid));
+      button.addEventListener("click", () => void this.#activate(request, wallet, grid, status));
       grid.append(button);
     }
 
-    request.mount.replaceChildren(style, grid);
+    request.mount.replaceChildren(style, grid, status);
   }
 
-  async #activate(request: WalletAdapterRequest, wallet: string, grid: HTMLElement): Promise<void> {
+  async #activate(
+    request: WalletAdapterRequest,
+    wallet: string,
+    grid: HTMLElement,
+    status: HTMLElement,
+  ): Promise<void> {
+    const label = WALLET_LABELS[wallet] ?? wallet;
+    status.textContent = `Activating ${label} fixture...`;
     this.record({ source: "wallet", name: "activate", detail: { wallet } });
     const buttons = Array.from(grid.querySelectorAll("button"));
     for (const button of buttons) button.disabled = true;
@@ -148,8 +165,10 @@ export class WalletLabAdapter implements WalletAdapter {
         await request.getCart({ purchase: request.purchase, wallet, signal: request.signal });
         this.record({ source: "wallet", name: "getCart:resolved", detail: { wallet } });
       }
+      status.textContent = `${label} fixture completed. No payment was attempted.`;
       this.record({ source: "wallet", name: "fixture:complete", detail: { wallet } });
     } catch {
+      status.textContent = `${label} fixture activation failed.`;
       this.record({ source: "wallet", name: "fixture:failed", detail: { wallet } });
     } finally {
       for (const button of buttons) button.disabled = false;
