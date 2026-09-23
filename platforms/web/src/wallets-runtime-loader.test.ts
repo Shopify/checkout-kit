@@ -123,6 +123,7 @@ describe("createPortableWalletsRuntimeLoader", () => {
     expect((failure as PortableWalletsRuntimeError).message).not.toContain(
       "sensitive transport details",
     );
+    expect(failure).not.toHaveProperty("cause");
   });
 
   it("rejects an unsupported runtime API version", async () => {

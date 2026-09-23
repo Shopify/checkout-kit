@@ -5,8 +5,8 @@ export type PortableWalletsRuntimeFailureCode = "runtime_import_failed" | "runti
 export class PortableWalletsRuntimeError extends Error {
   readonly code: PortableWalletsRuntimeFailureCode;
 
-  constructor(code: PortableWalletsRuntimeFailureCode, options?: ErrorOptions) {
-    super("The private wallet runtime is unavailable.", options);
+  constructor(code: PortableWalletsRuntimeFailureCode) {
+    super("The private wallet runtime is unavailable.");
     this.name = "PortableWalletsRuntimeError";
     this.code = code;
   }
@@ -164,8 +164,8 @@ async function importRuntime(
   let imported: unknown;
   try {
     imported = await importer(moduleUrl);
-  } catch (cause) {
-    throw new PortableWalletsRuntimeError("runtime_import_failed", { cause });
+  } catch {
+    throw new PortableWalletsRuntimeError("runtime_import_failed");
   }
 
   if (!isRuntimeModule(imported)) {
@@ -175,8 +175,8 @@ async function importRuntime(
   let runtime: unknown;
   try {
     runtime = imported.createPortableWalletsRuntime();
-  } catch (cause) {
-    throw new PortableWalletsRuntimeError("runtime_incompatible", { cause });
+  } catch {
+    throw new PortableWalletsRuntimeError("runtime_incompatible");
   }
 
   if (!isPortableWalletsRuntime(runtime)) {
@@ -217,5 +217,5 @@ function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
 function normalizeRuntimeError(error: unknown): PortableWalletsRuntimeError {
   return error instanceof PortableWalletsRuntimeError
     ? error
-    : new PortableWalletsRuntimeError("runtime_import_failed", { cause: error });
+    : new PortableWalletsRuntimeError("runtime_import_failed");
 }
