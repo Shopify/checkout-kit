@@ -208,11 +208,17 @@ LICENSE
 README.md
 package.json
 dist/                       (built JS, .d.ts, custom-elements.json, source map)
-src/                        (TypeScript source for consumers who want to read it)
 ```
 
-Test files (`*.test.ts`), the playground (`sample/`), the `consumer-test`
-harness, dev configs, and lockfiles are all excluded.
+Test files (`*.test.ts`), TypeScript source, the playground (`sample/`), the
+`consumer-test` harness, dev configs, and lockfiles are all excluded.
+
+The accelerated-wallet source and build artifact are intentionally unpublished.
+The package has no `./wallets` export, its explicit `files` allowlist omits the
+wallet artifacts, and the published custom-elements manifest excludes wallet
+metadata. The local build can still emit `dist/wallets.js` for development.
+Releasing that surface requires a reviewed change to the package export, files
+allowlist, custom-elements manifest, and package snapshot.
 
 You can preview exactly what will be published before tagging a release:
 

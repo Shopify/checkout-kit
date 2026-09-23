@@ -28,27 +28,22 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./wallets": {
-      "types": "./dist/wallets.d.ts",
-      "import": "./dist/wallets.js",
-      "default": "./dist/wallets.js"
-    },
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
   "sideEffects": [
     "./src/index.ts",
     "./src/checkout-web-component.ts",
-    "./src/wallets-index.ts",
-    "./src/wallets-web-component.ts",
-    "./dist/index.js",
-    "./dist/wallets.js"
+    "./dist/index.js"
   ],
   "files": [
     "LICENSE",
     "README.md",
     "package.json",
-    "dist"
+    "dist/custom-elements.json",
+    "dist/index.d.ts",
+    "dist/index.js",
+    "dist/index.js.map"
   ],
   "keywords": [
     "shopify",
@@ -61,7 +56,7 @@
   "scripts": {
     "clean": "rm -rf dist sample/dist coverage",
     "build": "vite build && pnpm run build:manifest",
-    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
+    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' 'src/wallets*.ts' --outdir dist",
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

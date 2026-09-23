@@ -19,6 +19,14 @@ pnpm sample:wallets
 
 The lab opens at `http://127.0.0.1:4178/wallets.html`. It intentionally does not bind `checkout-kit.shop.dev`, because Hydrogen uses that origin for the integrated `/wallets.js` runtime.
 
+To emit `dist/wallets.js` for that local integration, run:
+
+```bash
+pnpm dev
+```
+
+The build keeps the wallet artifact available locally. The package export and explicit npm `files` allowlist keep the wallet artifact out of published packages.
+
 ## What the demo shows
 
 The default flow highlights a multi-item cart use case:

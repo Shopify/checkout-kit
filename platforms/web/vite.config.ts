@@ -40,7 +40,7 @@ export default defineConfig({
       fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      // Zero runtime deps — bundle everything reachable from each public entry.
+      // Zero runtime deps. Package files decide which local artifacts are published.
       external: [],
     },
   },
