@@ -17,6 +17,38 @@ export interface PortableWalletsPurchaseContext {
   readonly hasSellingPlan: boolean;
 }
 
+export interface PortableWalletsWalletConfig {
+  readonly name: string;
+  readonly supports_subs?: boolean;
+  readonly supports_def_opts?: boolean;
+  readonly wallet_params: Readonly<Record<string, unknown>>;
+}
+
+export interface PortableWalletsVariantConfig {
+  readonly id: string;
+  readonly requiresShipping: boolean;
+}
+
+interface PortableWalletsChildConfigurationBase {
+  readonly buyerCountry: string;
+  readonly buyerCurrency: string;
+  readonly shopId?: string;
+  readonly variantParams: ReadonlyArray<PortableWalletsVariantConfig>;
+  readonly enabledFlags: ReadonlyArray<string>;
+  readonly layout?: "horizontal" | "vertical";
+}
+
+export type PortableWalletsChildConfiguration =
+  | (PortableWalletsChildConfigurationBase & {
+      readonly presentation: "multi";
+      readonly walletConfigs: ReadonlyArray<PortableWalletsWalletConfig>;
+    })
+  | (PortableWalletsChildConfigurationBase & {
+      readonly presentation: "single";
+      readonly recommendedWallet: PortableWalletsWalletConfig | null;
+      readonly fallbackWallet: PortableWalletsWalletConfig | null;
+    });
+
 export interface PortableWalletsTerminalError {
   readonly wallet: string;
   readonly errorCode: string;
@@ -24,6 +56,8 @@ export interface PortableWalletsTerminalError {
 }
 
 export interface PortableWalletsChild extends HTMLElement {
+  /** Installs private bootstrap data without reflecting it into DOM attributes. */
+  configure(configuration: PortableWalletsChildConfiguration): void;
   setCheckoutClient(client: unknown): void;
   setDatasource(datasource: unknown): void;
   setSurfaceAdapter(adapter: unknown): void;

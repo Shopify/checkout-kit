@@ -13,6 +13,7 @@ const moduleUrl = "https://cdn.example.com/v1/portable-wallets.js";
 
 function runtimeChild(): PortableWalletsChild {
   return Object.assign(document.createElement("div"), {
+    configure: vi.fn(),
     setCheckoutClient: vi.fn(),
     setDatasource: vi.fn(),
     setSurfaceAdapter: vi.fn(),
