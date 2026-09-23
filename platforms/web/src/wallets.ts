@@ -420,30 +420,75 @@ export class ShopifyAcceleratedCheckoutButtons
   #configurationState(): ConfigurationState {
     const { storeDomain, country, locale, currency, cartId, variantId, sellingPlanId, layout } =
       this;
+    const contextInputPresent = ["store-domain", "country", "locale", "currency"].some(
+      (attribute) => this.hasAttribute(attribute),
+    );
+    const cartInputPresent = cartId !== undefined;
+    const variantInputPresent = this.hasAttribute("variant-id");
+    const sellingPlanInputPresent = this.hasAttribute("selling-plan-id");
+    const purchaseInputPresent = cartInputPresent || variantInputPresent || sellingPlanInputPresent;
 
-    if (!storeDomain || !country || !locale || !currency) return { status: "incomplete" };
-    if (layout && layout !== "horizontal" && layout !== "vertical") return { status: "invalid" };
+    if (layout !== undefined && layout !== "horizontal" && layout !== "vertical") {
+      return { status: "invalid" };
+    }
+    if (!contextInputPresent && !purchaseInputPresent) return { status: "incomplete" };
+    if (
+      !this.#isNonEmpty(storeDomain) ||
+      !this.#isNonEmpty(country) ||
+      !this.#isNonEmpty(locale) ||
+      !this.#isNonEmpty(currency)
+    ) {
+      return { status: "invalid" };
+    }
+    if (cartInputPresent && (variantInputPresent || sellingPlanInputPresent)) {
+      return { status: "invalid" };
+    }
+    if (sellingPlanInputPresent && !variantInputPresent) return { status: "invalid" };
+
+    if (cartInputPresent) {
+      if (!this.#isNonEmpty(cartId)) return { status: "invalid" };
+      const purchase = Object.freeze({
+        storeDomain,
+        country,
+        locale,
+        currency,
+        cartId,
+        variantId: undefined,
+        sellingPlanId: undefined,
+      });
+      return { status: "ready", key: this.#configurationKey(purchase), purchase };
+    }
+
+    if (
+      !variantInputPresent ||
+      !this.#isNonEmpty(variantId) ||
+      typeof this.#getCart !== "function"
+    ) {
+      return { status: "invalid" };
+    }
+    if (sellingPlanInputPresent && !this.#isNonEmpty(sellingPlanId)) {
+      return { status: "invalid" };
+    }
 
     const purchase = Object.freeze({
       storeDomain,
       country,
       locale,
       currency,
-      cartId,
-      variantId: cartId ? undefined : variantId,
-      sellingPlanId: cartId ? undefined : sellingPlanId,
+      cartId: undefined,
+      variantId,
+      sellingPlanId,
     });
-
-    if (cartId) return { status: "ready", key: this.#configurationKey(purchase), purchase };
-    if (!variantId && !sellingPlanId) return { status: "incomplete" };
-    if (!variantId || !this.#getCart) return { status: "invalid" };
-
     return {
       status: "ready",
       key: this.#configurationKey(purchase),
       purchase,
       getCart: this.#getCart,
     };
+  }
+
+  #isNonEmpty(value: string | undefined): value is string {
+    return typeof value === "string" && value.trim().length > 0;
   }
 
   #configurationKey(purchase: Readonly<WalletPurchaseSnapshot>): string {

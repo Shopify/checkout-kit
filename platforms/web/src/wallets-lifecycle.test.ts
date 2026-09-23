@@ -217,6 +217,98 @@ describe("accelerated checkout lifecycle", () => {
     expect(ready).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps a new unconfigured element loading without reporting an error", async () => {
+    const adapter = createAdapter(deferred<WalletAdapterOutcome>());
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const error = vi.fn();
+    const element = createElement();
+
+    element.configure({
+      walletCount: 2,
+      layout: "horizontal",
+      callbacks: { error },
+    });
+    document.body.append(element);
+    await Promise.resolve();
+
+    expect(element.availability).toEqual({ state: "loading" });
+    expect(element.error).toBeNull();
+    expect(error).not.toHaveBeenCalled();
+    expect(adapter.start).not.toHaveBeenCalled();
+  });
+
+  it("reports persistent partial purchase configuration once", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const errors = vi.fn();
+    const element = createElement();
+
+    element.configure({
+      storeDomain: "example.myshopify.com",
+      callbacks: { error: errors },
+    });
+    document.body.append(element);
+
+    await vi.waitFor(() => expect(element.error?.code).toBe("purchase_configuration_invalid"));
+    expect(adapter.start).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledOnce();
+
+    element.configure({
+      country: "CA",
+      locale: "en-CA",
+      currency: "CAD",
+      variantId: "gid://shopify/ProductVariant/1",
+    });
+    await Promise.resolve();
+    expect(adapter.start).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledOnce();
+
+    element.configure({ getCart });
+    await expectStarts(adapter, 1);
+    expect(errors).toHaveBeenNthCalledWith(2, null);
+  });
+
+  it("coalesces complete same-turn configuration without a transient error", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const error = vi.fn();
+    const element = createElement();
+
+    element.callbacks = { error };
+    document.body.append(element);
+    element.storeDomain = "example.myshopify.com";
+    element.country = "CA";
+    element.locale = "en-CA";
+    element.currency = "CAD";
+    element.variantId = "gid://shopify/ProductVariant/1";
+    element.getCart = getCart;
+
+    await expectStarts(adapter, 1);
+    expect(error).not.toHaveBeenCalled();
+    expect(element.error).toBeNull();
+  });
+
+  it("rejects a selling plan after its product variant is cleared", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    configureProduct(element, { sellingPlanId: "gid://shopify/SellingPlan/2" });
+    document.body.append(element);
+    await expectStarts(adapter, 1);
+    const signal = adapter.start.mock.calls[0]![0].signal;
+
+    element.configure({ variantId: undefined });
+
+    await vi.waitFor(() => expect(element.error?.code).toBe("purchase_configuration_invalid"));
+    expect(signal.aborted).toBe(true);
+    expect(adapter.stop).toHaveBeenCalledOnce();
+    expect(adapter.start).toHaveBeenCalledOnce();
+  });
+
   it("reports invalid product configuration once and clears it before recovery", async () => {
     const outcome = deferred<WalletAdapterOutcome>();
     const adapter = createAdapter(outcome);
@@ -288,11 +380,11 @@ describe("accelerated checkout lifecycle", () => {
     expect(adapter.start).not.toHaveBeenCalled();
   });
 
-  it("gives an existing cart priority over product inputs", async () => {
-    const first = deferred<WalletAdapterOutcome>();
-    const second = deferred<WalletAdapterOutcome>();
-    const adapter = createAdapter(first, second);
+  it("rejects mixed cart and product inputs before adapter work", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
     setWalletAdapterFactoryForTesting(() => adapter);
+    const errors = vi.fn();
     const element = createElement();
 
     element.configure({
@@ -301,11 +393,30 @@ describe("accelerated checkout lifecycle", () => {
       locale: "en-CA",
       currency: "CAD",
       cartId: "existing-cart-reference",
-      variantId: "gid://shopify/ProductVariant/ignored",
+      variantId: "gid://shopify/ProductVariant/1",
+      sellingPlanId: "gid://shopify/SellingPlan/2",
+      callbacks: { error: errors },
     });
     document.body.append(element);
-    await expectStarts(adapter, 1);
 
+    await vi.waitFor(() =>
+      expect(element.error).toEqual({
+        phase: "initialization",
+        code: "purchase_configuration_invalid",
+      }),
+    );
+    expect(element.availability).toEqual({ state: "unavailable", reason: "setup_error" });
+    expect(adapter.start).not.toHaveBeenCalled();
+    expect(JSON.stringify(element.error)).not.toContain("existing-cart-reference");
+
+    element.configure({ variantId: undefined });
+    await Promise.resolve();
+    expect(adapter.start).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledOnce();
+
+    element.configure({ sellingPlanId: undefined });
+    await expectStarts(adapter, 1);
+    expect(errors).toHaveBeenNthCalledWith(2, null);
     expect(adapter.start.mock.calls[0]![0]).toMatchObject({
       purchase: {
         cartId: "existing-cart-reference",
