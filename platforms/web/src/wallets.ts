@@ -114,6 +114,7 @@ export class ShopifyAcceleratedCheckoutButtons
     this.#connected = false;
     this.#stopAdapter();
     this.#startedKey = undefined;
+    this.#clearError(false);
     this.#setAvailability({ state: "loading" }, false);
   }
 
@@ -213,8 +214,11 @@ export class ShopifyAcceleratedCheckoutButtons
     const normalized = value ?? undefined;
     if (this.#getCart === normalized) return;
     this.#getCart = normalized;
-    this.#startedKey = undefined;
-    this.#scheduleReconcile();
+
+    if (!this.#cartId) {
+      this.#startedKey = undefined;
+      this.#scheduleReconcile();
+    }
   }
 
   get callbacks(): WalletCallbacks | undefined {
@@ -355,7 +359,8 @@ export class ShopifyAcceleratedCheckoutButtons
   }
 
   #configurationKey(purchase: Readonly<WalletPurchaseSnapshot>): string {
-    return JSON.stringify([purchase, this.walletCount, this.layout, Boolean(this.#getCart)]);
+    const usesGetCart = !purchase.cartId && Boolean(this.#getCart);
+    return JSON.stringify([purchase, this.walletCount, this.layout, usesGetCart]);
   }
 
   #isCurrent(generation: number, controller: AbortController): boolean {
@@ -407,9 +412,10 @@ export class ShopifyAcceleratedCheckoutButtons
     return true;
   }
 
-  #clearError(): void {
+  #clearError(notify = true): void {
     if (!this.#error) return;
     this.#error = null;
+    if (!notify) return;
     this.#call(() => this.#callbacks?.error?.(null));
     this.#dispatchError(null);
   }

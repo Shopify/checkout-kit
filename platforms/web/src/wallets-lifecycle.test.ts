@@ -209,6 +209,35 @@ describe("accelerated checkout lifecycle", () => {
     await vi.waitFor(() => expect(element.availability.state).toBe("ready"));
   });
 
+  it("reports the same invalid configuration again after remount", async () => {
+    const adapter = createAdapter();
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const errorCallback = vi.fn();
+    const errorEvent = vi.fn();
+    const element = createElement();
+
+    configureProduct(element, {
+      getCart: undefined,
+      callbacks: { error: errorCallback },
+    });
+    element.addEventListener(EXPRESS_CHECKOUT_EVENTS.error, errorEvent);
+    document.body.append(element);
+
+    await vi.waitFor(() => expect(element.error?.code).toBe("purchase_configuration_invalid"));
+    expect(errorCallback).toHaveBeenCalledTimes(1);
+    expect(errorEvent).toHaveBeenCalledTimes(1);
+
+    element.remove();
+    expect(element.availability).toEqual({ state: "loading" });
+    expect(element.error).toBeNull();
+
+    document.body.append(element);
+    await vi.waitFor(() => expect(errorCallback).toHaveBeenCalledTimes(2));
+    expect(errorEvent).toHaveBeenCalledTimes(2);
+    expect(element.error?.code).toBe("purchase_configuration_invalid");
+    expect(adapter.start).not.toHaveBeenCalled();
+  });
+
   it("gives an existing cart priority over product inputs", async () => {
     const first = deferred<WalletAdapterOutcome>();
     const second = deferred<WalletAdapterOutcome>();
@@ -235,6 +264,34 @@ describe("accelerated checkout lifecycle", () => {
       },
       getCart: undefined,
     });
+  });
+
+  it("does not restart an existing-cart flow when getCart changes", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    element.configure({
+      storeDomain: "example.myshopify.com",
+      country: "CA",
+      locale: "en-CA",
+      currency: "CAD",
+      cartId: "existing-cart-reference",
+      getCart,
+    });
+    document.body.append(element);
+    await expectStarts(adapter, 1);
+    outcome.resolve({ status: "ready", wallets: ["apple_pay"] });
+    await vi.waitFor(() => expect(element.availability.state).toBe("ready"));
+
+    element.configure({ getCart: vi.fn().mockResolvedValue("another-cart-reference") });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(adapter.start).toHaveBeenCalledTimes(1);
+    expect(adapter.stop).not.toHaveBeenCalled();
+    expect(element.availability.state).toBe("ready");
   });
 
   it("treats an empty ready outcome as unavailable without calling ready", async () => {
