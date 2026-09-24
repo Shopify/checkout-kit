@@ -81,6 +81,11 @@
   }
 }
 
+.overlay[data-state="blocked"] slot[name="overlay"],
+.overlay:not([data-state="blocked"]) slot[name="overlay-blocked"] {
+  display: none;
+}
+
 .overlay-content-wrapper {
   display: grid;
   grid-template-rows: 1fr 20%;
