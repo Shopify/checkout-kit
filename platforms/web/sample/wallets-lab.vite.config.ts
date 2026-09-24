@@ -7,13 +7,22 @@ import sampleConfig from "./vite.config";
  * It deliberately avoids checkout-kit.shop.dev, which Hydrogen reserves for
  * the browser-importable /wallets.js runtime.
  */
-export default mergeConfig(sampleConfig, {
+const walletsLabConfig = mergeConfig(sampleConfig, {
   server: {
     host: "127.0.0.1",
     port: 4178,
     strictPort: true,
     open: "/wallets.html",
     cors: false,
-    allowedHosts: ["127.0.0.1", "localhost"],
   },
 });
+
+export default {
+  ...walletsLabConfig,
+  server: {
+    ...walletsLabConfig.server,
+    // Vite merges configuration arrays, but this isolated server must not
+    // inherit the base sample's proxy host allowlist.
+    allowedHosts: ["127.0.0.1", "localhost"],
+  },
+};
