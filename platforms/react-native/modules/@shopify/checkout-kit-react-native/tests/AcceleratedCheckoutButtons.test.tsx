@@ -340,17 +340,46 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(error.statusCode).toBeUndefined();
     });
 
-    it('calls onCancel when native cancel is invoked', () => {
-      const onCancel = jest.fn();
+    it('calls onDismiss when native dismissal is invoked', () => {
+      const onDismiss = jest.fn();
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
           cartId="gid://shopify/Cart/123"
-          onCancel={onCancel}
+          onDismiss={onDismiss}
         />,
       );
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onCancel();
-      expect(onCancel).toHaveBeenCalled();
+      nativeComponent.props.onDismiss();
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('delivers completion before a later dismissal as separate events', () => {
+      const onComplete = jest.fn();
+      const onDismiss = jest.fn();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId="gid://shopify/Cart/123"
+          events={{[CheckoutProtocol.complete]: onComplete}}
+          onDismiss={onDismiss}
+        />,
+      );
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: CheckoutProtocol.complete,
+            payload: {...wireCheckout, status: 'completed'},
+          }),
+        },
+      });
+
+      expect(onComplete).toHaveBeenCalledTimes(1);
+      expect(onDismiss).not.toHaveBeenCalled();
+
+      nativeComponent.props.onDismiss();
+
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
     it('maps render state change to typed states including error reason', () => {
@@ -448,7 +477,7 @@ describe('AcceleratedCheckoutButtons', () => {
     it('handles callbacks without throwing', () => {
       const mockCallbacks = {
         onFail: jest.fn(),
-        onCancel: jest.fn(),
+        onDismiss: jest.fn(),
         onRenderStateChange: jest.fn(),
         onClickLink: jest.fn(),
       };

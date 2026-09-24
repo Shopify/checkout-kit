@@ -453,7 +453,7 @@ function Routes() {
         // Checkout URLs
         case storefrontUrl.isCheckout() && !storefrontUrl.isThankYouPage():
           shopify.present(url, {
-            onClose: () => eventHandlers.onCancel?.(),
+            onDismiss: () => eventHandlers.onDismiss?.(),
             onFail: error => eventHandlers.onFail?.(error),
           });
           return;

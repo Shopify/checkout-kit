@@ -35,7 +35,7 @@ interface NativeProps extends ViewProps {
   applePayLabel?: string;
   applePayStyle?: string;
   onFail?: BubblingEventHandler<FailEvent>;
-  onCancel?: BubblingEventHandler<null>;
+  onDismiss?: DirectEventHandler<null>;
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
   onClickLink?: BubblingEventHandler<ClickLinkEvent>;
   onDispatch?: DirectEventHandler<DispatchEvent>;

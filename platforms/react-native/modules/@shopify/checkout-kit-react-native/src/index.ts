@@ -98,7 +98,8 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Dismisses the currently displayed checkout sheet
+   * Dismisses the currently displayed checkout sheet without invoking
+   * the per-presentation `onDismiss` callback.
    */
   public dismiss(): void {
     this.releaseDispatchSubscription();
@@ -128,8 +129,9 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   /**
    * Presents the checkout sheet for a given checkout URL.
    *
-   * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per
+   * At most one of `callbacks.onDismiss` or `callbacks.onFail` fires per
    * call, after which the per-presentation dispatch subscription is released.
+   * Programmatic dismissal invokes neither callback.
    *
    * @param checkoutUrl The URL of the checkout to display
    * @param callbacks Optional per-call SDK callbacks
