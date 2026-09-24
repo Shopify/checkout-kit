@@ -108,4 +108,5 @@ export interface WalletsProperties {
   readonly availability: WalletAvailability;
   readonly error: WalletDisplayError | null;
   configure(configuration: WalletConfiguration): void;
+  cartUpdated(): void;
 }

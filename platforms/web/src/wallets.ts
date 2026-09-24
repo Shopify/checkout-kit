@@ -88,6 +88,10 @@ export class ShopifyAcceleratedCheckoutButtons
   #generation = 0;
   #controller: AbortController | undefined;
   #startedKey: string | undefined;
+  #cartUpdateGeneration = 0;
+  #cartUpdatePending = false;
+  #cartUpdateScheduledGeneration: number | undefined;
+  #cartUpdateRunningGeneration: number | undefined;
 
   constructor() {
     super();
@@ -161,6 +165,7 @@ export class ShopifyAcceleratedCheckoutButtons
   set cartId(value: CartIdentifier | null | undefined) {
     const normalized = value ?? undefined;
     if (this.#cartId === normalized) return;
+    this.#invalidateCartUpdates();
     this.#cartId = normalized;
     this.#startedKey = undefined;
     this.#scheduleReconcile();
@@ -250,6 +255,85 @@ export class ShopifyAcceleratedCheckoutButtons
     this.#scheduleReconcile();
   }
 
+  cartUpdated(): void {
+    if (
+      !this.#connected ||
+      !this.cartId ||
+      this.#startedKey === undefined ||
+      !this.#adapter?.cartUpdated
+    ) {
+      return;
+    }
+
+    this.#cartUpdatePending = true;
+    this.#scheduleCartUpdate();
+  }
+
+  #scheduleCartUpdate(): void {
+    const generation = this.#cartUpdateGeneration;
+    if (
+      this.#availability.state !== "ready" ||
+      this.#cartUpdateScheduledGeneration === generation ||
+      this.#cartUpdateRunningGeneration === generation
+    ) {
+      return;
+    }
+
+    const cartId = this.cartId;
+    if (!cartId) return;
+
+    this.#cartUpdateScheduledGeneration = generation;
+    queueMicrotask(() => {
+      if (this.#cartUpdateScheduledGeneration === generation) {
+        this.#cartUpdateScheduledGeneration = undefined;
+      }
+      void this.#drainCartUpdates(generation, cartId);
+    });
+  }
+
+  async #drainCartUpdates(generation: number, cartId: CartIdentifier): Promise<void> {
+    if (
+      this.#cartUpdateRunningGeneration === generation ||
+      !this.#isCartUpdateCurrent(generation, cartId)
+    ) {
+      return;
+    }
+
+    this.#cartUpdateRunningGeneration = generation;
+    this.#clearError();
+
+    try {
+      while (this.#cartUpdatePending && this.#isCartUpdateCurrent(generation, cartId)) {
+        this.#cartUpdatePending = false;
+        await this.#adapter?.cartUpdated?.();
+      }
+    } catch {
+      if (this.#isCartUpdateCurrent(generation, cartId)) {
+        this.#setError({ phase: "interaction", code: "unexpected_error" });
+      }
+    } finally {
+      if (this.#cartUpdateRunningGeneration === generation) {
+        this.#cartUpdateRunningGeneration = undefined;
+      }
+      if (this.#cartUpdatePending) this.#scheduleCartUpdate();
+    }
+  }
+
+  #isCartUpdateCurrent(generation: number, cartId: CartIdentifier): boolean {
+    return (
+      this.#connected &&
+      this.#cartUpdateGeneration === generation &&
+      this.cartId === cartId &&
+      this.#startedKey !== undefined &&
+      this.#availability.state === "ready"
+    );
+  }
+
+  #invalidateCartUpdates(): void {
+    this.#cartUpdateGeneration += 1;
+    this.#cartUpdatePending = false;
+  }
+
   #scheduleReconcile(): void {
     if (!this.#connected || this.#reconcileScheduled) return;
     this.#reconcileScheduled = true;
@@ -314,6 +398,7 @@ export class ShopifyAcceleratedCheckoutButtons
         this.#setAvailability(availability, false);
         this.#call(() => this.#callbacks?.ready?.());
         this.#dispatchRender(availability);
+        if (this.#cartUpdatePending) this.#scheduleCartUpdate();
         return;
       }
 
@@ -335,7 +420,6 @@ export class ShopifyAcceleratedCheckoutButtons
   #configurationState(): ConfigurationState {
     const { storeDomain, country, locale, currency, cartId, variantId, sellingPlanId, layout } =
       this;
-
     const contextInputPresent = ["store-domain", "country", "locale", "currency"].some(
       (attribute) => this.hasAttribute(attribute),
     );
@@ -422,6 +506,7 @@ export class ShopifyAcceleratedCheckoutButtons
   }
 
   #stopAdapter(): void {
+    this.#invalidateCartUpdates();
     const active = this.#startedKey !== undefined || this.#controller !== undefined;
 
     if (active) {

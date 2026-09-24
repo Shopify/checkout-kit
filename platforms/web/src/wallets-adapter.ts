@@ -17,6 +17,7 @@ export type WalletAdapterOutcome =
 export interface WalletAdapter {
   start(request: WalletAdapterRequest): Promise<WalletAdapterOutcome>;
   stop?(): void;
+  cartUpdated?(): void | Promise<void>;
 }
 
 type WalletAdapterFactory = () => WalletAdapter | undefined;
