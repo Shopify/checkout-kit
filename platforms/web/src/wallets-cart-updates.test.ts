@@ -17,14 +17,17 @@ const getCart: GetCart = vi.fn().mockResolvedValue("created-cart-reference");
 type Deferred<T> = {
   promise: Promise<T>;
   resolve(value: T): void;
+  reject(reason?: unknown): void;
 };
 
 function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((next) => {
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((next, fail) => {
     resolve = next;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 function createAdapter(cartUpdated: NonNullable<WalletAdapter["cartUpdated"]>) {
@@ -122,12 +125,13 @@ describe("existing-cart update notifications", () => {
     await vi.waitFor(() => expect(cartUpdated).toHaveBeenCalledOnce());
   });
 
-  it("discards pending work when the configured cart is replaced", async () => {
+  it("does not let an old cart refresh block its replacement", async () => {
     const first = deferred<void>();
+    const second = deferred<void>();
     const cartUpdated = vi
       .fn<() => Promise<void>>()
       .mockImplementationOnce(() => first.promise)
-      .mockResolvedValue(undefined);
+      .mockImplementationOnce(() => second.promise);
     const adapter = createAdapter(cartUpdated);
     const element = await mountCart(adapter);
 
@@ -137,12 +141,13 @@ describe("existing-cart update notifications", () => {
 
     element.cartId = "replacement-cart-reference";
     await vi.waitFor(() => expect(adapter.start).toHaveBeenCalledTimes(2));
+    element.cartUpdated();
+
+    await vi.waitFor(() => expect(cartUpdated).toHaveBeenCalledTimes(2));
+    second.resolve();
     first.resolve();
     await Promise.resolve();
-    expect(cartUpdated).toHaveBeenCalledOnce();
-
-    element.cartUpdated();
-    await vi.waitFor(() => expect(cartUpdated).toHaveBeenCalledTimes(2));
+    expect(cartUpdated).toHaveBeenCalledTimes(2);
   });
 
   it("does not forward signals without a connected existing-cart flow", async () => {
@@ -171,6 +176,35 @@ describe("existing-cart update notifications", () => {
     element.cartUpdated();
     await Promise.resolve();
     expect(cartUpdated).not.toHaveBeenCalled();
+  });
+
+  it("preserves an update received while the active refresh fails", async () => {
+    const first = deferred<void>();
+    const second = deferred<void>();
+    const cartUpdated = vi
+      .fn<() => Promise<void>>()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const errors: Array<WalletDisplayError | null> = [];
+    const adapter = createAdapter(cartUpdated);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    element.callbacks = { error: (error) => errors.push(error) };
+    configureCart(element);
+    document.body.append(element);
+    await vi.waitFor(() => expect(element.availability.state).toBe("ready"));
+
+    element.cartUpdated();
+    await vi.waitFor(() => expect(cartUpdated).toHaveBeenCalledOnce());
+    element.cartUpdated();
+    first.reject(new Error("private refresh details"));
+
+    await vi.waitFor(() => expect(cartUpdated).toHaveBeenCalledTimes(2));
+    expect(element.error).toBeNull();
+    expect(errors).toEqual([{ phase: "interaction", code: "unexpected_error" }, null]);
+
+    second.resolve();
   });
 
   it("normalizes refresh failures and allows a later retry", async () => {

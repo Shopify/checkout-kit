@@ -90,8 +90,8 @@ export class ShopifyAcceleratedCheckoutButtons
   #startedKey: string | undefined;
   #cartUpdateGeneration = 0;
   #cartUpdatePending = false;
-  #cartUpdateScheduled = false;
-  #cartUpdateRunning = false;
+  #cartUpdateScheduledGeneration: number | undefined;
+  #cartUpdateRunningGeneration: number | undefined;
 
   constructor() {
     super();
@@ -270,29 +270,36 @@ export class ShopifyAcceleratedCheckoutButtons
   }
 
   #scheduleCartUpdate(): void {
+    const generation = this.#cartUpdateGeneration;
     if (
       this.#availability.state !== "ready" ||
-      this.#cartUpdateScheduled ||
-      this.#cartUpdateRunning
+      this.#cartUpdateScheduledGeneration === generation ||
+      this.#cartUpdateRunningGeneration === generation
     ) {
       return;
     }
 
-    const generation = this.#cartUpdateGeneration;
     const cartId = this.cartId;
     if (!cartId) return;
 
-    this.#cartUpdateScheduled = true;
+    this.#cartUpdateScheduledGeneration = generation;
     queueMicrotask(() => {
-      this.#cartUpdateScheduled = false;
+      if (this.#cartUpdateScheduledGeneration === generation) {
+        this.#cartUpdateScheduledGeneration = undefined;
+      }
       void this.#drainCartUpdates(generation, cartId);
     });
   }
 
   async #drainCartUpdates(generation: number, cartId: CartIdentifier): Promise<void> {
-    if (this.#cartUpdateRunning || !this.#isCartUpdateCurrent(generation, cartId)) return;
+    if (
+      this.#cartUpdateRunningGeneration === generation ||
+      !this.#isCartUpdateCurrent(generation, cartId)
+    ) {
+      return;
+    }
 
-    this.#cartUpdateRunning = true;
+    this.#cartUpdateRunningGeneration = generation;
     this.#clearError();
 
     try {
@@ -302,11 +309,12 @@ export class ShopifyAcceleratedCheckoutButtons
       }
     } catch {
       if (this.#isCartUpdateCurrent(generation, cartId)) {
-        this.#cartUpdatePending = false;
         this.#setError({ phase: "interaction", code: "unexpected_error" });
       }
     } finally {
-      this.#cartUpdateRunning = false;
+      if (this.#cartUpdateRunningGeneration === generation) {
+        this.#cartUpdateRunningGeneration = undefined;
+      }
       if (this.#cartUpdatePending) this.#scheduleCartUpdate();
     }
   }
@@ -324,7 +332,6 @@ export class ShopifyAcceleratedCheckoutButtons
   #invalidateCartUpdates(): void {
     this.#cartUpdateGeneration += 1;
     this.#cartUpdatePending = false;
-    this.#cartUpdateScheduled = false;
   }
 
   #scheduleReconcile(): void {
