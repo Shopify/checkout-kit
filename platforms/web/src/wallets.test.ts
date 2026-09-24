@@ -21,7 +21,10 @@ describe("accelerated checkout buttons element shell", () => {
     expect(registered).toBe(ShopifyAcceleratedCheckoutButtons);
 
     vi.resetModules();
-    await expect(import("./wallets-web-component")).resolves.toBeDefined();
+    const secondCopy = await import("./wallets-index");
+
     expect(customElements.get(tagName)).toBe(registered);
+    expect(secondCopy.ShopifyAcceleratedCheckoutButtons).toBe(registered);
+    expect(() => new secondCopy.ShopifyAcceleratedCheckoutButtons()).not.toThrow();
   });
 });
