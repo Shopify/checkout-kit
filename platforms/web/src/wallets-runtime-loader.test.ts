@@ -97,12 +97,23 @@ describe("createPortableWalletsRuntimeLoader", () => {
     expect(importer).toHaveBeenCalledOnce();
   });
 
-  it("allows a later import after a transient import failure", async () => {
+  it("bypasses the browser module cache after a transient import failure", async () => {
     const expected = runtime();
-    const importer = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("private module URL and transport details"))
-      .mockResolvedValueOnce(runtimeModule(expected));
+    const moduleCache = new Map<string, Promise<unknown>>();
+    const fetchModule = vi.fn(async (requestedUrl: string): Promise<unknown> => {
+      if (requestedUrl === moduleUrl) {
+        throw new Error("private module URL and transport details");
+      }
+      return runtimeModule(expected);
+    });
+    const importer = vi.fn((requestedUrl: string): Promise<unknown> => {
+      const cachedModule = moduleCache.get(requestedUrl);
+      if (cachedModule) return cachedModule;
+
+      const importedModule = fetchModule(requestedUrl);
+      moduleCache.set(requestedUrl, importedModule);
+      return importedModule;
+    });
     const loader = createPortableWalletsRuntimeLoader({ moduleUrl, importer });
 
     await expect(loader.load()).rejects.toMatchObject({
@@ -110,7 +121,9 @@ describe("createPortableWalletsRuntimeLoader", () => {
       message: "The private wallet runtime is unavailable.",
     });
     await expect(loader.load()).resolves.toBe(expected);
-    expect(importer).toHaveBeenCalledTimes(2);
+    expect(fetchModule).toHaveBeenCalledTimes(2);
+    expect(importer).toHaveBeenNthCalledWith(1, moduleUrl);
+    expect(importer).toHaveBeenNthCalledWith(2, `${moduleUrl}?_shopify_wallets_retry=1`);
   });
 
   it("does not expose an import failure message", async () => {
@@ -145,22 +158,26 @@ describe("createPortableWalletsRuntimeLoader", () => {
     await expect(loader.load()).rejects.toMatchObject({ code: "runtime_incompatible" });
   });
 
-  it("allows a retry after the runtime factory throws", async () => {
+  it("allows a cached runtime module to retry transient initialization", async () => {
     const expected = runtime();
-    const importer = vi
+    const createRuntime = vi
       .fn()
-      .mockResolvedValueOnce({
-        checkoutKitRuntimeApiVersion: PORTABLE_WALLETS_RUNTIME_API_VERSION,
-        createPortableWalletsRuntime(): PortableWalletsRuntime {
-          throw new Error("runtime initializing");
-        },
+      .mockImplementationOnce(() => {
+        throw new Error("runtime initializing");
       })
-      .mockResolvedValueOnce(runtimeModule(expected));
+      .mockReturnValue(expected);
+    const importer = vi.fn().mockResolvedValue({
+      checkoutKitRuntimeApiVersion: PORTABLE_WALLETS_RUNTIME_API_VERSION,
+      createPortableWalletsRuntime: createRuntime,
+    });
     const loader = createPortableWalletsRuntimeLoader({ moduleUrl, importer });
 
     await expect(loader.load()).rejects.toMatchObject({ code: "runtime_incompatible" });
     await expect(loader.load()).resolves.toBe(expected);
     expect(importer).toHaveBeenCalledTimes(2);
+    expect(importer).toHaveBeenNthCalledWith(1, moduleUrl);
+    expect(importer).toHaveBeenNthCalledWith(2, moduleUrl);
+    expect(createRuntime).toHaveBeenCalledTimes(2);
   });
 
   it.each([

@@ -135,21 +135,25 @@ export function createPortableWalletsRuntimeLoader(
   const importer = options.importer ?? defaultImporter;
   let cachedRuntime: PortableWalletsRuntime | undefined;
   let pendingRuntime: Promise<PortableWalletsRuntime> | undefined;
+  let importRetry = 0;
 
   return {
     load(): Promise<PortableWalletsRuntime> {
       if (cachedRuntime) return Promise.resolve(cachedRuntime);
       if (pendingRuntime) return pendingRuntime;
 
-      pendingRuntime = importRuntime(importer, moduleUrl)
+      const importUrl = importRetry === 0 ? moduleUrl : runtimeRetryUrl(moduleUrl, importRetry);
+      pendingRuntime = importRuntime(importer, importUrl)
         .then((runtime) => {
           cachedRuntime = runtime;
           pendingRuntime = undefined;
           return runtime;
         })
         .catch((error: unknown) => {
+          const normalizedError = normalizeRuntimeError(error);
+          if (normalizedError.code === "runtime_import_failed") importRetry += 1;
           pendingRuntime = undefined;
-          throw normalizeRuntimeError(error);
+          throw normalizedError;
         });
 
       return pendingRuntime;
@@ -195,6 +199,12 @@ function privateRuntimeUrl(value: string): string {
   }
 
   throw new PortableWalletsRuntimeError("runtime_incompatible");
+}
+
+function runtimeRetryUrl(moduleUrl: string, retry: number): string {
+  const url = new URL(moduleUrl);
+  url.searchParams.set("_shopify_wallets_retry", String(retry));
+  return url.toString();
 }
 
 function isRuntimeModule(value: unknown): value is PortableWalletsRuntimeModule {
