@@ -13,7 +13,6 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
 
 internal object CheckoutSerializer : KSerializer<Checkout> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("com.shopify.checkoutkit.Checkout")
@@ -26,28 +25,29 @@ internal object CheckoutSerializer : KSerializer<Checkout> {
     override fun deserialize(decoder: Decoder): Checkout {
         val input = decoder as? JsonDecoder
             ?: throw SerializationException("Checkout can only be deserialized from JSON")
-        val fields = input.decodeJsonElement().jsonObject
+        val fields = input.decodeJsonElement() as? JsonObject
+            ?: throw SerializationException("Checkout must be a JSON object")
         val json = input.json
-        return Checkout(
-            attribution = fields.optional("attribution", json),
-            buyer = fields.optional("buyer", json),
-            context = fields.optional("context", json),
-            continueURL = fields.optional("continue_url", json),
-            currency = fields.required("currency", json),
-            discounts = fields.optional("discounts", json),
-            expiresAt = fields.optional("expires_at", json),
-            fulfillment = fields.optional("fulfillment", json),
-            id = fields.required("id", json),
-            lineItems = fields.required("line_items", json),
-            links = fields.required("links", json),
-            messages = fields.optional("messages", json),
-            order = fields.optional("order", json),
-            payment = fields.optional("payment", json),
-            signals = fields.optional("signals", json),
-            status = fields.required("status", json),
-            totals = fields.required("totals", json),
-            additionalProperties = fields.filterKeys { it !in reservedKeys },
-        )
+        return Checkout.Builder()
+            .attribution(fields.optional("attribution", json))
+            .buyer(fields.optional("buyer", json))
+            .context(fields.optional("context", json))
+            .continueURL(fields.optional("continue_url", json))
+            .currency(fields.required("currency", json))
+            .discounts(fields.optional("discounts", json))
+            .expiresAt(fields.optional("expires_at", json))
+            .fulfillment(fields.optional("fulfillment", json))
+            .id(fields.required("id", json))
+            .lineItems(fields.required("line_items", json))
+            .links(fields.required("links", json))
+            .messages(fields.optional("messages", json))
+            .order(fields.optional("order", json))
+            .payment(fields.optional("payment", json))
+            .signals(fields.optional("signals", json))
+            .status(fields.required("status", json))
+            .totals(fields.required("totals", json))
+            .additionalProperties(fields.filterKeys { it !in reservedKeys })
+            .build()
     }
 
     override fun serialize(encoder: Encoder, value: Checkout) {

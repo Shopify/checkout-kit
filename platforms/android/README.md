@@ -28,6 +28,7 @@
   - [Title localization](#title-localization)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
+  - [Constructing event fixtures](#constructing-event-fixtures)
   - [Error handling](#error-handling)
   - [Migrating from the protocol-client prerelease API](#migrating-from-the-protocol-client-prerelease-api)
 - [Browser and system callbacks](#browser-and-system-callbacks)
@@ -199,7 +200,7 @@ and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` th
 `destroy()` once the view is permanently removed; Checkout Kit does not attempt to dismiss an unknown parent.
 Create a new `ShopifyCheckout` for any retry.
 
-`ShopifyCheckout` callbacks and protocol client are fixed when the view is created. Create a new view for a new checkout
+`ShopifyCheckout` callbacks are fixed when the view is created. Create a new view for a new checkout
 URL. If a Compose adapter accepts callbacks that can change during recomposition, forward them through stable delegates
 such as `rememberUpdatedState` rather than recreating an active checkout.
 
@@ -264,6 +265,10 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
 
 A valid checkout preloaded and presented with `ShopifyCheckoutKit.present` is retained when its bottom sheet is dismissed, so presenting the same checkout URL again can reuse the loaded checkout. Invalidate the preload when the cart changes or the loaded checkout should no longer be reused.
+
+Checkout events received during preload, before presentation callbacks are bound, are not replayed when checkout is
+presented. In particular, `onStart` only observes start events received during its presentation; it is not guaranteed
+to run for every presentation or when reusing a loaded checkout. Use the preload listener to observe loading progress.
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
@@ -515,12 +520,45 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 `onStart` and `onUpdate` observe checkout state; they do not send mutations to the checkout running in the WebView.
 Use `onComplete` to clear or refresh the cart so the app does not reuse a completed checkout.
 
+Callbacks observe events received during the current presentation. Events received before callbacks are bound,
+including during [preloading](#preload-checkout), are not replayed. `onStart` reports a checkout start event, not the
+act of presenting a view, so do not rely on it to initialize UI for every presentation.
+
 For Java integrations, override `onCheckoutStarted`, `onCheckoutUpdated`, and `onCheckoutCompleted` in
 `DefaultCheckoutListener`. These receive `CheckoutStartEvent`, `CheckoutUpdateEvent`, and `CheckoutCompleteEvent`;
 use `event.getCheckout()` to access their snapshot. Override `onCheckoutFailed` for `CheckoutFailureEvent` and
 `onCheckoutDismissed` for buyer dismissal. Unregistered callbacks have safe defaults.
 
 Use `onLinkClick` to choose how checkout links open; see [Offsite payments and links](#offsite-payments-and-links).
+
+### Constructing event fixtures
+
+Event constructors are public in Kotlin and Java: create `CheckoutStartEvent(checkout)`, `CheckoutUpdateEvent(checkout)`,
+`CheckoutCompleteEvent(checkout)`, or `CheckoutFailureEvent(error)` to exercise your app's callback handlers.
+Build checkout snapshots with `Checkout.Builder()` and derive variants with `toBuilder()`:
+
+```kotlin
+import com.shopify.checkoutkit.Checkout
+import com.shopify.checkoutkit.CheckoutStartEvent
+import com.shopify.checkoutkit.CheckoutUpdateEvent
+import com.shopify.ucp.embedded.checkout.CheckoutStatus
+
+val checkout = Checkout.Builder()
+    .id("fixture-checkout")
+    .currency("USD")
+    .status(CheckoutStatus.Incomplete)
+    .lineItems(emptyList())
+    .links(emptyList())
+    .totals(emptyList())
+    .build()
+
+val start = CheckoutStartEvent(checkout)
+val update = CheckoutUpdateEvent(checkout.toBuilder().currency("CAD").build())
+```
+
+`Checkout` has a private constructor and no data-class `copy` method. Its builder permits consumer fixtures and
+snapshot variants without exposing a constructor or `copy` signature containing every schema field, so adding
+optional fields can preserve binary compatibility. Set all required fields before calling `build()`.
 
 ### Error handling
 

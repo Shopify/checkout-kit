@@ -26,7 +26,12 @@ public class CheckoutPresentation internal constructor() {
         ((String, GeolocationPermissions.Callback) -> Unit)? = null
     internal var onGeolocationPermissionsHidePrompt: (() -> Unit)? = null
 
-    /** Called when checkout starts. */
+    /**
+     * Called for checkout start events received during this presentation.
+     *
+     * Events received before presentation callbacks are bound, including during preload, are not replayed.
+     * This callback is not guaranteed for every presentation or when reusing a loaded checkout.
+     */
     public fun onStart(handler: (CheckoutStartEvent) -> Unit) {
         onStart = handler
     }

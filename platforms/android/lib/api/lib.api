@@ -8,28 +8,7 @@ public final class com/shopify/checkoutkit/BuildConfig {
 
 public final class com/shopify/checkoutkit/Checkout {
 	public static final field Companion Lcom/shopify/checkoutkit/Checkout$Companion;
-	public fun <init> (Ljava/util/Map;Lcom/shopify/ucp/embedded/checkout/Buyer;Lcom/shopify/ucp/embedded/checkout/Context;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;Lcom/shopify/ucp/embedded/checkout/Payment;Lkotlinx/serialization/json/JsonObject;Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;Ljava/util/List;Ljava/util/Map;)V
-	public synthetic fun <init> (Ljava/util/Map;Lcom/shopify/ucp/embedded/checkout/Buyer;Lcom/shopify/ucp/embedded/checkout/Context;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;Lcom/shopify/ucp/embedded/checkout/Payment;Lkotlinx/serialization/json/JsonObject;Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;Ljava/util/List;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/util/Map;
-	public final fun component10 ()Ljava/util/List;
-	public final fun component11 ()Ljava/util/List;
-	public final fun component12 ()Ljava/util/List;
-	public final fun component13 ()Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;
-	public final fun component14 ()Lcom/shopify/ucp/embedded/checkout/Payment;
-	public final fun component15 ()Lkotlinx/serialization/json/JsonObject;
-	public final fun component16 ()Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;
-	public final fun component17 ()Ljava/util/List;
-	public final fun component18 ()Ljava/util/Map;
-	public final fun component2 ()Lcom/shopify/ucp/embedded/checkout/Buyer;
-	public final fun component3 ()Lcom/shopify/ucp/embedded/checkout/Context;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;
-	public final fun component7 ()Ljava/lang/String;
-	public final fun component8 ()Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;
-	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/util/Map;Lcom/shopify/ucp/embedded/checkout/Buyer;Lcom/shopify/ucp/embedded/checkout/Context;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;Lcom/shopify/ucp/embedded/checkout/Payment;Lkotlinx/serialization/json/JsonObject;Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;Ljava/util/List;Ljava/util/Map;)Lcom/shopify/checkoutkit/Checkout;
-	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/Checkout;Ljava/util/Map;Lcom/shopify/ucp/embedded/checkout/Buyer;Lcom/shopify/ucp/embedded/checkout/Context;Ljava/lang/String;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;Ljava/lang/String;Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;Lcom/shopify/ucp/embedded/checkout/Payment;Lkotlinx/serialization/json/JsonObject;Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;Ljava/util/List;Ljava/util/Map;ILjava/lang/Object;)Lcom/shopify/checkoutkit/Checkout;
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/Checkout$State;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAdditionalProperties ()Ljava/util/Map;
 	public final fun getAttribution ()Ljava/util/Map;
@@ -50,7 +29,31 @@ public final class com/shopify/checkoutkit/Checkout {
 	public final fun getStatus ()Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;
 	public final fun getTotals ()Ljava/util/List;
 	public fun hashCode ()I
+	public final fun toBuilder ()Lcom/shopify/checkoutkit/Checkout$Builder;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/Checkout$Builder {
+	public fun <init> ()V
+	public final fun additionalProperties (Ljava/util/Map;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun attribution (Ljava/util/Map;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun build ()Lcom/shopify/checkoutkit/Checkout;
+	public final fun buyer (Lcom/shopify/ucp/embedded/checkout/Buyer;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun context (Lcom/shopify/ucp/embedded/checkout/Context;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun continueURL (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun currency (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun discounts (Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun expiresAt (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun fulfillment (Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun id (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun lineItems (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun links (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun messages (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun order (Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun payment (Lcom/shopify/ucp/embedded/checkout/Payment;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun signals (Lkotlinx/serialization/json/JsonObject;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun status (Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun totals (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
 }
 
 public final class com/shopify/checkoutkit/Checkout$Companion {
@@ -119,6 +122,7 @@ public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront$Compani
 }
 
 public final class com/shopify/checkoutkit/CheckoutCompleteEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
 	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
 }
 
@@ -150,6 +154,7 @@ public final class com/shopify/checkoutkit/CheckoutException : java/lang/Excepti
 }
 
 public final class com/shopify/checkoutkit/CheckoutFailureEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/CheckoutException;)V
 	public final fun getError ()Lcom/shopify/checkoutkit/CheckoutException;
 }
 
@@ -305,10 +310,12 @@ public final class com/shopify/checkoutkit/CheckoutSheetTitleAlignment : java/la
 }
 
 public final class com/shopify/checkoutkit/CheckoutStartEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
 	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
 }
 
 public final class com/shopify/checkoutkit/CheckoutUpdateEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
 	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
 }
 

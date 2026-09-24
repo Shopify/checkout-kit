@@ -12,7 +12,12 @@ import android.webkit.WebView
  * We'd strongly recommend extending DefaultCheckoutListener where possible.
  */
 public interface CheckoutListener {
-    /** Called when checkout starts. */
+    /**
+     * Called for checkout start events received during this presentation.
+     *
+     * Events received before presentation callbacks are bound, including during preload, are not replayed.
+     * This callback is not guaranteed for every presentation or when reusing a loaded checkout.
+     */
     public fun onCheckoutStarted(event: CheckoutStartEvent)
 
     /** Called when the buyer-visible checkout state changes. */

@@ -2,6 +2,7 @@ package com.shopify.checkoutkit
 
 import com.shopify.ucp.embedded.checkout.CheckoutDiscounts
 import com.shopify.ucp.embedded.checkout.CheckoutFulfillment
+import com.shopify.ucp.embedded.checkout.CheckoutStatus
 import com.shopify.ucp.embedded.checkout.Payment
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
@@ -134,10 +135,11 @@ class CheckoutTest {
         )
 
         val projected = Checkout.fromProtocol(protocolCheckout.copy(additionalProperties = extensions))
-        val constructed = projected.copy(additionalProperties = extensions)
+        val constructed = projected.toBuilder().additionalProperties(extensions).build()
         val encoded = json.encodeToJsonElement(constructed).jsonObject
 
         assertThat(projected.additionalProperties).containsOnlyKeys("com.example.empty")
+        assertThat(constructed).isEqualTo(projected)
         assertThat(encoded["id"]).isEqualTo(JsonPrimitive(protocolCheckout.id))
         assertThat(encoded["line_items"]).isEqualTo(JsonArray(emptyList()))
         assertThat(encoded["com.example.empty"]).isEqualTo(JsonNull)
@@ -157,6 +159,102 @@ class CheckoutTest {
         assertThat(Checkout.fromProtocol(newProtocolVersion)).isEqualTo(checkout)
         assertThat(Checkout.fromProtocol(changedItems)).isNotEqualTo(checkout)
         assertThat(Checkout.fromProtocol(changedExtension)).isNotEqualTo(checkout)
+    }
+
+    @Test
+    fun `builder creates a fixture with only required values`() {
+        val checkout = Checkout.Builder()
+            .id("checkout-example")
+            .currency("USD")
+            .lineItems(emptyList())
+            .links(emptyList())
+            .status(CheckoutStatus.Incomplete)
+            .totals(emptyList())
+            .build()
+
+        val expected = json.decodeFromString<Checkout>(minimalCheckout)
+        assertThat(checkout).isEqualTo(expected)
+        assertThat(checkout.hashCode()).isEqualTo(expected.hashCode())
+        assertThat(checkout.additionalProperties).isEmpty()
+        assertThat(json.encodeToJsonElement(checkout)).isEqualTo(json.encodeToJsonElement(expected))
+    }
+
+    @Test
+    fun `builder reports each missing required value`() {
+        val setters: Map<String, (Checkout.Builder) -> Unit> = linkedMapOf(
+            "id" to { it.id("checkout-example") },
+            "currency" to { it.currency("USD") },
+            "lineItems" to { it.lineItems(emptyList()) },
+            "links" to { it.links(emptyList()) },
+            "status" to { it.status(CheckoutStatus.Incomplete) },
+            "totals" to { it.totals(emptyList()) },
+        )
+
+        setters.keys.forEach { missingField ->
+            val builder = Checkout.Builder()
+            setters.filterKeys { it != missingField }.values.forEach { setField -> setField(builder) }
+
+            assertThatThrownBy { builder.build() }
+                .describedAs("Missing %s", missingField)
+                .isInstanceOf(IllegalStateException::class.java)
+                .hasMessage("Missing required checkout field: $missingField")
+        }
+    }
+
+    @Test
+    fun `builder variants preserve every field and leave earlier snapshots unchanged`() {
+        val original = json.decodeFromString<Checkout>(fullCheckout)
+        val builder = original.toBuilder()
+        val rebuilt = builder.build()
+
+        assertThat(rebuilt).isNotSameAs(original).isEqualTo(original)
+        assertThat(rebuilt.hashCode()).isEqualTo(original.hashCode())
+        assertThat(json.encodeToJsonElement(rebuilt)).isEqualTo(json.encodeToJsonElement(original))
+
+        val changed = builder.id("checkout-variant").messages(null).lineItems(emptyList()).build()
+        val changedAgain = builder.id("checkout-another-variant").build()
+
+        assertThat(changed.id).isEqualTo("checkout-variant")
+        assertThat(changed.messages).isNull()
+        assertThat(changed.lineItems).isEmpty()
+        assertThat(changedAgain.id).isEqualTo("checkout-another-variant")
+        assertThat(original.id).isEqualTo("checkout-example")
+        assertThat(original.messages).isNotEmpty()
+        assertThat(original.lineItems).isNotEmpty()
+        assertThat(rebuilt).isEqualTo(original)
+    }
+
+    @Test
+    fun `snapshot equality accounts for every builder field`() {
+        val checkout = json.decodeFromString<Checkout>(fullCheckout)
+        val changes: Map<String, (Checkout.Builder) -> Unit> = linkedMapOf(
+            "attribution" to { it.attribution(null) },
+            "buyer" to { it.buyer(null) },
+            "context" to { it.context(null) },
+            "continueURL" to { it.continueURL(null) },
+            "currency" to { it.currency("EUR") },
+            "discounts" to { it.discounts(null) },
+            "expiresAt" to { it.expiresAt(null) },
+            "fulfillment" to { it.fulfillment(null) },
+            "id" to { it.id("checkout-variant") },
+            "lineItems" to { it.lineItems(emptyList()) },
+            "links" to { it.links(emptyList()) },
+            "messages" to { it.messages(null) },
+            "order" to { it.order(null) },
+            "payment" to { it.payment(null) },
+            "signals" to { it.signals(null) },
+            "status" to { it.status(CheckoutStatus.Incomplete) },
+            "totals" to { it.totals(emptyList()) },
+            "additionalProperties" to { it.additionalProperties(emptyMap()) },
+        )
+
+        changes.forEach { (field, change) ->
+            val builder = checkout.toBuilder()
+            change(builder)
+            assertThat(builder.build()).describedAs("Changed %s", field).isNotEqualTo(checkout)
+        }
+        assertThat(checkout).isEqualTo(checkout).isNotEqualTo(null).isNotEqualTo("checkout-example")
+        assertThat(setOf(checkout, checkout.toBuilder().build())).hasSize(1)
     }
 
     private val minimalCheckout = """

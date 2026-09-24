@@ -5,6 +5,8 @@ import static org.mockito.Mockito.mock;
 
 import android.net.Uri;
 
+import com.shopify.ucp.embedded.checkout.CheckoutStatus;
+
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
 
@@ -97,7 +99,14 @@ public class InteropTest {
                 // do nothing
             }
         };
-        Checkout checkout = mock(Checkout.class);
+        Checkout checkout = new Checkout.Builder()
+                .id("checkout-fixture")
+                .currency("USD")
+                .status(CheckoutStatus.Incomplete)
+                .lineItems(Collections.emptyList())
+                .links(Collections.emptyList())
+                .totals(Collections.emptyList())
+                .build();
         CheckoutException error = new CheckoutException(CheckoutErrorCode.NETWORK_ERROR, "Offline");
 
         listener.onCheckoutStarted(new CheckoutStartEvent(checkout));
@@ -111,6 +120,26 @@ public class InteropTest {
                 .isEqualTo(CheckoutLinkAction.Handled);
         assertThat(listener.onCheckoutLinkClicked(new CheckoutLink(Uri.parse("https://shopify.dev"))))
                 .isEqualTo(CheckoutLinkAction.Cancel);
+    }
+
+    @Test
+    public void canDeriveCheckoutFixturesWithoutExposingSnapshotConstructors() {
+        Checkout checkout = new Checkout.Builder()
+                .id("checkout-fixture")
+                .currency("USD")
+                .status(CheckoutStatus.Incomplete)
+                .lineItems(Collections.emptyList())
+                .links(Collections.emptyList())
+                .totals(Collections.emptyList())
+                .build();
+        Checkout completed = checkout.toBuilder().status(CheckoutStatus.Completed).build();
+
+        assertThat(completed.getId()).isEqualTo(checkout.getId());
+        assertThat(completed.getStatus()).isEqualTo(CheckoutStatus.Completed);
+        assertThat(checkout.getStatus()).isEqualTo(CheckoutStatus.Incomplete);
+        assertThat(Checkout.class.getConstructors())
+                .filteredOn(constructor -> !constructor.isSynthetic())
+                .isEmpty();
     }
 
     @Test
