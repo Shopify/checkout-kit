@@ -118,6 +118,8 @@ function originMatchesPattern(pattern: string, origin: URL): boolean {
 
 const WINDOW_OPEN_INVALID_URL_WARNING = "ec.window.open_request received without a valid url";
 
+const RETRY_ABORT_REASON = "retry";
+
 const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
 const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
   ["app:light", { colorScheme: "light", branding: "app" }],
@@ -467,6 +469,7 @@ export class ShopifyCheckout
     const isRetry = this.#blockedOpen !== null;
 
     // Close any existing sessions before opening a new one
+    this.#blockedOpen?.controller.abort(RETRY_ABORT_REASON);
     this.close();
 
     this.#checkout = undefined;
@@ -629,14 +632,10 @@ export class ShopifyCheckout
     dialog.dataset.state = "blocked";
     dialog.showModal();
 
-    let retrying = false;
-
     this.#dialogRetryButtonElement?.addEventListener(
       "click",
       () => {
-        retrying = true;
         this.open();
-        retrying = false;
       },
       {
         signal: abortController.signal,
@@ -669,7 +668,9 @@ export class ShopifyCheckout
       delete dialog.dataset.state;
       if (dialog.open) dialog.close();
       this.#blockedOpen = null;
-      if (!retrying) this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      if (abortController.signal.reason !== RETRY_ABORT_REASON) {
+        this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      }
     });
 
     this.#blockedOpen = { controller: abortController };
