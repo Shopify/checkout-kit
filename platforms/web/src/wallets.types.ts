@@ -24,6 +24,23 @@ export interface WalletCallbacks {
   error?(error: WalletDisplayError | null): void;
 }
 
+export type WalletAvailability =
+  | { state: "loading" }
+  | {
+      state: "ready";
+      wallets: ReadonlyArray<string>;
+      failed: ReadonlyArray<string>;
+    }
+  | { state: "unavailable"; reason: "no_wallet" | "setup_error" };
+
+export interface WalletRenderEventDetail {
+  availability: WalletAvailability;
+}
+
+export interface WalletErrorEventDetail {
+  error: WalletDisplayError | null;
+}
+
 export interface WalletPurchaseSnapshot {
   readonly storeDomain?: string;
   readonly country?: string;
@@ -88,5 +105,7 @@ export interface WalletsProperties {
   layout?: WalletLayout;
   getCart?: GetCart;
   callbacks?: WalletCallbacks;
+  readonly availability: WalletAvailability;
+  readonly error: WalletDisplayError | null;
   configure(configuration: WalletConfiguration): void;
 }
