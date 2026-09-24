@@ -380,6 +380,24 @@ describe("accelerated checkout lifecycle", () => {
     expect(adapter.start).not.toHaveBeenCalled();
   });
 
+  it("rejects an invalid layout attribute before adapter work", async () => {
+    const outcome = deferred<WalletAdapterOutcome>();
+    const adapter = createAdapter(outcome);
+    setWalletAdapterFactoryForTesting(() => adapter);
+    const element = createElement();
+
+    configureProduct(element);
+    element.setAttribute("layout", "diagonal");
+    document.body.append(element);
+
+    await vi.waitFor(() => expect(element.error?.code).toBe("purchase_configuration_invalid"));
+    expect(element.layout).toBeUndefined();
+    expect(adapter.start).not.toHaveBeenCalled();
+
+    element.layout = "vertical";
+    await expectStarts(adapter, 1);
+  });
+
   it("rejects mixed cart and product inputs before adapter work", async () => {
     const outcome = deferred<WalletAdapterOutcome>();
     const adapter = createAdapter(outcome);

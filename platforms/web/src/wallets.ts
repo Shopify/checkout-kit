@@ -428,7 +428,7 @@ export class ShopifyAcceleratedCheckoutButtons
     const sellingPlanInputPresent = this.hasAttribute("selling-plan-id");
     const purchaseInputPresent = cartInputPresent || variantInputPresent || sellingPlanInputPresent;
 
-    if (layout !== undefined && layout !== "horizontal" && layout !== "vertical") {
+    if (this.hasAttribute("layout") && layout === undefined) {
       return { status: "invalid" };
     }
     if (!contextInputPresent && !purchaseInputPresent) return { status: "incomplete" };
