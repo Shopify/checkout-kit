@@ -558,7 +558,7 @@ describe('ShopifyCheckoutKit', () => {
         status: 'incomplete',
         totals: [],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           payment_handlers: {
             loyalty_gold: [],
           },
@@ -573,7 +573,7 @@ describe('ShopifyCheckoutKit', () => {
         status: 'incomplete',
         totals: [],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           status: undefined,
           capabilities: undefined,
           services: undefined,

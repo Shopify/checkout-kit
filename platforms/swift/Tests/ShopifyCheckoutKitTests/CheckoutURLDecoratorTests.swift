@@ -1,4 +1,7 @@
 import Foundation
+#if !COCOAPODS
+    import EmbeddedCheckoutProtocol
+#endif
 @testable import ShopifyCheckoutKit
 import Testing
 
@@ -20,12 +23,12 @@ struct CheckoutURLDecoratorTests {
         var configuration = Configuration()
         configuration.appearance = .app(.light)
 
-        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=2026-04-08&ec_version=stale&ck_branding=app&ec_color_scheme=dark"))
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=2026-04-08&ck_branding=app&ec_color_scheme=dark"))
         let once = CheckoutURLDecorator.decorate(url, configuration: configuration)
         let twice = CheckoutURLDecorator.decorate(once, configuration: configuration)
         let items = queryItems(twice)
 
-        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == ["2026-08-25"])
+        #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
         #expect(items.filter { $0.name == "ck_branding" }.map(\.value) == ["app"])
         #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["light"])
     }

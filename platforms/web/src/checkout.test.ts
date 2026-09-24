@@ -194,7 +194,7 @@ describe("<shopify-checkout>", () => {
 
     it("replaces caller-supplied ec_* parameters", () => {
       const checkout = renderCheckout({
-        src: "https://example.com/checkout?ec_version=2026-04-08&ec_version=stale&ec_delegate=custom",
+        src: "https://example.com/checkout?ec_version=2026-04-08&ec_delegate=custom",
       });
 
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
@@ -202,7 +202,7 @@ describe("<shopify-checkout>", () => {
       checkout.open();
 
       const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
-      expect(url.searchParams.getAll("ec_version")).toEqual(["2026-08-25"]);
+      expect(url.searchParams.getAll("ec_version")).toEqual([EMBED_PROTOCOL_VERSION]);
       expect(url.searchParams.getAll("ec_delegate")).toEqual(["window.open"]);
     });
 

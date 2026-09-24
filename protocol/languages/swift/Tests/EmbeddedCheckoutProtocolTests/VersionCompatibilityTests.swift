@@ -7,7 +7,7 @@ struct VersionCompatibilityTests {
     @Test(arguments: ["2026-08-25", "2026-04-08"])
     func checkoutPayload(version: String) throws {
         let data = try fixture("checkout-" + version)
-        let envelope = try JSONDecoder().decode(JSONRPCRequest<JSONRPCCheckoutParams>.self, from: data)
+        let envelope = try JSONDecoder().decode(JSONRPCRequest<EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>.self, from: data)
         let checkout = envelope.params.checkout
         #expect(checkout.ucp.version == version)
         #expect(checkout.fulfillment?.methods?.first?.type == (version == "2026-08-25" ? "drone_delivery" : "shipping"))
@@ -50,7 +50,7 @@ struct VersionCompatibilityTests {
         let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         let params = try #require(object["params"] as? [String: Any])
         let wire = try #require(params["error"] as? [String: Any])
-        let error = try JSONDecoder().decode(ErrorResponse.self, from: JSONSerialization.data(withJSONObject: wire))
+        let error = try JSONDecoder().decode(EmbeddedCheckoutProtocol.ErrorResponse.self, from: JSONSerialization.data(withJSONObject: wire))
         #expect(error.ucp.version == "2026-04-08")
         #expect(error.messages.first?.content == "Try again.")
     }

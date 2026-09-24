@@ -451,7 +451,7 @@ class CheckoutProtocolTest {
     }
 
     @Test
-    fun `April checkout model decodes extension fields`() {
+    fun `checkout model decodes extension fields`() {
         val checkout = Json.decodeFromString<Checkout>(
             """
             {
@@ -495,7 +495,7 @@ class CheckoutProtocolTest {
               "totals": [],
               "ucp": {
                 "payment_handlers": {},
-                "version": "2026-04-08"
+                "version": "2026-08-25"
               }
             }
             """.trimIndent(),

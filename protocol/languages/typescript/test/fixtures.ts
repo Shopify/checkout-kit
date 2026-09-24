@@ -1,4 +1,3 @@
-// April wire payloads are retained here as older-version compatibility coverage.
 export const CHECKOUT_ENVELOPE = {
   id: 'checkout-123',
   currency: 'USD',

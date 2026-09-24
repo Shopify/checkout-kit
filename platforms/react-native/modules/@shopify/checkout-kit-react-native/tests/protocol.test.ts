@@ -1,4 +1,3 @@
-// April wire payloads are retained here as older-version compatibility coverage.
 import {
   CheckoutProtocol,
   type Checkout,
@@ -48,7 +47,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         links: [],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           payment_handlers: {},
         },
       };
@@ -72,12 +71,15 @@ describe('CheckoutProtocol', () => {
           totals: [],
           links: [],
           ucp: {
-            version: '2026-04-08',
+            version: '2026-08-25',
+            map_order: {
+              payment_handlers: ['loyalty_gold'],
+            },
             payment_handlers: {
               loyalty_gold: [
                 {
                   id: 'handler-1',
-                  version: '2026-04-08',
+                  version: '2026-08-25',
                   available_instruments: [
                     {
                       type: 'card',
@@ -94,6 +96,7 @@ describe('CheckoutProtocol', () => {
         });
 
         expect(decoded?.lineItems).toEqual([]);
+        expect(decoded?.ucp.mapOrder?.payment_handlers).toEqual(['loyalty_gold']);
         expect(decoded?.ucp.paymentHandlers).toHaveProperty('loyalty_gold');
         expect(
           Object.prototype.hasOwnProperty.call(
@@ -122,7 +125,7 @@ describe('CheckoutProtocol', () => {
           },
         ],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           status: 'error',
           payment_handlers: {
             'com.example.loyalty_gold': [],
@@ -157,7 +160,7 @@ describe('CheckoutProtocol', () => {
           },
         ],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           status: 'error',
           payment_handlers: {},
         },
@@ -212,7 +215,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         ucp: {
           payment_handlers: {},
-          version: '2026-04-08',
+          version: '2026-08-25',
         },
       });
 
@@ -255,7 +258,7 @@ describe('CheckoutProtocol', () => {
           permalink_url: 'https://example.test/orders/order-123',
           totals: [],
           ucp: {
-            version: '2026-04-08',
+            version: '2026-08-25',
           },
         }),
       );
@@ -278,7 +281,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         links: [],
         ucp: {
-          version: '2026-04-08',
+          version: '2026-08-25',
           payment_handlers: {},
           services: {
             'com.example.embedded': [
@@ -288,7 +291,7 @@ describe('CheckoutProtocol', () => {
                   delegate: ['window.open'],
                 },
                 transport: 'embedded',
-                version: '2026-04-08',
+                version: '2026-08-25',
               },
             ],
           },

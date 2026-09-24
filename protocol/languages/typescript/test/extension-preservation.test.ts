@@ -1,4 +1,3 @@
-// April wire payloads are retained here as older-version compatibility coverage.
 import {expect, test} from 'vitest';
 
 import {Convert} from '../src/generated/Models';

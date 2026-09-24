@@ -38,7 +38,7 @@ const wireCheckout = {
   status: 'incomplete',
   totals: [],
   ucp: {
-    version: '2026-04-08',
+    version: '2026-08-25',
     payment_handlers: {
       loyalty_gold: [],
     },
