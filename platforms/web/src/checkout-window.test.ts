@@ -302,6 +302,21 @@ describe("<shopify-checkout>", () => {
           });
         });
 
+        it("does not dispatch close when open() is called while the blocked overlay is showing", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("ec.close", closeEventSpy);
+
+            checkout.open();
+            checkout.open();
+
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
         it("dispatches close when the blocked overlay is dismissed", () => {
           POPUP_TARGETS.forEach((target) => {
             const checkout = renderCheckout({ target });
