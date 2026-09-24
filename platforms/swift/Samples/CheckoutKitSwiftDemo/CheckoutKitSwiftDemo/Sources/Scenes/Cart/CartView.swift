@@ -9,13 +9,15 @@ typealias CartLineNode = Storefront.CartFragment.Lines.Node
 struct CartView: View {
     @State var cartCompleted: Bool = false
     @State var isBusy: Bool = false
-    @State var isCompleted: Bool = false
-    @State var showCheckoutSheet: Bool = false
+    @StateObject private var checkoutPresentation = CartCheckoutPresentation()
     @State private var checkoutPreload: CheckoutPreload?
     @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
 
     @ObservedObject var cartManager: CartManager = .shared
     @ObservedObject private var preloadCacheHitLog: PreloadCacheHitLog = .shared
+
+    @AppStorage(AppStorageKeys.checkoutPresentation.rawValue)
+    var checkoutPresentationOption: CheckoutPresentationOption = .swiftUI
 
     @AppStorage(AppStorageKeys.applePayStyle.rawValue)
     var applePayStyle: ApplePayStyleOption = .automatic
@@ -73,7 +75,7 @@ struct CartView: View {
                     }
 
                     Button(
-                        action: { showCheckoutSheet = true },
+                        action: presentCheckout,
                         label: {
                             HStack {
                                 Text("Check out")
@@ -100,30 +102,13 @@ struct CartView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
-            .sheet(isPresented: $showCheckoutSheet) {
+            .sheet(isPresented: $checkoutPresentation.showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .connect(client.on(CheckoutProtocol.complete) { checkout in
-                            // Set the flag here; defer the cart reset until the user dismisses
-                            // the sheet (in .onDismiss). Resetting now would nil the cart and
-                            // SwiftUI would auto-collapse this sheet, hiding the confirmation page.
-                            print("[UCP] ec.complete: \(checkout.order?.id ?? "unknown")")
-                            isCompleted = true
-                        })
+                        .connect(checkoutPresentation.observingCompletion(on: client))
                         .appearance(.app(.automatic))
-                        .onDismiss {
-                            print("[CheckoutKitSwiftDemo] DISMISSED")
-                            showCheckoutSheet = false
-
-                            if isCompleted {
-                                CartManager.shared.resetCart()
-                                isCompleted = false
-                            }
-                        }
-                        .onFail { error in
-                            showCheckoutSheet = false
-                            print("[CheckoutKitSwiftDemo] FAIL - Checkout failed: \(error)")
-                        }
+                        .onDismiss(checkoutPresentation.checkoutDidDismiss)
+                        .onFail(checkoutPresentation.checkoutDidFail)
                         .edgesIgnoringSafeArea(.all)
                 }
             }
@@ -153,9 +138,14 @@ struct CartView: View {
     }
 
     private func presentCheckout() {
-        guard let url = CartManager.shared.cart?.checkoutURL else { return }
+        guard let url = cartManager.cart?.checkoutURL else { return }
 
-        CheckoutCoordinator.shared?.present(checkout: url)
+        checkoutPresentation.present(
+            checkout: url,
+            using: checkoutPresentationOption,
+            from: CheckoutCoordinator.shared?.window?.topMostViewController(),
+            client: client
+        )
     }
 
     private func preloadCheckoutIfNeeded() {
