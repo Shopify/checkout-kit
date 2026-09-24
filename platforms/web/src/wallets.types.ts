@@ -48,20 +48,21 @@ export type GetCart = (request: GetCartRequest) => Promise<CartIdentifier>;
 
 /**
  * A replay-safe patch accepted by `configure()`. Omitted members preserve
- * their current values; an explicitly supplied `undefined` clears a member.
+ * their current values; an explicitly supplied `null` or `undefined` clears a
+ * member.
  */
 export interface WalletConfiguration {
-  storeDomain?: string;
-  country?: string;
-  locale?: string;
-  currency?: string;
-  cartId?: CartIdentifier;
-  variantId?: string;
-  sellingPlanId?: string;
-  walletCount?: number;
-  layout?: WalletLayout;
-  getCart?: GetCart;
-  callbacks?: WalletCallbacks;
+  storeDomain?: string | null;
+  country?: string | null;
+  locale?: string | null;
+  currency?: string | null;
+  cartId?: CartIdentifier | null;
+  variantId?: string | null;
+  sellingPlanId?: string | null;
+  walletCount?: number | null;
+  layout?: WalletLayout | null;
+  getCart?: GetCart | null;
+  callbacks?: WalletCallbacks | null;
 }
 
 export interface WalletsAttributes {

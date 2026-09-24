@@ -52,6 +52,25 @@ describe("accelerated checkout buttons element", () => {
     expect(element.getAttribute("variant-id")).toBe("gid://shopify/ProductVariant/1");
     expect(element.getAttribute("selling-plan-id")).toBe("gid://shopify/SellingPlan/2");
     expect(element.getAttribute("layout")).toBe("vertical");
+
+    element.setAttribute("layout", "diagonal");
+    expect(element.layout).toBeUndefined();
+  });
+
+  it("clears nullable properties instead of reflecting the string null", () => {
+    const element = createElement();
+
+    element.configure({
+      storeDomain: "example.myshopify.com",
+      sellingPlanId: "gid://shopify/SellingPlan/2",
+      cartId: "existing-cart-reference",
+    });
+    element.configure({ storeDomain: null, sellingPlanId: null, cartId: null });
+
+    expect(element.storeDomain).toBeUndefined();
+    expect(element.sellingPlanId).toBeUndefined();
+    expect(element.cartId).toBeUndefined();
+    expect(element.outerHTML).not.toContain("null");
   });
 
   it("keeps the opaque existing-cart reference out of markup", () => {
@@ -92,6 +111,10 @@ describe("accelerated checkout buttons element", () => {
     element.walletCount = 3.8;
     expect(element.walletCount).toBe(3);
     expect(element.getAttribute("wallet-count")).toBe("3");
+
+    element.walletCount = 0.5;
+    expect(element.walletCount).toBe(0);
+    expect(element.hasAttribute("wallet-count")).toBe(false);
 
     element.walletCount = 0;
     expect(element.walletCount).toBe(0);

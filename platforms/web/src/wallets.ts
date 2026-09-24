@@ -75,7 +75,7 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#attribute("store-domain");
   }
 
-  set storeDomain(value: string | undefined) {
+  set storeDomain(value: string | null | undefined) {
     this.#setAttribute("store-domain", value);
   }
 
@@ -83,7 +83,7 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#attribute("country");
   }
 
-  set country(value: string | undefined) {
+  set country(value: string | null | undefined) {
     this.#setAttribute("country", value);
   }
 
@@ -91,7 +91,7 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#attribute("locale");
   }
 
-  set locale(value: string | undefined) {
+  set locale(value: string | null | undefined) {
     this.#setAttribute("locale", value);
   }
 
@@ -99,7 +99,7 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#attribute("currency");
   }
 
-  set currency(value: string | undefined) {
+  set currency(value: string | null | undefined) {
     this.#setAttribute("currency", value);
   }
 
@@ -107,15 +107,15 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#cartId;
   }
 
-  set cartId(value: CartIdentifier | undefined) {
-    this.#cartId = value;
+  set cartId(value: CartIdentifier | null | undefined) {
+    this.#cartId = value ?? undefined;
   }
 
   get variantId(): string | undefined {
     return this.#attribute("variant-id");
   }
 
-  set variantId(value: string | undefined) {
+  set variantId(value: string | null | undefined) {
     this.#setAttribute("variant-id", value);
   }
 
@@ -123,7 +123,7 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#attribute("selling-plan-id");
   }
 
-  set sellingPlanId(value: string | undefined) {
+  set sellingPlanId(value: string | null | undefined) {
     this.#setAttribute("selling-plan-id", value);
   }
 
@@ -132,20 +132,22 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return Number.isFinite(value) && value > 0 ? Math.trunc(value) : 0;
   }
 
-  set walletCount(value: number) {
-    if (!Number.isFinite(value) || value <= 0) {
+  set walletCount(value: number | null | undefined) {
+    const normalized = value == null ? 0 : Math.trunc(value);
+    if (!Number.isFinite(normalized) || normalized <= 0) {
       this.removeAttribute("wallet-count");
       return;
     }
 
-    this.setAttribute("wallet-count", String(Math.trunc(value)));
+    this.setAttribute("wallet-count", String(normalized));
   }
 
   get layout(): WalletLayout | undefined {
-    return this.#attribute("layout") as WalletLayout | undefined;
+    const value = this.#attribute("layout");
+    return value === "horizontal" || value === "vertical" ? value : undefined;
   }
 
-  set layout(value: WalletLayout | undefined) {
+  set layout(value: WalletLayout | null | undefined) {
     this.#setAttribute("layout", value);
   }
 
@@ -153,16 +155,16 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.#getCart;
   }
 
-  set getCart(value: GetCart | undefined) {
-    this.#getCart = value;
+  set getCart(value: GetCart | null | undefined) {
+    this.#getCart = value ?? undefined;
   }
 
   get callbacks(): WalletCallbacks | undefined {
     return this.#callbacks;
   }
 
-  set callbacks(value: WalletCallbacks | undefined) {
-    this.#callbacks = value;
+  set callbacks(value: WalletCallbacks | null | undefined) {
+    this.#callbacks = value ?? undefined;
   }
 
   configure(configuration: WalletConfiguration): void {
@@ -190,8 +192,8 @@ export class ShopifyAcceleratedCheckoutButtons extends HTMLElement implements Wa
     return this.getAttribute(name) ?? undefined;
   }
 
-  #setAttribute(name: string, value: string | undefined): void {
-    if (value === undefined) this.removeAttribute(name);
+  #setAttribute(name: string, value: string | null | undefined): void {
+    if (value == null) this.removeAttribute(name);
     else this.setAttribute(name, value);
   }
 }
