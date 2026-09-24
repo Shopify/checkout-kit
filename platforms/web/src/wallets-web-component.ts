@@ -11,6 +11,7 @@ declare global {
 const tagName = "shopify-accelerated-checkout-buttons";
 const registeredConstructor = customElements.get(tagName);
 
+export type ShopifyAcceleratedCheckoutButtons = LocalShopifyAcceleratedCheckoutButtons;
 export const ShopifyAcceleratedCheckoutButtons: typeof LocalShopifyAcceleratedCheckoutButtons =
   (registeredConstructor as typeof LocalShopifyAcceleratedCheckoutButtons | undefined) ??
   LocalShopifyAcceleratedCheckoutButtons;
