@@ -31,3 +31,8 @@ export function createWalletAdapter(): WalletAdapter | undefined {
 export function setWalletAdapterFactoryForTesting(nextFactory?: WalletAdapterFactory): void {
   factory = nextFactory ?? (() => undefined);
 }
+
+/** Installs a deterministic adapter for the local sample only. */
+export function setWalletAdapterFactoryForDevelopment(nextFactory: WalletAdapterFactory): void {
+  factory = nextFactory;
+}

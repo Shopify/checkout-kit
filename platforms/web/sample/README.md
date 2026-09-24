@@ -11,6 +11,22 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`.
 
+Run the deterministic wallet lab on its isolated local port with:
+
+```bash
+pnpm sample:wallets
+```
+
+The lab opens at `http://127.0.0.1:4178/wallets.html`. It intentionally does not bind `checkout-kit.shop.dev`, because Hydrogen uses that origin for the integrated `/wallets.js` runtime.
+
+To emit `dist/wallets.js` for that local integration, run:
+
+```bash
+pnpm dev
+```
+
+The build keeps the wallet artifact available locally. The package export and explicit npm `files` allowlist keep the wallet artifact out of published packages.
+
 ## What the demo shows
 
 The default flow highlights a multi-item cart use case:
@@ -37,6 +53,20 @@ You can also choose **Use existing checkout source** in Settings. In that mode, 
 - **Runtime** — shows component state above the `ec.*` event log, with a JSON snapshot of component state at fire time.
 
 The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is mostly the overlay scrim while checkout is open in a separate window or tab.
+
+## Accelerated Checkout Lab
+
+Open `/wallets.html` to exercise `<shopify-accelerated-checkout-buttons>` without Core, Portable Wallets, provider SDKs, or storefront credentials. The lab uses a deterministic private adapter and supports:
+
+- Product and existing-cart flows
+- `configure()`, JavaScript property, and attribute configuration
+- Loading, ready, partial success, unavailable, and failure scenarios
+- A manually held loading state for skeleton development
+- Existing-cart refresh bursts and refresh failures
+- Disconnect and remount behavior
+- Callback, DOM event, and adapter lifecycle inspection
+
+Fixture cart references remain property-only and are never included in the runtime timeline. The buttons are non-payment fixtures. Activating a product-flow fixture button invokes the local `getCart` callback but does not contact Shopify or a payment provider.
 
 ## Troubleshooting product loading
 
