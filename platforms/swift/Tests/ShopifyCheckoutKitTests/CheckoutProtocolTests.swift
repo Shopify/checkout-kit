@@ -99,7 +99,7 @@ struct WindowOpenDelegationTests {
 
     @Test func requestPayloadDecodesValidURL() throws {
         let payload = try JSONDecoder().decode(
-            WindowOpenRequest.self,
+            EmbeddedCheckoutProtocol.WindowOpenRequest.self,
             from: Data(#"{"url":"https://example.com/terms"}"#.utf8)
         )
         #expect(payload.url == "https://example.com/terms")
@@ -107,20 +107,20 @@ struct WindowOpenDelegationTests {
     }
 
     @Test func parsedURLIsNilForEmptyURL() {
-        #expect(WindowOpenRequest(url: "").parsedURL == nil)
+        #expect(EmbeddedCheckoutProtocol.WindowOpenRequest(url: "").parsedURL == nil)
     }
 
     @Test func requestPayloadRejectsMissingURL() {
-        #expect((try? JSONDecoder().decode(WindowOpenRequest.self, from: Data("{}".utf8))) == nil)
+        #expect((try? JSONDecoder().decode(EmbeddedCheckoutProtocol.WindowOpenRequest.self, from: Data("{}".utf8))) == nil)
     }
 
     @Test func requestPayloadRejectsNullURL() {
-        #expect((try? JSONDecoder().decode(WindowOpenRequest.self, from: Data(#"{"url":null}"#.utf8))) == nil)
+        #expect((try? JSONDecoder().decode(EmbeddedCheckoutProtocol.WindowOpenRequest.self, from: Data(#"{"url":null}"#.utf8))) == nil)
     }
 
     private struct EncodingFailure: Error {}
 
-    private func encode(_ result: WindowOpenResult) throws -> [String: Any] {
+    private func encode(_ result: EmbeddedCheckoutProtocol.WindowOpenResult) throws -> [String: Any] {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(result)
