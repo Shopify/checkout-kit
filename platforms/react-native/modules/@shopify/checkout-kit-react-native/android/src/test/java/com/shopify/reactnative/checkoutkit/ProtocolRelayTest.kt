@@ -196,7 +196,7 @@ private val ecStartNotificationFixture = """
   "params": {
     "checkout": {
       "ucp": {
-        "version": "2026-04-08",
+        "version": "${CheckoutProtocol.SPEC_VERSION}",
         "payment_handlers": {
           "com.example.loyalty_gold": []
         }
@@ -237,7 +237,7 @@ private val ecErrorNotificationFixture = """
   "params": {
     "error": {
       "ucp": {
-        "version": "2026-04-08",
+        "version": "${CheckoutProtocol.SPEC_VERSION}",
         "status": "error"
       },
       "messages": [

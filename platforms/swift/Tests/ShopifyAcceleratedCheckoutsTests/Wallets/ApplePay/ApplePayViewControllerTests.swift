@@ -1,3 +1,6 @@
+#if !COCOAPODS
+    import EmbeddedCheckoutProtocol
+#endif
 @testable import ShopifyAcceleratedCheckouts
 @testable import ShopifyCheckoutKit
 import UIKit
@@ -165,7 +168,7 @@ class ApplePayViewControllerTests: XCTestCase {
         {"jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{
           "id":"checkout-1","currency":"USD","status":"completed",
           "line_items":[],"links":[],"totals":[{"type":"total","amount":1000}],
-          "ucp":{"payment_handlers":{},"version":"2026-01-11"}
+          "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
         }}}
         """)
 

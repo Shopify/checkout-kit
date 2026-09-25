@@ -4,7 +4,11 @@ import {
   type ErrorResponse,
   type ProtocolHandlers,
 } from '../src';
-import {Convert, type LineItemQuantity} from '@shopify/checkout-kit-protocol';
+import {
+  Convert,
+  EmbeddedCheckoutProtocol,
+  type LineItemQuantity,
+} from '@shopify/checkout-kit-protocol';
 import {decodeProtocolPayload} from '../src/protocol';
 
 const checkoutPayloadMethods = [
@@ -47,7 +51,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         links: [],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           payment_handlers: {},
         },
       };
@@ -71,7 +75,7 @@ describe('CheckoutProtocol', () => {
           totals: [],
           links: [],
           ucp: {
-            version: '2026-08-25',
+            version: EmbeddedCheckoutProtocol.specVersion,
             map_order: {
               payment_handlers: ['loyalty_gold'],
             },
@@ -79,7 +83,7 @@ describe('CheckoutProtocol', () => {
               loyalty_gold: [
                 {
                   id: 'handler-1',
-                  version: '2026-08-25',
+                  version: EmbeddedCheckoutProtocol.specVersion,
                   available_instruments: [
                     {
                       type: 'card',
@@ -125,7 +129,7 @@ describe('CheckoutProtocol', () => {
           },
         ],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           status: 'error',
           payment_handlers: {
             'com.example.loyalty_gold': [],
@@ -160,7 +164,7 @@ describe('CheckoutProtocol', () => {
           },
         ],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           status: 'error',
           payment_handlers: {},
         },
@@ -215,7 +219,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         ucp: {
           payment_handlers: {},
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
         },
       });
 
@@ -258,7 +262,7 @@ describe('CheckoutProtocol', () => {
           permalink_url: 'https://example.test/orders/order-123',
           totals: [],
           ucp: {
-            version: '2026-08-25',
+            version: EmbeddedCheckoutProtocol.specVersion,
           },
         }),
       );
@@ -281,7 +285,7 @@ describe('CheckoutProtocol', () => {
         totals: [],
         links: [],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           payment_handlers: {},
           services: {
             'com.example.embedded': [
@@ -291,7 +295,7 @@ describe('CheckoutProtocol', () => {
                   delegate: ['window.open'],
                 },
                 transport: 'embedded',
-                version: '2026-08-25',
+                version: EmbeddedCheckoutProtocol.specVersion,
               },
             ],
           },

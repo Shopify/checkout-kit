@@ -1,4 +1,5 @@
 import React from 'react';
+import {EmbeddedCheckoutProtocol} from '@shopify/checkout-kit-protocol';
 import {render, act} from '@testing-library/react-native';
 import {Platform, UIManager} from 'react-native';
 import {
@@ -38,7 +39,7 @@ const wireCheckout = {
   status: 'incomplete',
   totals: [],
   ucp: {
-    version: '2026-08-25',
+    version: EmbeddedCheckoutProtocol.specVersion,
     payment_handlers: {
       loyalty_gold: [],
     },

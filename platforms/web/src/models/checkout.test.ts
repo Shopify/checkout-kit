@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   decodeProtocolPayload,
+  EmbeddedCheckoutProtocol,
   type Buyer,
   type Checkout as ProtocolCheckout,
   type CheckoutStatus,
@@ -17,7 +18,7 @@ function protocolCheckout(overrides: Partial<ProtocolCheckout> = {}): ProtocolCh
     links: [],
     status: "incomplete",
     totals: [],
-    ucp: { version: "2026-04-08", paymentHandlers: {} },
+    ucp: { version: EmbeddedCheckoutProtocol.specVersion, paymentHandlers: {} },
     ...overrides,
   };
 }
@@ -46,7 +47,10 @@ describe("toCheckout", () => {
     expect(snapshot).not.toBe(original);
     expect(snapshot).not.toHaveProperty("ucp");
     expect({ ...snapshot, ucp: original.ucp }).toEqual(original);
-    expect(original.ucp).toEqual({ version: "2026-04-08", paymentHandlers: {} });
+    expect(original.ucp).toEqual({
+      version: EmbeddedCheckoutProtocol.specVersion,
+      paymentHandlers: {},
+    });
     expect(snapshot["com.example.extension"]).toEqual({
       ucp: { preserved: true },
       nested_key: null,
@@ -77,7 +81,7 @@ describe("toCheckout", () => {
         },
       ],
       buyer: { first_name: "Sample", custom_buyer_data: { original_key: false } },
-      ucp: { version: "2026-04-08" },
+      ucp: { version: EmbeddedCheckoutProtocol.specVersion },
       custom_checkout_data: { original_key: [1, null, "sample"] },
     });
 
@@ -141,7 +145,7 @@ describe("checkoutComparisonKey", () => {
     const first = toCheckout(protocolCheckout());
     const second = toCheckout(
       protocolCheckout({
-        ucp: { version: "2099-01-01", paymentHandlers: {}, custom_metadata: true },
+        ucp: { version: "different-version", paymentHandlers: {}, custom_metadata: true },
       }),
     );
 

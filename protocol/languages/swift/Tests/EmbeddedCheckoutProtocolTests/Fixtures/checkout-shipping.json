@@ -3,14 +3,27 @@
   "method": "ec.start",
   "params": {
     "checkout": {
-      "id": "checkout-compatibility",
+      "id": "checkout-payload",
       "currency": "USD",
       "line_items": [],
       "links": [],
       "status": "incomplete",
-      "totals": [],
+      "totals": [
+        {
+          "type": "subtotal",
+          "amount": 0
+        },
+        {
+          "type": "fulfillment",
+          "amount": 500
+        },
+        {
+          "type": "total",
+          "amount": 500
+        }
+      ],
       "ucp": {
-        "version": "2026-04-08",
+        "version": "{{SPEC_VERSION}}",
         "payment_handlers": {}
       },
       "fulfillment": {
@@ -22,7 +35,7 @@
         ],
         "methods": [
           {
-            "id": "drone-1",
+            "id": "shipping-1",
             "type": "shipping",
             "line_item_ids": [],
             "destinations": [
@@ -31,7 +44,8 @@
                 "street_address": "123 Example Street",
                 "address_locality": "Example City",
                 "address_country": "US",
-                "postal_code": "10001"
+                "postal_code": "10001",
+                "type": "shipping_address"
               }
             ],
             "groups": [
@@ -42,7 +56,9 @@
                   {
                     "id": "option-standard",
                     "title": "Standard Shipping",
-                    "description": "Arrives in 3-5 business days",
+                    "description": {
+                      "plain": "Arrives in 3-5 business days"
+                    },
                     "totals": [
                       {
                         "type": "fulfillment",
@@ -73,14 +89,15 @@
                   "address_region": "NY",
                   "address_country": "US",
                   "postal_code": "10002"
-                }
+                },
+                "type": "business_location"
               }
             ]
           }
         ]
       },
       "signals": {
-        "com.example.device_id": "compatibility-test"
+        "com.example.device_id": "payload-test"
       },
       "com.example.extension": {
         "nested_value": 42

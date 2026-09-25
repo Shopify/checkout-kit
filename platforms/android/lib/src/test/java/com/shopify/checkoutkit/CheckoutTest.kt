@@ -151,7 +151,7 @@ class CheckoutTest {
     fun `snapshot equality includes nested values and extensions but excludes protocol metadata`() {
         val protocolCheckout = json.decodeFromString<ProtocolCheckout>(fullCheckout)
         val checkout = Checkout.fromProtocol(protocolCheckout)
-        val newProtocolVersion = protocolCheckout.copy(ucp = protocolCheckout.ucp.copy(version = "2027-01-01"))
+        val newProtocolVersion = protocolCheckout.copy(ucp = protocolCheckout.ucp.copy(version = "different-version"))
         val newLineItem = protocolCheckout.lineItems.first().copy(quantity = 3)
         val changedItems = protocolCheckout.copy(lineItems = listOf(newLineItem))
         val changedExtension = protocolCheckout.copy(additionalProperties = mapOf("com.example.extension" to JsonNull))
@@ -265,7 +265,7 @@ class CheckoutTest {
           "links": [],
           "status": "incomplete",
           "totals": [],
-          "ucp": {"payment_handlers": {}, "version": "2026-04-08"}
+          "ucp": {"payment_handlers": {}, "version": "${CheckoutProtocol.SPEC_VERSION}"}
         }
     """.trimIndent()
 
@@ -334,7 +334,7 @@ class CheckoutTest {
             "display_text": "Total",
             "lines": [{"amount": 2800, "display_text": "Example breakdown"}]
           }],
-          "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+          "ucp": {"payment_handlers": {}, "version": "${CheckoutProtocol.SPEC_VERSION}"},
           "com.example.extension": {"array": [1, false, null], "large_number": 9223372036854775806, "empty": {}}
         }
     """.trimIndent()

@@ -122,7 +122,7 @@ struct ModelDecodingTests {
           "totals": [],
           "ucp": {
             "payment_handlers": {},
-            "version": "2026-04-08"
+            "version": "\(EmbeddedCheckoutProtocol.specVersion)"
           }
         }
         """
@@ -186,7 +186,7 @@ struct ModelDecodingTests {
           "links": [],
           "status": "incomplete",
           "totals": [],
-          "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+          "ucp": {"payment_handlers": {}, "version": "\(EmbeddedCheckoutProtocol.specVersion)"},
           "signals": {"dev.ucp.buyer_ip": "203.0.113.7", "com.example.device_id": "abc-123"},
           "com.example.foo": "bar"
         }
@@ -209,6 +209,5 @@ struct ModelDecodingTests {
 }
 
 private func fixtureString(_ name: String) throws -> String {
-    let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures")!
-    return try String(contentsOf: url, encoding: .utf8)
+    try protocolFixture(name)
 }

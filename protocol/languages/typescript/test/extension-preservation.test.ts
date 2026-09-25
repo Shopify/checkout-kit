@@ -1,5 +1,6 @@
 import {expect, test} from 'vitest';
 
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {Convert} from '../src/generated/Models';
 
 test('preserves unknown top-level and nested extension keys through Convert round-trip', () => {
@@ -10,7 +11,7 @@ test('preserves unknown top-level and nested extension keys through Convert roun
     links: [],
     status: 'incomplete',
     totals: [],
-    ucp: {payment_handlers: {}, version: '2026-04-08'},
+    ucp: {payment_handlers: {}, version: EmbeddedCheckoutProtocol.specVersion},
     signals: {
       'dev.ucp.buyer_ip': '203.0.113.7',
       'com.example.device_id': 'abc-123',

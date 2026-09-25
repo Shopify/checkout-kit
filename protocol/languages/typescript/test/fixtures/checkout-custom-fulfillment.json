@@ -3,19 +3,32 @@
   "method": "ec.start",
   "params": {
     "checkout": {
-      "id": "checkout-compatibility",
+      "id": "checkout-payload",
       "currency": "USD",
       "line_items": [],
       "links": [],
       "status": "incomplete",
-      "totals": [],
+      "totals": [
+        {
+          "type": "subtotal",
+          "amount": 0
+        },
+        {
+          "type": "fulfillment",
+          "amount": 500
+        },
+        {
+          "type": "total",
+          "amount": 500
+        }
+      ],
       "ucp": {
-        "version": "2026-08-25",
+        "version": "{{SPEC_VERSION}}",
         "payment_handlers": {
           "com.example.wallet": [
             {
               "id": "example-wallet",
-              "version": "2026-08-25",
+              "version": "{{SPEC_VERSION}}",
               "available_instruments": [
                 {
                   "type": "card",
@@ -135,7 +148,7 @@
         ]
       },
       "signals": {
-        "com.example.device_id": "compatibility-test"
+        "com.example.device_id": "payload-test"
       },
       "com.example.extension": {
         "nested_value": 42

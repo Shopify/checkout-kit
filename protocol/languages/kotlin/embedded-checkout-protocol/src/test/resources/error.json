@@ -4,14 +4,15 @@
   "params": {
     "error": {
       "ucp": {
-        "version": "2026-04-08",
+        "version": "{{SPEC_VERSION}}",
         "status": "error"
       },
       "messages": [
         {
           "type": "error",
           "code": "checkout_unavailable",
-          "content": "Try again."
+          "content": "Try again.",
+          "severity": "unrecoverable"
         }
       ]
     }

@@ -510,7 +510,7 @@ class CheckoutWebViewTest {
     @Test
     fun `loadCheckout replaces ec_version when already present`() {
         val view = checkoutWebView(activity)
-        val callerSuppliedVersion = "2026-01-23"
+        val callerSuppliedVersion = "caller-supplied"
         val urlWithVersion = "https://checkout.shopify.com/cart/123?ec_version=$callerSuppliedVersion"
 
         view.loadCheckout(urlWithVersion)

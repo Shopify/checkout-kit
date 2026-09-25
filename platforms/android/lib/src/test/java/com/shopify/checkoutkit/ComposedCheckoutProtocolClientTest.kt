@@ -173,6 +173,10 @@ class ComposedCheckoutProtocolClientTest {
         private const val WINDOW_OPEN_REQUEST =
             """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"1","params":{"url":"https://example.com"}}"""
         private const val ERROR_NOTIFICATION =
-            """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[]}}}"""
+            """
+            {"jsonrpc":"2.0","method":"ec.error","params":{"error":{
+              "ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},"messages":[]
+            }}}
+            """
     }
 }

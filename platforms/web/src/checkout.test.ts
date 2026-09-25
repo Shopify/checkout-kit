@@ -194,7 +194,7 @@ describe("<shopify-checkout>", () => {
 
     it("replaces caller-supplied ec_* parameters", () => {
       const checkout = renderCheckout({
-        src: "https://example.com/checkout?ec_version=2026-04-08&ec_delegate=custom",
+        src: "https://example.com/checkout?ec_version=caller-supplied&ec_delegate=custom",
       });
 
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());

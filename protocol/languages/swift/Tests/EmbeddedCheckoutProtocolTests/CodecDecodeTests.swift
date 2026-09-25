@@ -27,7 +27,7 @@ struct CodecDecodeTests {
 
     @Test func decodesErrorNotification() throws {
         let json = #"""
-        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[{"type":"error","code":"unrecoverable","content":"Boom.","severity":"recoverable"}]}}}
+        {"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"\#(EmbeddedCheckoutProtocol.specVersion)","status":"error"},"messages":[{"type":"error","code":"unrecoverable","content":"Boom.","severity":"recoverable"}]}}}
         """#
         let message = EmbeddedCheckoutProtocol.decode(jsonRpc: json)
 
@@ -40,7 +40,7 @@ struct CodecDecodeTests {
         )
 
         #expect(method == "ec.error")
-        #expect(error.ucp.version == "2026-04-08")
+        #expect(error.ucp.version == EmbeddedCheckoutProtocol.specVersion)
         #expect(error.ucp.status == .error)
         #expect(error.messages.first?.content == "Boom.")
     }
@@ -216,6 +216,5 @@ struct CodecDecodeTests {
 }
 
 private func fixtureString(_ name: String) throws -> String {
-    let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures")!
-    return try String(contentsOf: url, encoding: .utf8)
+    try protocolFixture(name)
 }

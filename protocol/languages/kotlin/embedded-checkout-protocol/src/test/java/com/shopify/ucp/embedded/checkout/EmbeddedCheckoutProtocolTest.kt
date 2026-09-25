@@ -14,11 +14,6 @@ import java.nio.charset.StandardCharsets
 
 class EmbeddedCheckoutProtocolTest {
     @Test
-    fun `SPEC_VERSION is the current negotiated revision`() {
-        assertThat(EmbeddedCheckoutProtocol.SPEC_VERSION).isEqualTo("2026-08-25")
-    }
-
-    @Test
     fun `event catalog exposes embedded checkout methods`() {
         assertThat(EmbeddedCheckoutProtocol.Event.all).containsExactlyInAnyOrder(
             "ec.ready",
@@ -122,7 +117,7 @@ class EmbeddedCheckoutProtocolTest {
 
     @Test
     fun `url replaces caller supplied protocol parameters and is idempotent`() {
-        val callerSupplied = "$BASE_URL?ec_version=2026-04-08&ec_version=stale&ec_delegate=custom&ec_auth=stale&ec_color_scheme=light"
+        val callerSupplied = "$BASE_URL?ec_version=caller-supplied&ec_version=stale&ec_delegate=custom&ec_auth=stale&ec_color_scheme=light"
         val options = EmbeddedCheckoutProtocol.Options(
             delegations = listOf(EmbeddedCheckoutProtocol.Delegation.windowOpen),
             auth = "token",
@@ -300,7 +295,7 @@ private val checkoutParamsFixture = """
 {
   "checkout": {
     "ucp": {
-      "version": "2026-04-08",
+      "version": "${EmbeddedCheckoutProtocol.SPEC_VERSION}",
       "payment_handlers": {}
     },
     "id": "checkout-123",
@@ -317,7 +312,7 @@ private val errorParamsFixture = """
 {
   "error": {
     "ucp": {
-      "version": "2026-04-08",
+      "version": "${EmbeddedCheckoutProtocol.SPEC_VERSION}",
       "status": "error"
     },
     "messages": [

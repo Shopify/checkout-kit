@@ -20,6 +20,7 @@ import {__resetDispatchEventParityForTests} from '../src/dispatch-events';
 import {__resetPreloadForTests} from '../src/preload';
 import type {ApplePayContactField} from '../src/index.d';
 import {TurboModuleRegistry, PermissionsAndroid, Platform} from 'react-native';
+import {EmbeddedCheckoutProtocol} from '@shopify/checkout-kit-protocol';
 
 const NativeModule = TurboModuleRegistry.getEnforcing(
   'ShopifyCheckoutKit',
@@ -558,7 +559,7 @@ describe('ShopifyCheckoutKit', () => {
         status: 'incomplete',
         totals: [],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           payment_handlers: {
             loyalty_gold: [],
           },
@@ -573,7 +574,7 @@ describe('ShopifyCheckoutKit', () => {
         status: 'incomplete',
         totals: [],
         ucp: {
-          version: '2026-08-25',
+          version: EmbeddedCheckoutProtocol.specVersion,
           status: undefined,
           capabilities: undefined,
           services: undefined,

@@ -1,11 +1,14 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { ErrorResponse } from "@shopify/checkout-kit-protocol";
+import { EmbeddedCheckoutProtocol, type ErrorResponse } from "@shopify/checkout-kit-protocol";
 
 import { toCheckoutError, type CheckoutError, type CheckoutErrorCode } from "./error";
 
 function protocolError(messages: unknown): ErrorResponse {
   // The shared decoder does not validate every member of the messages field.
-  return { messages, ucp: { version: "2026-04-08", status: "error" } } as ErrorResponse;
+  return {
+    messages,
+    ucp: { version: EmbeddedCheckoutProtocol.specVersion, status: "error" },
+  } as ErrorResponse;
 }
 
 describe("toCheckoutError", () => {

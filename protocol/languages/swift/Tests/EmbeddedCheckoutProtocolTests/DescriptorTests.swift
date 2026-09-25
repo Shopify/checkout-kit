@@ -4,13 +4,6 @@ import Testing
 
 @Suite("Descriptor Tests")
 struct DescriptorTests {
-    @Suite("Spec Version")
-    struct SpecVersion {
-        @Test func advertisesAugustRevision() {
-            #expect(EmbeddedCheckoutProtocol.specVersion == "2026-08-25")
-        }
-    }
-
     @Suite("Event Catalog")
     struct EventCatalog {
         @Test func bindsNotificationMethods() {

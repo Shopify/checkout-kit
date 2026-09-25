@@ -23,7 +23,7 @@ struct CheckoutURLDecoratorTests {
         var configuration = Configuration()
         configuration.appearance = .app(.light)
 
-        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=2026-04-08&ck_branding=app&ec_color_scheme=dark"))
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=caller-supplied&ck_branding=app&ec_color_scheme=dark"))
         let once = CheckoutURLDecorator.decorate(url, configuration: configuration)
         let twice = CheckoutURLDecorator.decorate(once, configuration: configuration)
         let items = queryItems(twice)

@@ -49,7 +49,7 @@ class CheckoutEventAdapterTest {
         val adapter = CheckoutEventAdapter(listener)
         adapter.process(message("ec.start"))
         adapter.process(message("ec.messages.change"))
-        adapter.process(message("ec.totals.change", version = "2099-01-01"))
+        adapter.process(message("ec.totals.change", version = "different-version"))
         adapter.process(message("ec.fulfillment.change", total = 1))
         adapter.process(message("ec.line_items.change", total = 1))
 

@@ -17,8 +17,8 @@ describe('spec metadata', () => {
     expect(SPEC_VERSION).toBe(protocolVersion);
   });
 
-  // Catch skipped regeneration even when a native test still expects an older
-  // revision. These files are emitted by the same codegen commands used in CI.
+  // Catch skipped regeneration in every language even when fixtures use the
+  // generated constants. These files are emitted by the codegen commands in CI.
   test.each([
     [
       'Swift',
