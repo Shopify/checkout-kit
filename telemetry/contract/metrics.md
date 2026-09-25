@@ -91,6 +91,12 @@ A terminal `ec.error` protocol message is recorded as `category=protocol`,
 payload additionally records `checkout_kit_protocol_decode_error` with
 `method=ec.error`.
 
+A checkout window the browser blocks on web is recorded as
+`category=navigation`, `stage=presentation`, `code=blocked`,
+`retryable=true`, and `is_retry=false`. A block that happens while the blocked
+overlay is already showing, such as a retry from its Open checkout button, is
+recorded with `is_retry=true`.
+
 ## Prohibited data
 
 - Checkout, cart, order, shop, customer, or payment identifiers

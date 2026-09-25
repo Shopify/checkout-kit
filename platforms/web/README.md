@@ -352,6 +352,13 @@ Where the checkout is presented. Defaults to `"auto"`.
 > the host page away. The component falls back to `"auto"` if you set one,
 > and logs a warning at `log-level="warn"` or more verbose.
 
+> [!NOTE]
+> If the browser refuses to open the window (for example, a popup blocker, or
+> `open()` called outside a user gesture), the [overlay scrim](#overlay-scrim)
+> says so and offers a button to try again. Closing it dispatches `close`.
+> If the overlay is hidden, nothing is shown and no events fire. The component
+> logs a warning at `log-level="warn"` or more verbose.
+
 ### `appearance`
 
 Sets the checkout appearance preference. Defaults to `"storefront"`.
@@ -469,7 +476,9 @@ shopify-checkout {
 
 While a popup is open the component renders a `<dialog>` scrim over the host
 page, with a "Continue your purchase in the checkout window" link and a close
-button. Hide it by either:
+button. If the browser blocks the window, the scrim instead says "Your browser
+blocked the checkout window." with an "Open checkout" button that tries again.
+Hide it by either:
 
 - Setting `display: none` on the element itself, or
 - Targeting the `overlay` shadow part:

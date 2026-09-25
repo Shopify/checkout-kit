@@ -254,10 +254,82 @@ describe("<shopify-checkout>", () => {
               category: "navigation",
               stage: "presentation",
               code: "blocked",
-              retryable: false,
+              retryable: true,
               isRetry: false,
             });
             // Should not throw error when popup is blocked
+          });
+        });
+
+        it("shows the blocked overlay when the popup is blocked", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target, "log-level": "warn" });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const dialogShowModalSpy = vi
+              .spyOn(HTMLDialogElement.prototype, "showModal")
+              .mockImplementation(() => {});
+
+            checkout.open();
+
+            const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+            expect(dialogShowModalSpy).toHaveBeenCalledTimes(1);
+            expect(dialog.dataset.state).toBe("blocked");
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+              "<shopify-checkout>: checkout window could not be opened; the browser may have blocked it",
+            );
+          });
+        });
+
+        it("opens checkout when the blocked overlay's retry button is clicked", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            const windowOpenSpy = vi
+              .spyOn(window, "open")
+              .mockReturnValueOnce(null)
+              .mockReturnValueOnce(createMockWindow());
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+
+            checkout.open();
+            checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-retry-button")!.click();
+
+            const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+            expect(windowOpenSpy).toHaveBeenCalledTimes(2);
+            expect(dialog.dataset.state).toBeUndefined();
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
+        it("does not dispatch close when open() is called while the blocked overlay is showing", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+
+            checkout.open();
+            checkout.open();
+
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
+        it("dispatches close when the blocked overlay is dismissed", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+
+            checkout.open();
+            checkout
+              .shadowRoot!.querySelector<HTMLButtonElement>("#overlay-blocked-close-button")!
+              .click();
+
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
           });
         });
 
@@ -296,7 +368,7 @@ describe("<shopify-checkout>", () => {
             checkout.open();
 
             const dialog = checkout.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
-            dialog.dispatchEvent(new Event("close"));
+            dialog.close();
 
             expect(mockPopup.close).toHaveBeenCalled();
             expect(closeEventSpy).toHaveBeenCalled();

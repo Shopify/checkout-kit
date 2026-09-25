@@ -118,6 +118,8 @@ function originMatchesPattern(pattern: string, origin: URL): boolean {
 
 const WINDOW_OPEN_INVALID_URL_WARNING = "ec.window.open_request received without a valid url";
 
+const RETRY_ABORT_REASON = "retry";
+
 const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
 const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
   ["app:light", { colorScheme: "light", branding: "app" }],
@@ -144,6 +146,24 @@ const SHADOW_TEMPLATE = createTemplate(html`
                 </button>
               </div>
               <button class="overlay-close-button" id="overlay-close-button">
+                Close
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                  <path
+                    d="M15.1 2.3L13.7.9 8 6.6 2.3.9.9 2.3 6.6 8 .9 13.7l1.4 1.4L8 9.4l5.7 5.7 1.4-1.4L9.4 8"
+                  />
+                </svg>
+              </button>
+            </div>
+          </slot>
+          <slot name="overlay-blocked">
+            <div class="overlay-content-wrapper">
+              <div class="overlay-content">
+                Your browser blocked the checkout window. <br />
+                <button class="overlay-focus-button" id="overlay-retry-button" type="button">
+                  Open checkout
+                </button>
+              </div>
+              <button class="overlay-close-button" id="overlay-blocked-close-button">
                 Close
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
                   <path
@@ -206,6 +226,8 @@ export class ShopifyCheckout
 
   // Manages the listeners for the popup window, new tabs, and scrim dialog
   #currentOpen: { controller: AbortController } | null = null;
+  // Manages the listeners for the scrim dialog while it shows the blocked-window state
+  #blockedOpen: { controller: AbortController } | null = null;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
   // Shared protocol client that decodes messages and dispatches to handlers
@@ -408,6 +430,14 @@ export class ShopifyCheckout
     return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
   }
 
+  get #dialogRetryButtonElement(): HTMLButtonElement | undefined {
+    return this.shadowRoot?.querySelector("#overlay-retry-button") ?? undefined;
+  }
+
+  get #dialogBlockedCloseButtonElement(): HTMLButtonElement | undefined {
+    return this.shadowRoot?.querySelector("#overlay-blocked-close-button") ?? undefined;
+  }
+
   get #targetElement(): HTMLDivElement | undefined {
     return this.shadowRoot?.querySelector(".Shopify-target") ?? undefined;
   }
@@ -436,10 +466,11 @@ export class ShopifyCheckout
       return;
     }
 
+    const isRetry = this.#blockedOpen !== null;
+
     // Close any existing sessions before opening a new one
-    if (this.#currentOpen) {
-      this.close();
-    }
+    this.#blockedOpen?.controller.abort(RETRY_ABORT_REASON);
+    this.close();
 
     this.#checkout = undefined;
     this.#error = undefined;
@@ -470,70 +501,66 @@ export class ShopifyCheckout
       }
     }
 
+    if (!checkoutWindow) {
+      this.#logger.warn("checkout window could not be opened; the browser may have blocked it");
+      this.#recorder?.recordError({
+        category: "navigation",
+        stage: "presentation",
+        code: "blocked",
+        retryable: true,
+        isRetry,
+      });
+      this.#showBlockedOverlay();
+      return;
+    }
+
     const abortController = new AbortController();
 
     //  Opens a dialog element to act as a scrim over the current window while the popup is open.
     //  The dialog can be closed by the user, or will close itself when the popup is closed.
     const dialog = this.#dialogElement;
-    const dialogBackground = this.#dialogBackgroundElement;
     const dialogCloseButton = this.#dialogCloseButtonElement;
     const dialogButton = this.#dialogButtonElement;
 
-    if (dialog && dialogBackground) {
-      // By default we show the scrim.
-      // If a consumer wants to hide it, they can either:
-      // 1. Set `display: none` on the `<shopify-checkout>` element itself
-      // 2. Set `display: none` on the overlay using CSS parts, e.g.,
-      // ```
-      //   shopify-checkout::part(overlay) {
-      //     display: none;
-      //   }
-      // ```
-      // It's important not to call `dialog.showModal()` if the dialog is not visible because it traps focus and
-      // hides the rest of the page from the accessibility tree.
-      const isElementHidden = window.getComputedStyle(this).getPropertyValue("display") === "none";
-      const isOverlayHidden =
-        window.getComputedStyle(dialogBackground).getPropertyValue("display") === "none";
-      const showDialog = !isElementHidden && !isOverlayHidden;
+    if (dialog && this.#isDialogVisible()) {
+      dialog.showModal();
 
-      if (showDialog) {
-        dialog.showModal();
-
-        dialogCloseButton?.addEventListener(
-          "click",
-          () => {
-            dialog.close();
-          },
-          {
-            signal: abortController.signal,
-          },
-        );
-
-        dialog.addEventListener(
-          "close",
-          () => {
-            abortController.abort();
-          },
-          {
-            signal: abortController.signal,
-          },
-        );
-
-        dialogButton?.addEventListener(
-          "click",
-          (event: MouseEvent) => {
-            event.preventDefault();
-            this.#checkoutWindow?.focus();
-          },
-          {
-            signal: abortController.signal,
-          },
-        );
-
-        abortController.signal.addEventListener("abort", () => {
+      dialogCloseButton?.addEventListener(
+        "click",
+        () => {
           dialog.close();
-        });
-      }
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
+
+      dialog.addEventListener(
+        "close",
+        () => {
+          // `close` fires asynchronously; ignore it if the dialog has since been re-shown
+          if (dialog.open) return;
+          abortController.abort();
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
+
+      dialogButton?.addEventListener(
+        "click",
+        (event: MouseEvent) => {
+          event.preventDefault();
+          this.#checkoutWindow?.focus();
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
+
+      abortController.signal.addEventListener("abort", () => {
+        dialog.close();
+      });
     }
 
     abortController.signal.addEventListener("abort", () => {
@@ -566,23 +593,88 @@ export class ShopifyCheckout
 
     this.#currentOpen = { controller: abortController };
     this.#checkoutWindow = checkoutWindow;
-    this.#navigationStartedAt = checkoutWindow && this.telemetry ? navigationStartedAt : undefined;
-
-    if (!checkoutWindow) {
-      this.#recorder?.recordError({
-        category: "navigation",
-        stage: "presentation",
-        code: "blocked",
-        retryable: false,
-        isRetry: false,
-      });
-    }
+    this.#navigationStartedAt = this.telemetry ? navigationStartedAt : undefined;
   }
 
   close(): void {
-    if (this.#currentOpen) {
-      this.#currentOpen.controller.abort();
-    }
+    this.#blockedOpen?.controller.abort();
+    this.#currentOpen?.controller.abort();
+  }
+
+  /**
+   * By default we show the scrim. If a consumer wants to hide it, they can either:
+   * 1. Set `display: none` on the `<shopify-checkout>` element itself
+   * 2. Set `display: none` on the overlay using CSS parts, e.g.,
+   * ```
+   *   shopify-checkout::part(overlay) {
+   *     display: none;
+   *   }
+   * ```
+   * It's important not to call `dialog.showModal()` if the dialog is not visible because it traps
+   * focus and hides the rest of the page from the accessibility tree.
+   */
+  #isDialogVisible(): boolean {
+    const dialogBackground = this.#dialogBackgroundElement;
+    if (!dialogBackground) return false;
+
+    const isElementHidden = window.getComputedStyle(this).getPropertyValue("display") === "none";
+    const isOverlayHidden =
+      window.getComputedStyle(dialogBackground).getPropertyValue("display") === "none";
+    return !isElementHidden && !isOverlayHidden;
+  }
+
+  #showBlockedOverlay(): void {
+    const dialog = this.#dialogElement;
+    if (!dialog || !this.#isDialogVisible()) return;
+
+    const abortController = new AbortController();
+
+    dialog.dataset.state = "blocked";
+    dialog.showModal();
+
+    this.#dialogRetryButtonElement?.addEventListener(
+      "click",
+      () => {
+        this.open();
+      },
+      {
+        signal: abortController.signal,
+      },
+    );
+
+    this.#dialogBlockedCloseButtonElement?.addEventListener(
+      "click",
+      () => {
+        dialog.close();
+      },
+      {
+        signal: abortController.signal,
+      },
+    );
+
+    dialog.addEventListener(
+      "close",
+      () => {
+        // `close` fires asynchronously; ignore it if the dialog has since been re-shown
+        if (dialog.open) return;
+        abortController.abort();
+      },
+      {
+        signal: abortController.signal,
+      },
+    );
+
+    abortController.signal.addEventListener("abort", () => {
+      delete dialog.dataset.state;
+      if (dialog.open) dialog.close();
+      this.#blockedOpen = null;
+      if (abortController.signal.reason !== RETRY_ABORT_REASON) {
+        /** @ignore - Events are documented by the class @event tags. */
+        this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      }
+    });
+
+    this.#blockedOpen = { controller: abortController };
   }
 
   #recordNavigationSuccess(): void {
@@ -959,7 +1051,7 @@ export class ShopifyCheckout
 
     switch (name) {
       case "target": {
-        if (oldValue !== newValue && this.#currentOpen) {
+        if (oldValue !== newValue && (this.#currentOpen || this.#blockedOpen)) {
           this.close();
         }
 
