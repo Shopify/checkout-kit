@@ -1,7 +1,7 @@
 # Shopify Checkout Kit - Android
 
 [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](../../LICENSE)
-![Tests](https://github.com/Shopify/checkout-kit/actions/workflows/test.yml/badge.svg?branch=main)
+![Tests](https://github.com/Shopify/checkout-kit/actions/workflows/android-test.yml/badge.svg?branch=main)
 
 <img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/1f1d7351-1715-4165-874e-c1f2195bcb20" />
 
@@ -25,8 +25,10 @@
 - [Preload checkout](#preload-checkout)
 - [Configure checkout](#configure-checkout)
   - [Color schemes](#color-schemes)
+  - [Sheet options](#sheet-options)
   - [Title localization](#title-localization)
   - [Current configuration](#current-configuration)
+  - [Incoming message origin validation](#incoming-message-origin-validation)
 - [Checkout lifecycle](#checkout-lifecycle)
   - [Constructing event fixtures](#constructing-event-fixtures)
   - [Error handling](#error-handling)
@@ -41,7 +43,9 @@
 
 ## Requirements
 
-- JDK 17+
+- JDK 17+ for the Android build toolchain. The published library targets JVM 11 bytecode.
+- Kotlin 2.0+ for Kotlin consumers.
+- An HTTPS checkout URL from `cart.checkoutUrl` or a cart permalink.
 - Android `minSdk` 23+
 - Android `compileSdk` 35+ for consuming apps. This repository currently builds the library with `compileSdk` 36.
 - WebMessageListener support in the WebView installed on the buyer's device. This is available in Android System WebView
@@ -71,6 +75,12 @@ dependencies {
   <artifactId>checkout-kit</artifactId>
   <version>4.0.0-alpha.7</version>
 </dependency>
+```
+
+Declare internet access in your app manifest:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
 ```
 
 ## Get a checkout URL
@@ -140,6 +150,10 @@ val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
 
 checkout?.dismiss()
 ```
+
+Calling `present` again while checkout is already visible in the same activity returns the existing handle and keeps
+the current URL and callbacks. It does not create a second sheet. `present` returns `null` if the activity is finishing
+or destroyed, or if the installed WebView is unsupported.
 
 ## Embed checkout
 
@@ -234,7 +248,7 @@ val preload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
 
 if (preload == null) {
     // Preloading is disabled, unavailable, or unsupported.
-    // Calling present still loads checkout normally.
+    // An unsupported WebView also causes present to report a failure.
 }
 ```
 
@@ -248,7 +262,7 @@ A successful background preload normally transitions from `Loading` to `Ready`. 
 | `Ready` | The preload finished and can be used for the matching checkout URL. |
 | `Idle` | The preload was invalidated or otherwise cleared. |
 | `Expired` | The cached preload reached its lifetime and was discarded before use. |
-| `Failed(reason)` | Checkout navigation, web content, or an HTTP response failed while preloading. |
+| `Failed(reason, message)` | Checkout navigation, web content, an HTTP response, or a terminal protocol error caused preloading to fail. |
 
 `preload` returns `null` when preloading is disabled, the activity is finishing or destroyed, or the installed WebView does not support the required WebMessageListener API.
 
@@ -261,7 +275,7 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 }
 ```
 
-Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
+Preloading is a best-effort performance hint, not a guarantee. A matching preload can be reused while it is still loading. If the preload is unavailable, expired, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
 
 A valid checkout preloaded and presented with `ShopifyCheckoutKit.present` is retained when its bottom sheet is dismissed, so presenting the same checkout URL again can reuse the loaded checkout. Invalidate the preload when the cart changes or the loaded checkout should no longer be reused.
 
@@ -312,7 +326,7 @@ ShopifyCheckoutKit.configure {
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
 | `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
-| `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
+| `allowedMessageOrigins` | `emptySet()` | Origins trusted to send checkout protocol messages. Empty trusts every origin; a nonempty set restricts the allowlist. See [Incoming message origin validation](#incoming-message-origin-validation). |
 | `telemetry` | `Telemetry(enabled = true)` | Sends anonymous diagnostic metrics to Shopify. Set `enabled` to `false` to opt out. |
 
 Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
@@ -517,7 +531,11 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 ```
 
 `onStart` and `onUpdate` observe checkout state; they do not send mutations to the checkout running in the WebView.
-Use `onComplete` to clear or refresh the cart so the app does not reuse a completed checkout.
+Identical checkout snapshots do not trigger another `onUpdate`, including when different change notifications carry the
+same snapshot. Buyer and payment change notifications are not currently exposed.
+
+Completion leaves the confirmation page visible. Use `onComplete` to record completion and clear or refresh the cart
+without dismissing checkout unless your app explicitly chooses to do so.
 
 Callbacks observe events received during the current presentation. Events received before callbacks are bound,
 including during [preloading](#preload-checkout), are not replayed. `onStart` reports a checkout start event, not the
@@ -742,35 +760,31 @@ Make sure your app has:
 
 ## Samples
 
-See [samples](samples/README.md). `CheckoutKitAndroidDemo` demonstrates an Apollo Kotlin Storefront API cart flow, checkout presentation, typed protocol lifecycle events, file chooser handling, geolocation callbacks, and Customer Account API sign-in.
+See [samples](samples/README.md). `CheckoutKitAndroidDemo` demonstrates an Apollo Kotlin Storefront API cart flow, checkout presentation, typed checkout lifecycle events, file chooser handling, geolocation callbacks, and Customer Account API sign-in.
 
 ## Contributing
 
 See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
 
-Useful checks before opening an Android change:
+From the repository root, provision the development environment and run the Android checks:
 
 ```sh
-cd platforms/android
-./gradlew :lib:build
-./gradlew clean test --console=plain
-./gradlew detekt lintRelease
+dev up
+dev android build
+dev android test
+dev android lint
 ```
 
 For sample app changes, run:
 
 ```sh
-cd platforms/android/samples/CheckoutKitAndroidDemo
-./gradlew build
+dev android build samples
 ```
 
 For public API changes, run:
 
 ```sh
-cd platforms/android
-./gradlew :lib:apiCheck
-cd ../../protocol/languages/kotlin
-./gradlew :embedded-checkout-protocol:apiCheck
+dev android api check
 ```
 
 ## License

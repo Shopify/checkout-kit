@@ -4,7 +4,7 @@
 
 See the [UCP shopping embedded protocol schema](../../../services/shopping/embedded.openrpc.json) for method and payload definitions.
 
-Most Android apps consume this product through the [Checkout Kit Android package](../../../../platforms/android/README.md), which provides a curated protocol API and manages the WebView transport.
+Most Android apps consume this product through the [Checkout Kit Android package](../../../../platforms/android/README.md), which provides typed checkout lifecycle callbacks and manages the WebView transport.
 
 ## Requirements
 
@@ -50,26 +50,34 @@ Handlers run synchronously on the calling thread. The client does not provide a 
 
 ## Connect to Checkout Kit
 
-Android apps using Checkout Kit should use its curated `com.shopify.checkoutkit.CheckoutProtocol` API instead of constructing the low-level protocol client directly:
+Android apps using Checkout Kit register lifecycle callbacks directly. The protocol client is managed internally;
+`CheckoutProtocol.Client` and `connect(client)` are no longer public Checkout Kit APIs.
 
 ```kotlin
-import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.ShopifyCheckoutKit
 
-val protocolClient = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.start) { checkout ->
-        println("Checkout started: ${checkout.id}")
-    }
-    .on(CheckoutProtocol.complete) { checkout ->
-        println("Checkout completed: ${checkout.id}")
-    }
-
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    connect(protocolClient)
+    onStart { event ->
+        println("Checkout started: ${event.checkout.id}")
+    }
+    onUpdate { event ->
+        println("Checkout totals changed: ${event.checkout.totals}")
+    }
+    onComplete { event ->
+        println("Checkout completed: ${event.checkout.id}")
+    }
+    onFail { event ->
+        // Choose recovery using event.error.code.
+    }
+    onDismiss {
+        // Clear or refresh your app's checkout UI.
+    }
 }
 ```
 
-See the Android README's [checkout lifecycle](../../../../platforms/android/README.md#checkout-lifecycle) section for the supported Checkout Kit descriptors and presentation callbacks.
+These callbacks receive Checkout Kit event wrappers with a Kit-owned `Checkout` snapshot or a `CheckoutException`.
+See the Android README's [checkout lifecycle](../../../../platforms/android/README.md#checkout-lifecycle) section
+for Kotlin callbacks and Java listener methods.
 
 ## Protocol notifications
 
@@ -85,7 +93,8 @@ Raw notification descriptors include:
 - `EmbeddedCheckoutProtocol.paymentChange`
 - `EmbeddedCheckoutProtocol.fulfillmentChange`
 
-Checkout Kit intentionally exposes a curated subset of these descriptors to app developers.
+Checkout Kit translates a supported subset of these notifications into its own lifecycle events. Buyer and payment
+change notifications are available to low-level protocol clients but are not exposed as Checkout Kit callbacks.
 
 ## Protocol delegations
 
