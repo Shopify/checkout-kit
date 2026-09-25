@@ -59,7 +59,7 @@ describe("<shopify-checkout>", () => {
       vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
 
       const closeEventSpy = vi.fn();
-      checkout.addEventListener("ec.close", closeEventSpy);
+      checkout.addEventListener("close", closeEventSpy);
 
       checkout.open();
       expect(closeEventSpy).not.toHaveBeenCalled();
@@ -291,7 +291,7 @@ describe("<shopify-checkout>", () => {
 
             const closeEventSpy = vi.fn();
             const durationSpy = vi.spyOn(mockTelemetry(), "recordNavigationDuration");
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
 
@@ -381,7 +381,7 @@ describe("<shopify-checkout>", () => {
           vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
 
           const closeEventSpy = vi.fn();
-          checkout.addEventListener("ec.close", closeEventSpy);
+          checkout.addEventListener("close", closeEventSpy);
 
           checkout.open();
           checkout.open();
@@ -446,7 +446,7 @@ describe("<shopify-checkout>", () => {
             vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
 
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
 
@@ -471,7 +471,7 @@ describe("<shopify-checkout>", () => {
             vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
 
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
             window.dispatchEvent(new FocusEvent("focus"));
@@ -498,7 +498,7 @@ describe("<shopify-checkout>", () => {
             vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
 
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             // Session A opens.
             checkout.open();
@@ -554,7 +554,7 @@ describe("<shopify-checkout>", () => {
 
             vi.spyOn(window, "open").mockReturnValue(mockWindow);
 
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
             checkout.open();
             checkout.close();
 

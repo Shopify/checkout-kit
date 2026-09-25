@@ -193,15 +193,15 @@ describe("renderLog", () => {
       refs,
       state({
         log: [
-          { type: "ec.close", time: "00:00:02.000", snapshot: "{}" },
-          { type: "ec.start", time: "00:00:01.000", snapshot: "{}" },
+          { type: "close", time: "00:00:02.000", snapshot: "{}" },
+          { type: "start", time: "00:00:01.000", snapshot: "{}" },
         ],
       }),
     );
     const names = [...refs.eventLog.querySelectorAll(".event-entry-name")].map(
       (el) => el.textContent,
     );
-    expect(names).toEqual(["ec.close", "ec.start"]);
+    expect(names).toEqual(["close", "start"]);
   });
 
   it("collapses the events panel", () => {

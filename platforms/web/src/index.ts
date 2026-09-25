@@ -1,48 +1,33 @@
 // Registers `<shopify-checkout>` (side effect).
 import "./checkout-web-component";
 
-// The custom element class.
 export { ShopifyCheckout } from "./checkout";
 
-// Event classes — useful for `instanceof` checks and as type aliases for handlers.
 export {
   ShopifyCheckoutStartEvent,
+  ShopifyCheckoutUpdateEvent,
   ShopifyCheckoutCompleteEvent,
-  ShopifyCheckoutCloseEvent,
   ShopifyCheckoutErrorEvent,
-  ShopifyCheckoutFulfillmentChangeEvent,
-  ShopifyCheckoutLineItemsChangeEvent,
-  ShopifyCheckoutTotalsChangeEvent,
-  ShopifyCheckoutMessagesChangeEvent,
-} from "./checkout";
+  ShopifyCheckoutCloseEvent,
+} from "./checkout-events";
 
-// Event detail payload types — useful for typing handler parameter shapes.
 export type {
   ShopifyCheckoutStartEventDetail,
+  ShopifyCheckoutUpdateEventDetail,
   ShopifyCheckoutCompleteEventDetail,
   ShopifyCheckoutErrorEventDetail,
-  ShopifyCheckoutFulfillmentChangeEventDetail,
-  ShopifyCheckoutLineItemsChangeEventDetail,
-  ShopifyCheckoutTotalsChangeEventDetail,
-  ShopifyCheckoutMessagesChangeEventDetail,
-} from "./checkout";
+  ShopifyCheckoutEventMap,
+} from "./checkout-events";
 
-// Public configuration types.
 export type {
   CheckoutAppearance,
   CheckoutTarget,
+  Checkout,
+  CheckoutError,
+  CheckoutErrorCode,
   LogLevel,
   MessageRejectedDetail,
 } from "./checkout.types";
 
-// UCP domain types — surfaced because they appear on event details and the
-// `element.checkout` / `element.error` mirrors.
-export type {
-  Buyer,
-  Checkout,
-  LineItem,
-  Message,
-  OrderConfirmation,
-  CheckoutTotal,
-  ErrorResponse,
-} from "./checkout.types";
+// Shared domain types used by the Kit-owned checkout snapshot.
+export type { Buyer, LineItem, Message, OrderConfirmation, CheckoutTotal } from "./checkout.types";
