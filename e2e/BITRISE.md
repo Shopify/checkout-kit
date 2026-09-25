@@ -50,7 +50,32 @@ Changes that select no applications run only the lightweight `e2e-produce-browse
 
 For example, `platforms/react-native/README.md` is excluded by the Markdown filters, and `.github/workflows/rn-test.yml` does not select an E2E application. Both changes start the planner and finish successfully without allocating app build machines or BrowserStack devices. The runtime filters make the per-application decision after the required pipeline starts.
 
-A manually started pipeline has no pull request file list, so it selects every application in the E2E matrix. Choose the branch and `e2e` pipeline from the Bitrise **Start build** page to run the complete E2E suite against that branch. No push trigger is configured, so merging to `main` does not automatically start this pipeline.
+A manually started pipeline has no pull request file list, so it selects every application in the E2E matrix. Choose the branch and `e2e` pipeline from the Bitrise **Start build** page to run the complete E2E suite against that branch. The only push trigger matches merge queue branches, so merging to `main` does not automatically start this pipeline.
+
+## GitHub merge queue
+
+GitHub Actions handles `merge_group: checks_requested` in `.github/workflows/ci.yml`. The pinned path-filter action automatically compares the queued group with `github.event.merge_group.base_sha`, so `CI Required` covers all changes in the group.
+
+Both Bitrise pipelines also trigger on pushes to `gh-readonly-queue/main/*`, the temporary branches GitHub creates for the queue. These builds test the queue commit, which includes the latest base and any earlier queued changes. They have no pull request file list, so the existing non-PR fallback selects all native CI jobs and E2E applications. Queue builds therefore run the full suites even when the original PR only needed selected jobs.
+
+Bitrise publishes the pipeline statuses on that queue commit. The report name deliberately keeps the existing `/pr` suffix for every event:
+
+- `ci/bitrise/ci-ios/pr`
+- `ci/bitrise/e2e/pr`
+
+Using `<event_type>` would change these names to `/push` for queue builds and leave GitHub waiting for the required `/pr` checks. Detailed PR comments and the self-posted iOS report still skip non-PR builds; the required queue checks are Bitrise's pipeline statuses.
+
+### Enable the queue after this configuration reaches main
+
+In **Settings > Rules > Rulesets > main**, enable **Require merge queue** and choose **Squash**. Keep the existing required reviews, linear history, and all three required checks (`CI Required` and the two Bitrise statuses above).
+
+Start with build concurrency **1**, minimum merge group size **1**, and a status-check timeout long enough for the full Bitrise build and BrowserStack run. Increasing concurrency starts additional complete suites, including macOS builds and device tests.
+
+The Bitrise GitHub integration must receive push events and report build statuses. Queue branches run from the committed `e2e/bitrise.yml`; no separate merge bot or workflow dispatch token is needed. Enable the GitHub rule only after this configuration is on `main`, otherwise the required queue checks will never start.
+
+Native GitHub stacks can be enqueued with `shadowenv exec -- gh stack merge --squash`. GitHub keeps their dependency order; if a PR is ejected, its dependent PRs leave the queue too. Large stacks can span consecutive merge groups.
+
+See [GitHub's merge queue CI requirements](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue) and [stack merge behavior](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/merging-stacked-pull-requests).
 
 ## The `ci-ios` pipeline
 
@@ -64,7 +89,7 @@ Selection happens inside the pipeline instead. The Linux `ci-ios-plan` workflow 
 
 Both required pipelines start on every non-draft pull request and select their work at runtime.
 
-A manually started `ci-ios` pipeline selects all four macOS jobs. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e`, `ci-ios` has no push trigger and does not run automatically after a merge to `main`.
+A manually started `ci-ios` pipeline selects all four macOS jobs. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e`, `ci-ios` only triggers on pushes to merge queue branches and does not run automatically after a merge to `main`.
 
 ### The check is self-posted
 
