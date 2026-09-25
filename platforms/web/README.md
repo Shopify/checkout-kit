@@ -354,10 +354,12 @@ Where the checkout is presented. Defaults to `"auto"`.
 
 > [!NOTE]
 > If the browser refuses to open the window (for example, a popup blocker, or
-> `open()` called outside a user gesture), the [overlay scrim](#overlay-scrim)
-> says so and offers a button to try again. Closing it dispatches `close`.
-> If the overlay is hidden, nothing is shown and no events fire. The component
-> logs a warning at `log-level="warn"` or more verbose.
+> `open()` called outside a user gesture), the component dispatches `blocked`
+> and the [overlay scrim](#overlay-scrim) says so and offers a button to try
+> again. Closing it dispatches `close`. If you hide the overlay, listen for
+> `blocked` to show your own message, and call `open()` again from a user
+> action such as a click. A call made directly from the listener is ignored.
+> The component logs a warning at `log-level="warn"` or more verbose.
 
 ### `appearance`
 
@@ -492,11 +494,11 @@ shopify-checkout::part(overlay) {
 ## Checkout lifecycle
 
 The element dispatches typed `CustomEvent`s at every meaningful moment of the
-checkout session. The `start`, `update`, `complete`, and `close` events bubble,
-so you can listen anywhere in your DOM, including a single delegated listener
-at `document` if you have many elements on the page. The `error` event does not
-bubble; attach its listener directly to the checkout element. Event payloads
-are available in `event.detail`.
+checkout session. The `start`, `update`, `complete`, `close`, and `blocked`
+events bubble, so you can listen anywhere in your DOM, including a single
+delegated listener at `document` if you have many elements on the page. The
+`error` event does not bubble; attach its listener directly to the checkout
+element. Event payloads are available in `event.detail`.
 
 | Event      | `event.detail` | When it fires |
 | ---------- | -------------- | ------------- |
@@ -505,6 +507,7 @@ are available in `event.detail`.
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
 | `error`    | `{error}`      | Checkout reported a terminal error, exposed as `{code, message}`. The component closes automatically after this event. |
 | `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
+| `blocked`  | _(none)_       | The browser blocked the checkout window. Fires on every blocked attempt, whether or not the overlay is shown. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
 `event.detail.checkout`. It preserves checkout data, including unknown

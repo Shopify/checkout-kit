@@ -49,6 +49,14 @@ export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
   }
 }
 
+export class ShopifyCheckoutBlockedEvent extends CustomEvent<undefined> {
+  declare type: "blocked";
+
+  constructor() {
+    super("blocked", { bubbles: true });
+  }
+}
+
 export class ShopifyCheckoutErrorEvent extends CustomEvent<ShopifyCheckoutErrorEventDetail> {
   declare type: "error";
 
@@ -64,4 +72,5 @@ export interface ShopifyCheckoutEventMap {
   complete: ShopifyCheckoutCompleteEvent;
   error: ShopifyCheckoutErrorEvent;
   close: ShopifyCheckoutCloseEvent;
+  blocked: ShopifyCheckoutBlockedEvent;
 }

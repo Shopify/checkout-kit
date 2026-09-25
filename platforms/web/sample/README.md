@@ -34,7 +34,7 @@ You can also choose **Use existing checkout source** in Settings. In that mode, 
 
 - **Settings** — persisted storefront domain, flow, target (`popup` | `auto`), appearance (default `storefront` | `app:light` | `app:dark` | `app:automatic` | `storefront`), and log-level (`debug` | `warn` | `error` | `none`) settings. The storefront domain appears first because the cart builder cannot load products without it.
 - **Center workspace** — build mode shows a storefront-style product grid plus sticky cart banner; manual mode shows a focused checkout URL/cart permalink input.
-- **Runtime** — shows component state above the `start`, `update`, `complete`, `error`, and `close` event log. Each entry includes the event detail and a JSON snapshot of component state at fire time.
+- **Runtime** — shows component state above the `start`, `update`, `complete`, `error`, `close`, and `blocked` event log. Each entry includes the event detail and a JSON snapshot of component state at fire time.
 
 The element is mounted on `<body>`. For `popup` / `auto`, the visible UI is mostly the overlay scrim while checkout is open in a separate window or tab.
 
