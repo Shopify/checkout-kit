@@ -569,7 +569,7 @@ class CheckoutWebViewTests: XCTestCase {
 
         let sensitiveURL = try XCTUnwrap(
             URL(
-                string: "https://buyer:secret@shopify1.shopify.com/checkouts/cn/123?ec_version=2026-04-08&ec_auth=test-jwt-token&ec_delegate=payment.instruments_change&checkout[email]=buyer@example.com#fragment"
+                string: "https://buyer:secret@shopify1.shopify.com/checkouts/cn/123?ec_version=caller-supplied&ec_auth=test-jwt-token&ec_delegate=payment.instruments_change&checkout[email]=buyer@example.com#fragment"
             )
         )
 

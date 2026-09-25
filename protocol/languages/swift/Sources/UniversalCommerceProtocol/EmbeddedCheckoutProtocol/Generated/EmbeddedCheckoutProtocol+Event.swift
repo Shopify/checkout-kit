@@ -16,6 +16,10 @@ extension EmbeddedCheckoutProtocol.ReadyResult: ResponsePayload {}
 extension EmbeddedCheckoutProtocol.WindowOpenResult: ResponsePayload {}
 
 extension EmbeddedCheckoutProtocol {
+    /// The UCP spec revision these artifacts were generated from, taken from
+    /// `protocol/source-lock.json`. Do not edit by hand.
+    public static let specVersion = "2026-08-25"
+
     /// Every `ec.*` method this protocol owns, resolved to a typed descriptor.
     /// Notifications become `NotificationDescriptor`s; requests become
     /// `RequestDescriptor`s.

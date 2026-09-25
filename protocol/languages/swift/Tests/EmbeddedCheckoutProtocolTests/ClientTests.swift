@@ -58,18 +58,15 @@ private final class DecodeErrorRecorder: @unchecked Sendable {
 @Suite("Client Tests")
 struct ClientTests {
     private func notificationFixture() throws -> String {
-        let url = Bundle.module.url(forResource: "notification", withExtension: "json", subdirectory: "Fixtures")!
-        return try String(contentsOf: url, encoding: .utf8)
+        try protocolFixture("notification")
     }
 
     private func readyFixture() throws -> String {
-        let url = Bundle.module.url(forResource: "ready_response", withExtension: "json", subdirectory: "Fixtures")!
-        return try String(contentsOf: url, encoding: .utf8)
+        try protocolFixture("ready_response")
     }
 
     private func requestFixture() throws -> String {
-        let url = Bundle.module.url(forResource: "request", withExtension: "json", subdirectory: "Fixtures")!
-        return try String(contentsOf: url, encoding: .utf8)
+        try protocolFixture("request")
     }
 
     @Test @MainActor func notificationDispatchesToRegisteredHandler() async throws {
@@ -422,6 +419,7 @@ struct ClientTests {
                         checkout: nil,
                         ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
                             capabilities: nil,
+                            mapOrder: nil,
                             paymentHandlers: nil,
                             services: nil,
                             status: .success,

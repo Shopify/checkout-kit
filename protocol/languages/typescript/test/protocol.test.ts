@@ -1,5 +1,6 @@
 import {describe, test, expect} from 'vitest';
 
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {decodeProtocolPayload} from '../src/protocol';
 
 describe('decodeProtocolPayload', () => {
@@ -11,7 +12,7 @@ describe('decodeProtocolPayload', () => {
       links: [],
       status: 'incomplete',
       totals: [],
-      ucp: {version: '2026-04-08'},
+      ucp: {version: EmbeddedCheckoutProtocol.specVersion},
     }) as Record<string, unknown>;
 
     expect(decoded.lineItems).toEqual([]);

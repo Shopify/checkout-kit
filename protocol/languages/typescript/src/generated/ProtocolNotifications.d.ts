@@ -11,7 +11,7 @@ type ReadyRequest = import('./Models').ReadyRequest;
 type ReadyResult = import('./Models').ReadyResult;
 type WindowOpenRequest = import('./Models').WindowOpenRequest;
 type WindowOpenResult = import('./Models').WindowOpenResult;
-export declare const SPEC_VERSION = "2026-04-08";
+export declare const SPEC_VERSION = "2026-08-25";
 export declare const Delegations: {
     readonly paymentInstrumentsChange: "payment.instruments_change";
     readonly paymentCredential: "payment.credential";

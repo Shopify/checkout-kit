@@ -1,0 +1,107 @@
+{
+  "jsonrpc": "2.0",
+  "method": "ec.start",
+  "params": {
+    "checkout": {
+      "id": "checkout-payload",
+      "currency": "USD",
+      "line_items": [],
+      "links": [],
+      "status": "incomplete",
+      "totals": [
+        {
+          "type": "subtotal",
+          "amount": 0
+        },
+        {
+          "type": "fulfillment",
+          "amount": 500
+        },
+        {
+          "type": "total",
+          "amount": 500
+        }
+      ],
+      "ucp": {
+        "version": "{{SPEC_VERSION}}",
+        "payment_handlers": {}
+      },
+      "fulfillment": {
+        "available_methods": [
+          {
+            "type": "shipping",
+            "line_item_ids": []
+          }
+        ],
+        "methods": [
+          {
+            "id": "shipping-1",
+            "type": "shipping",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "address-1",
+                "street_address": "123 Example Street",
+                "address_locality": "Example City",
+                "address_country": "US",
+                "postal_code": "10001",
+                "type": "shipping_address"
+              }
+            ],
+            "groups": [
+              {
+                "id": "group-1",
+                "line_item_ids": [],
+                "options": [
+                  {
+                    "id": "option-standard",
+                    "title": "Standard Shipping",
+                    "description": {
+                      "plain": "Arrives in 3-5 business days"
+                    },
+                    "totals": [
+                      {
+                        "type": "fulfillment",
+                        "amount": 500
+                      }
+                    ]
+                  }
+                ],
+                "selected_option_id": "option-standard"
+              }
+            ],
+            "com.example.method_extension": {
+              "nested_value": "preserved"
+            }
+          },
+          {
+            "id": "pickup-1",
+            "type": "pickup",
+            "line_item_ids": [],
+            "destinations": [
+              {
+                "id": "location-1",
+                "name": "Example Pickup Store",
+                "address": {
+                  "street_address": "456 Example Avenue",
+                  "extended_address": "Suite 2",
+                  "address_locality": "Example City",
+                  "address_region": "NY",
+                  "address_country": "US",
+                  "postal_code": "10002"
+                },
+                "type": "business_location"
+              }
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "com.example.device_id": "payload-test"
+      },
+      "com.example.extension": {
+        "nested_value": 42
+      }
+    }
+  }
+}

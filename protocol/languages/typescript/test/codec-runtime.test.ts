@@ -1,5 +1,6 @@
 import {expect, test} from 'vitest';
 
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {
   decodeProtocolObject,
   encodeProtocolObject,
@@ -12,7 +13,7 @@ const wire = {
   links: [],
   status: 'incomplete',
   totals: [],
-  ucp: {version: '2026-04-08'},
+  ucp: {version: EmbeddedCheckoutProtocol.specVersion},
   x_partner_data: {nested_key: 'value'},
   'com.example.foo': 'bar',
 };

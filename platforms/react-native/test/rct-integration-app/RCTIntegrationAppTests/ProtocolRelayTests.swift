@@ -1,4 +1,9 @@
 import Foundation
+#if COCOAPODS
+    import ShopifyCheckoutKit
+#else
+    import EmbeddedCheckoutProtocol
+#endif
 @testable import RNShopifyCheckoutKit
 import XCTest
 
@@ -130,7 +135,7 @@ private let ecStartNotificationFixture = #"""
   "params": {
     "checkout": {
       "ucp": {
-        "version": "2026-04-08",
+        "version": "\#(EmbeddedCheckoutProtocol.specVersion)",
         "payment_handlers": {
           "com.example.loyalty_gold": []
         }
@@ -171,7 +176,7 @@ private let ecErrorNotificationFixture = #"""
   "params": {
     "error": {
       "ucp": {
-        "version": "2026-04-08",
+        "version": "\#(EmbeddedCheckoutProtocol.specVersion)",
         "status": "error"
       },
       "messages": [

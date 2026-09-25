@@ -48,7 +48,7 @@ struct CheckoutProtocolURLTests {
     }
 
     @Test func replacesCallerSuppliedProtocolQueryItems() throws {
-        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=stale&ec_delegate=custom"))
+        let url = try #require(URL(string: "https://shop.com/cart/c/abc?ec_version=caller-supplied&ec_version=stale&ec_delegate=custom"))
         let items = queryItems(EmbeddedCheckoutProtocol.url(for: url, options: .init(delegations: ["window.open"])))
 
         #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])

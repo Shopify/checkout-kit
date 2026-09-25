@@ -1,21 +1,22 @@
 import {describe, test, expect} from 'vitest';
 
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {url} from '../src/url';
 import {Delegations} from '../src/generated/ProtocolNotifications';
 
 describe('url handshake', () => {
   test('appends the spec version', () => {
     expect(url('https://shop.example/checkout')).toBe(
-      'https://shop.example/checkout?ec_version=2026-04-08',
+      `https://shop.example/checkout?ec_version=${EmbeddedCheckoutProtocol.specVersion}`,
     );
   });
 
   test('replaces an existing protocol version and preserves other query params', () => {
-    const result = url('https://shop.example/c?ec_version=old&foo=bar');
+    const result = url('https://shop.example/c?ec_version=caller-supplied&ec_version=stale&foo=bar');
 
     expect(result).toContain('foo=bar');
     expect(result.match(/ec_version=/g)).toHaveLength(1);
-    expect(result).toContain('ec_version=2026-04-08');
+    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
   });
 
   test('encodes delegations, auth, and color scheme', () => {
@@ -34,13 +35,13 @@ describe('url handshake', () => {
     const result = url('https://shop.example/c#section');
 
     expect(result.endsWith('#section')).toBe(true);
-    expect(result).toContain('ec_version=2026-04-08');
+    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
   });
 
   test('keeps a query param with a malformed percent-encoded name', () => {
     const result = url('https://shop.example/c?%=1');
 
     expect(result).toContain('%=1');
-    expect(result).toContain('ec_version=2026-04-08');
+    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
   });
 });

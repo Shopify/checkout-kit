@@ -8,7 +8,6 @@ import com.shopify.ucp.embedded.checkout.EmbeddedColorScheme
 import com.shopify.ucp.embedded.checkout.EmbeddedTransportConfig
 import com.shopify.ucp.embedded.checkout.ErrorResponse
 import com.shopify.ucp.embedded.checkout.ErrorStatus
-import com.shopify.ucp.embedded.checkout.FulfillmentMethodType
 import com.shopify.ucp.embedded.checkout.LineItemQuantity
 import com.shopify.ucp.embedded.checkout.LineItemStatus
 import com.shopify.ucp.embedded.checkout.Message
@@ -349,14 +348,14 @@ class CheckoutProtocolTest {
             .on(CheckoutProtocol.error) { received = it }
 
         val errorMsg = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
-            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":[""" +
+            """{"error":{"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},"messages":[""" +
             """{"type":"error","code":"unknown_error","content":"fail","severity":"unrecoverable"},""" +
             """{"type":"error","code":"session_expired","content":"expired","severity":"recoverable"}""" +
             """],"continue_url":"https://example.com/retry"}}}"""
         client.process(errorMsg)
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
 
-        assertThat(received?.ucp?.version).isEqualTo("2026-04-08")
+        assertThat(received?.ucp?.version).isEqualTo(CheckoutProtocol.SPEC_VERSION)
         assertThat(received?.ucp?.status).isEqualTo(ErrorStatus.Error)
         assertThat(received?.messages).hasSize(2)
         assertThat(received?.messages?.get(0)?.type).isEqualTo(MessageType.Error)
@@ -375,7 +374,7 @@ class CheckoutProtocolTest {
             .on(CheckoutProtocol.error) {}
 
         val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
-            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+            """{"error":{"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},"messages":"not-an-array"}}}"""
         client.process(malformed)
 
         assertThat(
@@ -408,7 +407,7 @@ class CheckoutProtocolTest {
             .on(CheckoutProtocol.error) {}
 
         val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
-            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+            """{"error":{"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},"messages":"not-an-array"}}}"""
         client.process(malformed)
 
         assertThat(
@@ -425,7 +424,7 @@ class CheckoutProtocolTest {
             .on(CheckoutProtocol.error) {}
 
         val malformed = """{"jsonrpc":"2.0","method":"ec.error","params":""" +
-            """{"error":{"ucp":{"version":"2026-04-08","status":"error"},"messages":"not-an-array"}}}"""
+            """{"error":{"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},"messages":"not-an-array"}}}"""
         client.process(malformed)
 
         assertThat(
@@ -496,7 +495,7 @@ class CheckoutProtocolTest {
               "totals": [],
               "ucp": {
                 "payment_handlers": {},
-                "version": "2026-04-08"
+                "version": "${CheckoutProtocol.SPEC_VERSION}"
               }
             }
             """.trimIndent(),
@@ -507,10 +506,10 @@ class CheckoutProtocolTest {
         assertThat(checkout.discounts?.applied?.get(0)?.allocations?.get(0)?.path)
             .isEqualTo("\$.line_items[0]")
         assertThat(checkout.fulfillment?.availableMethods?.get(0)?.type)
-            .isEqualTo(FulfillmentMethodType.Shipping)
+            .isEqualTo("shipping")
         assertThat(checkout.fulfillment?.methods?.get(0)?.id).isEqualTo("pickup-main")
         assertThat(checkout.fulfillment?.methods?.get(0)?.type)
-            .isEqualTo(FulfillmentMethodType.Pickup)
+            .isEqualTo("pickup")
     }
 
     @Test

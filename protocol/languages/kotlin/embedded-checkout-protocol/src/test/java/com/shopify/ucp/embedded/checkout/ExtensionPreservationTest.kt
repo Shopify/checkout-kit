@@ -21,7 +21,7 @@ class ExtensionPreservationTest {
               "links": [],
               "status": "incomplete",
               "totals": [],
-              "ucp": {"payment_handlers": {}, "version": "2026-04-08"},
+              "ucp": {"payment_handlers": {}, "version": "${EmbeddedCheckoutProtocol.SPEC_VERSION}"},
               "signals": {"dev.ucp.buyer_ip": "203.0.113.7", "com.example.device_id": "abc-123"},
               "com.example.foo": "bar"
             }

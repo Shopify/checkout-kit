@@ -215,7 +215,7 @@ struct CartView: View {
 
     private func selectedAddressIDs(in checkout: ShopifyCheckoutKit.Checkout) -> [String: String] {
         (checkout.fulfillment?.methods ?? []).reduce(into: [:]) { selections, method in
-            guard method.type == .shipping, let destinationID = method.selectedDestinationID else { return }
+            guard method.type == "shipping", let destinationID = method.selectedDestinationID else { return }
             selections[method.id] = destinationID
         }
     }

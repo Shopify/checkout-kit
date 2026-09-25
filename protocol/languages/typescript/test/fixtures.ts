@@ -1,3 +1,5 @@
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
+
 export const CHECKOUT_ENVELOPE = {
   id: 'checkout-123',
   currency: 'USD',
@@ -170,13 +172,13 @@ export const CHECKOUT_ENVELOPE = {
     },
   ],
   ucp: {
-    version: '2026-04-08',
+    version: EmbeddedCheckoutProtocol.specVersion,
     status: 'success',
     payment_handlers: {
       'com.shopify.payments': [
         {
           id: 'com.shopify.payments',
-          version: '2026-04-08',
+          version: EmbeddedCheckoutProtocol.specVersion,
           available_instruments: [
             {type: 'card', brands: ['visa', 'mastercard']},
           ],
@@ -187,7 +189,7 @@ export const CHECKOUT_ENVELOPE = {
       'com.shopify.checkout.embedded': [
         {
           id: 'embedded-1',
-          version: '2026-04-08',
+          version: EmbeddedCheckoutProtocol.specVersion,
           config: {color_scheme: 'dark'},
         },
       ],
@@ -202,6 +204,6 @@ export const CHECKOUT_ENVELOPE = {
 export const RESULT_FIXTURE = {
   ucp: {
     status: 'success',
-    version: '2026-04-08',
+    version: EmbeddedCheckoutProtocol.specVersion,
   },
 };

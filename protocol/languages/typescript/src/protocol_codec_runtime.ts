@@ -29,23 +29,28 @@ export function decodeProtocolObject(
   requireFields(input, REQUIRED_FIELDS[modelName] ?? [], modelName);
   requireStringFields(input, REQUIRED_STRING_FIELDS[modelName] ?? [], modelName);
   requireNestedFields(input, modelName);
-  return walkObject(input, renameMap[modelName], 'decode') as JSONRecord;
+  return walkObject(input, renameMap[modelName], 'decode', modelName) as JSONRecord;
 }
 
 export function encodeProtocolObject(
   value: unknown,
   modelName: string,
 ): unknown {
-  return walkObject(value, renameMap[modelName], 'encode');
+  return walkObject(value, renameMap[modelName], 'encode', modelName);
 }
 
 function walkObject(
   value: unknown,
   entries: RenameEntry[] | undefined,
   direction: Direction,
+  modelName?: string,
 ): unknown {
-  if (!entries || !isObjectRecord(value)) {
-    return value;
+  const input =
+    direction === 'decode' && modelName === 'FulfillmentOption'
+      ? normalizeLegacyFulfillmentOptionDescription(value)
+      : value;
+  if (!entries || !isObjectRecord(input)) {
+    return input;
   }
 
   const sourceIndex = direction === 'decode' ? 0 : 1;
@@ -57,7 +62,7 @@ function walkObject(
   }
 
   const output: JSONRecord = {};
-  for (const [key, item] of Object.entries(value)) {
+  for (const [key, item] of Object.entries(input)) {
     const entry = entryBySource.get(key);
     if (entry) {
       output[entry[targetIndex]] = walkChild(item, entry[2], direction);
@@ -79,7 +84,7 @@ function walkChild(
 
   switch (child[0]) {
     case 'r':
-      return walkObject(value, renameMap[child[1]], direction);
+      return walkObject(value, renameMap[child[1]], direction, child[1]);
     case 'a':
       return Array.isArray(value)
         ? value.map(item => walkChild(item, child[1], direction))
@@ -121,6 +126,13 @@ function walkUnion(
     return objectMember ? walkChild(value, objectMember, direction) : value;
   }
   return value;
+}
+
+function normalizeLegacyFulfillmentOptionDescription(value: unknown): unknown {
+  if (!isObjectRecord(value) || typeof value.description !== 'string') {
+    return value;
+  }
+  return {...value, description: {plain: value.description}};
 }
 
 function isObjectRecord(value: unknown): value is JSONRecord {

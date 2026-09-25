@@ -1,5 +1,6 @@
 import {describe, test, expect} from 'vitest';
 
+import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {
   Delegations,
   notificationDescriptors,
@@ -96,7 +97,7 @@ describe('notification descriptors', () => {
     const decoded = notificationDescriptors.error.decode({
       error: {
         messages: [],
-        ucp: {version: '2026-04-08', status: 'error', payment_handlers: {}},
+        ucp: {version: EmbeddedCheckoutProtocol.specVersion, status: 'error', payment_handlers: {}},
       },
     });
 

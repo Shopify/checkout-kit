@@ -61,7 +61,7 @@ class CheckoutUrlDecoratorTest {
 
     @Test
     fun `decorate replaces caller-supplied supported ECP params and strips unsupported ECP params`() {
-        val url = "$BASE_URL?ec_version=override&ec_delegate=custom&ec_auth=token&ec_color_scheme=dark&ck_branding=app"
+        val url = "$BASE_URL?ec_version=caller-supplied&ec_delegate=custom&ec_auth=token&ec_color_scheme=dark&ck_branding=app"
         val result = CheckoutUrlDecorator.decorate(url).toUri()
         assertThat(result.getQueryParameters("ec_version")).containsExactly(CheckoutProtocol.SPEC_VERSION)
         assertThat(result.getQueryParameters("ec_delegate")).containsExactly("window.open")

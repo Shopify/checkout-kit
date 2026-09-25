@@ -1,3 +1,6 @@
+#if !COCOAPODS
+    import EmbeddedCheckoutProtocol
+#endif
 @testable import ShopifyAcceleratedCheckouts
 @testable import ShopifyCheckoutKit
 import UIKit
@@ -186,7 +189,7 @@ final class WalletControllerTests: XCTestCase {
             {"jsonrpc":"2.0","method":"\(method)","params":{"checkout":{
               "id":"checkout-1","currency":"USD","status":"incomplete",
               "line_items":[],"links":[],"totals":[{"type":"total","amount":\(total)}],
-              "ucp":{"payment_handlers":{},"version":"2026-01-11"}
+              "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
             }}}
             """
         }

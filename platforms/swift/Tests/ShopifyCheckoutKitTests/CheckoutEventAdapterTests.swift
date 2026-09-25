@@ -27,9 +27,15 @@ final class CheckoutEventAdapterTests: XCTestCase {
         // Reserved keys must stay excluded even if an in-memory protocol model contains them.
         protocolCheckout.additionalProperties["ucp"] = protocolCheckout.additionalProperties["com.example.extension"]
         protocolCheckout.additionalProperties["currency"] = protocolCheckout.additionalProperties["com.example.extension"]
+        protocolCheckout.additionalProperties["actions"] = protocolCheckout.additionalProperties["com.example.extension"]
+        protocolCheckout.additionalProperties["policies"] = protocolCheckout.additionalProperties["com.example.extension"]
         let checkout = ShopifyCheckoutKit.Checkout(protocolCheckout: protocolCheckout)
         XCTAssertNil(checkout.additionalProperties["ucp"])
         XCTAssertNil(checkout.additionalProperties["currency"])
+        XCTAssertNil(checkout.additionalProperties["actions"])
+        XCTAssertNil(checkout.additionalProperties["policies"])
+        XCTAssertEqual(checkout.actions?["com.example.review"]?.first?["id"]?.value as? String, "action-1")
+        XCTAssertEqual(checkout.policies?.first?.description.plain, "Return within 30 days")
         XCTAssertEqual(checkout.attribution, ["source": "agent"])
         XCTAssertEqual(checkout.context?.addressCountry, "IE")
         XCTAssertEqual(checkout.continueURL, "https://example.com/continue")
@@ -64,6 +70,7 @@ final class CheckoutEventAdapterTests: XCTestCase {
         XCTAssertEqual(extensionValue?["enabled"] as? Bool, true)
 
         let encoded = try JSONEncoder().encode(checkout)
+        XCTAssertEqual(try JSONDecoder().decode(ShopifyCheckoutKit.Checkout.self, from: encoded), checkout)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
         XCTAssertNil(object["ucp"])
         XCTAssertNotNil(object["com.example.extension"])
@@ -74,6 +81,29 @@ final class CheckoutEventAdapterTests: XCTestCase {
         encodedProtocolObject.removeValue(forKey: "ucp")
         // Compare every field, including fractional dates and inline extension properties.
         XCTAssertEqual(object as NSDictionary, encodedProtocolObject as NSDictionary)
+    }
+
+    func testActionsAndPoliciesSurviveLifecycleEventsAndParticipateInDeduplication() async throws {
+        let sink = RecordingCheckoutEventSink()
+        let adapter = CheckoutEventAdapter(sink: sink)
+        _ = await adapter.process(fullCheckoutMessage)
+        let started = try XCTUnwrap(sink.started.first)
+        XCTAssertEqual(started.actions?["com.example.review"]?.first?["id"]?.value as? String, "action-1")
+        XCTAssertEqual(started.policies?.first?.description.plain, "Return within 30 days")
+
+        var update = fullCheckoutMessage.replacingOccurrences(of: "ec.start", with: "ec.messages.change")
+        for (index, change) in [("action-1", "action-2"), ("Return within 30 days", "Return within 60 days")].enumerated() {
+            update = update.replacingOccurrences(of: change.0, with: change.1)
+            _ = await adapter.process(update)
+            _ = await adapter.process(update)
+            XCTAssertEqual(sink.updated.count, index + 1)
+        }
+        let updated = try XCTUnwrap(sink.updated.last)
+        XCTAssertEqual(updated.actions?["com.example.review"]?.first?["id"]?.value as? String, "action-2")
+        XCTAssertEqual(updated.policies?.first?.description.plain, "Return within 60 days")
+
+        _ = await adapter.process(update.replacingOccurrences(of: "ec.messages.change", with: "ec.complete"))
+        XCTAssertEqual(sink.completed.first, updated)
     }
 
     func testCheckoutEqualityPreservesSubMillisecondDatePrecision() {
@@ -241,6 +271,8 @@ final class CheckoutEventAdapterTests: XCTestCase {
     private var fullCheckoutMessage: String {
         """
         {"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{
+          "actions":{"com.example.review":[{"id":"action-1","config":{"required":true,"value":null}}]},
+          "policies":[{"type":"com.example.return","description":{"plain":"Return within 30 days"}}],
           "attribution":{"source":"agent"},
           "buyer":{"email":"buyer@example.com","first_name":"Ada","last_name":"Lovelace","phone_number":"+353123456789"},
           "context":{"address_country":"IE","address_region":"D","currency":"EUR","eligibility":["com.example.member"],"intent":"gift","language":"en-IE","postal_code":"D02"},

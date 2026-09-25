@@ -946,7 +946,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     private companion object {
-        private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"2026-04-08","status":"error"}"""
+        private const val ERROR_RESPONSE_UCP = """"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"}"""
         private const val FAKE_BROWSER_PACKAGE = "com.fake.browser"
         private const val CUSTOM_TABS_SERVICE_ACTION = "android.support.customtabs.action.CustomTabsService"
     }

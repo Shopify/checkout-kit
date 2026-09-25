@@ -20,6 +20,8 @@ import Foundation
 // MARK: - Checkout
 extension EmbeddedCheckoutProtocol {
     public struct Checkout: Codable, Sendable {
+        /// Outstanding extension-defined [String: JSONAny] for this checkout.
+        public let actions: [String: [[String: JSONAny]]]?
         public let attribution: [String: String]?
         /// Representation of the buyer.
         public let buyer: Buyer?
@@ -47,8 +49,12 @@ extension EmbeddedCheckoutProtocol {
         /// Details about an order created for this checkout session.
         public let order: OrderConfirmation?
         public let payment: Payment?
+        /// Policies (e.g., return/refund terms) that apply to the items in this checkout.
+        /// `applies_to` targets are relative to the response root; when absent or empty, refer to
+        /// the URLs in `links[]`.
+        public let policies: [Policy]?
         public let signals: [String: JSONAny]?
-        /// Checkout state indicating the current phase and required action. See Checkout Status
+        /// Checkout state indicating the current phase and required processing. See Checkout Status
         /// lifecycle documentation for state transition details.
         public let status: CheckoutStatus
         /// Different cart totals.
@@ -56,16 +62,17 @@ extension EmbeddedCheckoutProtocol {
         public let ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
 
         public enum CodingKeys: String, CodingKey {
-            case attribution, buyer, context
+            case actions, attribution, buyer, context
             case continueURL = "continue_url"
             case currency, discounts
             case expiresAt = "expires_at"
             case fulfillment, id
             case lineItems = "line_items"
-            case links, messages, order, payment, signals, status, totals, ucp
+            case links, messages, order, payment, policies, signals, status, totals, ucp
         }
 
-        public init(attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) {
+        public init(actions: [String: [[String: JSONAny]]]?, attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, policies: [Policy]?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) {
+            self.actions = actions
             self.attribution = attribution
             self.buyer = buyer
             self.context = context
@@ -80,6 +87,7 @@ extension EmbeddedCheckoutProtocol {
             self.messages = messages
             self.order = order
             self.payment = payment
+            self.policies = policies
             self.signals = signals
             self.status = status
             self.totals = totals
@@ -88,10 +96,11 @@ extension EmbeddedCheckoutProtocol {
 
         public var additionalProperties: [String: JSONAny] = [:]
 
-        private static let knownAdditionalPropertyKeys: Set<String> = ["attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp"]
+        private static let knownAdditionalPropertyKeys: Set<String> = ["actions", "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "policies", "signals", "status", "totals", "ucp"]
 
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.actions = try container.decodeIfPresent([String: [[String: JSONAny]]].self, forKey: .actions)
             self.attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
             self.buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
             self.context = try container.decodeIfPresent(Context.self, forKey: .context)
@@ -106,6 +115,7 @@ extension EmbeddedCheckoutProtocol {
             self.messages = try container.decodeIfPresent([Message].self, forKey: .messages)
             self.order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
             self.payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+            self.policies = try container.decodeIfPresent([Policy].self, forKey: .policies)
             self.signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
             self.status = try container.decode(CheckoutStatus.self, forKey: .status)
             self.totals = try container.decode([CheckoutTotal].self, forKey: .totals)
@@ -120,6 +130,7 @@ extension EmbeddedCheckoutProtocol {
 
         public func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(actions, forKey: .actions)
             try container.encodeIfPresent(attribution, forKey: .attribution)
             try container.encodeIfPresent(buyer, forKey: .buyer)
             try container.encodeIfPresent(context, forKey: .context)
@@ -134,6 +145,7 @@ extension EmbeddedCheckoutProtocol {
             try container.encodeIfPresent(messages, forKey: .messages)
             try container.encodeIfPresent(order, forKey: .order)
             try container.encodeIfPresent(payment, forKey: .payment)
+            try container.encodeIfPresent(policies, forKey: .policies)
             try container.encodeIfPresent(signals, forKey: .signals)
             try container.encode(status, forKey: .status)
             try container.encode(totals, forKey: .totals)
@@ -165,6 +177,7 @@ public extension EmbeddedCheckoutProtocol.Checkout {
     }
 
     func with(
+        actions: [String: [[String: JSONAny]]]?? = nil,
         attribution: [String: String]?? = nil,
         buyer: Buyer?? = nil,
         context: Context?? = nil,
@@ -179,12 +192,14 @@ public extension EmbeddedCheckoutProtocol.Checkout {
         messages: [Message]?? = nil,
         order: OrderConfirmation?? = nil,
         payment: Payment?? = nil,
+        policies: [Policy]?? = nil,
         signals: [String: JSONAny]?? = nil,
         status: CheckoutStatus? = nil,
         totals: [CheckoutTotal]? = nil,
         ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema? = nil
     ) -> EmbeddedCheckoutProtocol.Checkout {
         return EmbeddedCheckoutProtocol.Checkout(
+            actions: actions ?? self.actions,
             attribution: attribution ?? self.attribution,
             buyer: buyer ?? self.buyer,
             context: context ?? self.context,
@@ -199,6 +214,7 @@ public extension EmbeddedCheckoutProtocol.Checkout {
             messages: messages ?? self.messages,
             order: order ?? self.order,
             payment: payment ?? self.payment,
+            policies: policies ?? self.policies,
             signals: signals ?? self.signals,
             status: status ?? self.status,
             totals: totals ?? self.totals,
@@ -214,6 +230,14 @@ public extension EmbeddedCheckoutProtocol.Checkout {
         return String(data: try self.jsonData(), encoding: encoding)
     }
 }
+
+/// Non-empty instances of one Action type. JSON preserves array order; the declaring
+/// extension defines whether order has processing semantics.
+///
+/// Common fields for one outstanding Action instance are id and optional config. The
+/// extension declaring the Action type defines type-specific processing data under config.
+/// Additional properties are permitted for forward compatibility.
+
 
 /// Representation of the buyer.
 // MARK: - Buyer
@@ -321,18 +345,19 @@ public extension Buyer {
 /// data. Context SHOULD be non-identifying and can be disclosed progressively—coarse signals
 /// early, finer resolution as the session progresses. Higher-resolution data (shipping
 /// address, billing address) supersedes context.
+///
+/// A coarse geographic location — country, region, and postal code. A lightweight
+/// alternative to a full postal address.
 // MARK: - Context
 public struct Context: Codable, Sendable {
-    /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
-    /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
-    /// full country name such as "Singapore" can also be used. Optional hint for market context
-    /// (currency, availability, pricing)—higher-resolution data (e.g., shipping address)
-    /// supersedes this value.
+    /// The country, as a 2-letter ISO 3166-1 alpha-2 code (e.g. "US"). A 3-letter alpha-3 code
+    /// or full country name MAY also be used.
     public let addressCountry: String?
-    /// The region in which the locality is, and which is in the country. For example, California
-    /// or another appropriate first-level Administrative division. Optional hint for progressive
-    /// localization—higher-resolution data (e.g., shipping address) supersedes this value.
+    /// The first-level administrative region within the country (e.g. a state or province such
+    /// as California).
     public let addressRegion: String?
+    /// The postal code (e.g. "94043").
+    public let postalCode: String?
     /// Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
     /// currency from context and authoritative signals; this hint MAY inform selection in
     /// multi-currency markets. Also serves as the denomination for price filter values —
@@ -355,40 +380,52 @@ public struct Context: Codable, Sendable {
     /// Accept-Language when this field is absent; when provided, overrides Accept-Language.
     /// Businesses MAY return content in a different language if unavailable.
     public let language: String?
-    /// The postal code. For example, 94043. Optional hint for regional
-    /// refinement—higher-resolution data (e.g., shipping address) supersedes this value.
-    public let postalCode: String?
+    /// Stable, opaque identifier for a Location in the Business's namespace. This provisional,
+    /// non-binding hint is distinct from the Buyer's locality. The operation specification or an
+    /// active capability/extension defines its effects. A common example in retail shopping is
+    /// the default home store ID selected and saved by the user when purchasing groceries.
+    public let location: String?
+    /// Buyer-preferred payment handlers in priority order (most preferred first). Each entry
+    /// names a handler advertised in the Business profile's `ucp.payment_handlers`, optionally
+    /// narrowed to preferred instrument types. The Business SHOULD use it to preselect or
+    /// prioritize the handler (and type, when given) and MAY ignore unavailable or ineligible
+    /// entries; unrecognized values MUST be ignored without error.
+    public let payment: [PreferredPaymentHandler]?
 
     public enum CodingKeys: String, CodingKey {
         case addressCountry = "address_country"
         case addressRegion = "address_region"
-        case currency, eligibility, intent, language
         case postalCode = "postal_code"
+        case currency, eligibility, intent, language, location, payment
     }
 
-    public init(addressCountry: String?, addressRegion: String?, currency: String?, eligibility: [String]?, intent: String?, language: String?, postalCode: String?) {
+    public init(addressCountry: String?, addressRegion: String?, postalCode: String?, currency: String?, eligibility: [String]?, intent: String?, language: String?, location: String?, payment: [PreferredPaymentHandler]?) {
         self.addressCountry = addressCountry
         self.addressRegion = addressRegion
+        self.postalCode = postalCode
         self.currency = currency
         self.eligibility = eligibility
         self.intent = intent
         self.language = language
-        self.postalCode = postalCode
+        self.location = location
+        self.payment = payment
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
 
-    private static let knownAdditionalPropertyKeys: Set<String> = ["address_country", "address_region", "currency", "eligibility", "intent", "language", "postal_code"]
+    private static let knownAdditionalPropertyKeys: Set<String> = ["address_country", "address_region", "postal_code", "currency", "eligibility", "intent", "language", "location", "payment"]
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.addressCountry = try container.decodeIfPresent(String.self, forKey: .addressCountry)
         self.addressRegion = try container.decodeIfPresent(String.self, forKey: .addressRegion)
+        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
         self.currency = try container.decodeIfPresent(String.self, forKey: .currency)
         self.eligibility = try container.decodeIfPresent([String].self, forKey: .eligibility)
         self.intent = try container.decodeIfPresent(String.self, forKey: .intent)
         self.language = try container.decodeIfPresent(String.self, forKey: .language)
-        self.postalCode = try container.decodeIfPresent(String.self, forKey: .postalCode)
+        self.location = try container.decodeIfPresent(String.self, forKey: .location)
+        self.payment = try container.decodeIfPresent([PreferredPaymentHandler].self, forKey: .payment)
         let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
         var extras: [String: JSONAny] = [:]
         for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
@@ -401,11 +438,13 @@ public struct Context: Codable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(addressCountry, forKey: .addressCountry)
         try container.encodeIfPresent(addressRegion, forKey: .addressRegion)
+        try container.encodeIfPresent(postalCode, forKey: .postalCode)
         try container.encodeIfPresent(currency, forKey: .currency)
         try container.encodeIfPresent(eligibility, forKey: .eligibility)
         try container.encodeIfPresent(intent, forKey: .intent)
         try container.encodeIfPresent(language, forKey: .language)
-        try container.encodeIfPresent(postalCode, forKey: .postalCode)
+        try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(payment, forKey: .payment)
         var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
         for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
             try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
@@ -434,20 +473,76 @@ public extension Context {
     func with(
         addressCountry: String?? = nil,
         addressRegion: String?? = nil,
+        postalCode: String?? = nil,
         currency: String?? = nil,
         eligibility: [String]?? = nil,
         intent: String?? = nil,
         language: String?? = nil,
-        postalCode: String?? = nil
+        location: String?? = nil,
+        payment: [PreferredPaymentHandler]?? = nil
     ) -> Context {
         return Context(
             addressCountry: addressCountry ?? self.addressCountry,
             addressRegion: addressRegion ?? self.addressRegion,
+            postalCode: postalCode ?? self.postalCode,
             currency: currency ?? self.currency,
             eligibility: eligibility ?? self.eligibility,
             intent: intent ?? self.intent,
             language: language ?? self.language,
-            postalCode: postalCode ?? self.postalCode
+            location: location ?? self.location,
+            payment: payment ?? self.payment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - PreferredPaymentHandler
+public struct PreferredPaymentHandler: Codable, Sendable {
+    /// Handler registry key advertised in the Business profile's `ucp.payment_handlers`.
+    public let handler: String
+    /// Optional preferred instrument types for this handler, in priority order, aligned with the
+    /// handler's advertised `payment_instrument.type` values (for example `card` or `bank`).
+    /// Unrecognized values MUST be ignored.
+    public let types: [String]?
+
+    public init(handler: String, types: [String]?) {
+        self.handler = handler
+        self.types = types
+    }
+}
+
+// MARK: PreferredPaymentHandler convenience initializers and mutators
+
+public extension PreferredPaymentHandler {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PreferredPaymentHandler.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        handler: String? = nil,
+        types: [String]?? = nil
+    ) -> PreferredPaymentHandler {
+        return PreferredPaymentHandler(
+            handler: handler ?? self.handler,
+            types: types ?? self.types
         )
     }
 
@@ -606,7 +701,8 @@ public extension AppliedDiscount {
 public struct DiscountAllocation: Codable, Sendable {
     /// Amount allocated to this target in ISO 4217 minor units.
     public let amount: Int
-    /// JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals.shipping').
+    /// RFC 9535 JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals[?@.type ==
+    /// "fulfillment"]').
     public let path: String
 
     public init(amount: Int, path: String) {
@@ -726,8 +822,9 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
     public let fulfillableOn: String?
     /// Line items available for this fulfillment method.
     public let lineItemIDS: [String]
-    /// Fulfillment method type this availability applies to.
-    public let type: FulfillmentMethodType
+    /// Fulfillment method type this availability applies to. Well-known values: `shipping`,
+    /// `pickup`; businesses MAY use additional values.
+    public let type: String
 
     public enum CodingKeys: String, CodingKey {
         case description
@@ -736,7 +833,7 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
         case type
     }
 
-    public init(description: String?, fulfillableOn: String?, lineItemIDS: [String], type: FulfillmentMethodType) {
+    public init(description: String?, fulfillableOn: String?, lineItemIDS: [String], type: String) {
         self.description = description
         self.fulfillableOn = fulfillableOn
         self.lineItemIDS = lineItemIDS
@@ -752,7 +849,7 @@ public struct FulfillmentAvailableMethod: Codable, Sendable {
         self.description = try container.decodeIfPresent(String.self, forKey: .description)
         self.fulfillableOn = try container.decodeIfPresent(String.self, forKey: .fulfillableOn)
         self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
-        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        self.type = try container.decode(String.self, forKey: .type)
         let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
         var extras: [String: JSONAny] = [:]
         for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
@@ -796,7 +893,7 @@ public extension FulfillmentAvailableMethod {
         description: String?? = nil,
         fulfillableOn: String?? = nil,
         lineItemIDS: [String]? = nil,
-        type: FulfillmentMethodType? = nil
+        type: String? = nil
     ) -> FulfillmentAvailableMethod {
         return FulfillmentAvailableMethod(
             description: description ?? self.description,
@@ -815,18 +912,11 @@ public extension FulfillmentAvailableMethod {
     }
 }
 
-/// Fulfillment method type this availability applies to.
-///
-/// Fulfillment method type.
-public enum FulfillmentMethodType: String, Codable, Sendable {
-    case pickup = "pickup"
-    case shipping = "shipping"
-}
-
-/// A fulfillment method (shipping or pickup) with destinations and groups.
+/// A fulfillment method with destinations and groups.
 // MARK: - FulfillmentMethod
 public struct FulfillmentMethod: Codable, Sendable {
-    /// Available destinations. For shipping: addresses. For pickup: retail locations.
+    /// Available destinations for this method. In Business responses, each destination carries a
+    /// `type` and `id`.
     public let destinations: [FulfillmentDestination]?
     /// Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
     /// choose shipping method.
@@ -835,10 +925,12 @@ public struct FulfillmentMethod: Codable, Sendable {
     public let id: String
     /// Line item IDs fulfilled via this method.
     public let lineItemIDS: [String]
-    /// ID of the selected destination.
+    /// ID of the selected destination. Accepts any stable, Business-scoped ID the Business
+    /// recognizes for this method, including Location IDs not yet enumerated in `destinations`.
     public let selectedDestinationID: String?
-    /// Fulfillment method type.
-    public let type: FulfillmentMethodType
+    /// Fulfillment method type. Well-known values: `shipping`, `pickup`. Businesses MAY use
+    /// additional values.
+    public let type: String
 
     public enum CodingKeys: String, CodingKey {
         case destinations, groups, id
@@ -847,7 +939,7 @@ public struct FulfillmentMethod: Codable, Sendable {
         case type
     }
 
-    public init(destinations: [FulfillmentDestination]?, groups: [FulfillmentGroup]?, id: String, lineItemIDS: [String], selectedDestinationID: String?, type: FulfillmentMethodType) {
+    public init(destinations: [FulfillmentDestination]?, groups: [FulfillmentGroup]?, id: String, lineItemIDS: [String], selectedDestinationID: String?, type: String) {
         self.destinations = destinations
         self.groups = groups
         self.id = id
@@ -867,7 +959,7 @@ public struct FulfillmentMethod: Codable, Sendable {
         self.id = try container.decode(String.self, forKey: .id)
         self.lineItemIDS = try container.decode([String].self, forKey: .lineItemIDS)
         self.selectedDestinationID = try container.decodeIfPresent(String.self, forKey: .selectedDestinationID)
-        self.type = try container.decode(FulfillmentMethodType.self, forKey: .type)
+        self.type = try container.decode(String.self, forKey: .type)
         let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
         var extras: [String: JSONAny] = [:]
         for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
@@ -915,7 +1007,7 @@ public extension FulfillmentMethod {
         id: String? = nil,
         lineItemIDS: [String]? = nil,
         selectedDestinationID: String?? = nil,
-        type: FulfillmentMethodType? = nil
+        type: String? = nil
     ) -> FulfillmentMethod {
         return FulfillmentMethod(
             destinations: destinations ?? self.destinations,
@@ -937,18 +1029,10 @@ public extension FulfillmentMethod {
 }
 
 /// A destination for fulfillment.
-///
-/// Shipping destination.
-///
-/// Physical address of the location.
-///
-/// The billing address associated with this payment method.
-///
-/// Delivery destination address.
-///
-/// A pickup location (retail store, locker, etc.).
 // MARK: - FulfillmentDestination
 public struct FulfillmentDestination: Codable, Sendable {
+    /// Physical address of the location.
+    public let address: PostalAddress?
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
     /// full country name such as "Singapore" can also be used.
@@ -964,49 +1048,54 @@ public struct FulfillmentDestination: Codable, Sendable {
     public let extendedAddress: String?
     /// Optional. First name of the contact associated with the address.
     public let firstName: String?
+    /// Fulfillment destination identifier.
+    public let id: String
     /// Optional. Last name of the contact associated with the address.
     public let lastName: String?
+    /// Buyer-facing, Business-owned display name.
+    public let name: String?
     /// Optional. Phone number of the contact associated with the address.
     public let phoneNumber: String?
     /// The postal code. For example, 94043.
     public let postalCode: String?
     /// The street address.
     public let streetAddress: String?
-    /// ID specific to this shipping destination.
-    ///
-    /// Unique location identifier.
-    public let id: String
-    /// Physical address of the location.
-    public let address: PostalAddress?
-    /// Location name (e.g., store name).
-    public let name: String?
+    /// Destination contract discriminator. Required in Business responses and optional in
+    /// Platform requests. Well-known values: `shipping_address`, `business_location`. The
+    /// enclosing method contract defines request defaults and which fields the Platform may
+    /// write; negotiated extensions define additional values.
+    public let type: String?
 
     public enum CodingKeys: String, CodingKey {
+        case address
         case addressCountry = "address_country"
         case addressLocality = "address_locality"
         case addressRegion = "address_region"
         case extendedAddress = "extended_address"
         case firstName = "first_name"
+        case id
         case lastName = "last_name"
+        case name
         case phoneNumber = "phone_number"
         case postalCode = "postal_code"
         case streetAddress = "street_address"
-        case id, address, name
+        case type
     }
 
-    public init(addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, lastName: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?, id: String, address: PostalAddress?, name: String?) {
+    public init(address: PostalAddress?, addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, id: String, lastName: String?, name: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?, type: String?) {
+        self.address = address
         self.addressCountry = addressCountry
         self.addressLocality = addressLocality
         self.addressRegion = addressRegion
         self.extendedAddress = extendedAddress
         self.firstName = firstName
+        self.id = id
         self.lastName = lastName
+        self.name = name
         self.phoneNumber = phoneNumber
         self.postalCode = postalCode
         self.streetAddress = streetAddress
-        self.id = id
-        self.address = address
-        self.name = name
+        self.type = type
     }
 }
 
@@ -1029,32 +1118,34 @@ public extension FulfillmentDestination {
     }
 
     func with(
+        address: PostalAddress?? = nil,
         addressCountry: String?? = nil,
         addressLocality: String?? = nil,
         addressRegion: String?? = nil,
         extendedAddress: String?? = nil,
         firstName: String?? = nil,
+        id: String? = nil,
         lastName: String?? = nil,
+        name: String?? = nil,
         phoneNumber: String?? = nil,
         postalCode: String?? = nil,
         streetAddress: String?? = nil,
-        id: String? = nil,
-        address: PostalAddress?? = nil,
-        name: String?? = nil
+        type: String?? = nil
     ) -> FulfillmentDestination {
         return FulfillmentDestination(
+            address: address ?? self.address,
             addressCountry: addressCountry ?? self.addressCountry,
             addressLocality: addressLocality ?? self.addressLocality,
             addressRegion: addressRegion ?? self.addressRegion,
             extendedAddress: extendedAddress ?? self.extendedAddress,
             firstName: firstName ?? self.firstName,
+            id: id ?? self.id,
             lastName: lastName ?? self.lastName,
+            name: name ?? self.name,
             phoneNumber: phoneNumber ?? self.phoneNumber,
             postalCode: postalCode ?? self.postalCode,
             streetAddress: streetAddress ?? self.streetAddress,
-            id: id ?? self.id,
-            address: address ?? self.address,
-            name: name ?? self.name
+            type: type ?? self.type
         )
     }
 
@@ -1272,54 +1363,63 @@ public extension FulfillmentGroup {
     }
 }
 
-/// A fulfillment option within a group (e.g., Standard Shipping $5, Express $15).
+/// A fulfillment option within a group (e.g., Standard Shipping $5, Express $15). Extends
+/// the fulfillment option base with cost and timing.
+///
+/// Common base for a fulfillment option: an addressable, renderable choice (e.g. Standard,
+/// Express). Catalog uses this base directly; checkout composes it with cost and timing.
 // MARK: - FulfillmentOption
 public struct FulfillmentOption: Codable, Sendable {
+    /// Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
+    /// 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
+    public let description: Description?
+    /// Unique identifier for this fulfillment option.
+    public let id: String
+    /// Short label that distinguishes this option from its siblings (e.g. 'Standard', 'Express
+    /// Shipping', 'Curbside Pickup').
+    public let title: String
     /// Carrier name (for shipping).
     public let carrier: String?
-    /// Complete context for buyer decision (e.g., 'Arrives Dec 12-15 via FedEx').
-    public let description: String?
     /// Earliest fulfillment date.
     public let earliestFulfillmentTime: Date?
-    /// Unique fulfillment option identifier.
-    public let id: String
     /// Latest fulfillment date.
     public let latestFulfillmentTime: Date?
-    /// Short label (e.g., 'Express Shipping', 'Curbside Pickup').
-    public let title: String
     /// Fulfillment option totals breakdown.
     public let totals: [LineItemTotal]
 
     public enum CodingKeys: String, CodingKey {
-        case carrier, description
+        case description, id, title, carrier
         case earliestFulfillmentTime = "earliest_fulfillment_time"
-        case id
         case latestFulfillmentTime = "latest_fulfillment_time"
-        case title, totals
+        case totals
     }
 
-    public init(carrier: String?, description: String?, earliestFulfillmentTime: Date?, id: String, latestFulfillmentTime: Date?, title: String, totals: [LineItemTotal]) {
-        self.carrier = carrier
+    public init(description: Description?, id: String, title: String, carrier: String?, earliestFulfillmentTime: Date?, latestFulfillmentTime: Date?, totals: [LineItemTotal]) {
         self.description = description
-        self.earliestFulfillmentTime = earliestFulfillmentTime
         self.id = id
-        self.latestFulfillmentTime = latestFulfillmentTime
         self.title = title
+        self.carrier = carrier
+        self.earliestFulfillmentTime = earliestFulfillmentTime
+        self.latestFulfillmentTime = latestFulfillmentTime
         self.totals = totals
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
 
-    private static let knownAdditionalPropertyKeys: Set<String> = ["carrier", "description", "earliest_fulfillment_time", "id", "latest_fulfillment_time", "title", "totals"]
+    private static let knownAdditionalPropertyKeys: Set<String> = ["description", "id", "title", "carrier", "earliest_fulfillment_time", "latest_fulfillment_time", "totals"]
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.carrier = try container.decodeIfPresent(String.self, forKey: .carrier)
-        self.description = try container.decodeIfPresent(String.self, forKey: .description)
-        self.earliestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .earliestFulfillmentTime)
+        if let legacyDescription = try? container.decode(String.self, forKey: .description) {
+            self.description = Description(html: nil, markdown: nil, plain: legacyDescription)
+        } else {
+            self.description = try container.decodeIfPresent(Description.self, forKey: .description)
+        }
         self.id = try container.decode(String.self, forKey: .id)
-        self.latestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .latestFulfillmentTime)
         self.title = try container.decode(String.self, forKey: .title)
+        self.carrier = try container.decodeIfPresent(String.self, forKey: .carrier)
+        self.earliestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .earliestFulfillmentTime)
+        self.latestFulfillmentTime = try container.decodeIfPresent(Date.self, forKey: .latestFulfillmentTime)
         self.totals = try container.decode([LineItemTotal].self, forKey: .totals)
         let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
         var extras: [String: JSONAny] = [:]
@@ -1331,12 +1431,12 @@ public struct FulfillmentOption: Codable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(carrier, forKey: .carrier)
         try container.encodeIfPresent(description, forKey: .description)
-        try container.encodeIfPresent(earliestFulfillmentTime, forKey: .earliestFulfillmentTime)
         try container.encode(id, forKey: .id)
-        try container.encodeIfPresent(latestFulfillmentTime, forKey: .latestFulfillmentTime)
         try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(carrier, forKey: .carrier)
+        try container.encodeIfPresent(earliestFulfillmentTime, forKey: .earliestFulfillmentTime)
+        try container.encodeIfPresent(latestFulfillmentTime, forKey: .latestFulfillmentTime)
         try container.encode(totals, forKey: .totals)
         var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
         for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
@@ -1364,22 +1464,87 @@ public extension FulfillmentOption {
     }
 
     func with(
-        carrier: String?? = nil,
-        description: String?? = nil,
-        earliestFulfillmentTime: Date?? = nil,
+        description: Description?? = nil,
         id: String? = nil,
-        latestFulfillmentTime: Date?? = nil,
         title: String? = nil,
+        carrier: String?? = nil,
+        earliestFulfillmentTime: Date?? = nil,
+        latestFulfillmentTime: Date?? = nil,
         totals: [LineItemTotal]? = nil
     ) -> FulfillmentOption {
         return FulfillmentOption(
-            carrier: carrier ?? self.carrier,
             description: description ?? self.description,
-            earliestFulfillmentTime: earliestFulfillmentTime ?? self.earliestFulfillmentTime,
             id: id ?? self.id,
-            latestFulfillmentTime: latestFulfillmentTime ?? self.latestFulfillmentTime,
             title: title ?? self.title,
+            carrier: carrier ?? self.carrier,
+            earliestFulfillmentTime: earliestFulfillmentTime ?? self.earliestFulfillmentTime,
+            latestFulfillmentTime: latestFulfillmentTime ?? self.latestFulfillmentTime,
             totals: totals ?? self.totals
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
+/// 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
+///
+/// Description content in one or more formats. At least one format must be provided.
+///
+/// Human-readable policy summary in one or more formats (plain, markdown, html). Required on
+/// every policy so a platform can present it without understanding any type-specific fields.
+/// This is not the buyer-facing disclosure — display is compelled by a `messages[]` warning
+/// (see the Policies section).
+// MARK: - Description
+public struct Description: Codable, Sendable {
+    /// HTML-formatted content. Security: Platforms MUST sanitize before rendering—strip scripts,
+    /// event handlers, and untrusted elements. Treat all rich text as untrusted input.
+    public let html: String?
+    /// Markdown-formatted content.
+    public let markdown: String?
+    /// Plain text content.
+    public let plain: String?
+
+    public init(html: String?, markdown: String?, plain: String?) {
+        self.html = html
+        self.markdown = markdown
+        self.plain = plain
+    }
+}
+
+// MARK: Description convenience initializers and mutators
+
+public extension Description {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Description.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        html: String?? = nil,
+        markdown: String?? = nil,
+        plain: String?? = nil
+    ) -> Description {
+        return Description(
+            html: html ?? self.html,
+            markdown: markdown ?? self.markdown,
+            plain: plain ?? self.plain
         )
     }
 
@@ -1462,7 +1627,11 @@ public struct LineItem: Codable, Sendable {
     public let item: Item
     /// Parent line item identifier for any nested structures.
     public let parentID: String?
-    /// Quantity of the item being purchased.
+    /// Always an integer step count. On Platform requests, steps use the item's
+    /// Business-authoritative sale basis; omitting `item.quantity_unit` makes no assertion and
+    /// does not imply `each`. On Business responses, `item.quantity_unit` describes the basis;
+    /// if absent, it encodes the `each` machine identity (`C62`, 0) and `quantity` counts whole
+    /// items.
     public let quantity: Int
     /// Line item totals breakdown.
     public let totals: [LineItemTotal]
@@ -1525,7 +1694,7 @@ public extension LineItem {
     }
 }
 
-/// Product data (id, title, price, image_url).
+/// Purchased item data, including identity, price, and sale basis.
 // MARK: - Item
 public struct Item: Codable, Sendable {
     /// The product identifier, often the SKU, required to resolve the product details associated
@@ -1533,22 +1702,47 @@ public struct Item: Codable, Sendable {
     public let id: String
     /// Product image URI.
     public let imageURL: String?
-    /// Unit price in ISO 4217 minor units.
+    /// Unit price in ISO 4217 minor units. Price is the amount per one whole
+    /// `quantity_unit.unit` (for example, per lb or per hour); when `quantity_unit` is absent,
+    /// it is per `each`.
     public let price: Int
+    /// Sale basis this item's `quantity` is denominated in. On an authoritative Business
+    /// response, absence encodes the default `each` machine identity (`C62`, 0); the Business
+    /// MUST include this descriptor for every non-`each` response. On Platform requests,
+    /// omission makes no assertion: the Business interprets `quantity` using the item's
+    /// authoritative sale basis. If the Platform includes this descriptor, it asserts the
+    /// unit-descriptor machine identity. The Business MUST compare that machine identity
+    /// (`unit`, effective `scale`), ignore `display_text` and `increment`, and resolve a
+    /// mismatch by conversion surfaced as a visible line revision with a warning, or by
+    /// rejection with a recoverable business outcome; silent reinterpretation is forbidden. An
+    /// explicit `C62` descriptor at effective scale 0 matches an authoritative basis represented
+    /// by an absent descriptor.
+    public let quantityUnit: QuantityUnit?
     /// Product title.
     public let title: String
+    /// Pricing basis for this item. On an authoritative Business response, the Business MUST
+    /// include `unit_price` on every line whose pricing basis differs from its sale basis (for
+    /// example, priced per pound but sold per `each`); presence on a line marks the rate as
+    /// transactional rather than display-only. When the pricing basis is the sale basis,
+    /// `item.price` fully denominates the charge and this field MAY be omitted.
+    public let unitPrice: UnitPrice?
 
     public enum CodingKeys: String, CodingKey {
         case id
         case imageURL = "image_url"
-        case price, title
+        case price
+        case quantityUnit = "quantity_unit"
+        case title
+        case unitPrice = "unit_price"
     }
 
-    public init(id: String, imageURL: String?, price: Int, title: String) {
+    public init(id: String, imageURL: String?, price: Int, quantityUnit: QuantityUnit?, title: String, unitPrice: UnitPrice?) {
         self.id = id
         self.imageURL = imageURL
         self.price = price
+        self.quantityUnit = quantityUnit
         self.title = title
+        self.unitPrice = unitPrice
     }
 }
 
@@ -1574,13 +1768,287 @@ public extension Item {
         id: String? = nil,
         imageURL: String?? = nil,
         price: Int? = nil,
-        title: String? = nil
+        quantityUnit: QuantityUnit?? = nil,
+        title: String? = nil,
+        unitPrice: UnitPrice?? = nil
     ) -> Item {
         return Item(
             id: id ?? self.id,
             imageURL: imageURL ?? self.imageURL,
             price: price ?? self.price,
-            title: title ?? self.title
+            quantityUnit: quantityUnit ?? self.quantityUnit,
+            title: title ?? self.title,
+            unitPrice: unitPrice ?? self.unitPrice
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Sale basis this item's `quantity` is denominated in. On an authoritative Business
+/// response, absence encodes the default `each` machine identity (`C62`, 0); the Business
+/// MUST include this descriptor for every non-`each` response. On Platform requests,
+/// omission makes no assertion: the Business interprets `quantity` using the item's
+/// authoritative sale basis. If the Platform includes this descriptor, it asserts the
+/// unit-descriptor machine identity. The Business MUST compare that machine identity
+/// (`unit`, effective `scale`), ignore `display_text` and `increment`, and resolve a
+/// mismatch by conversion surfaced as a visible line revision with a warning, or by
+/// rejection with a recoverable business outcome; silent reinterpretation is forbidden. An
+/// explicit `C62` descriptor at effective scale 0 matches an authoritative basis represented
+/// by an absent descriptor.
+///
+/// Sale-basis descriptor for quantities: the shared unit descriptor plus the Business's
+/// ordering policy. Its unit-descriptor machine identity remains (`unit`, effective
+/// `scale`); `display_text` and `increment` are excluded from identity and mismatch
+/// comparison.
+///
+/// A reusable unit descriptor for quantities and measures. Its unit-descriptor machine
+/// identity is (`unit`, effective `scale`), where effective `scale` is the provided `scale`
+/// or 0; `display_text` is excluded.
+// MARK: - QuantityUnit
+public struct QuantityUnit: Codable, Sendable {
+    /// Required printable unit label provided by the Business. The Platform MUST use it when it
+    /// does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
+    /// MAY substitute its own localized label. It does not participate in unit identity or
+    /// mismatch comparison.
+    public let displayText: String
+    /// One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
+    /// 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
+    /// single whole unit (10^16 steps) is no longer representable, so larger scales cannot
+    /// denominate one unit of their own basis. Businesses needing finer granularity use a
+    /// smaller unit.
+    public let scale: Int?
+    /// Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
+    /// when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
+    /// identifier and MUST use it consistently for the same unit. The Platform MUST treat an
+    /// unrecognized identifier as opaque.
+    public let unit: String
+    /// Ordering granularity, denominated in steps: the Business sells this item in integer
+    /// multiples of `increment` steps. Its effective value is the provided value or 1. Advisory
+    /// merchandising policy, not a representational bound: Platform-authored quantities SHOULD
+    /// be integer multiples of the effective increment; the Business MAY accept, revise, or
+    /// reject an off-increment request with a recoverable business outcome and MUST NOT silently
+    /// reinterpret it. Business-authored quantities (checkout revisions, fulfillment events,
+    /// adjustments) are bounded only by `scale`.
+    public let increment: Int?
+
+    public enum CodingKeys: String, CodingKey {
+        case displayText = "display_text"
+        case scale, unit, increment
+    }
+
+    public init(displayText: String, scale: Int?, unit: String, increment: Int?) {
+        self.displayText = displayText
+        self.scale = scale
+        self.unit = unit
+        self.increment = increment
+    }
+}
+
+// MARK: QuantityUnit convenience initializers and mutators
+
+public extension QuantityUnit {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(QuantityUnit.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        displayText: String? = nil,
+        scale: Int?? = nil,
+        unit: String? = nil,
+        increment: Int?? = nil
+    ) -> QuantityUnit {
+        return QuantityUnit(
+            displayText: displayText ?? self.displayText,
+            scale: scale ?? self.scale,
+            unit: unit ?? self.unit,
+            increment: increment ?? self.increment
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Pricing basis for this item. On an authoritative Business response, the Business MUST
+/// include `unit_price` on every line whose pricing basis differs from its sale basis (for
+/// example, priced per pound but sold per `each`); presence on a line marks the rate as
+/// transactional rather than display-only. When the pricing basis is the sale basis,
+/// `item.price` fully denominates the charge and this field MAY be omitted.
+///
+/// Price per standard unit of measurement. MAY be omitted when unit pricing does not apply.
+/// `unit_price.currency` MUST equal `price.currency`; the comparator MUST NOT perform
+/// currency conversion. `measure.unit` and `reference.unit` MUST be identical; cross-unit
+/// conversion is not permitted. Their scales MAY differ; each value represents `value ×
+/// 10^-scale`.
+// MARK: - UnitPrice
+public struct UnitPrice: Codable, Sendable {
+    /// Unit price in ISO 4217 minor units. After satisfying the same-unit invariant, the
+    /// Business MUST compute the comparator as `(price.amount / (measure.value ×
+    /// 10^-measure.scale)) × (reference.value × 10^-reference.scale)` and round it once to ISO
+    /// 4217 minor units according to its pricing rules. The returned `unit_price.amount` is
+    /// authoritative; the Platform MUST NOT recompute or substitute its own result.
+    public let amount: Int
+    /// ISO 4217 currency code.
+    public let currency: String
+    /// Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
+    /// `quantity_unit`, which defines the sale basis. Its integer `value` MUST be at least 1.
+    public let measure: Measure
+    /// Denominator for unit price display (for example, per 100 mL or per 1 kg). Its integer
+    /// `value` MUST be at least 1.
+    public let reference: Measure
+
+    public init(amount: Int, currency: String, measure: Measure, reference: Measure) {
+        self.amount = amount
+        self.currency = currency
+        self.measure = measure
+        self.reference = reference
+    }
+}
+
+// MARK: UnitPrice convenience initializers and mutators
+
+public extension UnitPrice {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(UnitPrice.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amount: Int? = nil,
+        currency: String? = nil,
+        measure: Measure? = nil,
+        reference: Measure? = nil
+    ) -> UnitPrice {
+        return UnitPrice(
+            amount: amount ?? self.amount,
+            currency: currency ?? self.currency,
+            measure: measure ?? self.measure,
+            reference: reference ?? self.reference
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
+/// `quantity_unit`, which defines the sale basis. Its integer `value` MUST be at least 1.
+///
+/// Denominator for unit price display (for example, per 100 mL or per 1 kg). Its integer
+/// `value` MUST be at least 1.
+///
+/// The settled measurement this adjustment reconciles (for example, actual picked weight),
+/// present when the line's price settles by measurement. Its unit identity MUST match the
+/// line's pricing basis (`item.unit_price` measure/reference unit); no unit conversion. A
+/// pure price settlement uses `quantity: 0` together with `measure` and a totals delta.
+///
+/// A measure composed of an integer value and a unit descriptor. Its value is the integer
+/// count of `10^-scale` units of `unit`.
+///
+/// A reusable unit descriptor for quantities and measures. Its unit-descriptor machine
+/// identity is (`unit`, effective `scale`), where effective `scale` is the provided `scale`
+/// or 0; `display_text` is excluded.
+// MARK: - Measure
+public struct Measure: Codable, Sendable {
+    /// Required printable unit label provided by the Business. The Platform MUST use it when it
+    /// does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
+    /// MAY substitute its own localized label. It does not participate in unit identity or
+    /// mismatch comparison.
+    public let displayText: String
+    /// One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
+    /// 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
+    /// single whole unit (10^16 steps) is no longer representable, so larger scales cannot
+    /// denominate one unit of their own basis. Businesses needing finer granularity use a
+    /// smaller unit.
+    public let scale: Int?
+    /// Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
+    /// when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
+    /// identifier and MUST use it consistently for the same unit. The Platform MUST treat an
+    /// unrecognized identifier as opaque.
+    public let unit: String
+    /// Integer count of `10^-scale` units of `unit`.
+    public let value: Int
+
+    public enum CodingKeys: String, CodingKey {
+        case displayText = "display_text"
+        case scale, unit, value
+    }
+
+    public init(displayText: String, scale: Int?, unit: String, value: Int) {
+        self.displayText = displayText
+        self.scale = scale
+        self.unit = unit
+        self.value = value
+    }
+}
+
+// MARK: Measure convenience initializers and mutators
+
+public extension Measure {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Measure.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        displayText: String? = nil,
+        scale: Int?? = nil,
+        unit: String? = nil,
+        value: Int? = nil
+    ) -> Measure {
+        return Measure(
+            displayText: displayText ?? self.displayText,
+            scale: scale ?? self.scale,
+            unit: unit ?? self.unit,
+            value: value ?? self.value
         )
     }
 
@@ -1661,14 +2129,11 @@ public struct Message: Codable, Sendable {
     public let content: String
     /// Content format, default = plain.
     public let contentType: ContentType?
-    /// RFC 9535 JSONPath to the component the message refers to (e.g., $.items[1]).
-    ///
-    /// JSONPath (RFC 9535) to related field (e.g., $.line_items[0]).
-    ///
-    /// RFC 9535 JSONPath to the component the message refers to.
+    /// RFC 9535 JSONPath to the component the message refers to (e.g., $.line_items[0]).
     public let path: String?
     /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
-    /// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+    /// the condition in band, for example by modifying inputs or processing a related Action,
+    /// and submit a new operation when needed. 'requires_buyer_input': merchant requires
     /// information their API doesn't support collecting programmatically (checkout incomplete).
     /// 'requires_buyer_review': buyer must authorize before order placement due to policy,
     /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
@@ -1765,7 +2230,8 @@ public enum ContentType: String, Codable, Sendable {
 }
 
 /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
-/// by modifying inputs and retrying via API. 'requires_buyer_input': merchant requires
+/// the condition in band, for example by modifying inputs or processing a related Action,
+/// and submit a new operation when needed. 'requires_buyer_input': merchant requires
 /// information their API doesn't support collecting programmatically (checkout incomplete).
 /// 'requires_buyer_review': buyer must authorize before order placement due to policy,
 /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
@@ -1910,7 +2376,11 @@ public struct SelectedPaymentInstrument: Codable, Sendable {
     /// The unique identifier for the handler instance that produced this instrument. This
     /// corresponds to the 'id' field in the Payment Handler definition.
     public let handlerID: String
-    /// A unique identifier for this instrument instance, assigned by the platform.
+    /// A unique identifier for this instrument instance. Typically assigned by the platform for
+    /// instruments it collects. For a business-owned saved instrument returned on an
+    /// identity-linked response, this identifier is assigned by the business; the platform MUST
+    /// treat it as an opaque, business-scoped reference, and the business resolves it
+    /// server-side when the buyer selects it.
     public let id: String
     /// The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
     /// will constrain this to a constant value.
@@ -2094,6 +2564,121 @@ public extension PaymentCredential {
     }
 }
 
+/// A durable business rule about the items in a response — return/refund terms, warranty,
+/// and the like — at the time of purchase. Every policy carries a `type` (an open
+/// reverse-DNS vocabulary) and a `description` so a platform can present it without
+/// understanding its type-specific fields; type-specific fields (gated by `type`) add
+/// structured context for platforms that model that type. Policies are reference data; the
+/// obligation to display a term to the buyer is carried by a `messages[]` warning whose
+/// `code` equals the policy `type` — see the Policies section of the specification.
+// MARK: - Policy
+public struct Policy: Codable, Sendable {
+    /// RFC 9535 JSONPath expressions identifying the nodes this policy applies to, relative to
+    /// the embedding response root (e.g., `$.line_items[0]` in cart/checkout, `$.products[2]` in
+    /// catalog). Each target covers the node it names and everything nested under it, so a
+    /// target on a product also covers its variants. A singular query (RFC 9535 Section 2.3.5.1;
+    /// name and index selectors only) names a single node; filters, wildcards, and slices match
+    /// a set. When omitted, the policy applies to the entire response. When policies of the same
+    /// `type` contest a node, the narrowest target wins and overrides the rest. See the Policies
+    /// section for how specificity resolves.
+    public let appliesTo: [String]?
+    /// Human-readable policy summary in one or more formats (plain, markdown, html). Required on
+    /// every policy so a platform can present it without understanding any type-specific fields.
+    /// This is not the buyer-facing disclosure — display is compelled by a `messages[]` warning
+    /// (see the Policies section).
+    public let description: Description
+    /// Policy type discriminator. Open reverse-DNS vocabulary. Well-known values:
+    /// `dev.ucp.shopping.policy.return` (return terms), `dev.ucp.shopping.policy.warranty`
+    /// (warranty terms). Businesses MAY define custom types in their own domain (e.g.,
+    /// `com.example.policy.price_match`). Platforms MUST tolerate unknown values.
+    public let type: String
+    /// Optional link to the full policy document.
+    public let url: String?
+
+    public enum CodingKeys: String, CodingKey {
+        case appliesTo = "applies_to"
+        case description, type, url
+    }
+
+    public init(appliesTo: [String]?, description: Description, type: String, url: String?) {
+        self.appliesTo = appliesTo
+        self.description = description
+        self.type = type
+        self.url = url
+    }
+
+    public var additionalProperties: [String: JSONAny] = [:]
+
+    private static let knownAdditionalPropertyKeys: Set<String> = ["applies_to", "description", "type", "url"]
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.appliesTo = try container.decodeIfPresent([String].self, forKey: .appliesTo)
+        self.description = try container.decode(Description.self, forKey: .description)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.url = try container.decodeIfPresent(String.self, forKey: .url)
+        let additionalContainer = try decoder.container(keyedBy: JSONCodingKey.self)
+        var extras: [String: JSONAny] = [:]
+        for key in additionalContainer.allKeys where !Self.knownAdditionalPropertyKeys.contains(key.stringValue) {
+            extras[key.stringValue] = try additionalContainer.decode(JSONAny.self, forKey: key)
+        }
+        self.additionalProperties = extras
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(appliesTo, forKey: .appliesTo)
+        try container.encode(description, forKey: .description)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(url, forKey: .url)
+        var additionalContainer = encoder.container(keyedBy: JSONCodingKey.self)
+        for key in additionalProperties.keys.sorted() where !Self.knownAdditionalPropertyKeys.contains(key) {
+            try additionalContainer.encode(additionalProperties[key]!, forKey: JSONCodingKey(stringValue: key)!)
+        }
+    }
+}
+
+// MARK: Policy convenience initializers and mutators
+
+public extension Policy {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Policy.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        appliesTo: [String]?? = nil,
+        description: Description? = nil,
+        type: String? = nil,
+        url: String?? = nil
+    ) -> Policy {
+        return Policy(
+            appliesTo: appliesTo ?? self.appliesTo,
+            description: description ?? self.description,
+            type: type ?? self.type,
+            url: url ?? self.url
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
 /// Environment data provided by the platform to support authorization and abuse prevention.
 /// Values MUST NOT be buyer-asserted claims — platforms provide signals based on direct
 /// observation or independently verifiable third-party attestations. All signal keys MUST
@@ -2101,7 +2686,7 @@ public extension PaymentCredential {
 /// extensions contribute to the shared namespace.
 
 
-/// Checkout state indicating the current phase and required action. See Checkout Status
+/// Checkout state indicating the current phase and required processing. See Checkout Status
 /// lifecycle documentation for state transition details.
 public enum CheckoutStatus: String, Codable, Sendable {
     case canceled = "canceled"
@@ -2250,6 +2835,9 @@ extension EmbeddedCheckoutProtocol {
     public struct UCPCheckoutResponseSchema: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
         public let capabilities: [String: [CapabilityResponseSchema]]?
+        /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+        /// (`services`, `capabilities`, and `payment_handlers`).
+        public let mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
         public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]
         /// Service registry keyed by reverse-domain name.
@@ -2260,12 +2848,14 @@ extension EmbeddedCheckoutProtocol {
 
         public enum CodingKeys: String, CodingKey {
             case capabilities
+            case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]], services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
+        public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]], services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
             self.capabilities = capabilities
+            self.mapOrder = mapOrder
             self.paymentHandlers = paymentHandlers
             self.services = services
             self.status = status
@@ -2294,6 +2884,7 @@ public extension EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
 
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
+        mapOrder: [String: [String]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]? = nil,
         services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus?? = nil,
@@ -2301,6 +2892,7 @@ public extension EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
     ) -> EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
         return EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema(
             capabilities: capabilities ?? self.capabilities,
+            mapOrder: mapOrder ?? self.mapOrder,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
             status: status ?? self.status,
@@ -2507,14 +3099,16 @@ public extension PaymentHandlerResponseSchema {
 /// An instrument type available from a payment handler with optional constraints.
 // MARK: - PaymentHandlerResponseSchemaAvailableInstrument
 public struct PaymentHandlerResponseSchemaAvailableInstrument: Codable, Sendable {
-    /// Constraints on this instrument type. Structure depends on instrument type and active
-    /// capabilities.
-    public let constraints: [String: JSONAny]?
+    /// A Constraint Expression describing the instrument this entry makes available. Keys in
+    /// `properties` name members of the `constraint_target` declared by the instrument schema
+    /// for this `type`. Requirements on submitted request data belong in
+    /// `ucp.request_constraints` instead.
+    public let constraints: ConstraintExpression?
     /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
     /// schema's type constant.
     public let type: String
 
-    public init(constraints: [String: JSONAny]?, type: String) {
+    public init(constraints: ConstraintExpression?, type: String) {
         self.constraints = constraints
         self.type = type
     }
@@ -2539,12 +3133,176 @@ public extension PaymentHandlerResponseSchemaAvailableInstrument {
     }
 
     func with(
-        constraints: [String: JSONAny]?? = nil,
+        constraints: ConstraintExpression?? = nil,
         type: String? = nil
     ) -> PaymentHandlerResponseSchemaAvailableInstrument {
         return PaymentHandlerResponseSchemaAvailableInstrument(
             constraints: constraints ?? self.constraints,
             type: type ?? self.type
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A Constraint Expression describing the instrument this entry makes available. Keys in
+/// `properties` name members of the `constraint_target` declared by the instrument schema
+/// for this `type`. Requirements on submitted request data belong in
+/// `ucp.request_constraints` instead.
+///
+/// A closed JSON Schema Draft 2020-12 constraint expression with Object and Value Constraint
+/// positions.
+///
+/// A Value Constraint containing `enum`, `const`, or both.
+// MARK: - ConstraintProperty
+public struct ConstraintProperty: Codable, Sendable {
+    /// Alternative Object Constraints. The constrained object must satisfy at least one. A
+    /// branch must be non-empty: an empty branch is satisfied by every object and neutralizes
+    /// the alternation.
+    public let anyOf: [ConstraintExpression]?
+    /// Constraints keyed by property name. Must be non-empty: an empty object applies no
+    /// constraint.
+    public let properties: [String: ConstraintProperty]?
+    /// Property names required by the constrained object. Must be non-empty: an empty array
+    /// applies no constraint.
+    public let constraintPropertyRequired: [String]?
+    public let const: JSONAny?
+    /// A non-empty array of unique JSON values.
+    public let constraintPropertyEnum: [JSONAny]?
+
+    public enum CodingKeys: String, CodingKey {
+        case anyOf, properties
+        case constraintPropertyRequired = "required"
+        case const
+        case constraintPropertyEnum = "enum"
+    }
+
+    public init(anyOf: [ConstraintExpression]?, properties: [String: ConstraintProperty]?, constraintPropertyRequired: [String]?, const: JSONAny?, constraintPropertyEnum: [JSONAny]?) {
+        self.anyOf = anyOf
+        self.properties = properties
+        self.constraintPropertyRequired = constraintPropertyRequired
+        self.const = const
+        self.constraintPropertyEnum = constraintPropertyEnum
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.anyOf = try container.decodeIfPresent([ConstraintExpression].self, forKey: .anyOf)
+        self.properties = try container.decodeIfPresent([String: ConstraintProperty].self, forKey: .properties)
+        self.constraintPropertyRequired = try container.decodeIfPresent([String].self, forKey: .constraintPropertyRequired)
+        self.const = container.contains(.const) ? try container.decode(JSONAny.self, forKey: .const) : nil
+        self.constraintPropertyEnum = try container.decodeIfPresent([JSONAny].self, forKey: .constraintPropertyEnum)
+    }
+}
+
+// MARK: ConstraintProperty convenience initializers and mutators
+
+public extension ConstraintProperty {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ConstraintProperty.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        anyOf: [ConstraintExpression]?? = nil,
+        properties: [String: ConstraintProperty]?? = nil,
+        constraintPropertyRequired: [String]?? = nil,
+        const: JSONAny?? = nil,
+        constraintPropertyEnum: [JSONAny]?? = nil
+    ) -> ConstraintProperty {
+        return ConstraintProperty(
+            anyOf: anyOf ?? self.anyOf,
+            properties: properties ?? self.properties,
+            constraintPropertyRequired: constraintPropertyRequired ?? self.constraintPropertyRequired,
+            const: const ?? self.const,
+            constraintPropertyEnum: constraintPropertyEnum ?? self.constraintPropertyEnum
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// A Constraint Expression describing the instrument this entry makes available. Keys in
+/// `properties` name members of the `constraint_target` declared by the instrument schema
+/// for this `type`. Requirements on submitted request data belong in
+/// `ucp.request_constraints` instead.
+///
+/// A closed JSON Schema Draft 2020-12 constraint expression with Object and Value Constraint
+/// positions.
+// MARK: - ConstraintExpression
+public struct ConstraintExpression: Codable, Sendable {
+    /// Alternative Object Constraints. The constrained object must satisfy at least one. A
+    /// branch must be non-empty: an empty branch is satisfied by every object and neutralizes
+    /// the alternation.
+    public let anyOf: [ConstraintExpression]?
+    /// Constraints keyed by property name. Must be non-empty: an empty object applies no
+    /// constraint.
+    public let properties: [String: ConstraintProperty]?
+    /// Property names required by the constrained object. Must be non-empty: an empty array
+    /// applies no constraint.
+    public let constraintExpressionRequired: [String]?
+
+    public enum CodingKeys: String, CodingKey {
+        case anyOf, properties
+        case constraintExpressionRequired = "required"
+    }
+
+    public init(anyOf: [ConstraintExpression]?, properties: [String: ConstraintProperty]?, constraintExpressionRequired: [String]?) {
+        self.anyOf = anyOf
+        self.properties = properties
+        self.constraintExpressionRequired = constraintExpressionRequired
+    }
+}
+
+// MARK: ConstraintExpression convenience initializers and mutators
+
+public extension ConstraintExpression {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ConstraintExpression.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        anyOf: [ConstraintExpression]?? = nil,
+        properties: [String: ConstraintProperty]?? = nil,
+        constraintExpressionRequired: [String]?? = nil
+    ) -> ConstraintExpression {
+        return ConstraintExpression(
+            anyOf: anyOf ?? self.anyOf,
+            properties: properties ?? self.properties,
+            constraintExpressionRequired: constraintExpressionRequired ?? self.constraintExpressionRequired
         )
     }
 
@@ -2749,6 +3507,9 @@ public struct Order: Codable, Sendable {
     public let messages: [Message]?
     /// Permalink to access the order on merchant site.
     public let permalinkURL: String
+    /// Snapshot of the policies that applied to the items at checkout, captured on the order as
+    /// a durable record. `applies_to` targets are relative to the response root.
+    public let policies: [Policy]?
     /// Different totals for the order.
     public let totals: [CheckoutTotal]
     public let ucp: UCPOrderResponseSchema
@@ -2760,10 +3521,10 @@ public struct Order: Codable, Sendable {
         case lineItems = "line_items"
         case messages
         case permalinkURL = "permalink_url"
-        case totals, ucp
+        case policies, totals, ucp
     }
 
-    public init(adjustments: [Adjustment]?, attribution: [String: String]?, checkoutID: String, currency: String, fulfillment: Fulfillment, id: String, label: String?, lineItems: [OrderLineItem], messages: [Message]?, permalinkURL: String, totals: [CheckoutTotal], ucp: UCPOrderResponseSchema) {
+    public init(adjustments: [Adjustment]?, attribution: [String: String]?, checkoutID: String, currency: String, fulfillment: Fulfillment, id: String, label: String?, lineItems: [OrderLineItem], messages: [Message]?, permalinkURL: String, policies: [Policy]?, totals: [CheckoutTotal], ucp: UCPOrderResponseSchema) {
         self.adjustments = adjustments
         self.attribution = attribution
         self.checkoutID = checkoutID
@@ -2774,6 +3535,7 @@ public struct Order: Codable, Sendable {
         self.lineItems = lineItems
         self.messages = messages
         self.permalinkURL = permalinkURL
+        self.policies = policies
         self.totals = totals
         self.ucp = ucp
     }
@@ -2808,6 +3570,7 @@ public extension Order {
         lineItems: [OrderLineItem]? = nil,
         messages: [Message]?? = nil,
         permalinkURL: String? = nil,
+        policies: [Policy]?? = nil,
         totals: [CheckoutTotal]? = nil,
         ucp: UCPOrderResponseSchema? = nil
     ) -> Order {
@@ -2822,6 +3585,7 @@ public extension Order {
             lineItems: lineItems ?? self.lineItems,
             messages: messages ?? self.messages,
             permalinkURL: permalinkURL ?? self.permalinkURL,
+            policies: policies ?? self.policies,
             totals: totals ?? self.totals,
             ucp: ucp ?? self.ucp
         )
@@ -2928,12 +3692,20 @@ public extension Adjustment {
 public struct AdjustmentLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
-    /// Signed quantity affected by this adjustment. Negative values represent reductions (e.g.
-    /// returns); positive values represent additions (e.g. exchanges).
+    /// The settled measurement this adjustment reconciles (for example, actual picked weight),
+    /// present when the line's price settles by measurement. Its unit identity MUST match the
+    /// line's pricing basis (`item.unit_price` measure/reference unit); no unit conversion. A
+    /// pure price settlement uses `quantity: 0` together with `measure` and a totals delta.
+    public let measure: Measure?
+    /// Signed integer count of steps of the referenced line item's `quantity_unit` (`10^-scale`
+    /// × `unit`); when `quantity_unit` is absent, it counts whole items (`each`). Negative
+    /// values represent reductions (e.g. returns); positive values represent additions (e.g.
+    /// exchanges).
     public let quantity: Int
 
-    public init(id: String, quantity: Int) {
+    public init(id: String, measure: Measure?, quantity: Int) {
         self.id = id
+        self.measure = measure
         self.quantity = quantity
     }
 }
@@ -2958,10 +3730,12 @@ public extension AdjustmentLineItem {
 
     func with(
         id: String? = nil,
+        measure: Measure?? = nil,
         quantity: Int? = nil
     ) -> AdjustmentLineItem {
         return AdjustmentLineItem(
             id: id ?? self.id,
+            measure: measure ?? self.measure,
             quantity: quantity ?? self.quantity
         )
     }
@@ -3133,7 +3907,8 @@ public extension FulfillmentEvent {
 public struct EventLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
-    /// Quantity fulfilled in this event.
+    /// Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
+    /// `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
     public let quantity: Int
 
     public init(id: String, quantity: Int) {
@@ -3195,8 +3970,9 @@ public struct Expectation: Codable, Sendable {
     public let id: String
     /// Which line items and quantities are in this expectation.
     public let lineItems: [ExpectationLineItem]
-    /// Delivery method type (shipping, pickup, digital).
-    public let methodType: MethodType
+    /// Delivery method type. Well-known values: `shipping`, `pickup`, `digital`; additional
+    /// values MAY be used.
+    public let methodType: String
 
     public enum CodingKeys: String, CodingKey {
         case description, destination
@@ -3206,7 +3982,7 @@ public struct Expectation: Codable, Sendable {
         case methodType = "method_type"
     }
 
-    public init(description: String?, destination: PostalAddress, fulfillableOn: String?, id: String, lineItems: [ExpectationLineItem], methodType: MethodType) {
+    public init(description: String?, destination: PostalAddress, fulfillableOn: String?, id: String, lineItems: [ExpectationLineItem], methodType: String) {
         self.description = description
         self.destination = destination
         self.fulfillableOn = fulfillableOn
@@ -3240,7 +4016,7 @@ public extension Expectation {
         fulfillableOn: String?? = nil,
         id: String? = nil,
         lineItems: [ExpectationLineItem]? = nil,
-        methodType: MethodType? = nil
+        methodType: String? = nil
     ) -> Expectation {
         return Expectation(
             description: description ?? self.description,
@@ -3265,7 +4041,8 @@ public extension Expectation {
 public struct ExpectationLineItem: Codable, Sendable {
     /// Line item ID reference.
     public let id: String
-    /// Quantity of this item in this expectation.
+    /// Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
+    /// `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
     public let quantity: Int
 
     public init(id: String, quantity: Int) {
@@ -3311,22 +4088,18 @@ public extension ExpectationLineItem {
     }
 }
 
-/// Delivery method type (shipping, pickup, digital).
-public enum MethodType: String, Codable, Sendable {
-    case digital = "digital"
-    case pickup = "pickup"
-    case shipping = "shipping"
-}
-
 // MARK: - OrderLineItem
 public struct OrderLineItem: Codable, Sendable {
     /// Line item identifier.
     public let id: String
-    /// Product data (id, title, price, image_url).
+    /// Purchased item data, including identity, price, and sale basis.
     public let item: Item
     /// Parent line item identifier for any nested structures.
     public let parentID: String?
-    /// Quantity tracking for the line item.
+    /// Tracks the line item's original, current active, and fulfilled quantities. All three
+    /// values use the same inherited `item.quantity_unit`. When `item.quantity_unit` is absent
+    /// on an authoritative order response, each step is one whole item (`each`) under the shared
+    /// default.
     public let quantity: LineItemQuantity
     /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
     /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
@@ -3396,15 +4169,18 @@ public extension OrderLineItem {
     }
 }
 
-/// Quantity tracking for the line item.
+/// Tracks the line item's original, current active, and fulfilled quantities. All three
+/// values use the same inherited `item.quantity_unit`. When `item.quantity_unit` is absent
+/// on an authoritative order response, each step is one whole item (`each`) under the shared
+/// default.
 // MARK: - LineItemQuantity
 public struct LineItemQuantity: Codable, Sendable {
-    /// Quantity fulfilled so far.
+    /// Quantity fulfilled so far, expressed as an integer step count.
     public let fulfilled: Int
-    /// Quantity from the original checkout.
+    /// Quantity from the original checkout, expressed as an integer step count.
     public let original: Int?
-    /// Current total active quantity. May differ from original due to post-order modifications
-    /// (e.g., returns or cancellations).
+    /// Current active quantity after returns, cancellations, or other order changes, expressed
+    /// as an integer step count.
     public let total: Int
 
     public init(fulfilled: Int, original: Int?, total: Int) {
@@ -3470,6 +4246,9 @@ public enum LineItemStatus: String, Codable, Sendable {
 public struct UCPOrderResponseSchema: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
     public let capabilities: [String: [CapabilityResponseSchema]]?
+    /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+    /// (`services`, `capabilities`, and `payment_handlers`).
+    public let mapOrder: [String: [String]]?
     /// Payment handler registry keyed by reverse-domain name.
     public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
     /// Service registry keyed by reverse-domain name.
@@ -3480,12 +4259,14 @@ public struct UCPOrderResponseSchema: Codable, Sendable {
 
     public enum CodingKeys: String, CodingKey {
         case capabilities
+        case mapOrder = "map_order"
         case paymentHandlers = "payment_handlers"
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
+    public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
         self.capabilities = capabilities
+        self.mapOrder = mapOrder
         self.paymentHandlers = paymentHandlers
         self.services = services
         self.status = status
@@ -3513,6 +4294,7 @@ public extension UCPOrderResponseSchema {
 
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
+        mapOrder: [String: [String]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
         services: [String: [Service]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus?? = nil,
@@ -3520,6 +4302,7 @@ public extension UCPOrderResponseSchema {
     ) -> UCPOrderResponseSchema {
         return UCPOrderResponseSchema(
             capabilities: capabilities ?? self.capabilities,
+            mapOrder: mapOrder ?? self.mapOrder,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
             status: status ?? self.status,
@@ -3688,6 +4471,9 @@ extension EmbeddedCheckoutProtocol {
     public struct ErrorResponseUcp: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
         public let capabilities: [String: [CapabilityResponseSchema]]?
+        /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+        /// (`services`, `capabilities`, and `payment_handlers`).
+        public let mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
         public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
         /// Service registry keyed by reverse-domain name.
@@ -3698,12 +4484,14 @@ extension EmbeddedCheckoutProtocol {
 
         public enum CodingKeys: String, CodingKey {
             case capabilities
+            case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [CapabilityResponseSchema]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: EmbeddedCheckoutProtocol.ErrorStatus, version: String) {
+        public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: EmbeddedCheckoutProtocol.ErrorStatus, version: String) {
             self.capabilities = capabilities
+            self.mapOrder = mapOrder
             self.paymentHandlers = paymentHandlers
             self.services = services
             self.status = status
@@ -3732,6 +4520,7 @@ public extension EmbeddedCheckoutProtocol.ErrorResponseUcp {
 
     func with(
         capabilities: [String: [CapabilityResponseSchema]]?? = nil,
+        mapOrder: [String: [String]]?? = nil,
         paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
         services: [String: [Service]]?? = nil,
         status: EmbeddedCheckoutProtocol.ErrorStatus? = nil,
@@ -3739,6 +4528,7 @@ public extension EmbeddedCheckoutProtocol.ErrorResponseUcp {
     ) -> EmbeddedCheckoutProtocol.ErrorResponseUcp {
         return EmbeddedCheckoutProtocol.ErrorResponseUcp(
             capabilities: capabilities ?? self.capabilities,
+            mapOrder: mapOrder ?? self.mapOrder,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
             status: status ?? self.status,
@@ -3957,6 +4747,9 @@ extension EmbeddedCheckoutProtocol {
     public struct InstrumentsChangeResultUcp: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
         public let capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?
+        /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
+        /// (`services`, `capabilities`, and `payment_handlers`).
+        public let mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
         public let paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?
         /// Service registry keyed by reverse-domain name.
@@ -3967,12 +4760,14 @@ extension EmbeddedCheckoutProtocol {
 
         public enum CodingKeys: String, CodingKey {
             case capabilities
+            case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?, paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?, services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
+        public init(capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?, services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
             self.capabilities = capabilities
+            self.mapOrder = mapOrder
             self.paymentHandlers = paymentHandlers
             self.services = services
             self.status = status
@@ -4001,6 +4796,7 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
 
     func with(
         capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?? = nil,
+        mapOrder: [String: [String]]?? = nil,
         paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?? = nil,
         services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?? = nil,
         status: UCPCheckoutResponseSchemaStatus? = nil,
@@ -4008,6 +4804,7 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
     ) -> EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
         return EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
             capabilities: capabilities ?? self.capabilities,
+            mapOrder: mapOrder ?? self.mapOrder,
             paymentHandlers: paymentHandlers ?? self.paymentHandlers,
             services: services ?? self.services,
             status: status ?? self.status,
@@ -4189,14 +4986,16 @@ public extension EmbeddedCheckoutProtocol.PaymentHandlerElement {
 // MARK: - PaymentHandlerAvailableInstrument
 extension EmbeddedCheckoutProtocol {
     public struct PaymentHandlerAvailableInstrument: Codable, Sendable {
-        /// Constraints on this instrument type. Structure depends on instrument type and active
-        /// capabilities.
-        public let constraints: [String: JSONAny]?
+        /// A Constraint Expression describing the instrument this entry makes available. Keys in
+        /// `properties` name members of the `constraint_target` declared by the instrument schema
+        /// for this `type`. Requirements on submitted request data belong in
+        /// `ucp.request_constraints` instead.
+        public let constraints: ConstraintExpression?
         /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
         /// schema's type constant.
         public let type: String
 
-        public init(constraints: [String: JSONAny]?, type: String) {
+        public init(constraints: ConstraintExpression?, type: String) {
             self.constraints = constraints
             self.type = type
         }
@@ -4222,7 +5021,7 @@ public extension EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
     }
 
     func with(
-        constraints: [String: JSONAny]?? = nil,
+        constraints: ConstraintExpression?? = nil,
         type: String? = nil
     ) -> EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
         return EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument(

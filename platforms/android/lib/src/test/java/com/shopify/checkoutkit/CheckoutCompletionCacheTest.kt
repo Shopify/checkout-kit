@@ -186,7 +186,7 @@ class CheckoutCompletionCacheTest {
           "params": {"checkout": {
             "id": "checkout-example", "currency": "USD", "status": "completed",
             "line_items": [], "links": [], "totals": [],
-            "ucp": {"payment_handlers": {}, "version": "2026-04-08"}
+            "ucp": {"payment_handlers": {}, "version": "${CheckoutProtocol.SPEC_VERSION}"}
           }}
         }
     """.trimIndent()

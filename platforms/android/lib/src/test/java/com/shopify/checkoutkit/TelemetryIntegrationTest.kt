@@ -278,7 +278,7 @@ class TelemetryIntegrationTest {
     private fun ecErrorMessage(): String {
         val error = """
             |{
-            |  "ucp":{"version":"2026-04-08","status":"error"},
+            |  "ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}","status":"error"},
             |  "messages":[
             |    {
             |      "type":"error",
