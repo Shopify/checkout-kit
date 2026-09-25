@@ -17,7 +17,7 @@ Add the protocol artifact from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("com.shopify:embedded-checkout-protocol:2026.04.08.1-alpha.2")
+    implementation("com.shopify:embedded-checkout-protocol:2026.08.25.1-alpha.1")
 }
 ```
 
