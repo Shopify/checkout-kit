@@ -290,7 +290,7 @@ describe("<shopify-checkout>", () => {
               .mockReturnValueOnce(createMockWindow());
             vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
             checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-retry-button")!.click();
@@ -308,7 +308,7 @@ describe("<shopify-checkout>", () => {
             vi.spyOn(window, "open").mockReturnValue(null);
             vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
             checkout.open();
@@ -322,7 +322,7 @@ describe("<shopify-checkout>", () => {
             const checkout = renderCheckout({ target });
             vi.spyOn(window, "open").mockReturnValue(null);
             const closeEventSpy = vi.fn();
-            checkout.addEventListener("ec.close", closeEventSpy);
+            checkout.addEventListener("close", closeEventSpy);
 
             checkout.open();
             checkout
