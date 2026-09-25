@@ -1469,7 +1469,7 @@ public data class PaymentHandlerResponseSchemaAvailableInstrument (
  *
  * A Value Constraint containing `enum`, `const`, or both.
  */
-@Serializable
+@Serializable(with = ConstraintPropertySerializer::class)
 public data class ConstraintProperty (
     /**
      * Alternative Object Constraints. The constrained object must satisfy at least one. A
@@ -3054,6 +3054,40 @@ public object PolicySerializer : KSerializer<Policy> {
         value.additionalProperties
             .filterKeys { it !in known }
             .forEach { (key, element) -> map[key] = element }
+        output.encodeJsonElement(JsonObject(map))
+    }
+}
+
+internal object ConstraintPropertySerializer : KSerializer<ConstraintProperty> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.ConstraintProperty")
+    override fun deserialize(decoder: Decoder): ConstraintProperty {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("ConstraintProperty can only be deserialized from JSON")
+        val obj = input.decodeJsonElement().jsonObject
+        val json = input.json
+        val known = setOf("anyOf", "properties", "required", "const", "enum")
+        if (!json.configuration.ignoreUnknownKeys && obj.keys.any { it !in known }) {
+            throw SerializationException("Unknown property for ConstraintProperty")
+        }
+        return ConstraintProperty(
+            anyOf = obj["anyOf"]?.let { json.decodeFromJsonElement(serializer<List<ConstraintExpression>>(), it) },
+            properties = obj["properties"]?.let { json.decodeFromJsonElement(serializer<Map<String, ConstraintProperty>>(), it) },
+            required = obj["required"]?.let { json.decodeFromJsonElement(serializer<List<String>>(), it) },
+            const = obj["const"]?.let { json.decodeFromJsonElement(serializer<JsonElement>(), it) },
+            enum = obj["enum"]?.let { json.decodeFromJsonElement(serializer<JsonArray>(), it) },
+        )
+    }
+    override fun serialize(encoder: Encoder, value: ConstraintProperty) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("ConstraintProperty can only be serialized to JSON")
+        val json = output.json
+        val map = linkedMapOf<String, JsonElement>()
+        value.anyOf?.let { map["anyOf"] = json.encodeToJsonElement(serializer<List<ConstraintExpression>>(), it) }
+        value.properties?.let { map["properties"] = json.encodeToJsonElement(serializer<Map<String, ConstraintProperty>>(), it) }
+        value.required?.let { map["required"] = json.encodeToJsonElement(serializer<List<String>>(), it) }
+        value.const?.let { map["const"] = json.encodeToJsonElement(serializer<JsonElement>(), it) }
+        value.enum?.let { map["enum"] = json.encodeToJsonElement(serializer<JsonArray>(), it) }
         output.encodeJsonElement(JsonObject(map))
     }
 }

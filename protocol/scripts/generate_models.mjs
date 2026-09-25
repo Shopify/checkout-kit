@@ -668,7 +668,7 @@ function kotlinDecodeField(name, field) {
     : `            ${field.name} = json.decodeFromJsonElement(serializer<${field.type}>(), obj["${field.wire}"] ?: throw SerializationException("Missing ${field.wire} for ${name}")),`;
 }
 
-function kotlinSerializerObject(name, fields) {
+function kotlinSerializerObject(name, fields, {preserveAdditionalProperties = true} = {}) {
   const knownList = fields.map((field) => `"${field.wire}"`).join(", ");
 
   const ctorArgs = fields.map((field) => kotlinDecodeField(name, field)).join("\n");
@@ -683,7 +683,7 @@ function kotlinSerializerObject(name, fields) {
 
   return [
     "",
-    `public object ${name}Serializer : KSerializer<${name}> {`,
+    `${preserveAdditionalProperties ? "public" : "internal"} object ${name}Serializer : KSerializer<${name}> {`,
     "    override val descriptor: SerialDescriptor =",
     `        buildClassSerialDescriptor("com.shopify.ucp.embedded.checkout.${name}")`,
     "",
@@ -693,9 +693,14 @@ function kotlinSerializerObject(name, fields) {
     "        val obj = input.decodeJsonElement().jsonObject",
     "        val json = input.json",
     `        val known = setOf(${knownList})`,
+    ...(!preserveAdditionalProperties ? [
+      "        if (!json.configuration.ignoreUnknownKeys && obj.keys.any { it !in known }) {",
+      `            throw SerializationException("Unknown property for ${name}")`,
+      "        }",
+    ] : []),
     `        return ${name}(`,
     ctorArgs,
-    "            additionalProperties = obj.filterKeys { it !in known }",
+    ...(preserveAdditionalProperties ? ["            additionalProperties = obj.filterKeys { it !in known }"] : []),
     "        )",
     "    }",
     "",
@@ -703,12 +708,14 @@ function kotlinSerializerObject(name, fields) {
     "        val output = encoder as? JsonEncoder",
     `            ?: throw SerializationException("${name} can only be serialized to JSON")`,
     "        val json = output.json",
-    `        val known = setOf(${knownList})`,
+    ...(preserveAdditionalProperties ? [`        val known = setOf(${knownList})`] : []),
     "        val map = linkedMapOf<String, JsonElement>()",
     serLines,
-    "        value.additionalProperties",
-    "            .filterKeys { it !in known }",
-    "            .forEach { (key, element) -> map[key] = element }",
+    ...(preserveAdditionalProperties ? [
+      "        value.additionalProperties",
+      "            .filterKeys { it !in known }",
+      "            .forEach { (key, element) -> map[key] = element }",
+    ] : []),
     "        output.encodeJsonElement(JsonObject(map))",
     "    }",
     "}",
@@ -747,6 +754,29 @@ function injectKotlinAdditionalProperties(source, openModelNames) {
   assertExpectedNativeOpenModels("Kotlin", injectedModelNames);
 
   return `${result}\n${serializers.join("\n")}\n`;
+}
+
+// A missing const and a const whose JSON value is null have different meanings.
+// Decode present fields with their non-nullable serializers so JSON null remains
+// JsonNull, while a missing key retains the Kotlin null default.
+function preserveKotlinConstraintConstants(source) {
+  let serializer;
+  const result = source.replace(
+    /^@Serializable\npublic data class ConstraintProperty \(\n([\s\S]*?)\n\)$/m,
+    (match, inner) => {
+      if (!inner.includes("    public val const: JsonElement? = null,")) {
+        throw new Error("Kotlin constraint constant injection failed; quicktype output may have changed");
+      }
+      serializer = kotlinSerializerObject("ConstraintProperty", parseKotlinFields(inner), {
+        preserveAdditionalProperties: false,
+      });
+      return `@Serializable(with = ConstraintPropertySerializer::class)\npublic data class ConstraintProperty (\n${inner}\n)`;
+    },
+  );
+  if (!serializer) {
+    throw new Error("Kotlin ConstraintProperty model was not found");
+  }
+  return `${result}\n${serializer}\n`;
 }
 
 function removeKotlinMapModel(source, modelName) {
@@ -805,7 +835,7 @@ async function generateKotlin(specDir, output, {openModelNames, mapModelNames}) 
       throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
     }
 
-    return injectKotlinAdditionalProperties(withSerializer, openModelNames);
+    return preserveKotlinConstraintConstants(injectKotlinAdditionalProperties(withSerializer, openModelNames));
   });
 }
 
@@ -903,6 +933,35 @@ function injectSwiftAdditionalProperties(source, openModelNames) {
   return result;
 }
 
+// Synthesized decodeIfPresent treats JSON null as absence. Constraint constants
+// accept every JSON value, so check key presence before decoding JSONAny instead.
+function preserveSwiftConstraintConstants(source) {
+  let injected = false;
+  const result = source.replace(
+    /^public struct ConstraintProperty: Codable, Sendable \{\n([\s\S]*?)\n\}$/m,
+    (match, inner) => {
+      if (!inner.includes("    public let const: JSONAny?") || inner.includes("public init(from decoder:")) {
+        throw new Error("Swift constraint constant injection failed; quicktype output may have changed");
+      }
+      const properties = [...inner.matchAll(/^    public let (\w+): (.+)\?$/gm)];
+      const lines = ["", "", "    public init(from decoder: Decoder) throws {",
+        "        let container = try decoder.container(keyedBy: CodingKeys.self)"];
+      for (const [, name, type] of properties) {
+        lines.push(name === "const"
+          ? "        self.const = container.contains(.const) ? try container.decode(JSONAny.self, forKey: .const) : nil"
+          : `        self.${name} = try container.decodeIfPresent(${type}.self, forKey: .${name})`);
+      }
+      lines.push("    }");
+      injected = true;
+      return `public struct ConstraintProperty: Codable, Sendable {\n${inner}${lines.join("\n")}\n}`;
+    },
+  );
+  if (!injected) {
+    throw new Error("Swift ConstraintProperty model was not found");
+  }
+  return result;
+}
+
 function removeSwiftMapModel(source, modelName) {
   return source
     .replace(
@@ -964,7 +1023,8 @@ async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
 
     const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
     const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
-    return namespaceSwiftPayloadModels(injectSwiftAdditionalProperties(withMapModels, openModelNames));
+    const withAdditionalProperties = injectSwiftAdditionalProperties(withMapModels, openModelNames);
+    return namespaceSwiftPayloadModels(preserveSwiftConstraintConstants(withAdditionalProperties));
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);

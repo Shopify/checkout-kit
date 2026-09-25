@@ -3190,6 +3190,15 @@ public struct ConstraintProperty: Codable, Sendable {
         self.const = const
         self.constraintPropertyEnum = constraintPropertyEnum
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.anyOf = try container.decodeIfPresent([ConstraintExpression].self, forKey: .anyOf)
+        self.properties = try container.decodeIfPresent([String: ConstraintProperty].self, forKey: .properties)
+        self.constraintPropertyRequired = try container.decodeIfPresent([String].self, forKey: .constraintPropertyRequired)
+        self.const = container.contains(.const) ? try container.decode(JSONAny.self, forKey: .const) : nil
+        self.constraintPropertyEnum = try container.decodeIfPresent([JSONAny].self, forKey: .constraintPropertyEnum)
+    }
 }
 
 // MARK: ConstraintProperty convenience initializers and mutators

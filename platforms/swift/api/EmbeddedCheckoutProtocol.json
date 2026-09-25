@@ -10568,7 +10568,6 @@
             "usr": "s:24EmbeddedCheckoutProtocol18ConstraintPropertyV4fromACs7Decoder_p_tKcfc",
             "mangledName": "$s24EmbeddedCheckoutProtocol18ConstraintPropertyV4fromACs7Decoder_p_tKcfc",
             "moduleName": "EmbeddedCheckoutProtocol",
-            "implicit": true,
             "throwing": true,
             "init_kind": "Designated"
           },
