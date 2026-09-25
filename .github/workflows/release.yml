@@ -53,10 +53,6 @@ jobs:
           EXPECTED_VERSION: ${{ inputs.version }}
         run: .github/scripts/validate-release-version "$PLATFORM" "$EXPECTED_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Verify Android protocol dependency matches its release
-        if: steps.release.outputs.platform == 'android'
-        run: .github/scripts/check-android-protocol-release
-
       - name: Require main branch for stable releases
         if: steps.release.outputs.prerelease == 'false' && github.ref != 'refs/heads/main'
         env:

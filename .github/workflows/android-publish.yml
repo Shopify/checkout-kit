@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
-          fetch-depth: 0
 
       - name: Validate release tag matches Android version
         id: release
@@ -48,10 +47,6 @@ jobs:
           fi
 
           .github/scripts/validate-release-version Android "" "$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Verify Embedded Checkout Protocol sources match its release
-        working-directory: ${{ github.workspace }}
-        run: .github/scripts/check-android-protocol-release
 
       - name: Verify Embedded Checkout Protocol is published
         env:

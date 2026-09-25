@@ -272,30 +272,15 @@ Open a pull request with the following changes:
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
 
-The release preparation and Android publish workflows compare Kotlin protocol runtime
-sources and build definitions with the tag for `embeddedCheckoutProtocolAndroid`.
-They reject an Android release if those files have changed or the protocol tag is
-missing. Fetch tags and run `.github/scripts/check-android-protocol-release` locally
-to check this prerequisite. Protocol documentation and tests can change without a
-release; runtime changes require a new protocol version to be published first.
-The Maven Central availability check still runs before Android publication. The
-publish workflow then builds, runs unit tests, checks the API baseline,
-and publishes with `usePublishedProtocol=true`. This resolves the pinned protocol
-from Maven Central instead of compiling its in-repo project.
-
-For a local reproduction, run from `platforms/android` inside shadowenv:
+Android publication sets `ORG_GRADLE_PROJECT_usePublishedProtocol=true` to build
+and test against the pinned Maven Central protocol artifact. Remote Gradle
+publish tasks require this mode, verify the resolved version, and require unit
+tests to pass. Normal development and `publishToMavenLocal` use protocol sources.
+To reproduce the release checks from `platforms/android`, run:
 
 ```bash
 shadowenv exec -- ./gradlew -PusePublishedProtocol=true :lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck
 ```
-
-Gradle's remote Maven publication tasks require published-protocol mode, verify
-the exact protocol artifact on release and test classpaths, and depend on passing
-unit tests. Ordinary development uses the source project by default;
-`publishToMavenLocal` remains available for React Native's explicit `--local` flow.
-
-For coordinated version-bump PRs, agents can use the repository's
-[prepare-release skill](../.agents/skills/prepare-release/SKILL.md).
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
