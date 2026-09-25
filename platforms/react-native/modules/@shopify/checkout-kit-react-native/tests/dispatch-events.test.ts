@@ -20,7 +20,7 @@ describe('SDK lifecycle event dispatch contract', () => {
   });
 
   it('accepts native event types in a different order and verifies once', () => {
-    verifyDispatchEventParity(['geolocationRequest', 'close', 'fail']);
+    verifyDispatchEventParity([...SDK_LIFECYCLE_EVENT_TYPES].reverse());
 
     expect(() => verifyDispatchEventParity(['close'])).not.toThrow();
   });
@@ -35,11 +35,11 @@ describe('SDK lifecycle event dispatch contract', () => {
   });
 
   it('reports event types missing from either side of the dispatch contract', () => {
-    expect(() => verifyDispatchEventParity(['close', 'nativeOnly'])).toThrow(
+    expect(() => verifyDispatchEventParity(['dismiss', 'nativeOnly'])).toThrow(
       'events missing from js:     nativeOnly',
     );
-    expect(() => verifyDispatchEventParity(['close', 'nativeOnly'])).toThrow(
-      'events missing from native: fail, geolocationRequest',
+    expect(() => verifyDispatchEventParity(['dismiss', 'nativeOnly'])).toThrow(
+      'events missing from native: complete, fail, geolocationRequest, linkClick, start, update',
     );
   });
 });

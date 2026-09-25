@@ -13,7 +13,6 @@ import {
 import Icon from 'react-native-vector-icons/Entypo';
 
 import {
-  CheckoutProtocol,
   useShopifyCheckout,
   AcceleratedCheckoutButtons,
   ApplePayLabel,
@@ -28,10 +27,7 @@ import type {Colors} from '../context/Theme';
 import {useTheme} from '../context/Theme';
 import {useCart} from '../context/Cart';
 import {currency} from '../utils';
-import {
-  useShopifyEventHandlers,
-  useShopifyProtocolEventHandlers,
-} from '../hooks/useCheckoutEventHandlers';
+import {useShopifyEventHandlers} from '../hooks/useCheckoutEventHandlers';
 import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
 
 function CartScreen(): React.JSX.Element {
@@ -51,26 +47,15 @@ function CartScreen(): React.JSX.Element {
   } = useCart();
   const {queries} = useShopify();
   const {appConfig} = useConfig();
-  // Separate handler instances so debug logs are labelled with the actual
-  // surface that emitted the event. Otherwise an `onClose` from the
-  // `ShopifyCheckout.present()` sheet would log under the
-  // `AcceleratedCheckoutButtons` namespace and confuse anyone debugging.
-  const sheetEventHandlers = useShopifyEventHandlers('Cart - CheckoutSheet');
-  const sheetProtocolEventHandlers = useShopifyProtocolEventHandlers(
-    'Cart - CheckoutSheet Protocol',
-    {
-      [CheckoutProtocol.complete]: () => {
-        clearCart();
-      },
-    },
+  // Wait for dismissal before removing the cart and its accelerated buttons.
+  const sheetEventHandlers = useShopifyEventHandlers(
+    'Cart - CheckoutSheet',
+    clearCart,
   );
   const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
+    clearCart,
   );
-  const acceleratedCheckoutProtocolEventHandlers =
-    useShopifyProtocolEventHandlers(
-      'Cart - AcceleratedCheckoutButtons Protocol',
-    );
 
   const [fetchCart, {data, loading, error}] = queries.cart;
 
@@ -125,18 +110,7 @@ function CartScreen(): React.JSX.Element {
 
   const presentCheckout = async () => {
     if (checkoutURL) {
-      present(
-        checkoutURL,
-        {
-          onClose: () => {
-            sheetEventHandlers.onCancel?.();
-          },
-          onFail: error => {
-            sheetEventHandlers.onFail?.(error);
-          },
-        },
-        sheetProtocolEventHandlers,
-      );
+      present(checkoutURL, sheetEventHandlers);
     }
   };
 
@@ -229,7 +203,6 @@ function CartScreen(): React.JSX.Element {
                   AcceleratedCheckoutWallet.shopPay,
                 ]}
                 cornerRadius={cornerRadius}
-                events={acceleratedCheckoutProtocolEventHandlers}
               />
 
               <Pressable

@@ -36,8 +36,8 @@ internal enum ShopifyEventSerialization {
         }
     }
 
-    static func serialize(clickEvent url: URL) -> [String: URL] {
-        return ["url": url]
+    static func serialize(clickEvent url: URL) -> [String: String] {
+        return ["url": url.absoluteString]
     }
 
     /**

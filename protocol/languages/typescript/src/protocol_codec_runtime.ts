@@ -32,6 +32,19 @@ export function decodeProtocolObject(
   return walkObject(input, renameMap[modelName], 'decode', modelName) as JSONRecord;
 }
 
+/** Decode Kit checkout fields using the generated schema, without protocol metadata. */
+export function decodeCheckoutSnapshot(value: unknown): JSONRecord {
+  const input = {...requireObject(value, 'Checkout')};
+  delete input.ucp;
+  requireFields(input, (REQUIRED_FIELDS.Checkout ?? []).filter(field => field !== 'ucp'), 'Checkout');
+  requireStringFields(input, ['currency', 'id', 'status'], 'Checkout');
+  for (const field of ['line_items', 'links', 'totals']) {
+    if (!Array.isArray(input[field])) throw new TypeError('Invalid Checkout');
+  }
+  requireNestedFields(input, 'Checkout');
+  return walkObject(input, renameMap.Checkout, 'decode', 'Checkout') as JSONRecord;
+}
+
 export function encodeProtocolObject(
   value: unknown,
   modelName: string,

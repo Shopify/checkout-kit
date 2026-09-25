@@ -8,7 +8,6 @@ import type {
   PreloadOptions,
   PresentCallbacks,
 } from './index.d';
-import type {ProtocolHandlers} from './protocol';
 
 type Maybe<T> = T | undefined;
 
@@ -16,11 +15,7 @@ interface Context {
   acceleratedCheckoutsAvailable: boolean;
   getConfig: () => Configuration | undefined;
   setConfig: (config: Configuration) => void;
-  present: (
-    checkoutUrl: string,
-    callbacks?: PresentCallbacks,
-    protocol?: ProtocolHandlers,
-  ) => void;
+  present: (checkoutUrl: string, callbacks?: PresentCallbacks) => void;
   preload: (
     checkoutUrl: string,
     options?: PreloadOptions,
@@ -63,13 +58,9 @@ export function ShopifyCheckoutProvider({
   }, [checkout, configuration]);
 
   const present = useCallback(
-    (
-      checkoutUrl: string,
-      callbacks?: PresentCallbacks,
-      protocol?: ProtocolHandlers,
-    ) => {
+    (checkoutUrl: string, callbacks?: PresentCallbacks) => {
       if (checkoutUrl) {
-        checkout.present(checkoutUrl, callbacks, protocol);
+        checkout.present(checkoutUrl, callbacks);
       }
     },
     [checkout],

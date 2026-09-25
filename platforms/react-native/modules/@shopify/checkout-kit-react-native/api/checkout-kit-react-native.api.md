@@ -4,11 +4,19 @@
 
 ```ts
 
-import { Checkout } from '@shopify/checkout-kit-protocol';
-import { CheckoutProtocolCatalogPayloads } from '@shopify/checkout-kit-protocol';
-import { ErrorResponse } from '@shopify/checkout-kit-protocol';
+import type { Buyer } from '@shopify/checkout-kit-protocol';
+import type { CheckoutDiscounts } from '@shopify/checkout-kit-protocol';
+import type { CheckoutFulfillment } from '@shopify/checkout-kit-protocol';
+import type { CheckoutStatus } from '@shopify/checkout-kit-protocol';
+import type { CheckoutTotal } from '@shopify/checkout-kit-protocol';
+import type { Context } from '@shopify/checkout-kit-protocol';
+import type { LineItem } from '@shopify/checkout-kit-protocol';
+import type { Link } from '@shopify/checkout-kit-protocol';
+import type { Message } from '@shopify/checkout-kit-protocol';
+import type { OrderConfirmation } from '@shopify/checkout-kit-protocol';
+import type { Payment } from '@shopify/checkout-kit-protocol';
+import type { Policy } from '@shopify/checkout-kit-protocol';
 import type { PropsWithChildren } from 'react';
-import { ProtocolHandlers as ProtocolHandlers_2 } from '@shopify/checkout-kit-protocol';
 import { default as React_2 } from 'react';
 
 // @public (undocumented)
@@ -124,7 +132,54 @@ export enum ApplePayStyle {
     whiteOutline = "whiteOutline"
 }
 
-export { Checkout }
+// @public
+export interface Checkout {
+    [key: string]: unknown;
+    // (undocumented)
+    actions?: Record<string, Record<string, unknown>[]>;
+    // (undocumented)
+    attribution?: Record<string, string>;
+    // (undocumented)
+    buyer?: Buyer;
+    // (undocumented)
+    context?: Context;
+    // (undocumented)
+    continueUrl?: string;
+    // (undocumented)
+    currency: string;
+    // (undocumented)
+    discounts?: CheckoutDiscounts;
+    // (undocumented)
+    expiresAt?: string;
+    // (undocumented)
+    fulfillment?: CheckoutFulfillment;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    lineItems: LineItem[];
+    // (undocumented)
+    links: Link[];
+    // (undocumented)
+    messages?: Message[];
+    // (undocumented)
+    order?: OrderConfirmation;
+    // (undocumented)
+    payment?: Payment;
+    // (undocumented)
+    policies?: Policy[];
+    // (undocumented)
+    signals?: Record<string, unknown>;
+    // (undocumented)
+    status: CheckoutStatus;
+    // (undocumented)
+    totals: CheckoutTotal[];
+}
+
+// @public (undocumented)
+export interface CheckoutCompleteEvent {
+    // (undocumented)
+    checkout: Checkout;
+}
 
 // @public
 export enum CheckoutErrorCode {
@@ -142,6 +197,21 @@ export enum CheckoutErrorCode {
 }
 
 // @public
+export interface CheckoutEventHandlers {
+    linkAction?: CheckoutLinkAction;
+    onComplete?: (event: CheckoutCompleteEvent) => void;
+    // (undocumented)
+    onDismiss?: () => void;
+    // (undocumented)
+    onFail?: (event: CheckoutFailureEvent) => void;
+    onLinkClick?: (link: CheckoutLink) => void;
+    // (undocumented)
+    onStart?: (event: CheckoutStartEvent) => void;
+    // (undocumented)
+    onUpdate?: (event: CheckoutUpdateEvent) => void;
+}
+
+// @public
 export class CheckoutException {
     constructor(exception?: CheckoutNativeError);
     // (undocumented)
@@ -153,6 +223,21 @@ export class CheckoutException {
     // (undocumented)
     statusCode?: number;
 }
+
+// @public (undocumented)
+export interface CheckoutFailureEvent {
+    // (undocumented)
+    error: CheckoutException;
+}
+
+// @public (undocumented)
+export interface CheckoutLink {
+    // (undocumented)
+    url: string;
+}
+
+// @public (undocumented)
+export type CheckoutLinkAction = 'open' | 'handled' | 'cancel';
 
 // @public
 export type CheckoutNativeError = {
@@ -168,21 +253,16 @@ export interface CheckoutPreloadSubscription {
 }
 
 // @public (undocumented)
-export const CheckoutProtocol: {
-    readonly complete: "ec.complete";
-    readonly error: "ec.error";
-    readonly fulfillmentChange: "ec.fulfillment.change";
-    readonly lineItemsChange: "ec.line_items.change";
-    readonly messagesChange: "ec.messages.change";
-    readonly start: "ec.start";
-    readonly totalsChange: "ec.totals.change";
-};
+export interface CheckoutStartEvent {
+    // (undocumented)
+    checkout: Checkout;
+}
 
 // @public (undocumented)
-export type CheckoutProtocolMethod = (typeof CheckoutProtocol)[keyof typeof CheckoutProtocol];
-
-// @public (undocumented)
-export type CheckoutProtocolPayloads = Pick<CheckoutProtocolCatalogPayloads, CheckoutProtocolMethod>;
+export interface CheckoutUpdateEvent {
+    // (undocumented)
+    checkout: Checkout;
+}
 
 // @public (undocumented)
 export enum ColorScheme {
@@ -225,8 +305,6 @@ export type Configuration = CommonConfiguration & {
 export class DispatchEventParityError extends Error {
     constructor(message: string);
 }
-
-export { ErrorResponse }
 
 // @public
 export interface Features {
@@ -285,14 +363,9 @@ export type PreloadState =
 };
 
 // @public
-export interface PresentCallbacks {
-    onClose?: () => void;
-    onFail?: (error: CheckoutException) => void;
+export interface PresentCallbacks extends CheckoutEventHandlers {
     onGeolocationRequest?: (event: GeolocationRequestEvent) => void;
 }
-
-// @public (undocumented)
-export type ProtocolHandlers = ProtocolHandlers_2<CheckoutProtocolPayloads>;
 
 // @public (undocumented)
 export enum RenderState {
@@ -325,7 +398,7 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     invalidate(): void;
     isAcceleratedCheckoutAvailable(): boolean;
     preload(checkoutUrl: string, options?: PreloadOptions): CheckoutPreloadSubscription;
-    present(checkoutUrl: string, callbacks?: PresentCallbacks, protocol?: ProtocolHandlers): void;
+    present(checkoutUrl: string, callbacks?: PresentCallbacks): void;
     setConfig(configuration: Configuration): void;
     teardown(): void;
     // (undocumented)
@@ -337,10 +410,10 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
 // @public (undocumented)
 export function ShopifyCheckoutProvider(input: PropsWithChildren<Props>): React_2.JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Context" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Context_2" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function useShopifyCheckout(): Context;
+export function useShopifyCheckout(): Context_2;
 
 // (No @packageDocumentation comment for this package)
 
