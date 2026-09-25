@@ -282,6 +282,9 @@ To reproduce the release checks from `platforms/android`, run:
 shadowenv exec -- ./gradlew -PusePublishedProtocol=true :lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck
 ```
 
+For coordinated version-bump PRs, agents can use the repository's
+[prepare-release skill](../.agents/skills/prepare-release/SKILL.md).
+
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
