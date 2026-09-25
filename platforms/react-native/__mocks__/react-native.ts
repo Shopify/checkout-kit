@@ -78,7 +78,15 @@ const ShopifyCheckoutKit = {
   version: '0.7.0',
   getConstants: jest.fn(() => ({
     version: '0.7.0',
-    dispatchEventTypes: ['close', 'fail', 'geolocationRequest'],
+    dispatchEventTypes: [
+      'start',
+      'update',
+      'complete',
+      'dismiss',
+      'fail',
+      'linkClick',
+      'geolocationRequest',
+    ],
   })),
   onDispatch: jest.fn((callback: (envelopeJson: string) => void) =>
     shopifyCheckoutKitEventEmitter.addListener('onDispatch', callback),

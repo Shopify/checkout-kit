@@ -1,13 +1,8 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {Platform, UIManager} from 'react-native';
-import type {AcceleratedCheckoutWallet, CheckoutException} from '..';
-import {parseCheckoutError, type CheckoutNativeError} from '../errors';
-import {
-  CheckoutProtocol,
-  decodeProtocolPayload,
-  type CheckoutProtocolPayloads,
-  type ProtocolHandlers,
-} from '../protocol';
+import {Platform} from 'react-native';
+import type {AcceleratedCheckoutWallet} from '../enums';
+import type {CheckoutEventHandlers} from '../checkout';
+import {createPresentDispatcher} from '../present-dispatcher';
 import RCTAcceleratedCheckoutButtons from '../specs/RCTAcceleratedCheckoutButtonsNativeComponent';
 
 export enum RenderState {
@@ -56,7 +51,7 @@ type CheckoutIdentifier =
       quantity: number;
     };
 
-interface CommonAcceleratedCheckoutButtonsProps {
+interface CommonAcceleratedCheckoutButtonsProps extends CheckoutEventHandlers {
   /**
    * Corner radius for the button (defaults to 8)
    */
@@ -80,32 +75,10 @@ interface CommonAcceleratedCheckoutButtonsProps {
   applePayStyle?: ApplePayStyle;
 
   /**
-   * Called when checkout fails
-   */
-  onFail?: (error: CheckoutException) => void;
-
-  /**
-   * Called when checkout is cancelled
-   */
-  onCancel?: () => void;
-
-  /**
    * Called when the render state changes
    * States from SDK: loading, rendered, error
    */
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
-
-  /**
-   * Checkout Protocol event handlers scoped to this button instance.
-   *
-   * Supports all public Checkout Protocol notification events.
-   */
-  events?: ProtocolHandlers;
-
-  /**
-   * Called when a link is clicked within the checkout
-   */
-  onClickLink?: (url: string) => void;
 
   /**
    * Called when the size of the button changes
@@ -142,7 +115,7 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
  * @example Cart-based checkout
  * <AcceleratedCheckoutButtons
  *   cartId="gid://shopify/Cart/123"
- *   onFail={(error) => console.error('Checkout failed:', error.message)}
+ *   onFail={({error}) => console.error('Checkout failed:', error.message)}
  * />
  *
  * @example Product-based checkout
@@ -153,14 +126,6 @@ export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
  */
 
 const defaultStyles = {flex: 1};
-const nativeComponentName = 'RCTAcceleratedCheckoutButtons';
-const protocolEventTypesConstant = 'checkoutProtocolEventTypes';
-const checkoutProtocolEventTypeValues = Object.values(CheckoutProtocol);
-const checkoutProtocolEventTypes: ReadonlySet<string> = new Set(
-  checkoutProtocolEventTypeValues,
-);
-let verifiedProtocolEventParitySignature: string | undefined;
-
 export const AcceleratedCheckoutButtons: React.FC<
   AcceleratedCheckoutButtonsProps
 > = ({
@@ -169,10 +134,13 @@ export const AcceleratedCheckoutButtons: React.FC<
   cornerRadius,
   wallets,
   onFail,
-  onCancel,
+  onDismiss,
+  onStart,
+  onUpdate,
+  onComplete,
   onRenderStateChange,
-  onClickLink,
-  events,
+  onLinkClick,
+  linkAction = 'open',
   ...props
 }) => {
   const isCart = isCartProps(props);
@@ -181,16 +149,7 @@ export const AcceleratedCheckoutButtons: React.FC<
     undefined,
   );
 
-  const handleFail = useCallback(
-    (event: {nativeEvent: unknown}) => {
-      onFail?.(parseCheckoutError(event.nativeEvent as CheckoutNativeError));
-    },
-    [onFail],
-  );
-
-  const handleCancel = useCallback(() => {
-    onCancel?.();
-  }, [onCancel]);
+  const handleDismiss = useCallback(() => onDismiss?.(), [onDismiss]);
 
   const handleRenderStateChange = useCallback(
     (event: {nativeEvent: unknown}) => {
@@ -210,27 +169,19 @@ export const AcceleratedCheckoutButtons: React.FC<
     [onRenderStateChange],
   );
 
-  const handleClickLink = useCallback(
-    (event: {nativeEvent: unknown}) => {
-      const nativeEvent = event.nativeEvent as {url?: string};
-      if (nativeEvent?.url) {
-        onClickLink?.(nativeEvent.url);
-      }
-    },
-    [onClickLink],
+  const {dispatcher} = useMemo(
+    () =>
+      createPresentDispatcher({
+        callbacks: {onStart, onUpdate, onComplete, onFail, onLinkClick},
+      }),
+    [onStart, onUpdate, onComplete, onFail, onLinkClick],
   );
 
   const handleDispatch = useCallback(
-    (event: {nativeEvent: unknown}) => {
-      const nativeEvent = event.nativeEvent as {value?: unknown};
-      if (typeof nativeEvent?.value !== 'string') {
-        logDispatchError('dispatch event is missing a string `value`');
-        return;
-      }
-
-      routeProtocolDispatchEnvelope(nativeEvent.value, events);
+    (event: {nativeEvent: {value: string}}) => {
+      dispatcher(event.nativeEvent.value);
     },
-    [events],
+    [dispatcher],
   );
 
   const handleSizeChange = useCallback(
@@ -280,8 +231,6 @@ export const AcceleratedCheckoutButtons: React.FC<
     }
   }
 
-  verifyProtocolEventParity();
-
   return (
     <RCTAcceleratedCheckoutButtons
       testID="accelerated-checkout-buttons"
@@ -291,10 +240,9 @@ export const AcceleratedCheckoutButtons: React.FC<
       checkoutIdentifier={checkoutIdentifier}
       cornerRadius={cornerRadius}
       wallets={wallets}
-      onFail={handleFail}
-      onCancel={handleCancel}
+      onDismiss={handleDismiss}
+      linkAction={linkAction}
       onRenderStateChange={handleRenderStateChange}
-      onClickLink={handleClickLink}
       onDispatch={handleDispatch}
       onSizeChange={handleSizeChange}
     />
@@ -330,168 +278,4 @@ function isVariantProps(
   props: AcceleratedCheckoutButtonsProps,
 ): props is VariantProps {
   return 'variantId' in props && 'quantity' in props && props.quantity > 0;
-}
-
-function verifyProtocolEventParity(): void {
-  const nativeTypes = getNativeProtocolEventTypes();
-  const signature = buildProtocolEventParitySignature(nativeTypes);
-  if (verifiedProtocolEventParitySignature === signature) return;
-
-  verifiedProtocolEventParitySignature = signature;
-
-  if (!Array.isArray(nativeTypes)) {
-    logProtocolEventParityWarning(
-      `native view manager did not report a \`${protocolEventTypesConstant}\` array. ` +
-        'The bundled native component is likely older than this JS package.',
-    );
-    return;
-  }
-
-  const jsSet = new Set<string>(checkoutProtocolEventTypeValues);
-  const nativeSet = new Set<string>(nativeTypes);
-
-  const missingFromJs = [...nativeSet].filter(t => !jsSet.has(t)).sort();
-  const missingFromNative = [...jsSet].filter(t => !nativeSet.has(t)).sort();
-
-  if (missingFromJs.length === 0 && missingFromNative.length === 0) {
-    return;
-  }
-
-  const lines = [
-    `js     = [${[...jsSet].sort().join(', ')}]`,
-    `native = [${[...nativeSet].sort().join(', ')}]`,
-  ];
-  if (missingFromJs.length > 0) {
-    lines.push(`events missing from js:     ${missingFromJs.join(', ')}`);
-  }
-  if (missingFromNative.length > 0) {
-    lines.push(`events missing from native: ${missingFromNative.join(', ')}`);
-  }
-
-  logProtocolEventParityWarning(lines.join('\n  '));
-}
-
-function buildProtocolEventParitySignature(
-  nativeTypes: readonly string[] | undefined | null,
-): string {
-  return JSON.stringify({
-    js: [...checkoutProtocolEventTypeValues].sort(),
-    native: Array.isArray(nativeTypes) ? [...nativeTypes].sort() : nativeTypes,
-  });
-}
-
-function getNativeProtocolEventTypes(): readonly string[] | undefined | null {
-  const viewManagerConfig = UIManager.getViewManagerConfig?.(
-    nativeComponentName,
-  ) as
-    | {
-        Constants?: Record<string, unknown>;
-      }
-    | undefined;
-
-  return viewManagerConfig?.Constants?.[protocolEventTypesConstant] as
-    | readonly string[]
-    | undefined
-    | null;
-}
-
-function routeProtocolDispatchEnvelope(
-  envelopeJson: string,
-  events: ProtocolHandlers | undefined,
-): void {
-  let envelope: unknown;
-  try {
-    envelope = JSON.parse(envelopeJson);
-  } catch {
-    logDispatchError('dispatch envelope is not valid JSON', envelopeJson);
-    return;
-  }
-
-  if (!isPlainObject(envelope) || typeof envelope.type !== 'string') {
-    logDispatchError(
-      'dispatch envelope is missing a string `type` discriminator',
-      envelopeJson,
-    );
-    return;
-  }
-
-  if (!checkoutProtocolEventTypes.has(envelope.type)) {
-    logUnknownDispatchType(envelope.type);
-    return;
-  }
-
-  const handler = (
-    events as
-      | Record<string, ((payload: unknown) => void) | undefined>
-      | undefined
-  )?.[envelope.type];
-
-  if (handler == null) {
-    return;
-  }
-
-  if (!isPlainObject(envelope.payload)) {
-    logDispatchError(
-      `protocol envelope "${envelope.type}" payload is not an object`,
-      envelopeJson,
-    );
-    return;
-  }
-
-  let decodedPayload:
-    | CheckoutProtocolPayloads[keyof CheckoutProtocolPayloads]
-    | undefined;
-  try {
-    decodedPayload = decodeProtocolPayload(envelope.type, envelope.payload);
-  } catch (error) {
-    logDispatchError(
-      `protocol envelope "${envelope.type}" payload failed schema conversion: ${String(error)}`,
-      envelopeJson,
-    );
-    return;
-  }
-
-  if (decodedPayload == null) {
-    logDispatchError(
-      `protocol envelope "${envelope.type}" has no registered decoder`,
-      envelopeJson,
-    );
-    return;
-  }
-
-  handler(decodedPayload);
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function logUnknownDispatchType(type: string): void {
-  // eslint-disable-next-line no-console
-  console.warn(
-    `[ShopifyAcceleratedCheckouts] Ignoring protocol dispatch envelope with unknown type "${type}". ` +
-      'Native emitted a Checkout Protocol event this JS package does not know how to handle. ' +
-      'Confirm native and JS package versions are compatible.',
-  );
-}
-
-function logProtocolEventParityWarning(detail: string): void {
-  // eslint-disable-next-line no-console
-  console.warn(
-    '[ShopifyAcceleratedCheckouts] Checkout Protocol event list out of sync between JS ' +
-      'and native. Rebuild your host app so the bundled native component matches ' +
-      `this version of '@shopify/checkout-kit-react-native'.\n  ${detail}`,
-  );
-}
-
-function logDispatchError(detail: string, raw?: string): void {
-  const message = `[ShopifyAcceleratedCheckouts] Failed to handle protocol dispatch: ${detail}`;
-  if (raw == null) {
-    // eslint-disable-next-line no-console
-    console.error(message);
-    return;
-  }
-
-  // eslint-disable-next-line no-console
-  console.error(message, raw);
 }

@@ -6,3 +6,4 @@ export { checkoutProtocolCatalog, checkoutProtocolCatalogPayloadDecoders, checko
 export { Client, type DecodeErrorContext } from './client';
 export { windowOpenSuccess, windowOpenRejected } from './window_open';
 export { EmbeddedCheckoutProtocol } from './embedded_checkout_protocol';
+export { decodeCheckoutSnapshot } from './protocol_codec_runtime';

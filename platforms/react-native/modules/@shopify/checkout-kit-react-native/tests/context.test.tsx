@@ -1,16 +1,8 @@
 import React from 'react';
 import {render, act} from '@testing-library/react-native';
 import {NativeModules, Platform} from 'react-native';
-import {
-  ShopifyCheckoutProvider,
-  useShopifyCheckout,
-} from '../src/context';
-import {
-  ApplePayContactField,
-  CheckoutProtocol,
-  ColorScheme,
-  type Configuration,
-} from '../src';
+import {ShopifyCheckoutProvider, useShopifyCheckout} from '../src/context';
+import {ApplePayContactField, ColorScheme, type Configuration} from '../src';
 import {__resetPreloadForTests} from '../src/preload';
 
 const checkoutUrl = 'https://shopify.com/checkout';
@@ -61,9 +53,9 @@ describe('ShopifyCheckoutProvider', () => {
       </TestComponent>,
     );
 
-    expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
-    ).toHaveBeenCalledWith(config);
+    expect(NativeModules.ShopifyCheckoutKit.setConfig).toHaveBeenCalledWith(
+      config,
+    );
   });
 
   it('skips configuration when no configuration is provided', () => {
@@ -73,9 +65,7 @@ describe('ShopifyCheckoutProvider', () => {
       </ShopifyCheckoutProvider>,
     );
 
-    expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
-    ).not.toHaveBeenCalled();
+    expect(NativeModules.ShopifyCheckoutKit.setConfig).not.toHaveBeenCalled();
     expect(
       NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
     ).not.toHaveBeenCalled();
@@ -143,9 +133,9 @@ describe('ShopifyCheckoutProvider', () => {
       </TestComponent>,
     );
 
-    expect(
-      NativeModules.ShopifyCheckoutKit.setConfig.mock.calls,
-    ).toHaveLength(2);
+    expect(NativeModules.ShopifyCheckoutKit.setConfig.mock.calls).toHaveLength(
+      2,
+    );
   });
 });
 
@@ -179,7 +169,8 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      [],
+      expect.any(String),
+      'open',
     );
   });
 
@@ -195,12 +186,12 @@ describe('useShopifyCheckout', () => {
       </Wrapper>,
     );
 
-    const onClose = jest.fn();
+    const onDismiss = jest.fn();
     const onFail = jest.fn();
     const onGeolocationRequest = jest.fn();
 
     act(() => {
-      hookValue.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
+      hookValue.present(checkoutUrl, {onDismiss, onFail, onGeolocationRequest});
     });
 
     expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
@@ -208,11 +199,12 @@ describe('useShopifyCheckout', () => {
     );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      [],
+      expect.any(String),
+      'open',
     );
   });
 
-  it('forwards protocol handlers through the provider present function', () => {
+  it('forwards the native link policy through the provider present function', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -225,8 +217,9 @@ describe('useShopifyCheckout', () => {
     );
 
     act(() => {
-      hookValue.present(checkoutUrl, undefined, {
-        [CheckoutProtocol.start]: jest.fn(),
+      hookValue.present(checkoutUrl, {
+        linkAction: 'handled',
+        onStart: jest.fn(),
       });
     });
 
@@ -235,7 +228,8 @@ describe('useShopifyCheckout', () => {
     );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      [CheckoutProtocol.start],
+      expect.any(String),
+      'handled',
     );
   });
 
@@ -255,9 +249,7 @@ describe('useShopifyCheckout', () => {
       hookValue.present('');
     });
 
-    expect(
-      NativeModules.ShopifyCheckoutKit.present,
-    ).not.toHaveBeenCalled();
+    expect(NativeModules.ShopifyCheckoutKit.present).not.toHaveBeenCalled();
   });
 
   it('provides preload function and forwards observation options', () => {
@@ -362,9 +354,9 @@ describe('useShopifyCheckout', () => {
       hookValue.setConfig(newConfig);
     });
 
-    expect(
-      NativeModules.ShopifyCheckoutKit.setConfig,
-    ).toHaveBeenCalledWith(newConfig);
+    expect(NativeModules.ShopifyCheckoutKit.setConfig).toHaveBeenCalledWith(
+      newConfig,
+    );
   });
 
   it('provides getConfig function', async () => {
@@ -404,7 +396,6 @@ describe('useShopifyCheckout', () => {
 
     expect(hookValue.version).toBe('0.7.0');
   });
-
 });
 
 describe('ShopifyCheckoutContext without provider', () => {

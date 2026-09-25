@@ -49,10 +49,6 @@ class RCTAcceleratedCheckoutButtonsManager: RCTViewManager {
     override static func requiresMainQueueSetup() -> Bool {
         return true
     }
-
-    override func constantsToExport() -> [AnyHashable: Any]! {
-        return ["checkoutProtocolEventTypes": supportedProtocolRelayMethods]
-    }
 }
 
 @available(iOS 16.0, *)
@@ -103,10 +99,9 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         }
     }
 
-    @objc var onFail: RCTBubblingEventBlock?
-    @objc var onCancel: RCTBubblingEventBlock?
+    @objc var linkAction: String = "open"
+    @objc var onDismiss: RCTDirectEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
-    @objc var onClickLink: RCTBubblingEventBlock?
     @objc var onDispatch: RCTDirectEventBlock?
 
     // MARK: - Private
@@ -229,6 +224,14 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
     private func attachEventListeners(to buttons: AcceleratedCheckoutButtons) -> AcceleratedCheckoutButtons {
         return buttons
+            .onStart { [weak self] event in self?.dispatchCheckout(.start, checkout: event.checkout) }
+            .onUpdate { [weak self] event in self?.dispatchCheckout(.update, checkout: event.checkout) }
+            .onComplete { [weak self] event in self?.dispatchCheckout(.complete, checkout: event.checkout) }
+            .onLinkClick { [weak self] link in
+                guard let self else { return .cancel }
+                self.dispatchEvent(.linkClick, payload: ShopifyEventSerialization.serialize(clickEvent: link.url))
+                return checkoutLinkAction(self.linkAction)
+            }
             .onFail { [weak self] error in
                 self?.handleCheckoutFailed(error)
             }
@@ -273,14 +276,6 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         buttons = attachModifiers(to: buttons, wallets: shopifyWallets, applePayButtonType: PKPaymentButtonType.from(applePayLabel), applePayButtonStyle: PKPaymentButtonStyle.from(applePayStyle))
         // Attach event handlers
         buttons = attachEventListeners(to: buttons)
-
-        let client = makeRelayClient(
-            subscribedMethods: supportedProtocolRelayMethods,
-            dispatch: { [weak self] json in
-                self?.onDispatch?(["value": json])
-            }
-        )
-        buttons = buttons.connect(client)
 
         var view: AnyView
 
@@ -335,19 +330,26 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     // MARK: - Event Handlers
 
     private func handleCheckoutFailed(_ error: CheckoutError) {
-        onFail?(ShopifyEventSerialization.serialize(checkoutError: error))
+        dispatchEvent(.fail, payload: ["error": ShopifyEventSerialization.serialize(checkoutError: error)])
     }
 
     private func handleCheckoutDismissed() {
-        onCancel?([:])
+        onDismiss?([:])
     }
 
     private func handleRenderStateChange(_ state: RenderState) {
         onRenderStateChange?(ShopifyEventSerialization.serialize(renderState: state))
     }
 
-    private func handleClickLink(_ url: URL) {
-        onClickLink?(ShopifyEventSerialization.serialize(clickEvent: url))
+    private func dispatchCheckout(_ type: DispatchEventType, checkout: Checkout) {
+        guard let json = checkoutEventJSON(type: type, checkout: checkout) else { return }
+        onDispatch?(["value": json])
+    }
+
+    private func dispatchEvent(_ type: DispatchEventType, payload: [String: Any]) {
+        guard let data = try? JSONSerialization.data(withJSONObject: ["type": type.rawValue, "payload": payload]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        onDispatch?(["value": json])
     }
 
     // MARK: - Helper Methods

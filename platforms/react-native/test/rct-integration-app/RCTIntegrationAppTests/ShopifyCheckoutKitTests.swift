@@ -487,7 +487,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func testFailedPresentDoesNotRetainCheckoutSheet() {
         let presentAttemptCompleted = expectation(description: "present attempt completed")
 
-        shopifyCheckoutKit.present("", subscribedMethods: [])
+        shopifyCheckoutKit.present("", requestId: "test", linkAction: "open")
 
         DispatchQueue.main.async {
             XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
@@ -502,7 +502,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let checkoutSheet = DismissTrackingViewController()
         shopifyCheckoutKit.checkoutSheet = checkoutSheet
 
-        shopifyCheckoutKit.checkoutDidDismiss()
+        shopifyCheckoutKit.dismiss()
 
         DispatchQueue.main.async {
             XCTAssertTrue(checkoutSheet.dismissCalled)

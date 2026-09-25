@@ -779,31 +779,84 @@ Should you wish to manually clear the preload cache, call `invalidate()` on your
 
 ## Checkout lifecycle
 
-Lifecycle callbacks are passed per-call to `present()`. The bridge holds the
-handles for the duration of that one presentation and releases them on
-terminal events; nothing needs to be subscribed or torn down explicitly.
+Lifecycle callbacks are passed to `present()` or as props on
+`AcceleratedCheckoutButtons`. Start, update, and complete events contain a
+`Checkout` snapshot. Known fields use camelCase; extension fields keep their
+original keys. Snapshots include checkout data such as line items, totals,
+fulfillment, actions, and policies, without protocol metadata.
 
 ### SDK callbacks on `present()`
 
 ```tsx
+let completed = false;
 shopify.present(checkoutUrl, {
-  onClose: () => {
-    // The sheet was dismissed without a terminal error
+  onStart: ({checkout}) => {
+    completed = false;
   },
-  onFail: (error: CheckoutException) => {
-    // A terminal error occurred — inspect `error.code`, `error.message`, etc.
+  onUpdate: ({checkout}) => {
+    // Observe changes to checkout.lineItems, checkout.totals, etc.
+  },
+  onComplete: ({checkout}) => {
+    completed = true;
+    // checkout.order contains the order confirmation when available.
+  },
+  onDismiss: () => {
+    if (completed) clearCart();
+  },
+  onFail: ({error}) => {
+    // Inspect error.code, error.message, and optional error.statusCode.
   },
 });
 ```
 
-| Name                   | Callback                                   | Fires                                                                                                            |
-| ---------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `onClose`              | `() => void`                               | Once, when the buyer dismisses the sheet without a terminal error.                                               |
-| `onFail`               | `(error: CheckoutException) => void`       | Once, when the checkout terminates with an error.                                                                |
-| `onGeolocationRequest` | `(event: GeolocationRequestEvent) => void` | Android only. Fired each time the webview requests geolocation permissions. See [Opting out of the default behavior](#opting-out-of-the-default-behavior). |
+| Callback | Payload | When it fires |
+| --- | --- | --- |
+| `onStart` | `{checkout: Checkout}` | Checkout starts. Android does not replay a start received during preload. |
+| `onUpdate` | `{checkout: Checkout}` | Checkout data changes. The native SDK suppresses duplicate snapshots. |
+| `onComplete` | `{checkout: Checkout}` | Checkout completes. The confirmation UI can remain visible. |
+| `onDismiss` | None | Checkout is dismissed, including after completion. |
+| `onFail` | `{error: CheckoutException}` | Checkout cannot continue. |
+| `onLinkClick` | `{url: string}` | Checkout requests opening a link. |
+| `onGeolocationRequest` | `GeolocationRequestEvent` | Android sheets only. See [geolocation handling](#opting-out-of-the-default-behavior). |
 
-`onClose` and `onFail` are mutually exclusive — exactly one of them fires
-per `present(...)` call, after which both handles are released.
+Completion keeps callbacks active until dismissal or failure. Delay changes that
+unmount checkout UI, such as clearing the cart that owns accelerated buttons,
+until dismissal. Calling `dismiss()` also delivers `onDismiss`.
+
+Repeated `present()` calls while a sheet is visible replace its callbacks and link
+policy; the existing checkout stays open. `teardown()` stops observations without
+dismissing the sheet.
+
+### Link handling
+
+Set `linkAction` before presentation (or on the accelerated buttons):
+
+- `open` (default): let the native SDK open links.
+- `handled`: your app opens or routes links itself.
+- `cancel`: prevent links from opening.
+
+`onLinkClick` is an asynchronous notification. Its return value cannot change the
+native decision. For custom routing, pair it with `linkAction: 'handled'`:
+
+```tsx
+shopify.present(checkoutUrl, {
+  linkAction: 'handled',
+  onLinkClick: ({url}) => Linking.openURL(url),
+});
+```
+
+### Migrating from protocol callbacks
+
+Replace the third `present()` argument and accelerated `events` prop with the
+lifecycle callbacks above. `ec.start` becomes `onStart`, `ec.complete` becomes
+`onComplete`, and checkout change notifications become `onUpdate`. Read checkout
+data from `event.checkout`. Terminal protocol errors now arrive through `onFail`;
+checkout messages remain available in snapshots.
+
+Rename sheet `onClose` and accelerated `onCancel` to `onDismiss`. Change
+`onFail(error)` to `onFail({error})`, and accelerated `onClickLink(url)` to
+`onLinkClick({url})` with the appropriate `linkAction`. `CheckoutProtocol`,
+`ProtocolHandlers`, and protocol payload exports have been removed.
 
 ## Identity & customer accounts
 
@@ -1127,28 +1180,29 @@ The `cornerRadius` prop lets you match the buttons to other calls-to-action in y
 
 ### Handle loading, errors, and lifecycle events
 
-Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an error.
+Accelerated buttons use the same lifecycle callbacks and link policy as sheets.
+Use a ref to remember completion without unmounting the button's confirmation UI:
 
 ```tsx
+const completed = useRef(false);
+
 <AcceleratedCheckoutButtons
   cartId={cartId}
-  onComplete={(event) => {
-    // Clear cart after successful checkout
-    clearCart();
+  onStart={() => { completed.current = false; }}
+  onComplete={({checkout}) => { completed.current = true; }}
+  onDismiss={() => {
+    if (completed.current) {
+      completed.current = false;
+      clearCart();
+    }
   }}
-  onFail={(error) => {
-    console.error('Accelerated checkout failed:', error);
+  onFail={({error}) => {
+    completed.current = false;
+    console.error('Accelerated checkout failed:', error.code);
   }}
-  onCancel={() => {
-    analytics.track('accelerated_checkout_cancelled');
-  }}
-  onRenderStateChange={(event) => {
-    // event.state: 'loading' | 'rendered' | 'error'
-    setRenderState(event.state);
-  }}
-  onClickLink={(url) => {
-    Linking.openURL(url);
-  }}
+  onRenderStateChange={(event) => setRenderState(event.state)}
+  linkAction="handled"
+  onLinkClick={({url}) => Linking.openURL(url)}
 />
 ```
 

@@ -13,7 +13,11 @@ import UIKit
 /// `constantsToExport()` so the JS layer can verify the two sides
 /// agree at construction time.
 enum DispatchEventType: String, CaseIterable {
-    case close
+    case start
+    case update
+    case complete
+    case dismiss
+    case linkClick
     case fail
     case geolocationRequest
 }
@@ -24,6 +28,7 @@ class RCTShopifyCheckoutKit: NSObject {
     private static let storefrontColorScheme = "storefront"
 
     internal var checkoutSheet: UIViewController?
+    private var checkoutEvents: CheckoutEventBridge?
     private var checkoutPreload: CheckoutPreload?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
@@ -85,8 +90,12 @@ class RCTShopifyCheckoutKit: NSObject {
 
     @objc func dismiss() {
         DispatchQueue.main.async {
-            self.checkoutSheet?.dismiss(animated: true)
-            self.checkoutSheet = nil
+            let sheet = self.checkoutSheet
+            let events = self.checkoutEvents
+            sheet?.dismiss(animated: true) { [weak self] in
+                if self?.checkoutSheet === sheet { self?.checkoutSheet = nil }
+                events?.checkoutDidDismiss()
+            }
         }
     }
 
@@ -97,31 +106,27 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func present(_ checkoutURL: String, subscribedMethods: [String]) {
+    @objc func present(_ checkoutURL: String, requestId: String, linkAction: String) {
         DispatchQueue.main.async {
-            guard let url = URL(string: checkoutURL),
-                  let viewController = self.getCurrentViewController() else { return }
-
-            // Protocol relay: forwards UCP messages from native to the JS
-            // dispatch event stream.
-            let client = makeRelayClient(
-                subscribedMethods: subscribedMethods,
-                dispatch: { [weak self] json in
-                    self?.emitDispatchEvent(json)
-                }
-            )
-
-            // `delegate: self` wires the SDK lifecycle events (close/fail)
-            // into the same JS dispatcher; `client:` wires the UCP
-            // protocol event stream. They are independent inputs feeding
-            // the same outbound envelope channel.
-            let view = ShopifyCheckoutKit.present(
-                checkout: url,
-                from: viewController,
-                delegate: self,
-                client: client
-            )
-            self.checkoutSheet = view
+            // Native SDKs only support one visible checkout. Keep its delegate alive
+            // when JS replaces the callbacks for that presentation.
+            if let events = self.checkoutEvents {
+                events.requestId = requestId
+                events.linkAction = checkoutLinkAction(linkAction)
+                return
+            }
+            let events = CheckoutEventBridge(requestId: requestId, linkAction: linkAction, dispatch: { [weak self] json in
+                self?.emitDispatchEvent(json)
+            }, onTerminal: { [weak self] in
+                self?.checkoutEvents = nil
+                self?.checkoutSheet = nil
+            })
+            self.checkoutEvents = events
+            guard let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() else {
+                events.checkoutDidDismiss()
+                return
+            }
+            self.checkoutSheet = ShopifyCheckoutKit.present(checkout: url, from: viewController, delegate: events)
         }
     }
 
@@ -298,7 +303,7 @@ class RCTShopifyCheckoutKit: NSObject {
         return NSNumber(value: available)
     }
 
-    @objc func respondToGeolocationRequest(_: Bool) {
+    @objc func respondToGeolocationRequest(_: Bool, requestId _: String) {
         // No-op on iOS — geolocation permission is handled natively
     }
 
@@ -318,47 +323,6 @@ class RCTShopifyCheckoutKit: NSObject {
 
     private func logLevelToString(_ logLevel: LogLevel) -> String {
         return logLevel.rawValue
-    }
-}
-
-// MARK: - CheckoutDelegate
-
-extension RCTShopifyCheckoutKit: CheckoutDelegate {
-    /// Fired by the iOS SDK when the buyer dismisses the checkout sheet
-    /// without a terminal error. Mirrors
-    /// `CustomCheckoutListener.onCheckoutDismissed()` on Android.
-    ///
-    /// The iOS SDK dismisses the presented checkout when the buyer taps
-    /// the close button; this wrapper also clears its local reference so
-    /// future presentations start from a clean state.
-    func checkoutDidDismiss() {
-        emitDispatchEnvelope(type: .close, payload: nil)
-        dismissCheckoutSheet()
-    }
-
-    /// Fired by the iOS SDK when checkout terminates with an error.
-    /// Mirrors `CustomCheckoutListener.onCheckoutFailed()` on Android.
-    /// The error is serialised into the JS-side `CheckoutNativeError`
-    /// shape (`message` / `code` / optional `statusCode`) so it can be
-    /// coerced into a `CheckoutException` on the JS side.
-    ///
-    /// The sheet is left visible — consumers may want to render a
-    /// recovery UI on top of the still-presented checkout, or decide to
-    /// dismiss it explicitly via `ShopifyCheckoutKit.dismiss()` from
-    /// their `onFail` handler. Mirrors the Android behaviour where
-    /// `onCheckoutFailed` also does not auto-dismiss the dialog.
-    func checkoutDidFail(error: CheckoutError) {
-        emitDispatchEnvelope(type: .fail, payload: ShopifyEventSerialization.serialize(checkoutError: error))
-    }
-
-    /// Dismisses the currently-presented checkout sheet on the main
-    /// queue and releases our reference to it. Safe to call when no
-    /// sheet is presented — `checkoutSheet` will simply be `nil`.
-    private func dismissCheckoutSheet() {
-        DispatchQueue.main.async { [weak self] in
-            self?.checkoutSheet?.dismiss(animated: true)
-            self?.checkoutSheet = nil
-        }
     }
 }
 
@@ -405,26 +369,6 @@ extension RCTShopifyCheckoutKit {
             return ["reason": "webContentUnavailable"]
         case .protocolError:
             return ["reason": "protocolError"]
-        }
-    }
-
-    /// Builds a `{ "type": ..., "payload": ... }` envelope and forwards
-    /// it to the JS dispatch event stream.
-    private func emitDispatchEnvelope(type: DispatchEventType, payload: [String: Any]?) {
-        var envelope: [String: Any] = ["type": type.rawValue]
-        if let payload {
-            envelope["payload"] = payload
-        }
-
-        do {
-            let data = try JSONSerialization.data(withJSONObject: envelope, options: [])
-            guard let json = String(data: data, encoding: .utf8) else {
-                NSLog("[ShopifyCheckoutKit] Failed to encode dispatch envelope for \(type.rawValue): non-UTF8 result")
-                return
-            }
-            emitDispatchEvent(json)
-        } catch {
-            NSLog("[ShopifyCheckoutKit] Failed to serialize dispatch envelope for \(type.rawValue): \(error)")
         }
     }
 }

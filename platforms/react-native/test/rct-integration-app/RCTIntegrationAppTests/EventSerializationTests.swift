@@ -34,7 +34,7 @@ class EventSerializationTests: XCTestCase {
     func testClickEventSerialization() throws {
         let url = try XCTUnwrap(URL(string: "https://shopify.dev/test"))
         let serialized = ShopifyEventSerialization.serialize(clickEvent: url)
-        XCTAssertEqual(serialized["url"], url)
+        XCTAssertEqual(serialized["url"], url.absoluteString)
     }
 
     // MARK: - Checkout error

@@ -1,14 +1,12 @@
 import React from 'react';
-import {EmbeddedCheckoutProtocol} from '@shopify/checkout-kit-protocol';
 import {render, act} from '@testing-library/react-native';
-import {Platform, UIManager} from 'react-native';
+import {Platform} from 'react-native';
 import {
   AcceleratedCheckoutButtons,
   AcceleratedCheckoutWallet,
   ApplePayStyle,
   CheckoutErrorCode,
   CheckoutException,
-  CheckoutProtocol,
   RenderState,
 } from '../src';
 
@@ -38,12 +36,6 @@ const wireCheckout = {
   links: [],
   status: 'incomplete',
   totals: [],
-  ucp: {
-    version: EmbeddedCheckoutProtocol.specVersion,
-    payment_handlers: {
-      loyalty_gold: [],
-    },
-  },
 };
 
 describe('AcceleratedCheckoutButtons', () => {
@@ -133,125 +125,72 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(nativeComponent.props.applePayStyle).toBe(ApplePayStyle.black);
     });
 
-    it('routes native protocol dispatch envelopes to event handlers', () => {
-      const onStart = jest.fn();
+    it('routes native snapshots to the matching lifecycle callback', () => {
+      const callbacks = {
+        onStart: jest.fn(),
+        onUpdate: jest.fn(),
+        onComplete: jest.fn(),
+        onDismiss: jest.fn(),
+      };
       const {getByTestId} = render(
-        <AcceleratedCheckoutButtons
-          cartId={'gid://shopify/Cart/123'}
-          events={{
-            [CheckoutProtocol.start]: onStart,
-          }}
-        />,
+        <AcceleratedCheckoutButtons cartId="cart-1" {...callbacks} />,
       );
-
-      const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onDispatch({
-        nativeEvent: {
-          value: JSON.stringify({
-            type: CheckoutProtocol.start,
-            payload: wireCheckout,
-          }),
-        },
-      });
-
-      expect(onStart).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'checkout-id',
-          lineItems: [],
-          ucp: expect.objectContaining({
-            paymentHandlers: {
-              loyalty_gold: [],
-            },
-          }),
-        }),
-      );
+      const component = getByTestId('accelerated-checkout-buttons');
+      for (const type of ['start', 'update', 'complete']) {
+        component.props.onDispatch({
+          nativeEvent: {
+            value: JSON.stringify({type, payload: {checkout: wireCheckout}}),
+          },
+        });
+      }
+      for (const handler of [
+        callbacks.onStart,
+        callbacks.onUpdate,
+        callbacks.onComplete,
+      ]) {
+        expect(handler).toHaveBeenCalledWith({
+          checkout: {
+            id: 'checkout-id',
+            currency: 'USD',
+            status: 'incomplete',
+            lineItems: [],
+            links: [],
+            totals: [],
+          },
+        });
+      }
+      expect(callbacks.onDismiss).not.toHaveBeenCalled();
+      component.props.onDismiss();
+      expect(callbacks.onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('does not throw when native protocol dispatch is malformed', () => {
+    it('rejects malformed native snapshots without calling consumers', () => {
       const onStart = jest.fn();
       const {getByTestId} = render(
-        <AcceleratedCheckoutButtons
-          cartId={'gid://shopify/Cart/123'}
-          events={{
-            [CheckoutProtocol.start]: onStart,
-          }}
-        />,
+        <AcceleratedCheckoutButtons cartId="cart-1" onStart={onStart} />,
       );
-
-      const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      expect(() => {
-        nativeComponent.props.onDispatch({nativeEvent: {value: 'not json'}});
-      }).not.toThrow();
+      const component = getByTestId('accelerated-checkout-buttons');
+      component.props.onDispatch({nativeEvent: {value: '{bad json'}});
+      component.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({type: 'start', payload: {checkout: {}}}),
+        },
+      });
       expect(onStart).not.toHaveBeenCalled();
     });
 
-    it('warns when native reports an unknown protocol event', () => {
-      const warn = jest.spyOn(global.console, 'warn').mockImplementation();
-      const getViewManagerConfig = UIManager.getViewManagerConfig as jest.Mock;
-      const defaultImplementation = getViewManagerConfig.getMockImplementation();
-      getViewManagerConfig.mockImplementation((name: string) => {
-        if (name === 'RCTAcceleratedCheckoutButtons') {
-          return {
-            Constants: {
-              checkoutProtocolEventTypes: [
-                CheckoutProtocol.start,
-                'ec.future.event',
-              ],
-            },
-          };
-        }
-        return null;
-      });
-
-      render(<AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />);
-
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'events missing from js:     ec.future.event',
-        ),
-      );
-
-      getViewManagerConfig.mockImplementation(defaultImplementation);
-      warn.mockRestore();
-    });
-
-    it('warns when native emits an unknown protocol event', () => {
-      const warn = jest.spyOn(global.console, 'warn').mockImplementation();
-      const {getByTestId} = render(
-        <AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />,
-      );
-
-      const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onDispatch({
-        nativeEvent: {
-          value: JSON.stringify({
-            type: 'ec.future.event',
-            payload: {},
-          }),
-        },
-      });
-
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Ignoring protocol dispatch envelope with unknown type "ec.future.event"',
-        ),
-      );
-      warn.mockRestore();
-    });
-
-    it.each([0, -1, -2, Number.NaN])(
-      'throws when invalid variant quantity %p',
-      quantity => {
-        expect(() => {
-          render(
-            <AcceleratedCheckoutButtons
-              variantId={'gid://shopify/ProductVariant/456'}
-              quantity={quantity as any}
-            />,
-          );
-        }).toThrow(
-          'AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
+    it.each(['open', 'handled', 'cancel'] as const)(
+      'passes the %s link policy to native',
+      linkAction => {
+        const {getByTestId} = render(
+          <AcceleratedCheckoutButtons
+            cartId="cart-1"
+            linkAction={linkAction}
+          />,
         );
+        expect(
+          getByTestId('accelerated-checkout-buttons').props.linkAction,
+        ).toBe(linkAction);
       },
     );
 
@@ -310,11 +249,18 @@ describe('AcceleratedCheckoutButtons', () => {
       );
 
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onFail({
-        nativeEvent: {code: 'http_error', message: 'boom', statusCode: 503},
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: 'fail',
+            payload: {
+              error: {code: 'http_error', message: 'boom', statusCode: 503},
+            },
+          }),
+        },
       });
 
-      const error = onFail.mock.calls[0][0];
+      const {error} = onFail.mock.calls[0][0];
       expect(error).toBeInstanceOf(CheckoutException);
       expect(error.code).toBe(CheckoutErrorCode.httpError);
       expect(error.message).toBe('boom');
@@ -331,27 +277,34 @@ describe('AcceleratedCheckoutButtons', () => {
       );
 
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onFail({
-        nativeEvent: {code: 'a_code_from_a_newer_sdk', message: 'boom'},
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: 'fail',
+            payload: {
+              error: {code: 'a_code_from_a_newer_sdk', message: 'boom'},
+            },
+          }),
+        },
       });
 
-      const error = onFail.mock.calls[0][0];
+      const {error} = onFail.mock.calls[0][0];
       expect(error).toBeInstanceOf(CheckoutException);
       expect(error.code).toBe(CheckoutErrorCode.unknown);
       expect(error.statusCode).toBeUndefined();
     });
 
-    it('calls onCancel when native cancel is invoked', () => {
-      const onCancel = jest.fn();
+    it('calls onDismiss when native cancel is invoked', () => {
+      const onDismiss = jest.fn();
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
           cartId="gid://shopify/Cart/123"
-          onCancel={onCancel}
+          onDismiss={onDismiss}
         />,
       );
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onCancel();
-      expect(onCancel).toHaveBeenCalled();
+      nativeComponent.props.onDismiss();
+      expect(onDismiss).toHaveBeenCalled();
     });
 
     it('maps render state change to typed states including error reason', () => {
@@ -393,23 +346,32 @@ describe('AcceleratedCheckoutButtons', () => {
       });
     });
 
-    it('handles onClickLink when URL is present and ignores when absent', () => {
-      const onClickLink = jest.fn();
+    it('handles onLinkClick when URL is present and ignores when absent', () => {
+      const onLinkClick = jest.fn();
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
           cartId="gid://shopify/Cart/123"
-          onClickLink={onClickLink}
+          onLinkClick={onLinkClick}
         />,
       );
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
-      nativeComponent.props.onClickLink({
-        nativeEvent: {url: 'https://checkout.shopify.com'},
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: 'linkClick',
+            payload: {url: 'https://example.test/link'},
+          }),
+        },
       });
-      expect(onClickLink).toHaveBeenCalledWith('https://checkout.shopify.com');
+      expect(onLinkClick).toHaveBeenCalledWith({
+        url: 'https://example.test/link',
+      });
 
-      onClickLink.mockClear();
-      nativeComponent.props.onClickLink({nativeEvent: {}});
-      expect(onClickLink).not.toHaveBeenCalled();
+      onLinkClick.mockClear();
+      nativeComponent.props.onDispatch({
+        nativeEvent: {value: JSON.stringify({type: 'linkClick', payload: {}})},
+      });
+      expect(onLinkClick).not.toHaveBeenCalled();
     });
 
     it('applies dynamic height when onSizeChange is emitted', async () => {
@@ -449,9 +411,9 @@ describe('AcceleratedCheckoutButtons', () => {
     it('handles callbacks without throwing', () => {
       const mockCallbacks = {
         onFail: jest.fn(),
-        onCancel: jest.fn(),
+        onDismiss: jest.fn(),
         onRenderStateChange: jest.fn(),
-        onClickLink: jest.fn(),
+        onLinkClick: jest.fn(),
       };
 
       expect(() => {

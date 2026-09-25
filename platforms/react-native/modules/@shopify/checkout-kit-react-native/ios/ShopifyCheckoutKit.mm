@@ -18,7 +18,8 @@
 RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
-                  subscribedMethods:(NSArray *)subscribedMethods)
+                  requestId:(NSString *)requestId
+                  linkAction:(NSString *)linkAction)
 
 RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL
                   requestId:(NSString *)requestId)
@@ -126,29 +127,17 @@ RCT_EXPORT_VIEW_PROPERTY(applePayLabel, NSString*)
  */
 RCT_EXPORT_VIEW_PROPERTY(applePayStyle, NSString*)
 
-/**
- * Emitted when checkout fails. Payload contains a CheckoutException-like shape.
- */
-RCT_EXPORT_VIEW_PROPERTY(onFail, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(linkAction, NSString*)
 
-/**
- * Emitted when checkout is cancelled by the buyer.
- */
-RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock)
+// React Native reserves topDismiss as a direct event.
+RCT_EXPORT_VIEW_PROPERTY(onDismiss, RCTDirectEventBlock)
 
 /**
  * Emitted when the native render state changes. Values: "loading", "rendered", "error".
  */
 RCT_EXPORT_VIEW_PROPERTY(onRenderStateChange, RCTBubblingEventBlock)
 
-/**
- * Emitted when a link is clicked within the checkout experience. Payload contains the URL.
- */
-RCT_EXPORT_VIEW_PROPERTY(onClickLink, RCTBubblingEventBlock)
-
-/**
- * Emitted when a subscribed Checkout Protocol event fires. Payload contains { value } where value is a JSON envelope.
- */
+/** Emitted for checkout lifecycle events as a JSON envelope. */
 RCT_EXPORT_VIEW_PROPERTY(onDispatch, RCTDirectEventBlock)
 
 /**

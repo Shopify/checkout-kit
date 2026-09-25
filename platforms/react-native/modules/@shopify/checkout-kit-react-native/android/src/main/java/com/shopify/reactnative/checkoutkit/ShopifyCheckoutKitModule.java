@@ -4,6 +4,7 @@ import android.app.Activity;
 import androidx.activity.ComponentActivity;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -73,41 +74,44 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, ReadableArray subscribedMethods) {
-    releaseCheckoutListener();
-
+  public void present(String checkoutURL, String requestId, String linkAction) {
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
-      CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
-      checkoutListener = listener;
-
-      List<String> methods = new ArrayList<>();
-      for (int i = 0; i < subscribedMethods.size(); i++) {
-        String method = subscribedMethods.getString(i);
-        if (method != null) {
-          methods.add(method);
-        }
-      }
-      CheckoutProtocol.Client client = ProtocolRelay.makeClient(methods, dispatch);
-
       currentActivity.runOnUiThread(() -> {
-        if (checkoutListener != listener) {
+        if (checkoutSheet != null && checkoutListener != null && !checkoutListener.isReleased()) {
+          checkoutListener.configure(requestId, linkAction, () -> {
+            checkoutListener = null;
+            checkoutSheet = null;
+          });
           return;
         }
-        checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            listener, client);
+        releaseCheckoutListener();
+        CustomCheckoutListener listener = new CustomCheckoutListener(json -> emitOnDispatch(json));
+        listener.configure(requestId, linkAction, () -> {
+          checkoutListener = null;
+          checkoutSheet = null;
+        });
+        checkoutListener = listener;
+        CheckoutHandle sheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity, listener);
+        if (checkoutListener == listener) {
+          checkoutSheet = sheet;
+          if (sheet == null) listener.onCheckoutDismissed();
+        }
       });
+    } else {
+      CustomCheckoutListener listener = new CustomCheckoutListener(json -> emitOnDispatch(json));
+      listener.configure(requestId, linkAction, () -> {});
+      listener.onCheckoutDismissed();
     }
   }
 
   @ReactMethod
   public void dismiss() {
-    releaseCheckoutListener();
-
-    if (checkoutSheet != null) {
-      checkoutSheet.dismiss();
-      checkoutSheet = null;
+    Activity currentActivity = getReactApplicationContext().getCurrentActivity();
+    if (currentActivity != null) {
+      currentActivity.runOnUiThread(() -> {
+        if (checkoutSheet != null) checkoutSheet.dismiss();
+      });
     }
   }
 
@@ -297,10 +301,12 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void respondToGeolocationRequest(boolean allow) {
-    if (checkoutListener != null) {
-      checkoutListener.invokeGeolocationCallback(allow);
-    }
+  public void respondToGeolocationRequest(boolean allow, String requestId) {
+    UiThreadUtil.runOnUiThread(() -> {
+      if (checkoutListener != null && checkoutListener.matchesRequest(requestId)) {
+        checkoutListener.invokeGeolocationCallback(allow);
+      }
+    });
   }
 
   // Private
