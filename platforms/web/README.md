@@ -35,12 +35,14 @@ Check out our blog to
   - [`target`](#target)
   - [`appearance`](#appearance)
   - [`log-level`](#log-level)
+  - [`allowed-origins`](#allowed-origins)
   - [`telemetry`](#telemetry)
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
 - [Explore the sample app](#explore-the-sample-app)
 - [Contributing](#contributing)
+- [Releasing](#releasing)
 - [License](#license)
 
 ## Platform Requirements
@@ -114,8 +116,8 @@ checkout:
 ```
 
 The element has no visible layout of its own beyond a transient `<dialog>`
-scrim that appears over the host page while the popup is open. It can sit
-anywhere in your DOM.
+scrim that appears over the host page while the checkout window or tab is open.
+It can sit anywhere in your DOM.
 
 See [usage with the Storefront API](#usage-with-the-shopify-storefront-api)
 below for details on how to obtain a checkout URL.
@@ -160,9 +162,8 @@ document.body.append(checkout);
 
 React 19+ has first-class support for custom elements — it renders
 `<shopify-checkout>` and forwards props to it as properties with no extra
-configuration. Reach for a `ref` for the two things that aren't expressible as
-JSX props: calling imperative methods (`open()`, `close()`, `focus()`) and
-subscribing to Checkout Kit events.
+configuration. Use a `ref` to call imperative methods (`open()`, `close()`,
+`focus()`) and subscribe to typed Checkout Kit events with `addEventListener`.
 
 ```tsx
 import {useEffect, useRef} from 'react';
@@ -224,6 +225,7 @@ declare module 'react' {
         target?: string;
         appearance?: string;
         'log-level'?: 'debug' | 'warn' | 'error' | 'none';
+        'allowed-origins'?: string;
         telemetry?: boolean | 'true' | 'false';
       };
     }
@@ -239,9 +241,10 @@ declare module 'react' {
 > [!NOTE]
 > The `import '@shopify/checkout-kit'` side effect registers the element with
 > `customElements` and touches browser-only globals, so it must run on the
-> client. In server-rendered frameworks (Next.js, Remix), keep the import and
-> the component in a client component — e.g. add `'use client'` to the top of
-> the file.
+> client. In server-rendered frameworks (Next.js, Remix), load the package
+> through a client-only dynamic import, or load the component with server
+> rendering disabled. In Next.js, `'use client'` alone still allows server
+> prerendering, so it does not make a top-level package import safe.
 
 ## Usage with the Shopify Storefront API
 
@@ -330,7 +333,8 @@ checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
 The component appends a handful of query parameters to `src` when it opens
 checkout: `ec_version` (Embedded Checkout Protocol version),
 `ec_delegate` (which capabilities the host delegates), and `ck_version`
-(the Checkout Kit version).
+(the Checkout Kit version). The appearance also sets `ec_color_scheme` and
+`ck_branding`.
 
 ### `target`
 
@@ -338,14 +342,18 @@ Where the checkout is presented. Defaults to `"auto"`.
 
 | Value      | Behavior                                                            |
 | ---------- | ------------------------------------------------------------------- |
-| `"auto"`   | Opens checkout in a new browser tab (default).                      |
+| `"auto"`   | Opens checkout using the browser window target `"auto"` (default); an existing tab/window with that name may be reused. |
 | `"popup"`  | Opens checkout in a popup window sized and centered over the page.  |
-| `"_blank"` | Synonym for `"auto"` — new tab.                                     |
+| `"_blank"` | Opens checkout in a new tab/window. |
 | _(string)_ | Any other value is treated as a named window target, the same as the [`target` parameter of `window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target). |
 
 ```html
 <shopify-checkout target="popup"></shopify-checkout>
 ```
+
+Changing `target` while a session is open closes that session. Changing `src`
+or `appearance` does not navigate the open window; the next `open()` call loads
+the updated checkout URL.
 
 > [!NOTE]
 > `"_self"`, `"_parent"`, and `"_top"` are not allowed — they would navigate
@@ -425,9 +433,23 @@ Wildcard entries match subdomains only, not the apex domain. For example,
 `https://example.net`. Invalid entries are ignored and log a warning at
 `log-level="warn"` or more verbose.
 
+Only HTTPS messages from the checkout window opened by this element are
+processed. Set `onMessageRejected` to observe origin rejections instead of
+the default warning log:
+
+```ts
+checkout.onMessageRejected = ({origin, reason}) => {
+  console.warn('Checkout message rejected', origin, reason);
+};
+```
+
+The callback also receives `data`, the untrusted message body. Rejection does
+not emit a checkout `error` event or close the session.
+
 > [!CAUTION]
-> Setting `allowed-origins="*"` disables the message-origin allowlist. Use it
-> only for controlled debugging, never in production.
+> Setting `allowed-origins="*"` disables the message-origin allowlist. The
+> HTTPS and source-window checks still apply. Use it only for controlled
+> debugging, never in production.
 
 ### `telemetry`
 
@@ -445,7 +467,7 @@ cross-origin checkout page-finish. `ec.start` means checkout is loaded and
 interactive.
 
 ```html
-<shopify-checkout src="..." telemetry="false" />
+<shopify-checkout src="..." telemetry="false"></shopify-checkout>
 ```
 
 ```ts
@@ -467,9 +489,9 @@ shopify-checkout {
 
 ### Overlay scrim
 
-While a popup is open the component renders a `<dialog>` scrim over the host
-page, with a "Continue your purchase in the checkout window" link and a close
-button. Hide it by either:
+While a checkout window or tab is open, the component renders a `<dialog>`
+scrim over the host page, with a "Continue your purchase in the checkout window"
+button that focuses checkout and a close button. Hide it by either:
 
 - Setting `display: none` on the element itself, or
 - Targeting the `overlay` shadow part:
@@ -535,6 +557,12 @@ checkout.addEventListener('close', () => {
 
 Protocol errors are terminal for the checkout session regardless of message
 severity. The component emits `error` before closing and emitting `close`.
+Use `error.code` for recovery decisions: `storefront_password_required`,
+`customer_account_required`, `cart_expired`, `cart_completed`, `invalid_cart`,
+or `unknown`. The `message` is diagnostic text.
+
+Completion leaves the confirmation page open. Call `close()` if your app
+should dismiss checkout after handling `complete`.
 
 Because these events carry the full snapshot, one handler can combine fields.
 For example, rendering an inline cart summary on `start` requires line items,
@@ -569,8 +597,10 @@ pnpm install
 pnpm sample
 ```
 
-Then open the dev server URL and paste a valid checkout URL into the `src`
-field to try `open()` / `close()` / `focus()` and see the live event stream.
+Then open the dev server URL. In Settings, choose **Build cart permalink**
+to load products from a storefront and build a cart, or **Use existing checkout
+source** to enter a checkout URL directly. Open checkout and inspect the live
+lifecycle events and component state in the Runtime panel.
 
 ## Contributing
 
