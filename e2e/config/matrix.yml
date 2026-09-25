@@ -19,6 +19,8 @@ applications:
     app_id: com.shopify.checkoutkit.reactnativedemo
     artifact_env: E2E_REACT_NATIVE_IOS_APP_PATH
     ready_marker: checkout-kit-sample-ready
+    additional_include_tags:
+      - apple-pay
     changed_files_filters:
       - reactNative
       - protocolTypescript
@@ -61,6 +63,7 @@ applications:
     ready_marker: checkout-kit-sample-ready
     additional_include_tags:
       - preload
+      - apple-pay
     changed_files_filters:
       - swift
       - protocolSwift
