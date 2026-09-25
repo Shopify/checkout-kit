@@ -45,6 +45,27 @@ class CheckoutEventAdapterTest {
     }
 
     @Test
+    fun `actions and policies survive lifecycle events and participate in deduplication`() {
+        val adapter = CheckoutEventAdapter(listener)
+        adapter.process(message("ec.start"))
+        assertThat(started.single().checkout.actions?.get("com.example.review")).hasSize(1)
+        assertThat(started.single().checkout.policies?.single()?.description?.plain).isEqualTo("Return within 30 days")
+
+        val changedAction = message("ec.messages.change").replace("action-1", "action-2")
+        adapter.process(changedAction)
+        adapter.process(changedAction)
+        assertThat(updated).hasSize(1)
+        val changedPolicy = changedAction.replace("Return within 30 days", "Return within 60 days")
+        adapter.process(changedPolicy)
+        adapter.process(changedPolicy)
+        assertThat(updated).hasSize(2)
+        assertThat(updated.last().checkout.policies?.single()?.description?.plain).isEqualTo("Return within 60 days")
+
+        adapter.process(changedPolicy.replace("ec.messages.change", "ec.complete"))
+        assertThat(completed.single().checkout).isEqualTo(updated.last().checkout)
+    }
+
+    @Test
     fun `equal updates across sources and ucp-only changes are suppressed`() {
         val adapter = CheckoutEventAdapter(listener)
         adapter.process(message("ec.start"))
@@ -130,6 +151,8 @@ class CheckoutEventAdapterTest {
         extension: String = "value",
     ): String = """{
         "jsonrpc":"2.0","method":"$method","params":{"checkout":{
+          "actions":{"com.example.review":[{"id":"action-1"}]},
+          "policies":[{"type":"com.example.return","description":{"plain":"Return within 30 days"}}],
           "id":"checkout-1","currency":"USD","status":"incomplete","line_items":[],"links":[],
           "messages":[{"type":"error","code":"out_of_stock","content":"Unavailable"}],
           "totals":[{"type":"total","amount":$total}],"com.example.extension":"$extension",

@@ -11,6 +11,7 @@ import com.shopify.ucp.embedded.checkout.Link
 import com.shopify.ucp.embedded.checkout.Message
 import com.shopify.ucp.embedded.checkout.OrderConfirmation
 import com.shopify.ucp.embedded.checkout.Payment
+import com.shopify.ucp.embedded.checkout.Policy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -27,6 +28,9 @@ import com.shopify.ucp.embedded.checkout.Checkout as ProtocolCheckout
  */
 @Serializable(with = CheckoutSerializer::class)
 public class Checkout private constructor(private val state: State) {
+    public val actions: Map<String, List<JsonObject>>?
+        get() = state.actions
+
     public val attribution: Map<String, String>?
         get() = state.attribution
 
@@ -69,6 +73,9 @@ public class Checkout private constructor(private val state: State) {
     public val payment: Payment?
         get() = state.payment
 
+    public val policies: List<Policy>?
+        get() = state.policies
+
     public val signals: JsonObject?
         get() = state.signals
 
@@ -83,6 +90,7 @@ public class Checkout private constructor(private val state: State) {
 
     /** Returns a builder containing all values from this snapshot. */
     public fun toBuilder(): Builder = Builder()
+        .actions(actions)
         .attribution(attribution)
         .buyer(buyer)
         .context(context)
@@ -97,6 +105,7 @@ public class Checkout private constructor(private val state: State) {
         .messages(messages)
         .order(order)
         .payment(payment)
+        .policies(policies)
         .signals(signals)
         .status(status)
         .totals(totals)
@@ -116,6 +125,7 @@ public class Checkout private constructor(private val state: State) {
      */
     @Suppress("TooManyFunctions")
     public class Builder {
+        private var actions: Map<String, List<JsonObject>>? = null
         private var attribution: Map<String, String>? = null
         private var buyer: Buyer? = null
         private var context: Context? = null
@@ -130,10 +140,13 @@ public class Checkout private constructor(private val state: State) {
         private var messages: List<Message>? = null
         private var order: OrderConfirmation? = null
         private var payment: Payment? = null
+        private var policies: List<Policy>? = null
         private var signals: JsonObject? = null
         private var status: CheckoutStatus? = null
         private var totals: List<CheckoutTotal>? = null
         private var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun actions(value: Map<String, List<JsonObject>>?): Builder = apply { actions = value }
 
         public fun attribution(value: Map<String, String>?): Builder = apply { attribution = value }
 
@@ -163,6 +176,8 @@ public class Checkout private constructor(private val state: State) {
 
         public fun payment(value: Payment?): Builder = apply { payment = value }
 
+        public fun policies(value: List<Policy>?): Builder = apply { policies = value }
+
         public fun signals(value: JsonObject?): Builder = apply { signals = value }
 
         public fun status(value: CheckoutStatus): Builder = apply { status = value }
@@ -178,6 +193,7 @@ public class Checkout private constructor(private val state: State) {
          */
         public fun build(): Checkout = Checkout(
             State(
+                actions = actions,
                 attribution = attribution,
                 buyer = buyer,
                 context = context,
@@ -192,6 +208,7 @@ public class Checkout private constructor(private val state: State) {
                 messages = messages,
                 order = order,
                 payment = payment,
+                policies = policies,
                 signals = signals,
                 status = checkNotNull(status) { "Missing required checkout field: status" },
                 totals = checkNotNull(totals) { "Missing required checkout field: totals" },
@@ -202,6 +219,7 @@ public class Checkout private constructor(private val state: State) {
 
     @Suppress("LongParameterList")
     private data class State(
+        val actions: Map<String, List<JsonObject>>?,
         val attribution: Map<String, String>?,
         val buyer: Buyer?,
         val context: Context?,
@@ -216,6 +234,7 @@ public class Checkout private constructor(private val state: State) {
         val messages: List<Message>?,
         val order: OrderConfirmation?,
         val payment: Payment?,
+        val policies: List<Policy>?,
         val signals: JsonObject?,
         val status: CheckoutStatus,
         val totals: List<CheckoutTotal>,
@@ -224,6 +243,7 @@ public class Checkout private constructor(private val state: State) {
 
     public companion object {
         internal fun fromProtocol(checkout: ProtocolCheckout): Checkout = Builder()
+            .actions(checkout.actions)
             .attribution(checkout.attribution)
             .buyer(checkout.buyer)
             .context(checkout.context)
@@ -238,6 +258,7 @@ public class Checkout private constructor(private val state: State) {
             .messages(checkout.messages)
             .order(checkout.order)
             .payment(checkout.payment)
+            .policies(checkout.policies)
             .signals(checkout.signals)
             .status(checkout.status)
             .totals(checkout.totals)

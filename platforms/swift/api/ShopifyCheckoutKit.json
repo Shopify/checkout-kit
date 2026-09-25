@@ -502,6 +502,140 @@
           },
           {
             "kind": "Var",
+            "name": "actions",
+            "printedName": "actions",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Array",
+                        "printedName": "[[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Dictionary",
+                            "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "String",
+                                "printedName": "Swift.String",
+                                "usr": "s:SS"
+                              },
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONAny",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                                "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                              }
+                            ],
+                            "usr": "s:SD"
+                          }
+                        ],
+                        "usr": "s:Sa"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B0V7actionsSDySSSaySDySS08EmbeddedB8Protocol7JSONAnyCGGGSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B0V7actionsSDySSSaySDySS08EmbeddedB8Protocol7JSONAnyCGGGSgvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Dictionary",
+                        "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          },
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Array",
+                            "printedName": "[[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "Dictionary",
+                                "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                                "children": [
+                                  {
+                                    "kind": "TypeNominal",
+                                    "name": "String",
+                                    "printedName": "Swift.String",
+                                    "usr": "s:SS"
+                                  },
+                                  {
+                                    "kind": "TypeNominal",
+                                    "name": "JSONAny",
+                                    "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                                    "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                                  }
+                                ],
+                                "usr": "s:SD"
+                              }
+                            ],
+                            "usr": "s:Sa"
+                          }
+                        ],
+                        "usr": "s:SD"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B0V7actionsSDySSSaySDySS08EmbeddedB8Protocol7JSONAnyCGGGSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B0V7actionsSDySSSaySDySS08EmbeddedB8Protocol7JSONAnyCGGGSgvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "attribution",
             "printedName": "attribution",
             "children": [
@@ -1382,6 +1516,84 @@
           },
           {
             "kind": "Var",
+            "name": "policies",
+            "printedName": "policies",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[EmbeddedCheckoutProtocol.Policy]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[EmbeddedCheckoutProtocol.Policy]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Policy",
+                        "printedName": "EmbeddedCheckoutProtocol.Policy",
+                        "usr": "s:24EmbeddedCheckoutProtocol6PolicyV"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:18ShopifyCheckoutKit0B0V8policiesSay08EmbeddedB8Protocol6PolicyVGSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B0V8policiesSay08EmbeddedB8Protocol6PolicyVGSgvp",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "[EmbeddedCheckoutProtocol.Policy]?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Array",
+                        "printedName": "[EmbeddedCheckoutProtocol.Policy]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Policy",
+                            "printedName": "EmbeddedCheckoutProtocol.Policy",
+                            "usr": "s:24EmbeddedCheckoutProtocol6PolicyV"
+                          }
+                        ],
+                        "usr": "s:Sa"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:18ShopifyCheckoutKit0B0V8policiesSay08EmbeddedB8Protocol6PolicyVGSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B0V8policiesSay08EmbeddedB8Protocol6PolicyVGSgvg",
+                "moduleName": "ShopifyCheckoutKit",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "signals",
             "printedName": "signals",
             "children": [
@@ -1606,7 +1818,7 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(id:status:currency:attribution:buyer:context:continueURL:discounts:expiresAt:fulfillment:lineItems:links:messages:order:payment:signals:totals:additionalProperties:)",
+            "printedName": "init(id:status:currency:actions:attribution:buyer:context:continueURL:discounts:expiresAt:fulfillment:lineItems:links:messages:order:payment:policies:signals:totals:additionalProperties:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -1631,6 +1843,57 @@
                 "name": "String",
                 "printedName": "Swift.String",
                 "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Dictionary",
+                    "printedName": "[Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Array",
+                        "printedName": "[[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "Dictionary",
+                            "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]",
+                            "children": [
+                              {
+                                "kind": "TypeNominal",
+                                "name": "String",
+                                "printedName": "Swift.String",
+                                "usr": "s:SS"
+                              },
+                              {
+                                "kind": "TypeNominal",
+                                "name": "JSONAny",
+                                "printedName": "EmbeddedCheckoutProtocol.JSONAny",
+                                "usr": "s:24EmbeddedCheckoutProtocol7JSONAnyC"
+                              }
+                            ],
+                            "usr": "s:SD"
+                          }
+                        ],
+                        "usr": "s:Sa"
+                      }
+                    ],
+                    "usr": "s:SD"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
               },
               {
                 "kind": "TypeNominal",
@@ -1836,6 +2099,29 @@
               {
                 "kind": "TypeNominal",
                 "name": "Optional",
+                "printedName": "[EmbeddedCheckoutProtocol.Policy]?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[EmbeddedCheckoutProtocol.Policy]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Policy",
+                        "printedName": "EmbeddedCheckoutProtocol.Policy",
+                        "usr": "s:24EmbeddedCheckoutProtocol6PolicyV"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
                 "printedName": "[Swift.String : EmbeddedCheckoutProtocol.JSONAny]?",
                 "children": [
                   {
@@ -1899,8 +2185,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B0V2id6status8currency11attribution5buyer7context11continueURL9discounts9expiresAt11fulfillment9lineItems5links8messages5order7payment7signals6totals20additionalPropertiesACSS_08EmbeddedB8Protocol0B6StatusOSSSDyS2SGSgAV5BuyerVSgAV7ContextVSgSSSgAV0B9DiscountsVSg10Foundation4DateVSgAV0B11FulfillmentVSgSayAV8LineItemVGSayAV4LinkVGSayAV7MessageVGSgAV17OrderConfirmationVSgAV7PaymentVSgSDySSAV7JSONAnyCGSgSayAV0B5TotalVGA34_tcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B0V2id6status8currency11attribution5buyer7context11continueURL9discounts9expiresAt11fulfillment9lineItems5links8messages5order7payment7signals6totals20additionalPropertiesACSS_08EmbeddedB8Protocol0B6StatusOSSSDyS2SGSgAV5BuyerVSgAV7ContextVSgSSSgAV0B9DiscountsVSg10Foundation4DateVSgAV0B11FulfillmentVSgSayAV8LineItemVGSayAV4LinkVGSayAV7MessageVGSgAV17OrderConfirmationVSgAV7PaymentVSgSDySSAV7JSONAnyCGSgSayAV0B5TotalVGA34_tcfc",
+            "usr": "s:18ShopifyCheckoutKit0B0V2id6status8currency7actions11attribution5buyer7context11continueURL9discounts9expiresAt11fulfillment9lineItems5links8messages5order7payment8policies7signals6totals20additionalPropertiesACSS_08EmbeddedB8Protocol0B6StatusOSSSDySSSaySDySSAX7JSONAnyCGGGSgSDyS2SGSgAX5BuyerVSgAX7ContextVSgSSSgAX0B9DiscountsVSg10Foundation4DateVSgAX0B11FulfillmentVSgSayAX8LineItemVGSayAX4LinkVGSayAX7MessageVGSgAX17OrderConfirmationVSgAX7PaymentVSgSayAX6PolicyVGSgA1_SgSayAX0B5TotalVGA1_tcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B0V2id6status8currency7actions11attribution5buyer7context11continueURL9discounts9expiresAt11fulfillment9lineItems5links8messages5order7payment8policies7signals6totals20additionalPropertiesACSS_08EmbeddedB8Protocol0B6StatusOSSSDySSSaySDySSAX7JSONAnyCGGGSgSDyS2SGSgAX5BuyerVSgAX7ContextVSgSSSgAX0B9DiscountsVSg10Foundation4DateVSgAX0B11FulfillmentVSgSayAX8LineItemVGSayAX4LinkVGSayAX7MessageVGSgAX17OrderConfirmationVSgAX7PaymentVSgSayAX6PolicyVGSgA1_SgSayAX0B5TotalVGA1_tcfc",
             "moduleName": "ShopifyCheckoutKit",
             "init_kind": "Designated"
           },

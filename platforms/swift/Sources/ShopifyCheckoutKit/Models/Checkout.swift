@@ -6,6 +6,7 @@ import Foundation
 /// A checkout snapshot that excludes protocol metadata.
 public struct Checkout: Codable, Sendable {
     public var additionalProperties: [String: JSONAny]
+    public let actions: [String: [[String: JSONAny]]]?
     public let attribution: [String: String]?
     public let buyer: Buyer?
     public let context: Context?
@@ -20,24 +21,25 @@ public struct Checkout: Codable, Sendable {
     public let messages: [Message]?
     public let order: OrderConfirmation?
     public let payment: Payment?
+    public let policies: [Policy]?
     public let signals: [String: JSONAny]?
     public let status: CheckoutStatus
     public let totals: [CheckoutTotal]
 
     enum CodingKeys: String, CodingKey {
-        case attribution, buyer, context
+        case actions, attribution, buyer, context
         case continueURL = "continue_url"
         case currency, discounts
         case expiresAt = "expires_at"
         case fulfillment, id
         case lineItems = "line_items"
-        case links, messages, order, payment, signals, status, totals
+        case links, messages, order, payment, policies, signals, status, totals
     }
 
     /// Prevent typed fields and the omitted `ucp` metadata from being copied through `additionalProperties`.
     private static let excludedAdditionalPropertyKeys: Set<String> = [
-        "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at",
-        "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "signals", "status",
+        "actions", "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at",
+        "fulfillment", "id", "line_items", "links", "messages", "order", "payment", "policies", "signals", "status",
         "totals", "ucp"
     ]
 
@@ -45,6 +47,7 @@ public struct Checkout: Codable, Sendable {
         id: String,
         status: CheckoutStatus,
         currency: String,
+        actions: [String: [[String: JSONAny]]]? = nil,
         attribution: [String: String]? = nil,
         buyer: Buyer? = nil,
         context: Context? = nil,
@@ -57,11 +60,13 @@ public struct Checkout: Codable, Sendable {
         messages: [Message]? = nil,
         order: OrderConfirmation? = nil,
         payment: Payment? = nil,
+        policies: [Policy]? = nil,
         signals: [String: JSONAny]? = nil,
         totals: [CheckoutTotal],
         additionalProperties: [String: JSONAny] = [:]
     ) {
         self.additionalProperties = additionalProperties
+        self.actions = actions
         self.attribution = attribution
         self.buyer = buyer
         self.context = context
@@ -76,6 +81,7 @@ public struct Checkout: Codable, Sendable {
         self.messages = messages
         self.order = order
         self.payment = payment
+        self.policies = policies
         self.signals = signals
         self.status = status
         self.totals = totals
@@ -83,6 +89,7 @@ public struct Checkout: Codable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        actions = try container.decodeIfPresent([String: [[String: JSONAny]]].self, forKey: .actions)
         attribution = try container.decodeIfPresent([String: String].self, forKey: .attribution)
         buyer = try container.decodeIfPresent(Buyer.self, forKey: .buyer)
         context = try container.decodeIfPresent(Context.self, forKey: .context)
@@ -97,6 +104,7 @@ public struct Checkout: Codable, Sendable {
         messages = try container.decodeIfPresent([Message].self, forKey: .messages)
         order = try container.decodeIfPresent(OrderConfirmation.self, forKey: .order)
         payment = try container.decodeIfPresent(Payment.self, forKey: .payment)
+        policies = try container.decodeIfPresent([Policy].self, forKey: .policies)
         signals = try container.decodeIfPresent([String: JSONAny].self, forKey: .signals)
         status = try container.decode(CheckoutStatus.self, forKey: .status)
         totals = try container.decode([CheckoutTotal].self, forKey: .totals)
@@ -110,6 +118,7 @@ public struct Checkout: Codable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(actions, forKey: .actions)
         try container.encodeIfPresent(attribution, forKey: .attribution)
         try container.encodeIfPresent(buyer, forKey: .buyer)
         try container.encodeIfPresent(context, forKey: .context)
@@ -124,6 +133,7 @@ public struct Checkout: Codable, Sendable {
         try container.encodeIfPresent(messages, forKey: .messages)
         try container.encodeIfPresent(order, forKey: .order)
         try container.encodeIfPresent(payment, forKey: .payment)
+        try container.encodeIfPresent(policies, forKey: .policies)
         try container.encodeIfPresent(signals, forKey: .signals)
         try container.encode(status, forKey: .status)
         try container.encode(totals, forKey: .totals)
@@ -176,6 +186,7 @@ extension Checkout {
             id: checkout.id,
             status: checkout.status,
             currency: checkout.currency,
+            actions: checkout.actions,
             attribution: checkout.attribution,
             buyer: checkout.buyer,
             context: checkout.context,
@@ -188,6 +199,7 @@ extension Checkout {
             messages: checkout.messages,
             order: checkout.order,
             payment: checkout.payment,
+            policies: checkout.policies,
             signals: checkout.signals,
             totals: checkout.totals,
             additionalProperties: checkout.additionalProperties.filter {

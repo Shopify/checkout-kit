@@ -18,8 +18,8 @@ internal object CheckoutSerializer : KSerializer<Checkout> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("com.shopify.checkoutkit.Checkout")
 
     internal val reservedKeys: Set<String> = setOf(
-        "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment",
-        "id", "line_items", "links", "messages", "order", "payment", "signals", "status", "totals", "ucp",
+        "actions", "attribution", "buyer", "context", "continue_url", "currency", "discounts", "expires_at", "fulfillment",
+        "id", "line_items", "links", "messages", "order", "payment", "policies", "signals", "status", "totals", "ucp",
     )
 
     override fun deserialize(decoder: Decoder): Checkout {
@@ -29,6 +29,7 @@ internal object CheckoutSerializer : KSerializer<Checkout> {
             ?: throw SerializationException("Checkout must be a JSON object")
         val json = input.json
         return Checkout.Builder()
+            .actions(fields.optional("actions", json))
             .attribution(fields.optional("attribution", json))
             .buyer(fields.optional("buyer", json))
             .context(fields.optional("context", json))
@@ -43,6 +44,7 @@ internal object CheckoutSerializer : KSerializer<Checkout> {
             .messages(fields.optional("messages", json))
             .order(fields.optional("order", json))
             .payment(fields.optional("payment", json))
+            .policies(fields.optional("policies", json))
             .signals(fields.optional("signals", json))
             .status(fields.required("status", json))
             .totals(fields.required("totals", json))
@@ -55,25 +57,31 @@ internal object CheckoutSerializer : KSerializer<Checkout> {
             ?: throw SerializationException("Checkout can only be serialized to JSON")
         val json = output.json
         val fields = linkedMapOf<String, JsonElement>()
-        value.attribution?.let { fields["attribution"] = json.encodeToJsonElement(it) }
-        value.buyer?.let { fields["buyer"] = json.encodeToJsonElement(it) }
-        value.context?.let { fields["context"] = json.encodeToJsonElement(it) }
-        value.continueURL?.let { fields["continue_url"] = json.encodeToJsonElement(it) }
+        fields.putOptional("actions", value.actions, json)
+        fields.putOptional("attribution", value.attribution, json)
+        fields.putOptional("buyer", value.buyer, json)
+        fields.putOptional("context", value.context, json)
+        fields.putOptional("continue_url", value.continueURL, json)
         fields["currency"] = json.encodeToJsonElement(value.currency)
-        value.discounts?.let { fields["discounts"] = json.encodeToJsonElement(it) }
-        value.expiresAt?.let { fields["expires_at"] = json.encodeToJsonElement(it) }
-        value.fulfillment?.let { fields["fulfillment"] = json.encodeToJsonElement(it) }
+        fields.putOptional("discounts", value.discounts, json)
+        fields.putOptional("expires_at", value.expiresAt, json)
+        fields.putOptional("fulfillment", value.fulfillment, json)
         fields["id"] = json.encodeToJsonElement(value.id)
         fields["line_items"] = json.encodeToJsonElement(value.lineItems)
         fields["links"] = json.encodeToJsonElement(value.links)
-        value.messages?.let { fields["messages"] = json.encodeToJsonElement(it) }
-        value.order?.let { fields["order"] = json.encodeToJsonElement(it) }
-        value.payment?.let { fields["payment"] = json.encodeToJsonElement(it) }
-        value.signals?.let { fields["signals"] = json.encodeToJsonElement(it) }
+        fields.putOptional("messages", value.messages, json)
+        fields.putOptional("order", value.order, json)
+        fields.putOptional("payment", value.payment, json)
+        fields.putOptional("policies", value.policies, json)
+        fields.putOptional("signals", value.signals, json)
         fields["status"] = json.encodeToJsonElement(value.status)
         fields["totals"] = json.encodeToJsonElement(value.totals)
         value.additionalProperties.filterKeys { it !in reservedKeys }.forEach { (key, element) -> fields[key] = element }
         output.encodeJsonElement(JsonObject(fields))
+    }
+
+    private inline fun <reified T> MutableMap<String, JsonElement>.putOptional(key: String, value: T?, json: Json) {
+        if (value != null) this[key] = json.encodeToJsonElement(value)
     }
 
     private inline fun <reified T> JsonObject.required(key: String, json: Json): T =
