@@ -766,25 +766,29 @@ See [samples](samples/README.md). `CheckoutKitAndroidDemo` demonstrates an Apoll
 
 See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
 
-From the repository root, provision the development environment and run the Android checks:
+Useful checks before opening an Android change:
 
 ```sh
-dev up
-dev android build
-dev android test
-dev android lint
+cd platforms/android
+./gradlew :lib:build
+./gradlew clean test --console=plain
+./gradlew detekt lintRelease
 ```
 
 For sample app changes, run:
 
 ```sh
-dev android build samples
+cd platforms/android/samples/CheckoutKitAndroidDemo
+./gradlew build
 ```
 
 For public API changes, run:
 
 ```sh
-dev android api check
+cd platforms/android
+./gradlew :lib:apiCheck
+cd ../../protocol/languages/kotlin
+./gradlew :embedded-checkout-protocol:apiCheck
 ```
 
 ## License

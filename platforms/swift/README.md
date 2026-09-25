@@ -600,20 +600,21 @@ See [Samples](Samples/README.md):
 
 See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
 
-From the repository root, provision the development environment and run the Swift checks:
+Useful checks before opening a Swift change:
 
 ```sh
-dev up
-dev swift build packages
-dev swift test
-dev swift lint
-dev swift api check
+cd platforms/swift
+./Scripts/xcode_run build ShopifyCheckoutKit
+./Scripts/xcode_run build ShopifyAcceleratedCheckouts
+./Scripts/xcode_run test ShopifyCheckoutKit-Package
+./Scripts/lint
 ```
 
 For sample app changes, run:
 
 ```sh
-dev swift build samples
+cd platforms/swift
+./Scripts/build_samples
 ```
 
 ## License
