@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run before creating or publishing an Android release. Local Android builds
+# compile the protocol project, while consumers resolve its published version.
+cd "$(git rev-parse --show-toplevel)"
+RELEASE=$(.github/scripts/validate-release-version "Embedded Checkout Protocol")
+TAG=$(printf '%s\n' "$RELEASE" | sed -n 's/^tag=//p')
+REF="refs/tags/$TAG"
+PROTOCOL_DIR="protocol/languages/kotlin/embedded-checkout-protocol"
+
+if ! git rev-parse --verify "${REF}^{commit}" >/dev/null 2>&1; then
+  echo "::error::Required protocol release tag '$TAG' is missing. Fetch release tags and release this protocol version before releasing Android."
+  exit 1
+fi
+
+if ! git cat-file -e "${REF}:${PROTOCOL_DIR}/src/main" 2>/dev/null; then
+  echo "::error::Protocol tag '$TAG' has no Kotlin runtime sources at ${PROTOCOL_DIR}/src/main; cannot verify the Android dependency."
+  exit 1
+fi
+
+# Compare files that define the protocol runtime and its build, not docs/tests
+# or the shared catalog (whose Android version changes on every Kit release).
+CHANGED=$(git diff --name-only "$REF" -- \
+  "$PROTOCOL_DIR/src/main" \
+  "$PROTOCOL_DIR/build.gradle" \
+  protocol/languages/kotlin/build.gradle \
+  protocol/languages/kotlin/settings.gradle \
+  protocol/languages/kotlin/gradle.properties \
+  platforms/android/gradle/android-library-versions.gradle)
+
+if [ -n "$CHANGED" ]; then
+  echo "::error::Kotlin protocol sources/build definitions differ from '$TAG'. Bump embeddedCheckoutProtocolAndroid and publish the updated protocol before releasing Android."
+  printf '%s\n' "$CHANGED"
+  exit 1
+fi
+
+echo "::notice::Kotlin protocol sources/build definitions match '$TAG'. Maven Central availability is checked separately during Android publication."

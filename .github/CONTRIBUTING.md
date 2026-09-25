@@ -272,6 +272,17 @@ Open a pull request with the following changes:
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
 
+The release preparation and Android publish workflows compare Kotlin protocol runtime
+sources and build definitions with the tag for `embeddedCheckoutProtocolAndroid`.
+They reject an Android release if those files have changed or the protocol tag is
+missing. Fetch tags and run `.github/scripts/check-android-protocol-release` locally
+to check this prerequisite. Protocol documentation and tests can change without a
+release; runtime changes require a new protocol version to be published first.
+The existing Maven Central availability check still runs before Android publication.
+
+For coordinated version-bump PRs, agents can use the repository's
+[prepare-release skill](../.agents/skills/prepare-release/SKILL.md).
+
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):

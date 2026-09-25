@@ -113,6 +113,10 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             scripts:
+              - '.github/scripts/check-android-protocol-release'
+              - '.github/scripts/validate-release-version'
+              - '.github/workflows/release.yml'
+              - '.github/workflows/android-publish.yml'
               - 'platforms/swift/Scripts/api'
               - 'platforms/swift/Scripts/normalize-api.jq'
               - 'scripts/lib/**'
