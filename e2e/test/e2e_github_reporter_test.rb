@@ -16,7 +16,6 @@ class E2EGitHubReporterTest < Minitest::Test
     E2EGitHubReporter.new(
       results,
       repository: "Shopify/checkout-kit",
-      sha: "abc123",
       pr_number: 1,
       branch: "feature-branch",
       app_slug: manifest.fetch("app_slug"),
@@ -104,12 +103,16 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_includes url, "app-debug.apk"
   end
 
+  def pipeline_url
+    "https://app.bitrise.io/app/app-slug/pipelines/pipeline-slug"
+  end
+
   def blocked_reporter
     reporter(
       results: [],
       run_plan: [react_native_ios_run, swift_ios_run],
       stages: failed_react_native_ios_build,
-      pipeline_url: "https://app.bitrise.io/app/#{manifest.fetch("app_slug")}/pipelines/7ccf403b",
+      pipeline_url: pipeline_url,
       expected: 2
     )
   end
@@ -123,7 +126,8 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_includes summary, "/build/a7111bcd)"
     assert_includes summary, "> None of the 2 planned runs executed:"
     assert_includes summary, "> - `swift-ios` · launch (ios)"
-    assert_includes summary, "> [Pipeline build](https://app.bitrise.io/app/"
+    assert_includes summary, "\n\n[Pipeline build](#{pipeline_url})"
+    assert_equal 1, summary.scan("[Pipeline build](").length
   end
 
   def test_blocked_report_omits_the_empty_tables
@@ -134,8 +138,41 @@ class E2EGitHubReporterTest < Minitest::Test
     refute_includes body, "| SDK | Install |"
   end
 
-  def test_blocked_report_names_the_stage_in_the_check_run_title
-    assert_equal "Blocked by e2e-build-react-native-ios", blocked_reporter.check_run_payload.dig(:output, :title)
+  def test_blocked_report_has_a_failure_conclusion
+    assert_equal "failure", blocked_reporter.conclusion
+  end
+
+  def test_successful_report_links_the_pipeline_build
+    report = reporter(results: [result("swift")], expected: 1, pipeline_url: pipeline_url)
+
+    assert_equal "success", report.conclusion
+    assert_includes report.markdown_summary, "\n\n[Pipeline build](#{pipeline_url})"
+    assert_equal 1, report.markdown_summary.scan("[Pipeline build](").length
+  end
+
+  def test_failed_report_links_the_pipeline_build
+    failed = swift_ios_run.merge("passed" => false, "failed_tests" => [])
+    report = reporter(results: [failed], expected: 1, pipeline_url: pipeline_url)
+
+    assert_equal "failure", report.conclusion
+    assert_includes report.markdown_summary, "\n\n[Pipeline build](#{pipeline_url})"
+    assert_equal 1, report.markdown_summary.scan("[Pipeline build](").length
+  end
+
+  def test_incomplete_report_links_the_pipeline_build_once
+    report = reporter(results: [result("swift")], expected: 2, pipeline_url: pipeline_url)
+
+    assert_equal "failure", report.conclusion
+    assert_includes report.markdown_summary, "\n\n[Pipeline build](#{pipeline_url})"
+    assert_equal 1, report.markdown_summary.scan("[Pipeline build](").length
+  end
+
+  def test_report_omits_the_pipeline_link_when_the_url_is_unavailable
+    [nil, "", "  "].each do |url|
+      summary = reporter(results: [result("swift")], pipeline_url: url).markdown_summary
+
+      refute_includes summary, "[Pipeline build]"
+    end
   end
 
   def test_missing_runs_are_named_without_a_stage_roster

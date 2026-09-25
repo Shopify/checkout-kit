@@ -18,21 +18,23 @@ class IOSCIReporterTest < Minitest::Test
     BitrisePipelineStages.from_json("not json", app_slug: "app-slug")
   end
 
-  def reporter(selected_job_ids:, stages:, job_ids: nil)
+  def reporter(selected_job_ids:, stages:, job_ids: nil, pipeline_url: "https://app.bitrise.io/build/pipeline")
     IOSCIReporter.new(
       job_ids: job_ids || selected_job_ids,
       selected_job_ids: selected_job_ids,
       repository: "Shopify/checkout-kit",
-      sha: "abc123",
+      pr_number: 1,
       token: "token",
       stages: stages,
-      pipeline_url: "https://app.bitrise.io/build/pipeline"
+      pipeline_url: pipeline_url
     )
   end
 
-  def test_the_check_name_is_the_literal_the_ruleset_pins
-    assert_equal "Checkout Kit iOS", IOSCIReporter::CHECK_NAME
-    assert_equal "Checkout Kit iOS", reporter(selected_job_ids: [], stages: stage_roster).check_run_payload.fetch(:name)
+  def test_the_comment_names_the_report
+    body = reporter(selected_job_ids: [], stages: stage_roster).comment_body
+
+    assert_includes body, "<!-- checkout-kit-ios-ci-report -->"
+    assert_includes body, "## Checkout Kit iOS"
   end
 
   def test_every_selected_job_succeeding_passes
@@ -134,8 +136,6 @@ class IOSCIReporterTest < Minitest::Test
     assert_includes report.markdown_summary, "No iOS job ran for this change"
   end
 
-  # ci-ios-report is still running while it writes this check, so its own stage always
-  # looks unexecuted. It must never count itself as a missing stage.
   def test_the_report_stage_never_counts_against_itself
     stages = stage_roster(
       workflow("ci-ios-plan"),
@@ -152,11 +152,11 @@ class IOSCIReporterTest < Minitest::Test
     assert_includes report.markdown_summary, "https://app.bitrise.io/build/pipeline"
   end
 
-  def test_the_check_run_payload_reports_a_completed_run_against_the_head_sha
-    payload = reporter(selected_job_ids: [], stages: stage_roster(workflow("ci-ios-plan"))).check_run_payload
+  def test_the_comment_omits_the_pipeline_link_when_the_url_is_unavailable
+    [nil, "", "  "].each do |url|
+      body = reporter(selected_job_ids: [], stages: stage_roster(workflow("ci-ios-plan")), pipeline_url: url).comment_body
 
-    assert_equal "abc123", payload.fetch(:head_sha)
-    assert_equal "completed", payload.fetch(:status)
-    assert_equal "success", payload.fetch(:conclusion)
+      refute_includes body, "[Pipeline build]"
+    end
   end
 end
