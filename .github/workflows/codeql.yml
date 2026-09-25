@@ -1,0 +1,410 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/Tests/**'
+      - '**/tests/**'
+      - '**/test/**'
+      - '**/Samples/**'
+      - '**/samples/**'
+      - '**/sample/**'
+      - '**/*.test.*'
+      - '**/*.spec.*'
+      - '**/Fixtures/**'
+      - '**/fixtures/**'
+      - 'scripts/test/**'
+      - 'scripts/test_ruby'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+  pull-requests: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze-without-build:
+    name: Analyze (${{ matrix.language }})
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - actions
+          - javascript-typescript
+          - ruby
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}
+
+  native-changes:
+    name: Detect native changes
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      android: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || steps.platform.outputs.android == 'true' || steps.platform.outputs.codeql == 'true' }}
+      reactNativeAndroid: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || steps.platform.outputs.reactNativeAndroid == 'true' || steps.platform.outputs.codeql == 'true' }}
+      reactNativeIos: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || steps.platform.outputs.reactNativeIos == 'true' || steps.platform.outputs.codeql == 'true' }}
+      swift: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || steps.platform.outputs.swift == 'true' || steps.platform.outputs.codeql == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Detect changed native platforms
+        id: platform
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            android:
+              - 'platforms/android/lib/src/main/**'
+              - 'platforms/android/**/*.gradle*'
+              - 'platforms/android/gradle/**'
+              - 'platforms/android/gradle.properties'
+              - 'protocol/languages/kotlin/**'
+            reactNativeAndroid:
+              - 'platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**'
+            reactNativeIos:
+              - 'platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/**'
+              - 'platforms/react-native/modules/@shopify/checkout-kit-react-native/RNShopifyCheckoutKit.podspec'
+            swift:
+              - 'Package.swift'
+              - 'Package.resolved'
+              - 'platforms/swift/Package.swift'
+              - 'platforms/swift/Sources/**'
+              - 'protocol/languages/swift/Sources/**'
+              - 'telemetry/languages/swift/Sources/**'
+            codeql:
+              - '.github/codeql/**'
+              - '.github/workflows/codeql.yml'
+
+  analyze-android:
+    name: Analyze (android)
+    needs: native-changes
+    if: needs.native-changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=768m
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install JDK 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: zulu
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            platforms/android/**/*.gradle*
+            platforms/android/**/gradle-wrapper.properties
+            platforms/android/gradle.properties
+            protocol/languages/kotlin/**/*.gradle*
+            protocol/languages/kotlin/**/*.toml
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Build Android SDK and protocol
+        run: |
+          platforms/android/gradlew \
+            -p platforms/android \
+            :lib:assembleRelease \
+            --console=plain \
+            --no-daemon
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:java-kotlin/platform:android
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter Android results to shipped sources
+        uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+        with:
+          patterns: |
+            -**
+            +platforms/android/lib/src/main/**/*
+            +protocol/languages/kotlin/embedded-checkout-protocol/src/main/**/*
+          input: sarif-results/java.sarif
+          output: sarif-results/java.sarif
+
+      - name: Upload Android results
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          sarif_file: sarif-results/java.sarif
+
+  analyze-react-native-android:
+    name: Analyze (react-native-android)
+    needs: native-changes
+    if: needs.native-changes.outputs.reactNativeAndroid == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=768m
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js, pnpm, and React Native dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+
+      - name: Install JDK 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: zulu
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            platforms/react-native/package.json
+            platforms/react-native/pnpm-lock.yaml
+            platforms/react-native/sample/package.json
+            platforms/react-native/sample/android/**/*.gradle*
+            platforms/react-native/sample/android/**/gradle-wrapper.properties
+            platforms/react-native/sample/android/gradle.properties
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/**/*.gradle*
+            platforms/react-native/modules/@shopify/checkout-kit-react-native/android/gradle.properties
+
+      - name: Prepare React Native Android build
+        run: |
+          printf 'STOREFRONT_DOMAIN=example.myshopify.com\n' > platforms/react-native/sample/.env
+          platforms/react-native/sample/android/gradlew \
+            -p platforms/react-native/sample/android \
+            projects \
+            --console=plain \
+            --no-daemon
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Build React Native Android wrapper
+        run: |
+          platforms/react-native/sample/android/gradlew \
+            -p platforms/react-native/sample/android \
+            :shopify_checkout-kit-react-native:assembleRelease \
+            -PreactNativeArchitectures=arm64-v8a \
+            --console=plain \
+            --no-daemon
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:java-kotlin/platform:react-native-android
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter React Native Android results to shipped sources
+        uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+        with:
+          patterns: |
+            -**
+            +platforms/react-native/modules/@shopify/checkout-kit-react-native/android/src/main/**/*
+          input: sarif-results/java.sarif
+          output: sarif-results/java.sarif
+
+      - name: Upload React Native Android results
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          sarif_file: sarif-results/java.sarif
+
+  analyze-swift:
+    name: Analyze (swift)
+    needs: native-changes
+    if: needs.native-changes.outputs.swift == 'true'
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 45
+    env:
+      DERIVED_DATA_PATH: ${{ github.workspace }}/../codeql-swift-derived-data
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Switch to Xcode 26.2
+        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
+
+      - name: Setup iOS simulator
+        run: |
+          xcrun simctl delete all
+          CURRENT_SIMULATOR_UUID=$(xcrun simctl create CodeQL 'iPhone 17 Pro')
+          echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
+
+      - name: Prepare Swift modules
+        run: .github/codeql/prepare_swift_modules
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: swift
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Type-check Swift modules for CodeQL
+        run: .github/codeql/build_swift --typecheck
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:swift/platform:swift
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter Swift results to shipped sources
+        uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+        with:
+          patterns: |
+            -**
+            +platforms/swift/Sources/**/*
+            +protocol/languages/swift/Sources/**/*
+            +telemetry/languages/swift/Sources/**/*
+          input: sarif-results/swift.sarif
+          output: sarif-results/swift.sarif
+
+      - name: Upload Swift results
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          sarif_file: sarif-results/swift.sarif
+
+  analyze-react-native-ios:
+    name: Analyze (react-native-ios)
+    needs: native-changes
+    if: needs.native-changes.outputs.reactNativeIos == 'true'
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 25
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/platforms/react-native/sample/Gemfile
+      DERIVED_DATA_PATH: ${{ github.workspace }}/../codeql-react-native-ios-derived-data
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Switch to Xcode 26.2
+        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
+
+      - name: Setup iOS simulator
+        run: |
+          xcrun simctl delete all
+          CURRENT_SIMULATOR_UUID=$(xcrun simctl create CodeQL 'iPhone 17 Pro')
+          echo "CURRENT_SIMULATOR_UUID=$CURRENT_SIMULATOR_UUID" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js, pnpm, and React Native dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: platforms/react-native/package.json
+          cache-dependency-path: platforms/react-native/pnpm-lock.yaml
+          package-json-file: platforms/react-native/package.json
+          working-directory: platforms/react-native
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+          working-directory: platforms/react-native/sample
+
+      - uses: ./.github/actions/setup-mint
+
+      - name: Generate React Native integration project
+        run: platforms/swift/Scripts/generate_xcode_projects --spec ../react-native/test/rct-integration-app/project.yml
+
+      - name: Verify iOS lockfile uses published native SDK
+        run: platforms/react-native/scripts/check_published_podfile_lock platforms/react-native/test/rct-integration-app/Podfile.lock
+
+      - name: Cache CocoaPods
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: platforms/react-native/test/rct-integration-app/Pods
+          key: ${{ runner.os }}-codeql-react-native-ios-pods-${{ hashFiles('platforms/react-native/test/rct-integration-app/Podfile.lock', 'platforms/react-native/sample/Gemfile', 'platforms/react-native/sample/Gemfile.lock', 'platforms/react-native/sample/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json', 'platforms/react-native/modules/@shopify/checkout-kit-react-native/RNShopifyCheckoutKit.podspec', 'platforms/react-native/package.json', 'platforms/react-native/pnpm-lock.yaml') }}
+
+      - name: Install React Native CocoaPods
+        working-directory: platforms/react-native/test/rct-integration-app
+        run: bundle exec pod install --deployment
+
+      - name: Build published Swift SDK dependency
+        working-directory: platforms/react-native/test/rct-integration-app
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Pods/Pods.xcodeproj \
+            -scheme ShopifyCheckoutKit \
+            -sdk iphonesimulator \
+            -destination "id=$CURRENT_SIMULATOR_UUID" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -skipPackagePluginValidation \
+            -disableAutomaticPackageResolution \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO | xcbeautify --renderer github-actions
+
+      - name: Validate React Native Swift wrapper module
+        run: .github/codeql/build_react_native_ios
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: swift
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Build React Native Swift wrapper for CodeQL
+        run: .github/codeql/build_react_native_ios
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:swift/platform:react-native-ios
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter React Native iOS results to shipped sources
+        uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+        with:
+          patterns: |
+            -**
+            +platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/**/*
+          input: sarif-results/swift.sarif
+          output: sarif-results/swift.sarif
+
+      - name: Upload React Native iOS results
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          sarif_file: sarif-results/swift.sarif
