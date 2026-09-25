@@ -15,6 +15,7 @@ describe("@shopify/checkout-kit public entry", () => {
       pkg.ShopifyCheckoutCloseEvent,
       pkg.ShopifyCheckoutErrorEvent,
       pkg.ShopifyCheckoutUpdateEvent,
+      pkg.ShopifyCheckoutBlockedEvent,
     ];
     for (const ctor of eventCtors) {
       expect(typeof ctor).toBe("function");

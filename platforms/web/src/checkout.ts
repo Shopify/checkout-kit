@@ -17,6 +17,7 @@ import {
   ShopifyCheckoutCompleteEvent,
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
+  ShopifyCheckoutBlockedEvent,
   type ShopifyCheckoutEventMap,
 } from "./checkout-events";
 import stylesText from "./checkout.css?inline";
@@ -194,6 +195,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
  * @event {ShopifyCheckoutErrorEvent} error - Checkout reported a terminal error; the session closes after this event.
  * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed, including after a blocked window.
+ * @event {ShopifyCheckoutBlockedEvent} blocked - The browser blocked the checkout window.
  *
  * @example
  * ```js
@@ -227,6 +229,7 @@ export class ShopifyCheckout
   #currentOpen: { controller: AbortController } | null = null;
   // Manages a blocked open, and the scrim dialog while it shows the blocked-window state
   #blockedOpen: { controller: AbortController } | null = null;
+  #dispatchingBlocked = false;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
   // Shared protocol client that decodes messages and dispatches to handlers
@@ -452,6 +455,13 @@ export class ShopifyCheckout
    * Reveals checkout in the target.
    */
   open(): void {
+    if (this.#dispatchingBlocked) {
+      this.#logger.warn(
+        "open() called from a blocked listener will be ignored; call it from a user action such as a click",
+      );
+      return;
+    }
+
     const { target } = this;
     const src = this.#srcAsURL({ warnInvalidAppearance: true })?.href;
 
@@ -512,6 +522,10 @@ export class ShopifyCheckout
         isRetry,
       });
       this.#showBlockedOverlay();
+      this.#dispatchingBlocked = true;
+      /** @ignore - Events are documented by the class @event tags. */
+      this.dispatchEvent(new ShopifyCheckoutBlockedEvent());
+      this.#dispatchingBlocked = false;
       return;
     }
 
