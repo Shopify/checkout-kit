@@ -355,7 +355,7 @@ Where the checkout is presented. Defaults to `"auto"`.
 > [!NOTE]
 > If the browser refuses to open the window (for example, a popup blocker, or
 > `open()` called outside a user gesture), the [overlay scrim](#overlay-scrim)
-> says so and offers a button to try again. Closing it dispatches `ec.close`.
+> says so and offers a button to try again. Closing it dispatches `close`.
 > If the overlay is hidden, nothing is shown and no events fire. The component
 > logs a warning at `log-level="warn"` or more verbose.
 
