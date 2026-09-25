@@ -6,6 +6,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.shopify.checkoutkit.androiddemo.common.components.BodyMedium
 
 @Composable
@@ -28,6 +29,7 @@ fun SettingsSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
+    testTag: String? = null,
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -37,7 +39,8 @@ fun SettingsSwitch(
         BodyMedium(label)
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            modifier = if (testTag == null) Modifier else Modifier.testTag(testTag),
         )
     }
 }
