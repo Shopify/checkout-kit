@@ -41,7 +41,7 @@ pipelines:
   # pipeline intermediate artifacts without rebuilding the IPA/APK.
   #
   # Start every ready PR, including unrelated changes, so required statuses always
-  # report. The shared planner scopes changed-file selection by the pipeline ID;
+  # report. The shared planner scopes changed-file selection by the pipeline name;
   # an unrelated app finishes after that cheap Linux workflow.
   #
   # Do not reintroduce a runtime `parallel` count. Once its producer has finished,

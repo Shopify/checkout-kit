@@ -89,22 +89,29 @@ class BitriseCIHelpersTest < Minitest::Test
 
   def test_application_identity_is_available_without_planner_outputs
     Dir.mktmpdir do |directory|
-      output, error, status = run_helper("e2e_pipeline_application",
-        "BITRISE_DEPLOY_DIR" => directory, "BITRISEIO_PIPELINE_ID" => "e2e-react-native-ios")
+      %w[react-native-ios react-native-android kotlin-android swift-ios].each do |application|
+        # Bitrise exposes the build ID separately from the configured pipeline name.
+        output, error, status = run_helper("e2e_pipeline_application",
+          "BITRISE_DEPLOY_DIR" => directory,
+          "BITRISEIO_PIPELINE_ID" => "00000000-0000-4000-8000-000000000001",
+          "BITRISEIO_PIPELINE_TITLE" => "e2e-#{application}")
 
-      assert status.success?, error
-      assert_equal "react-native-ios\n", output
+        assert status.success?, error
+        assert_equal "#{application}\n", output
+      end
     end
   end
 
   def test_a_workflow_outside_an_application_pipeline_cannot_claim_its_report
     Dir.mktmpdir do |directory|
-      [nil, "e2e", "ci-ios", "e2e-"].each do |pipeline_id|
+      [nil, "e2e", "ci-ios", "e2e-"].each do |pipeline_title|
         _output, error, status = run_helper("e2e_pipeline_application",
-          "BITRISE_DEPLOY_DIR" => directory, "BITRISEIO_PIPELINE_ID" => pipeline_id)
+          "BITRISE_DEPLOY_DIR" => directory,
+          "BITRISEIO_PIPELINE_ID" => "e2e-react-native-ios",
+          "BITRISEIO_PIPELINE_TITLE" => pipeline_title)
 
         refute status.success?
-        assert_includes error, "An e2e-<application> pipeline is required"
+        assert_includes error, "BITRISEIO_PIPELINE_TITLE must name an e2e-<application> pipeline"
       end
     end
   end

@@ -25,13 +25,14 @@ e2e_has_pull_request() {
   [ -n "${BITRISE_PULL_REQUEST:-}" ] && [ "$BITRISE_PULL_REQUEST" != "false" ] && [ "$BITRISE_PULL_REQUEST" != "0" ]
 }
 
-# The pipeline ID is present even if the planner failed, and on partial rebuilds
-# where the planner is reused. Derive report identity from it rather than from a
-# shared variable which might never have been published by a failed planner.
+# Bitrise's PIPELINE_TITLE is the configured pipeline name; PIPELINE_ID identifies
+# the running build. The title also survives a failed or reused planner, so report
+# identity does not depend on a shared variable that the planner must publish.
+# https://docs.bitrise.io/en/references/available-environment-variables.html
 e2e_pipeline_application() {
-  case "${BITRISEIO_PIPELINE_ID:-}" in
-    e2e-?*) printf '%s\n' "${BITRISEIO_PIPELINE_ID#e2e-}" ;;
-    *) printf '%s\n' "An e2e-<application> pipeline is required" >&2; return 1 ;;
+  case "${BITRISEIO_PIPELINE_TITLE:-}" in
+    e2e-?*) printf '%s\n' "${BITRISEIO_PIPELINE_TITLE#e2e-}" ;;
+    *) printf '%s\n' "BITRISEIO_PIPELINE_TITLE must name an e2e-<application> pipeline" >&2; return 1 ;;
   esac
 }
 
