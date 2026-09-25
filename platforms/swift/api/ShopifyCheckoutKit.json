@@ -9159,54 +9159,6 @@
             ]
           },
           {
-            "kind": "Var",
-            "name": "schemaVersion",
-            "printedName": "schemaVersion",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit8MetaDataO13schemaVersionSSvpZ",
-            "mangledName": "$s18ShopifyCheckoutKit8MetaDataO13schemaVersionSSvpZ",
-            "moduleName": "ShopifyCheckoutKit",
-            "static": true,
-            "isInternal": true,
-            "declAttributes": [
-              "HasInitialValue",
-              "HasStorage"
-            ],
-            "isLet": true,
-            "hasStorage": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit8MetaDataO13schemaVersionSSvgZ",
-                "mangledName": "$s18ShopifyCheckoutKit8MetaDataO13schemaVersionSSvgZ",
-                "moduleName": "ShopifyCheckoutKit",
-                "static": true,
-                "implicit": true,
-                "isInternal": true,
-                "accessorKind": "get"
-              }
-            ]
-          },
-          {
             "kind": "TypeDecl",
             "name": "EntryPoint",
             "printedName": "EntryPoint",
