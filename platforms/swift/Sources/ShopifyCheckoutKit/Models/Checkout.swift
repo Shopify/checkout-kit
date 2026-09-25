@@ -153,30 +153,46 @@ private struct CheckoutAdditionalPropertyKey: CodingKey {
 
 extension Checkout: Equatable {
     public static func == (lhs: Checkout, rhs: Checkout) -> Bool {
-        lhs.comparisonData == rhs.comparisonData
-    }
-
-    private var comparisonData: Data? {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        // ISO 8601 encoding drops fractional seconds, which can hide checkout updates.
+        encoder.dateEncodingStrategy = .deferredToDate
         encoder.outputFormatting = .sortedKeys
-        return try? encoder.encode(self)
+        guard
+            let lhsData = try? encoder.encode(lhs),
+            let rhsData = try? encoder.encode(rhs)
+        else {
+            // A failed comparison must not suppress an update.
+            return false
+        }
+
+        return lhsData == rhsData
     }
 }
 
 extension Checkout {
-    init?(protocolCheckout: some Encodable) {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        guard
-            let data = try? encoder.encode(protocolCheckout),
-            let checkout = try? decoder.decode(Checkout.self, from: data)
-        else {
-            return nil
-        }
-
-        self = checkout
+    init(protocolCheckout checkout: EmbeddedCheckoutProtocol.Checkout) {
+        // Copy domain values directly so projection cannot lose precision or fail serialization.
+        self.init(
+            id: checkout.id,
+            status: checkout.status,
+            currency: checkout.currency,
+            attribution: checkout.attribution,
+            buyer: checkout.buyer,
+            context: checkout.context,
+            continueURL: checkout.continueURL,
+            discounts: checkout.discounts,
+            expiresAt: checkout.expiresAt,
+            fulfillment: checkout.fulfillment,
+            lineItems: checkout.lineItems,
+            links: checkout.links,
+            messages: checkout.messages,
+            order: checkout.order,
+            payment: checkout.payment,
+            signals: checkout.signals,
+            totals: checkout.totals,
+            additionalProperties: checkout.additionalProperties.filter {
+                !Self.excludedAdditionalPropertyKeys.contains($0.key)
+            }
+        )
     }
 }

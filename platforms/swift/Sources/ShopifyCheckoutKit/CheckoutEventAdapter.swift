@@ -44,21 +44,21 @@ private final class CheckoutEventState {
         self.sink = sink
     }
 
-    func start(_ checkout: some Encodable) {
-        guard let snapshot = Checkout(protocolCheckout: checkout) else { return }
+    func start(_ checkout: EmbeddedCheckoutProtocol.Checkout) {
+        let snapshot = Checkout(protocolCheckout: checkout)
         latestCheckout = snapshot
         sink?.checkoutDidStart(snapshot)
     }
 
-    func update(_ checkout: some Encodable) {
-        guard let snapshot = Checkout(protocolCheckout: checkout) else { return }
+    func update(_ checkout: EmbeddedCheckoutProtocol.Checkout) {
+        let snapshot = Checkout(protocolCheckout: checkout)
         guard snapshot != latestCheckout else { return }
         latestCheckout = snapshot
         sink?.checkoutDidUpdate(snapshot)
     }
 
-    func complete(_ checkout: some Encodable) {
-        guard let snapshot = Checkout(protocolCheckout: checkout) else { return }
+    func complete(_ checkout: EmbeddedCheckoutProtocol.Checkout) {
+        let snapshot = Checkout(protocolCheckout: checkout)
         latestCheckout = snapshot
         sink?.checkoutDidComplete(snapshot)
     }

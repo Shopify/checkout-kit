@@ -23,12 +23,17 @@ final class CheckoutEventAdapterTests: XCTestCase {
         let params = try XCTUnwrap(envelope["params"] as? [String: Any])
         let protocolObject = try XCTUnwrap(params["checkout"] as? [String: Any])
         let protocolData = try JSONSerialization.data(withJSONObject: protocolObject)
-        let protocolCheckout = try EmbeddedCheckoutProtocol.Checkout(data: protocolData)
-        let checkout = try XCTUnwrap(ShopifyCheckoutKit.Checkout(protocolCheckout: protocolCheckout))
+        var protocolCheckout = try EmbeddedCheckoutProtocol.Checkout(data: protocolData)
+        // Reserved keys must stay excluded even if an in-memory protocol model contains them.
+        protocolCheckout.additionalProperties["ucp"] = protocolCheckout.additionalProperties["com.example.extension"]
+        protocolCheckout.additionalProperties["currency"] = protocolCheckout.additionalProperties["com.example.extension"]
+        let checkout = ShopifyCheckoutKit.Checkout(protocolCheckout: protocolCheckout)
+        XCTAssertNil(checkout.additionalProperties["ucp"])
+        XCTAssertNil(checkout.additionalProperties["currency"])
         XCTAssertEqual(checkout.attribution, ["source": "agent"])
         XCTAssertEqual(checkout.context?.addressCountry, "IE")
         XCTAssertEqual(checkout.continueURL, "https://example.com/continue")
-        XCTAssertEqual(checkout.expiresAt, ISO8601DateFormatter().date(from: "2026-09-11T12:00:00Z"))
+        XCTAssertEqual(checkout.expiresAt, protocolCheckout.expiresAt)
         XCTAssertEqual(checkout.links.first?.type, "privacy_policy")
         XCTAssertEqual(checkout.messages?.first?.code, "notice")
         XCTAssertEqual(checkout.signals?["com.example.trusted"]?.value as? Bool, true)
@@ -64,8 +69,64 @@ final class CheckoutEventAdapterTests: XCTestCase {
         XCTAssertNotNil(object["com.example.extension"])
 
         let protocolEncoded = try JSONEncoder().encode(protocolCheckout)
-        let encodedProtocolObject = try XCTUnwrap(JSONSerialization.jsonObject(with: protocolEncoded) as? [String: Any])
+        var encodedProtocolObject = try XCTUnwrap(JSONSerialization.jsonObject(with: protocolEncoded) as? [String: Any])
         XCTAssertNotNil(encodedProtocolObject["ucp"])
+        encodedProtocolObject.removeValue(forKey: "ucp")
+        // Compare every field, including fractional dates and inline extension properties.
+        XCTAssertEqual(object as NSDictionary, encodedProtocolObject as NSDictionary)
+    }
+
+    func testCheckoutEqualityPreservesSubMillisecondDatePrecision() {
+        let first = ShopifyCheckoutKit.Checkout(
+            id: "checkout-1", status: .incomplete, currency: "USD",
+            expiresAt: Date(timeIntervalSinceReferenceDate: 1.123456), lineItems: [], totals: []
+        )
+        let second = ShopifyCheckoutKit.Checkout(
+            id: "checkout-1", status: .incomplete, currency: "USD",
+            expiresAt: Date(timeIntervalSinceReferenceDate: 1.123457), lineItems: [], totals: []
+        )
+
+        XCTAssertNotEqual(first, second)
+        XCTAssertEqual(first, first)
+    }
+
+    func testCheckoutEqualityDoesNotEquateEncodingFailures() throws {
+        let decoder = JSONDecoder()
+        decoder.nonConformingFloatDecodingStrategy = .convertFromString(
+            positiveInfinity: "Infinity", negativeInfinity: "-Infinity", nan: "NaN"
+        )
+        let value = try decoder.decode(JSONAny.self, from: Data(#""NaN""#.utf8))
+        let first = ShopifyCheckoutKit.Checkout(
+            id: "checkout-1", status: .incomplete, currency: "USD",
+            lineItems: [], signals: ["com.example.value": value], totals: []
+        )
+        let second = ShopifyCheckoutKit.Checkout(
+            id: "checkout-2", status: .incomplete, currency: "USD",
+            lineItems: [], signals: ["com.example.value": value], totals: []
+        )
+
+        XCTAssertThrowsError(try JSONEncoder().encode(first))
+        XCTAssertThrowsError(try JSONEncoder().encode(second))
+        XCTAssertNotEqual(first, second)
+    }
+
+    func testFractionalDateChangesProduceUpdatesAndIdenticalRepeatsAreDeduplicated() async {
+        let sink = RecordingCheckoutEventSink()
+        let adapter = CheckoutEventAdapter(sink: sink)
+        _ = await adapter.process(fullCheckoutMessage)
+
+        var update = fullCheckoutMessage.replacingOccurrences(of: "ec.start", with: "ec.fulfillment.change")
+        let dateChanges = [
+            ("2026-09-11T12:00:00.123Z", "2026-09-11T12:00:00.124Z"),
+            ("2026-09-12T09:00:00.456Z", "2026-09-12T09:00:00.457Z"),
+            ("2026-09-12T17:00:00.789Z", "2026-09-12T17:00:00.790Z")
+        ]
+        for (index, dates) in dateChanges.enumerated() {
+            update = update.replacingOccurrences(of: dates.0, with: dates.1)
+            _ = await adapter.process(update)
+            _ = await adapter.process(update)
+            XCTAssertEqual(sink.updated.count, index + 1, "Changed date: \(dates.0)")
+        }
     }
 
     func testEveryChangeNotificationProducesOneUpdate() async {
@@ -186,8 +247,8 @@ final class CheckoutEventAdapterTests: XCTestCase {
           "continue_url":"https://example.com/continue",
           "currency":"EUR",
           "discounts":{"codes":["SAVE10"],"applied":[{"allocations":[{"amount":100,"path":"$.line_items[0]"}],"amount":100,"automatic":false,"code":"SAVE10","eligibility":"com.example.member","method":"across","priority":1,"provisional":true,"title":"Save ten"}]},
-          "expires_at":"2026-09-11T12:00:00Z",
-          "fulfillment":{"available_methods":[{"description":"Available now","fulfillable_on":"now","line_item_ids":["line-1"],"type":"shipping"}],"methods":[{"destinations":[{"id":"destination-1","street_address":"1 Main Street","address_locality":"Dublin","address_country":"IE"}],"groups":[{"id":"group-1","line_item_ids":["line-1"],"options":[{"carrier":"Post","description":"Tomorrow","earliest_fulfillment_time":"2026-09-12T09:00:00Z","id":"option-1","latest_fulfillment_time":"2026-09-12T17:00:00Z","title":"Standard","totals":[{"amount":500,"display_text":"Shipping","type":"fulfillment"}]}],"selected_option_id":"option-1"}],"id":"method-1","line_item_ids":["line-1"],"selected_destination_id":"destination-1","type":"shipping"}]},
+          "expires_at":"2026-09-11T12:00:00.123Z",
+          "fulfillment":{"available_methods":[{"description":"Available now","fulfillable_on":"now","line_item_ids":["line-1"],"type":"shipping"}],"methods":[{"destinations":[{"id":"destination-1","street_address":"1 Main Street","address_locality":"Dublin","address_country":"IE"}],"groups":[{"id":"group-1","line_item_ids":["line-1"],"options":[{"carrier":"Post","description":"Tomorrow","earliest_fulfillment_time":"2026-09-12T09:00:00.456Z","id":"option-1","latest_fulfillment_time":"2026-09-12T17:00:00.789Z","title":"Standard","totals":[{"amount":500,"display_text":"Shipping","type":"fulfillment"}]}],"selected_option_id":"option-1"}],"id":"method-1","line_item_ids":["line-1"],"selected_destination_id":"destination-1","type":"shipping"}]},
           "id":"checkout-1",
           "line_items":[{"id":"line-1","item":{"id":"variant-1","image_url":"https://example.com/item.png","price":1000,"title":"Item"},"parent_id":"parent-1","quantity":1,"totals":[{"amount":1000,"display_text":"Item total","type":"total"}]}],
           "links":[{"title":"Privacy","type":"privacy_policy","url":"https://example.com/privacy"}],
