@@ -21,6 +21,7 @@ options = {
 }
 
 OptionParser.new do |opts|
+  opts.on("--application ID") { |id| options[:application_id] = id }
   opts.on("--results-root PATH") { |path| options[:results_root] = path }
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
   opts.on("--sha SHA") { |sha| options[:sha] = sha }
@@ -38,7 +39,7 @@ if pr_number.empty? || pr_number == "false" || pr_number == "0"
   exit 0
 end
 
-%i[sha token].each do |key|
+%i[application_id sha token].each do |key|
   next unless options[key].nil? || options[key].to_s.strip.empty?
 
   abort "#{key} is required"
@@ -69,6 +70,7 @@ stages = BitrisePipelineStages.from_json(
 
 reporter = E2EGitHubReporter.new(
   results,
+  application_id: options.fetch(:application_id),
   repository: options.fetch(:repository),
   sha: options.fetch(:sha),
   pr_number: options.fetch(:pr_number),
@@ -83,3 +85,6 @@ reporter = E2EGitHubReporter.new(
 )
 reporter.publish!
 puts reporter.markdown_summary
+# A missing result or failed upload must also fail the required pipeline status,
+# not just the supplementary GitHub check created by the reporter.
+exit(reporter.success? ? 0 : 1)

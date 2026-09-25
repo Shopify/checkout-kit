@@ -25,6 +25,17 @@ e2e_has_pull_request() {
   [ -n "${BITRISE_PULL_REQUEST:-}" ] && [ "$BITRISE_PULL_REQUEST" != "false" ] && [ "$BITRISE_PULL_REQUEST" != "0" ]
 }
 
+# Bitrise's PIPELINE_TITLE is the configured pipeline name; PIPELINE_ID identifies
+# the running build. The title also survives a failed or reused planner, so report
+# identity does not depend on a shared variable that the planner must publish.
+# https://docs.bitrise.io/en/references/available-environment-variables.html
+e2e_pipeline_application() {
+  case "${BITRISEIO_PIPELINE_TITLE:-}" in
+    e2e-?*) printf '%s\n' "${BITRISEIO_PIPELINE_TITLE#e2e-}" ;;
+    *) printf '%s\n' "BITRISEIO_PIPELINE_TITLE must name an e2e-<application> pipeline" >&2; return 1 ;;
+  esac
+}
+
 # Writes the changed file list and prints its path. Two gates read it — the E2E matrix
 # and the iOS CI run plan — and a second copy of this derivation would let them select
 # different work from the same commit.
