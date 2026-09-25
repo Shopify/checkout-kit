@@ -87,6 +87,28 @@ class BitriseCIHelpersTest < Minitest::Test
     end
   end
 
+  def test_application_identity_is_available_without_planner_outputs
+    Dir.mktmpdir do |directory|
+      output, error, status = run_helper("e2e_pipeline_application",
+        "BITRISE_DEPLOY_DIR" => directory, "BITRISEIO_PIPELINE_ID" => "e2e-react-native-ios")
+
+      assert status.success?, error
+      assert_equal "react-native-ios\n", output
+    end
+  end
+
+  def test_a_workflow_outside_an_application_pipeline_cannot_claim_its_report
+    Dir.mktmpdir do |directory|
+      [nil, "e2e", "ci-ios", "e2e-"].each do |pipeline_id|
+        _output, error, status = run_helper("e2e_pipeline_application",
+          "BITRISE_DEPLOY_DIR" => directory, "BITRISEIO_PIPELINE_ID" => pipeline_id)
+
+        refute status.success?
+        assert_includes error, "An e2e-<application> pipeline is required"
+      end
+    end
+  end
+
   private
 
   def run_helper(command, environment)

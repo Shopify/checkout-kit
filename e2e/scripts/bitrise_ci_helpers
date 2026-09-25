@@ -25,6 +25,16 @@ e2e_has_pull_request() {
   [ -n "${BITRISE_PULL_REQUEST:-}" ] && [ "$BITRISE_PULL_REQUEST" != "false" ] && [ "$BITRISE_PULL_REQUEST" != "0" ]
 }
 
+# The pipeline ID is present even if the planner failed, and on partial rebuilds
+# where the planner is reused. Derive report identity from it rather than from a
+# shared variable which might never have been published by a failed planner.
+e2e_pipeline_application() {
+  case "${BITRISEIO_PIPELINE_ID:-}" in
+    e2e-?*) printf '%s\n' "${BITRISEIO_PIPELINE_ID#e2e-}" ;;
+    *) printf '%s\n' "An e2e-<application> pipeline is required" >&2; return 1 ;;
+  esac
+}
+
 # Writes the changed file list and prints its path. Two gates read it — the E2E matrix
 # and the iOS CI run plan — and a second copy of this derivation would let them select
 # different work from the same commit.

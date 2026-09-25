@@ -108,10 +108,48 @@ connection options and Android through the launch intent.
 ## Matrix
 
 CI runs are described by `config/matrix.yml`. The matrix expands applications and
-OS version tags into a BrowserStack run plan. Because Bitrise has no built-in
-matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb` transforms the
-matrix into a BrowserStack run plan and the pipeline parallelizes over the
-resulting rows.
+OS version tags into a BrowserStack run plan. Each application has an independent
+Bitrise pipeline: `e2e-react-native-ios`, `e2e-react-native-android`,
+`e2e-kotlin-android`, and `e2e-swift-ios`. Its graph is:
+
+```text
+select application → build app → run BrowserStack tests → report
+```
+
+All four pipelines trigger on every ready PR so required statuses always report.
+The planner intersects the pipeline's application with the shared changed-file
+filters. An unrelated change finishes after the planner without building an app
+or starting BrowserStack. A manually started pipeline selects its application.
+Each test workflow waits only for its own app's artifact.
+
+The graph intentionally has no runtime `parallel` count: Bitrise can require a
+full rebuild once the workflow producing that count finishes. App pipelines run
+concurrently; OS variants within an app run sequentially, preserving every row's
+results even if an earlier row fails. Today there is one OS row per application.
+If more OS variants need independent retries, add explicit test workflows rather
+than dynamic copies.
+
+After an application's pipeline finishes, use **Rebuild unsuccessful Workflows**
+or **Rebuild from here** on its failed test workflow. Other application pipelines
+can keep running, and a partial rebuild reuses the successful app build's pipeline
+artifacts. Test failures exit unsuccessfully after saving diagnostics; artifact
+upload and reporting still run. Each application owns a separate GitHub check
+and sticky PR comment, with Tophat links limited to that application's artifacts.
+
+When rolling out this split, replace the required `ci/bitrise/e2e/pr` status in
+the GitHub `main` ruleset with all four application statuses:
+
+- `ci/bitrise/e2e-react-native-ios/pr`
+- `ci/bitrise/e2e-react-native-android/pr`
+- `ci/bitrise/e2e-kotlin-android/pr`
+- `ci/bitrise/e2e-swift-ios/pr`
+
+Keep the Bitrise integration restriction on each status, and retain `CI Required`
+and `ci/bitrise/ci-ios/pr`. Coordinate this switch with landing the configuration:
+old branches need to rebase because Bitrise reads the pipeline graph from their
+branch head. The supplementary `Checkout Kit E2E / <application>` checks only
+appear for selected applications and should not be required. Repository changes
+do not update the live ruleset automatically.
 
 Current applications:
 

@@ -8,8 +8,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   MATRIX_PATH = File.expand_path("../config/matrix.yml", __dir__)
   PIPELINE_PATH = File.expand_path("../bitrise.yml", __dir__)
 
-  def plan(changed_files: nil, config: base_config)
-    E2EMatrixToBrowserStackRunPlan.new(MATRIX_PATH, config, changed_files: changed_files)
+  def plan(changed_files: nil, config: base_config, application_id: nil)
+    E2EMatrixToBrowserStackRunPlan.new(MATRIX_PATH, config, changed_files: changed_files, application_id: application_id)
   end
 
   def base_config
@@ -48,8 +48,8 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     plan(changed_files: changed_files).expand.find { |run| run.fetch("application_id") == application_id }
   end
 
-  def e2e_pipeline
-    YAML.safe_load_file(PIPELINE_PATH, aliases: true).fetch("pipelines").fetch("e2e")
+  def e2e_pipeline(application_id)
+    YAML.safe_load_file(PIPELINE_PATH, aliases: true).fetch("pipelines").fetch("e2e-#{application_id}")
   end
 
   def test_expand_produces_one_run_per_application_and_os_version_tag
@@ -208,11 +208,6 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "2", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
-    assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
-    assert_equal "true", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
-    assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
-    assert_equal "false", env.fetch("E2E_BUILD_SWIFT_IOS")
   end
 
   def test_bitrise_env_reports_swift_ios_build_on_swift_change
@@ -220,10 +215,6 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
-    assert_equal "true", env.fetch("E2E_BUILD_SWIFT_IOS")
-    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
-    assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
   end
 
   def test_bitrise_env_reports_kotlin_android_build_on_android_change
@@ -231,10 +222,6 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
-    assert_equal "true", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
-    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
-    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
   end
 
   def test_bitrise_env_reports_no_runs_when_nothing_selected
@@ -242,54 +229,75 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
     assert_equal "false", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "0", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
-    assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT")
-    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_IOS")
-    assert_equal "false", env.fetch("E2E_BUILD_REACT_NATIVE_ANDROID")
-    assert_equal "false", env.fetch("E2E_BUILD_KOTLIN_ANDROID")
-    assert_equal "false", env.fetch("E2E_BUILD_SWIFT_IOS")
   end
 
   # A required pipeline status cannot be published when its trigger rejects the PR.
-  def test_required_pipeline_starts_for_every_ready_pull_request
-    trigger = e2e_pipeline.fetch("triggers").fetch("pull_request").find do |candidate|
-      candidate["source_branch"] == "*" && !candidate.key?("changed_files")
-    end
+  def test_required_pipelines_start_for_every_ready_pull_request
+    base_config.fetch("applications").each do |application|
+      trigger = e2e_pipeline(application.fetch("id")).fetch("triggers").fetch("pull_request").find do |candidate|
+        candidate["source_branch"] == "*" && !candidate.key?("changed_files")
+      end
 
-    refute_nil trigger, "Required E2E status needs a PR trigger without a changed-files filter"
-    assert_equal false, trigger.fetch("draft_enabled")
+      refute_nil trigger, "Required E2E statuses need PR triggers without changed-files filters"
+      assert_equal false, trigger.fetch("draft_enabled")
+    end
   end
 
   def test_workflow_and_docs_changes_run_only_the_planner
-    workflows = e2e_pipeline.fetch("workflows")
-    planner = "e2e-produce-browserstack-run-plan"
-    refute workflows.fetch(planner).key?("run_if"), "The planner must run to complete the required pipeline"
+    base_config.fetch("applications").each do |application|
+      id = application.fetch("id")
+      workflows = e2e_pipeline(id).fetch("workflows")
+      planner = "e2e-produce-browserstack-run-plan"
+      refute workflows.fetch(planner).key?("run_if"), "The planner must complete the required pipeline"
 
-    [
-      [".github/workflows/protocol-test.yml", ".github/workflows/rn-test.yml", ".github/workflows/web.yml"],
-      ["README.md"],
-      ["platforms/react-native/docs/assets/screenshot.png"]
-    ].each do |changed_files|
-      run_plan = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: changed_files)
-      assert_empty run_plan.selected_applications, changed_files.inspect
-      assert_empty run_plan.expand, changed_files.inspect
-      env = run_plan.bitrise_env
+      [
+        [".github/workflows/protocol-test.yml", ".github/workflows/rn-test.yml", ".github/workflows/web.yml"],
+        ["README.md"],
+        ["platforms/react-native/docs/assets/screenshot.png"]
+      ].each do |changed_files|
+        run_plan = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: changed_files, application_id: id)
+        assert_empty run_plan.expand, changed_files.inspect
+        env = run_plan.bitrise_env
 
-      workflows.each do |name, workflow|
-        next if name == planner
+        workflows.each do |name, workflow|
+          next if name == planner
 
-        expression = workflow.fetch("run_if").fetch("expression")
-        flag = /\A\{\{\s+enveq "(E2E_[A-Z0-9_]+)" "true"\s+\}\}\z/.match(expression)
-        refute_nil flag, "#{name} must run only when its plan flag is true"
-        assert_equal "false", env.fetch(flag[1]), "#{name} should skip #{changed_files.inspect}"
+          expression = workflow.fetch("run_if").fetch("expression")
+          flag = /\A\{\{\s+enveq "(E2E_[A-Z0-9_]+)" "true"\s+\}\}\z/.match(expression)
+          refute_nil flag, "#{name} must run only when its plan flag is true"
+          assert_equal "false", env.fetch(flag[1]), "#{name} should skip #{changed_files.inspect}"
+        end
       end
     end
   end
 
-  def test_build_env_key_sanitizes_application_id
-    assert_equal "E2E_BUILD_REACT_NATIVE_IOS", plan.send(:build_env_key, "react-native-ios")
-    assert_equal "E2E_BUILD_REACT_NATIVE_ANDROID", plan.send(:build_env_key, "react-native-android")
-    assert_equal "E2E_BUILD_KOTLIN_ANDROID", plan.send(:build_env_key, "kotlin-android")
-    assert_equal "E2E_BUILD_SWIFT_IOS", plan.send(:build_env_key, "swift-ios")
+  def test_shared_changes_still_select_only_the_pipeline_application
+    scoped = plan(application_id: "swift-ios", changed_files: ["protocol/schemas/ucp.json"])
+
+    assert_equal ["swift-ios-latest"], scoped.expand.map { |run| run.fetch("id") }
+    assert_empty scoped.missing_build_workflows(["e2e-build-swift-ios"])
+    assert_equal "1", scoped.bitrise_env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
+  end
+
+  def test_an_application_scope_does_not_force_an_unrelated_build
+    scoped = plan(application_id: "swift-ios", changed_files: ["platforms/android/lib/src/main/Foo.kt"])
+
+    assert_empty scoped.expand
+    assert_equal "false", scoped.bitrise_env.fetch("E2E_HAS_E2E_RUNS")
+  end
+
+  def test_a_manual_application_run_keeps_every_os_variant
+    config = base_config
+    config["os_version_tags"] = ["latest", "latest-1"]
+    scoped = plan(config: config, application_id: "swift-ios")
+
+    assert_equal ["swift-ios-latest", "swift-ios-latest-1"], scoped.expand.map { |run| run.fetch("id") }
+  end
+
+  def test_an_unknown_application_fails_even_for_unrelated_changes
+    error = assert_raises(KeyError) { plan(application_id: "typo", changed_files: []).expand }
+
+    assert_includes error.message, "unknown E2E application typo"
   end
 
   def test_application_changed_file_filter_names_prefers_plural

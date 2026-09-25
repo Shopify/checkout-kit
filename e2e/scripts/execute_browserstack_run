@@ -42,7 +42,9 @@ class BrowserStackRunExecutor
     warn "Recording failure for #{identifier}: #{error.class}: #{error.message}"
     warn error.backtrace.join("\n") if error.backtrace
     FileUtils.mkdir_p(results_dir)
-    File.write(File.join(results_dir, "result.json"), JSON.pretty_generate(failure_result(context, error)))
+    result = failure_result(context, error)
+    File.write(File.join(results_dir, "result.json"), JSON.pretty_generate(result))
+    result
   end
 
   def self.build_options(argv, env: ENV)
@@ -122,6 +124,7 @@ class BrowserStackRunExecutor
     result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)
     write_json("result.json", result)
     log_completion(result, build_status, sessions)
+    result
   rescue StandardError => error
     log "", "==> BrowserStack run error", "#{error.class}: #{error.message}"
     self.class.record_failure!(error, results_dir: output_dir, identifier: failure_identifier, context: failure_context)
@@ -438,10 +441,13 @@ end
 if $PROGRAM_NAME == __FILE__
   begin
     options = BrowserStackRunExecutor.build_options(ARGV)
-    BrowserStackRunExecutor.new(options).run
+    result = BrowserStackRunExecutor.new(options).run
   rescue StandardError => error
     results_dir = (options && options[:output_dir]) ||
       ENV.fetch("E2E_BROWSERSTACK_RESULTS_DIR", File.join(Dir.pwd, "e2e-results"))
-    BrowserStackRunExecutor.record_failure!(error, results_dir: results_dir, identifier: "e2e setup")
+    result = BrowserStackRunExecutor.record_failure!(error, results_dir: results_dir, identifier: "e2e setup")
   end
+  # Save diagnostics before failing the Step. Bitrise must see a failed workflow
+  # for "Rebuild unsuccessful Workflows" to retry tests instead of only reporting.
+  exit(result.fetch("passed", false) ? 0 : 1)
 end

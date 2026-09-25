@@ -8,12 +8,12 @@ require_relative "../../scripts/lib/json_http_client"
 # Publishes normalized E2E run results back to GitHub as a check run and a
 # sticky pull request comment carrying the Tophat install link and run summary.
 class E2EGitHubReporter
-  COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
   EXECUTE_STAGE_NAME = "e2e-execute-browserstack-run"
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
+  def initialize(results, application_id:, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
     @results = results
+    @application_id = application_id
     @repository = repository
     @sha = sha
     @pr_number = pr_number
@@ -33,7 +33,10 @@ class E2EGitHubReporter
   end
 
   def tophat_install_url(target)
-    pairs = target.fetch("recipes").flat_map do |recipe|
+    # React Native has recipes for both OSes. An iOS report must not offer an
+    # Android artifact left over from an earlier build of the same branch.
+    recipes = target.fetch("recipes").select { |recipe| recipe.fetch("workflow") == "e2e-build-#{@application_id}" }
+    pairs = recipes.flat_map do |recipe|
       [
         ["platform", recipe.fetch("platform")],
         ["destination", recipe.fetch("destination")],
@@ -47,12 +50,12 @@ class E2EGitHubReporter
   end
 
   def comment_body
-    [COMMENT_MARKER, tophat_install_markdown, markdown_summary].compact.join("\n\n")
+    [comment_marker, tophat_install_markdown, markdown_summary].compact.join("\n\n")
   end
 
   def markdown_summary
     lines = []
-    lines << "## Checkout Kit E2E results"
+    lines << "## #{check_name} results"
     lines << ""
     lines.concat(results_table) unless @results.empty?
     unless complete?
@@ -75,7 +78,7 @@ class E2EGitHubReporter
 
   def check_run_payload
     {
-      name: "Checkout Kit E2E",
+      name: check_name,
       head_sha: @sha,
       status: "completed",
       conclusion: conclusion,
@@ -86,7 +89,21 @@ class E2EGitHubReporter
     }
   end
 
+  def success?
+    failed_results.empty? && complete? && blocking_stages.empty?
+  end
+
   private
+
+  def check_name
+    "Checkout Kit E2E / #{@application_id}"
+  end
+
+  # Independent pipelines finish concurrently. Each owns a comment so updating a
+  # Swift result cannot erase a React Native failure (or race a shared read/write).
+  def comment_marker
+    "<!-- checkout-kit-e2e-report:#{@application_id} -->"
+  end
 
   def results_table
     lines = []
@@ -189,13 +206,13 @@ class E2EGitHubReporter
   end
 
   def conclusion
-    failed_results.empty? && complete? ? "success" : "failure"
+    success? ? "success" : "failure"
   end
 
   def check_run_title
     return "Blocked by #{blocking_stages.first.name}" if blocked?
 
-    "Checkout Kit E2E #{conclusion}"
+    "#{check_name} #{conclusion}"
   end
 
   def tophat_install_markdown
@@ -220,7 +237,7 @@ class E2EGitHubReporter
   end
 
   def complete?
-    @expected.nil? || @results.length >= @expected
+    (@expected.nil? || @results.length >= @expected) && missing_runs.empty?
   end
 
   def missing_runs
@@ -235,7 +252,7 @@ class E2EGitHubReporter
   def missing_count
     return 0 if @expected.nil?
 
-    [@expected - @results.length, 0].max
+    [@expected - @results.length, missing_runs.length, 0].max
   end
 
   def sync_comment
@@ -250,7 +267,7 @@ class E2EGitHubReporter
 
   def existing_comment
     issue_comments.find do |comment|
-      comment.fetch("body", "").include?(COMMENT_MARKER)
+      comment.fetch("body", "").include?(comment_marker)
     end
   end
 
