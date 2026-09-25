@@ -30,15 +30,15 @@ final class ShopPayViewControllerTests: XCTestCase {
     class MockShopPayViewController: ShopPayViewController {
         var mockTopViewController: UIViewController?
         var mockStorefront: TestStorefrontAPI
-        var presentCalls: [(url: URL, client: (any CheckoutCommunicationProtocol)?)] = []
+        var presentCalls: [URL] = []
 
         override func getTopViewController() -> UIViewController? {
             return mockTopViewController
         }
 
         @MainActor
-        override func present(url: URL, client: (any CheckoutCommunicationProtocol)?) async throws {
-            presentCalls.append((url: url, client: client))
+        override func present(url: URL) async throws {
+            presentCalls.append(url)
         }
 
         init(
@@ -73,7 +73,7 @@ final class ShopPayViewControllerTests: XCTestCase {
 
         XCTAssertEqual(viewController.presentCalls.count, 1)
         XCTAssertEqual(
-            viewController.presentCalls[0].url.absoluteString,
+            viewController.presentCalls[0].absoluteString,
             "https://test-shop.myshopify.com/checkout?payment=shop_pay"
         )
     }
@@ -110,7 +110,7 @@ final class ShopPayViewControllerTests: XCTestCase {
 
         XCTAssertEqual(viewController.presentCalls.count, 1)
         XCTAssertEqual(
-            viewController.presentCalls[0].url.absoluteString,
+            viewController.presentCalls[0].absoluteString,
             "https://test-shop.myshopify.com/checkout?payment=shop_pay"
         )
     }
@@ -267,7 +267,7 @@ final class ShopPayViewControllerTests: XCTestCase {
 
         // An invalid URL still gets processed, so we should check it was called with the modified URL
         XCTAssertEqual(
-            viewController.presentCalls[0].url.absoluteString,
+            viewController.presentCalls[0].absoluteString,
             "invalid-url?payment=shop_pay"
         )
     }

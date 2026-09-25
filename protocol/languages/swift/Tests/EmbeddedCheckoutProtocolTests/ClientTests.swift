@@ -86,6 +86,75 @@ struct ClientTests {
         #expect(receivedCheckout?.id == "checkout-123")
     }
 
+    @Test(arguments: ["", ".123"], ["Z", "+05:30", "-04:00"])
+    @MainActor func checkoutNotificationsDecodeShippingDates(fraction: String, timeZone: String) async throws {
+        let descriptors = [
+            EmbeddedCheckoutProtocol.Event.start,
+            EmbeddedCheckoutProtocol.Event.fulfillmentChange,
+            EmbeddedCheckoutProtocol.Event.totalsChange,
+            EmbeddedCheckoutProtocol.Event.complete
+        ]
+        for descriptor in descriptors {
+            var receivedCheckout: EmbeddedCheckoutProtocol.Checkout?
+            let client = EmbeddedCheckoutProtocol.Client()
+                .on(descriptor) { receivedCheckout = $0.params.checkout }
+            let message = """
+            {"jsonrpc":"2.0","method":"\(descriptor.method)","params":{"checkout":{
+              "id":"checkout-1","currency":"USD","status":"incomplete",
+              "line_items":[],"links":[],"totals":[{"type":"total","amount":1500}],
+              "expires_at":"2026-09-15T12:00:00\(fraction)\(timeZone)",
+              "fulfillment":{"methods":[{"id":"shipping","type":"shipping","line_item_ids":[],
+                "groups":[{"id":"group-1","line_item_ids":[],"selected_option_id":"standard",
+                  "options":[{"id":"standard","title":"Standard","totals":[],
+                    "earliest_fulfillment_time":"2026-09-16T09:00:00\(fraction)\(timeZone)",
+                    "latest_fulfillment_time":"2026-09-17T17:00:00\(fraction)\(timeZone)"}]}]}]},
+              "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
+            }}}
+            """
+
+            _ = await client.process(message)
+
+            let checkout = try #require(receivedCheckout, "Dropped \(descriptor.method)")
+            let fractionalSeconds = try #require(Double("0" + fraction))
+            let expiry = try #require(ISO8601DateFormatter().date(from: "2026-09-15T12:00:00\(timeZone)"))
+            let earliest = try #require(ISO8601DateFormatter().date(from: "2026-09-16T09:00:00\(timeZone)"))
+            let latest = try #require(ISO8601DateFormatter().date(from: "2026-09-17T17:00:00\(timeZone)"))
+            let expiresAt = try #require(checkout.expiresAt)
+            #expect(abs(expiresAt.timeIntervalSince(expiry) - fractionalSeconds) < 0.000_001)
+            let option = try #require(checkout.fulfillment?.methods?.first?.groups?.first?.options?.first)
+            let earliestFulfillmentTime = try #require(option.earliestFulfillmentTime)
+            let latestFulfillmentTime = try #require(option.latestFulfillmentTime)
+            #expect(abs(earliestFulfillmentTime.timeIntervalSince(earliest) - fractionalSeconds) < 0.000_001)
+            #expect(abs(latestFulfillmentTime.timeIntervalSince(latest) - fractionalSeconds) < 0.000_001)
+        }
+    }
+
+    @Test @MainActor func invalidCheckoutDateReportsDecodeError() async throws {
+        let recorder = DecodeErrorRecorder()
+        var receivedCheckout = false
+        let client = EmbeddedCheckoutProtocol.Client()
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
+            .on(EmbeddedCheckoutProtocol.Event.start) { _ in receivedCheckout = true }
+        let message = """
+        {"jsonrpc":"2.0","method":"ec.start","params":{"checkout":{
+          "id":"checkout-1","currency":"USD","status":"incomplete",
+          "line_items":[],"links":[],"totals":[],"expires_at":"invalid-date",
+          "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
+        }}}
+        """
+
+        _ = await client.process(message)
+
+        #expect(receivedCheckout == false)
+        #expect(recorder.method == "ec.start")
+        let error = try #require(recorder.error as? DecodingError)
+        guard case let .dataCorrupted(context) = error else {
+            Issue.record("Expected an invalid date to report a data-corrupted decoding error")
+            return
+        }
+        #expect(context.codingPath.map(\.stringValue) == ["checkout", "expires_at"])
+    }
+
     @Test @MainActor func notificationDoesNotFireUnregisteredHandler() async throws {
         var completeFired = false
         let client = EmbeddedCheckoutProtocol.Client()

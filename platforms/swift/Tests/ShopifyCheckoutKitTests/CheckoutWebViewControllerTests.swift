@@ -95,7 +95,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         viewController.checkoutViewDidFailWithError(error: sampleError)
 
-        XCTAssertEqual(delegate.didFailErrors.count, 1)
+        XCTAssertEqual(delegate.failureEvents.count, 1)
+        XCTAssertEqual(delegate.failureEvents.first?.error.code, sampleError.code)
     }
 
     func test_presentationControllerDidDismiss_invokesDelegateCancel() {
@@ -105,6 +106,22 @@ class CheckoutWebViewControllerTests: XCTestCase {
         viewController.presentationControllerDidDismiss(UIPresentationController(presentedViewController: viewController, presenting: nil))
 
         XCTAssertEqual(delegate.didDismissCount, 1)
+    }
+
+    func test_linkClickUsesDelegateAction() async throws {
+        let delegate = MockCheckoutDelegate()
+        delegate.linkAction = .handled
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+        let body = #"{"jsonrpc":"2.0","method":"ec.window.open_request","id":"link-1","params":{"url":"https://example.com/policy"}}"#
+
+        let rawResponse = await viewController.checkoutView?.defaultsClient.process(body)
+        let response = try XCTUnwrap(rawResponse)
+        let parsed = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let result = try XCTUnwrap(parsed["result"] as? [String: Any])
+        let ucp = try XCTUnwrap(result["ucp"] as? [String: Any])
+
+        XCTAssertEqual(ucp["status"] as? String, "success")
+        XCTAssertEqual(delegate.clickedLinks, try [CheckoutLink(url: XCTUnwrap(URL(string: "https://example.com/policy")))])
     }
 
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {

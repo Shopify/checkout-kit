@@ -9,18 +9,15 @@ internal struct ShopPayButton: View {
     let identifier: CheckoutIdentifier
     let eventHandlers: EventHandlers
     let cornerRadius: CGFloat?
-    let clientContainer: CheckoutProtocolClientContainer
 
     init(
         identifier: CheckoutIdentifier,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?,
-        client: (any CheckoutCommunicationProtocol)? = nil
+        cornerRadius: CGFloat?
     ) {
         self.identifier = identifier.parse()
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
-        clientContainer = CheckoutProtocolClientContainer(client)
     }
 
     var body: some View {
@@ -32,8 +29,7 @@ internal struct ShopPayButton: View {
                 identifier: identifier,
                 configuration: resolvedConfiguration,
                 eventHandlers: eventHandlers,
-                cornerRadius: cornerRadius,
-                client: clientContainer.client
+                cornerRadius: cornerRadius
             )
         }
     }
@@ -51,29 +47,38 @@ internal struct ShopPayButton: View {
 @available(iOS 16.0, *)
 @MainActor
 internal struct Internal_ShopPayButton: View {
-    private var controller: ShopPayViewController
+    @State private var controller: ShopPayViewController?
+    private let identifier: CheckoutIdentifier
+    private let configuration: ShopifyAcceleratedCheckouts.Configuration
+    private let eventHandlers: EventHandlers
     private let cornerRadius: CGFloat?
 
     init(
         identifier: CheckoutIdentifier,
         configuration: ShopifyAcceleratedCheckouts.Configuration,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?,
-        client: (any CheckoutCommunicationProtocol)? = nil
+        cornerRadius: CGFloat?
     ) {
-        controller = ShopPayViewController(
-            identifier: identifier,
-            configuration: configuration,
-            eventHandlers: eventHandlers
-        )
+        self.identifier = identifier
+        self.configuration = configuration
+        self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
-        controller.client = client
     }
 
     var body: some View {
         Button(
             action: {
-                Task { @MainActor in await controller.onPress() }
+                Task { @MainActor in
+                    let controller = ShopPayViewController(
+                        identifier: identifier,
+                        configuration: configuration,
+                        eventHandlers: eventHandlers
+                    )
+
+                    // Retain the delegate while checkout events redraw the button's parent.
+                    self.controller = controller
+                    await controller.onPress()
+                }
             },
             label: {
                 HStack {

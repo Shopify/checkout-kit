@@ -4,7 +4,7 @@ import Foundation
 /// Observable state of a preloaded checkout.
 ///
 /// Preload is a performance hint, not a presentation lifecycle. Its failure never calls
-/// ``CheckoutDelegate/checkoutDidFail(error:)``; a later presentation can load checkout normally.
+/// ``CheckoutDelegate/checkoutDidFail(_:)``; a later presentation can load checkout normally.
 public enum PreloadState: Equatable {
     /// No checkout is currently cached for preload.
     case idle

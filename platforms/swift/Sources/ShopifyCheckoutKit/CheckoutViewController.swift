@@ -6,8 +6,8 @@ import UIKit
 
 @MainActor
 public class CheckoutViewController: UINavigationController {
-    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: nil)
+    public init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil) {
+        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -40,9 +40,12 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
-    var client: (any CheckoutCommunicationProtocol)?
+    var onStartAction: ((CheckoutStartEvent) -> Void)?
+    var onUpdateAction: ((CheckoutUpdateEvent) -> Void)?
+    var onCompleteAction: ((CheckoutCompleteEvent) -> Void)?
+    var onLinkClickAction: ((CheckoutLink) -> CheckoutLinkAction)?
     var onDismissAction: (() -> Void)?
-    var onFailAction: ((CheckoutError) -> Void)?
+    var onFailAction: ((CheckoutFailureEvent) -> Void)?
 
     public init(checkout url: URL) {
         checkoutURL = url
@@ -53,7 +56,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL, client: client)
+        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL)
         configureWebViewController(viewController)
         return viewController
     }
@@ -72,15 +75,42 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
             return
         }
 
-        webViewController.client = client
-        webViewController.checkoutView?.client = client
+        webViewController.onStart = onStartAction
+        webViewController.onUpdate = onUpdateAction
+        webViewController.onComplete = onCompleteAction
+        webViewController.onLinkClick = onLinkClickAction
         webViewController.onDismiss = onDismissAction
         webViewController.onFail = onFailAction
     }
 
-    @discardableResult public func connect(_ handler: any CheckoutCommunicationProtocol) -> Self {
+    @discardableResult public func onStart(_ action: @escaping (CheckoutStartEvent) -> Void) -> Self {
         var copy = self
-        copy.client = handler
+        copy.onStartAction = action
+        return copy
+    }
+
+    @discardableResult public func onUpdate(_ action: @escaping (CheckoutUpdateEvent) -> Void) -> Self {
+        var copy = self
+        copy.onUpdateAction = action
+        return copy
+    }
+
+    @discardableResult public func onComplete(_ action: @escaping (CheckoutCompleteEvent) -> Void) -> Self {
+        var copy = self
+        copy.onCompleteAction = action
+        return copy
+    }
+
+    /// Registers a handler for links clicked in checkout.
+    ///
+    /// Return ``CheckoutLinkAction/open`` to use Checkout Kit's default behavior,
+    /// ``CheckoutLinkAction/handled`` when your app handled the link, or
+    /// ``CheckoutLinkAction/cancel`` to reject it.
+    @discardableResult public func onLinkClick(
+        _ action: @escaping (CheckoutLink) -> CheckoutLinkAction
+    ) -> Self {
+        var copy = self
+        copy.onLinkClickAction = action
         return copy
     }
 
@@ -93,7 +123,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     /// Registers a handler called when checkout cannot continue.
     ///
     /// Use ``CheckoutError/code`` for your app's recovery policy.
-    @discardableResult public func onFail(_ action: @escaping (CheckoutError) -> Void) -> Self {
+    @discardableResult public func onFail(_ action: @escaping (CheckoutFailureEvent) -> Void) -> Self {
         var copy = self
         copy.onFailAction = action
         return copy
