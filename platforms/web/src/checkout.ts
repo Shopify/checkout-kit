@@ -669,6 +669,7 @@ export class ShopifyCheckout
       if (dialog.open) dialog.close();
       this.#blockedOpen = null;
       if (abortController.signal.reason !== RETRY_ABORT_REASON) {
+        /** @ignore - Events are documented by the class @event tags. */
         this.dispatchEvent(new ShopifyCheckoutCloseEvent());
       }
     });
