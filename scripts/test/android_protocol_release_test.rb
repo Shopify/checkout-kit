@@ -154,6 +154,18 @@ class AndroidProtocolReleaseTest < Minitest::Test
     end
   end
 
+  def test_publication_workflow_uses_published_protocol_for_tests_and_upload
+    workflow = YAML.safe_load_file(File.join(ROOT, ".github/workflows/android-publish.yml"), aliases: true)
+    job = workflow.fetch("jobs").fetch("build")
+    assert_equal "true", job.fetch("env").fetch("ORG_GRADLE_PROJECT_usePublishedProtocol")
+    steps = job.fetch("steps")
+    test_index = steps.index { |step| step.fetch("run", "").include?(":lib:testDebugUnitTest") }
+    publish_index = steps.index { |step| step.fetch("run", "").include?(":lib:publishReleasePublicationToOssrh-staging-apiRepository") }
+    refute_nil test_index
+    refute_nil publish_index
+    assert_operator test_index, :<, publish_index
+  end
+
   private
 
   def write(path, content)

@@ -51,7 +51,10 @@ or snapshots with the existing platform commands when their checks require it.
 1. Publish a changed Kotlin protocol before publishing Android. The release
    workflows run `.github/scripts/check-android-protocol-release`, which requires
    the pinned protocol tag and matching runtime sources/build definitions. The
-   Android publish workflow also requires its Maven POM to be available.
+   Android publish workflow also requires its Maven POM to be available, then
+   builds, tests, and publishes with `usePublishedProtocol=true` to consume that
+   exact artifact. Gradle blocks remote publication in source mode and makes
+   remote publish tasks depend on unit tests.
 2. Publish the native Swift and Android versions before updating React Native's
    native pins. Swift can be released independently of Android/protocol; web
    has its own npm release flow.
@@ -75,6 +78,11 @@ shadowenv command prefix for these scripts and platform `dev` commands.
 For an Android release, run `.github/scripts/check-android-protocol-release`
 after fetching tags. A missing tag means the protocol release is still a
 prerequisite; source differences require a new protocol version and release.
+For a local Android release reproduction, pass `-PusePublishedProtocol=true` to
+`:lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck` from the
+Android Gradle root. This mode requires the protocol artifact to be available
+on Maven Central; source builds cannot substitute for it.
+
 Choose further checks based on the changed files: publication metadata for
 version bumps, and the relevant API/build/tests for code or dependency changes.
 

@@ -103,6 +103,16 @@ After the Android artifact is published, update `platforms/react-native/modules/
 
 Embedded Checkout Protocol releases are tagged `embedded-checkout-protocol/YYYY.MM.DD.PATCH[-prerelease.N]` and publish only `com.shopify:embedded-checkout-protocol`. Android Kit releases are tagged `android/X.Y.Z` and publish only `com.shopify:checkout-kit`; the Android publish workflow fails if the referenced protocol version is not already available on Maven Central. Swift releases use bare `X.Y.Z`.
 
+Android remote publication requires `-PusePublishedProtocol=true` (the publish
+workflow sets `ORG_GRADLE_PROJECT_usePublishedProtocol=true`). In this mode the
+Android root excludes the protocol source project and resolves the catalog's
+protocol version from Maven Central. Remote publish tasks verify the exact
+artifact on release/test classpaths and require passing `:lib:testDebugUnitTest`.
+Run `:lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck` in this
+mode when reproducing a release. Default development and `publishToMavenLocal`
+continue to use protocol sources. `./scripts/test_protocol_dependency` exercises
+these publication safeguards with isolated temporary Maven repositories.
+
 Publishing goes through GitHub Releases → the relevant repo-root publish workflow → manual approval gate before Maven Central deploy. Full procedure: the repo-root `.github/CONTRIBUTING.md` release sections.
 
 ## Things not to touch without discussion
