@@ -58,5 +58,8 @@ reporter = IOSCIReporter.new(
   stages: stages,
   pipeline_url: options[:pipeline_url]
 )
-reporter.publish!
-puts reporter.markdown_summary
+if reporter.publish!
+  puts reporter.markdown_summary
+else
+  puts "No iOS job was selected for this change; no #{IOSCIReporter::CHECK_NAME} check run posted."
+end

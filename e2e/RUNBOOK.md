@@ -1,21 +1,21 @@
 # Checkout Kit E2E Runbook
 
-## Rollout behaviour
+## Merge gate behavior
 
-The E2E pipeline always runs and always reports; it never blocks PR merges on its
-own. Merge-blocking is controlled solely by whether the single **"Checkout Kit E2E"**
-GitHub Check Run is marked **required** in branch protection. Keep it non-required
-until the suite is stable, then make it required — no code change is needed to gate
-or un-gate. This single umbrella check stays stable across matrix changes, so
-requiring it never churns as applications, OS versions, or suites are added.
+The E2E pipeline starts on every non-draft pull request so the required
+`ci/bitrise/e2e/pr` status always reports. Its Linux run-plan workflow applies the
+changed-file filters after the pipeline starts. When no application matches, app builds,
+BrowserStack execution, and `e2e-report` are skipped. No `Checkout Kit E2E` Check Run or
+sticky PR comment is published; Bitrise's successful pipeline status satisfies the
+required check.
 
-The runner never hard-fails on test or infrastructure problems: every run writes a
-`result.json` and exits `0`, so the report workflow always has data to publish. The
-report posts one **"Checkout Kit E2E"** Check Run and one sticky PR comment carrying the
-Tophat install links and the run summary; it does not post per-suite commit statuses. The
-comment is posted on every build, green or red, so the build is always installable from the
-PR, and failures add a loud Failures section (alongside one red check) while staying
-non-blocking.
+Each BrowserStack runner writes a `result.json` and exits `0` even for test or
+infrastructure failures, ensuring the report workflow has evidence to publish. When runs
+are planned, the report posts one diagnostic **Checkout Kit E2E** Check Run and one sticky
+PR comment carrying the Tophat install links and run summary; it does not post per-suite
+commit statuses. After publishing, a failed or incomplete report exits nonzero so the
+required Bitrise pipeline status also fails and blocks merging. The required gate is
+Bitrise's pipeline status, not the diagnostic Check Run.
 
 Failures land in `result.json` in one of two shapes:
 
@@ -38,10 +38,10 @@ the runner starts.
 The report also enforces a **completeness check**: it compares the number of
 `result.json` files against `E2E_BROWSERSTACK_RUN_PLAN_COUNT` (the run plan row
 count, shared across the pipeline). If a run never reports — for example a whole
-execute workflow that failed to upload — the "Checkout Kit E2E" check is forced red
-and the PR comment notes the shortfall, so a missing run can never silently
-pass. When the expected count is unavailable the completeness check is skipped
-rather than reporting a false failure.
+execute workflow that failed to upload — both the diagnostic "Checkout Kit E2E" check
+and the required pipeline status fail, and the PR comment notes the shortfall. When the
+expected count is unavailable the completeness check is skipped, but if no result files
+exist either, the report exits nonzero without publishing.
 
 To show *why* runs are missing, the report reads the pipeline workflow roster
 from `BITRISEIO_FINISHED_WORKFLOWS` and names the stages that failed or never
@@ -112,35 +112,38 @@ Use the GitHub Check Run or sticky PR comment first. Failure summaries should in
 BrowserStack artifact links require BrowserStack App Automate access. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening evidence links.
 
 The report keeps a single sticky PR comment, identified by a hidden marker, and updates it
-in place on every build, so green runs never add a second comment. Because that comment
-always carries the Tophat install links, it is posted even on a fully green run — a passing
-build stays installable from the PR.
+in place on each pull request build with planned E2E runs, including fully green runs.
+Produced SDK targets have Tophat install links, so a passing build stays installable from
+the PR. An empty run plan creates no Check Run and leaves any existing sticky comment
+untouched.
 
 ## The iOS check failed or never posted
 
-`Checkout Kit iOS` comes from the `ci-ios` pipeline, described in `BITRISE.md`. Three
-layers can break, and the symptom tells you which one. Work down the list in order.
+Bitrise posts the required `ci/bitrise/ci-ios/pr` pipeline status. `Checkout Kit iOS` is a
+diagnostic Check Run from `ci-ios-report`, described in `BITRISE.md`. Check the required
+pipeline status before treating an absent diagnostic as a failure.
 
-**The check never appears.** The pipeline did not start. Its target-based pull request
+**The required pipeline status never appears.** The pipeline did not start. Its target-based pull request
 trigger has no file filter, so the usual cause is the branch head: Bitrise reads the
 pipeline trigger from the pull request's own commit, and a branch older than the trigger
 never starts it. Rebase on `main` and push. The trigger also sets `draft_enabled: false`,
 so a draft posts nothing until it is marked ready.
 
-**The check is red but every job says skipped.** `ci-ios-plan` failed, and the reporter
-refuses to call an empty selection green. Open that workflow's log. It fetches the changed
-file list from GitHub and reads `e2e/config/ios_ci.yml`, so the usual causes are an expired
-build token or a malformed config file.
+**The diagnostic check is red but every job says skipped.** `ci-ios-plan` failed or never
+ran, and the reporter refuses to call an empty selection green. Inspect the pipeline and
+that workflow's log, if it started. It fetches the changed file list from GitHub and reads
+`e2e/config/ios_ci.yml`, so the usual causes are an expired build token or a malformed
+config file.
 
-**The check is red and names a job.** That macOS workflow failed or never finished. The
-reporter lists a selected job that produced no result as a failure, so a timeout and a
-compile error look different in the summary: a timeout shows as missing, a compile error
-shows as failed. Both link back to the Bitrise pipeline.
+**The diagnostic check is red and names a job.** That macOS workflow failed or never
+finished. A selected job that never ran is still a failure, rather than an intentional
+skip. Follow the pipeline link to inspect the failed or missing workflow.
 
-**The check is green and every job says skipped.** Expected on a change that touches no
-iOS input — documentation, Android, or web. `ci-ios-plan` and `ci-ios-report` still run,
-which costs about a minute on Linux. To confirm the selection is right rather than empty by
-accident, run the plan locally against the same file list:
+**The required pipeline is green and no diagnostic check was posted.** Expected on a
+change that touches no iOS input — documentation, Android, or web. `ci-ios-plan` and
+`ci-ios-report` still run on Linux, but a successful plan with no selected job posts
+nothing. To confirm the selection is right rather than empty by accident, run the plan
+locally against the same file list:
 
 ```bash
 ruby e2e/scripts/ios_ci_run_plan selected-jobs --changed-file <path>
