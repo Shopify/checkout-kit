@@ -1,13 +1,12 @@
 package com.shopify.checkoutkit.androiddemo.logs
 
-import com.shopify.checkoutkit.CheckoutProtocol
 import com.shopify.checkoutkit.androiddemo.common.logs.LogLine
 import com.shopify.checkoutkit.androiddemo.common.logs.LogSource
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
 internal data class CheckoutLogContext(
@@ -58,24 +57,28 @@ internal fun List<LogLine>.checkoutContextsByLogId(): Map<UUID, CheckoutLogConte
 }
 
 private fun LogLine.checkoutPayload(): CheckoutPayload? {
-    if (source != LogSource.PROTOCOL) return null
+    val isCheckoutEvent = source == LogSource.SDK && message in checkoutSnapshotMessages
+    if (!isCheckoutEvent && source != LogSource.PROTOCOL) return null
     val serializedPayload = payload ?: return null
     val payloadObject = runCatching {
         Json.parseToJsonElement(serializedPayload).jsonObject
     }.getOrNull() ?: return null
-    val checkoutId = payloadObject["id"]?.jsonPrimitive?.contentOrNull ?: return null
+    val checkoutId = (payloadObject["id"] as? JsonPrimitive)?.contentOrNull ?: return null
 
-    // These required Checkout fields keep other protocol payloads out of the diff chain.
-    runCatching {
-        payloadObject.getValue("line_items").jsonArray
-        payloadObject.getValue("totals").jsonArray
-    }.getOrNull() ?: return null
+    // Recognize saved protocol logs from earlier sample versions without using the protocol API.
+    if (!isCheckoutEvent) {
+        runCatching {
+            payloadObject.getValue("line_items").jsonArray
+            payloadObject.getValue("totals").jsonArray
+        }.getOrNull() ?: return null
+    }
 
     return CheckoutPayload(checkoutId, serializedPayload)
 }
 
 private fun LogLine.isCheckoutCompletion(): Boolean =
-    message == "Received: ${CheckoutProtocol.complete.method}"
+    (source == LogSource.SDK && message == "Checkout completed") ||
+        (source == LogSource.PROTOCOL && message == "Received: ec.complete")
 
 private fun LogLine.isCheckoutDismissal(): Boolean =
     source == LogSource.SDK && message == "Checkout dismissed"
@@ -89,3 +92,4 @@ private data class CheckoutPayload(
 )
 
 private val terminalSdkMessages = setOf("Checkout dismissed", "Checkout failed")
+private val checkoutSnapshotMessages = setOf("Checkout started", "Checkout updated", "Checkout completed")

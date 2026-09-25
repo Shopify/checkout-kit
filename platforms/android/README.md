@@ -28,7 +28,9 @@
   - [Title localization](#title-localization)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
+  - [Constructing event fixtures](#constructing-event-fixtures)
   - [Error handling](#error-handling)
+  - [Migrating from the protocol-client prerelease API](#migrating-from-the-protocol-client-prerelease-api)
 - [Browser and system callbacks](#browser-and-system-callbacks)
 - [Authentication and buyer identity](#authentication-and-buyer-identity)
 - [Offsite payments and links](#offsite-payments-and-links)
@@ -49,6 +51,10 @@
 ## Install
 
 For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.6`.
+
+The checkout event API documented below is an unreleased prerelease change in this source tree. It replaces the
+protocol-client API in `4.0.0-alpha.6`; see [the migration guide](#migrating-from-the-protocol-client-prerelease-api)
+when upgrading to the release containing this change.
 
 ### Gradle
 
@@ -89,8 +95,12 @@ import com.shopify.checkoutkit.ShopifyCheckoutKit
 
 fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
     ShopifyCheckoutKit.present(checkoutUrl, activity) {
-        onFail { error ->
-            handleCheckoutError(error)
+        onComplete { event ->
+            handleCompletedCheckout(event.checkout)
+        }
+
+        onFail { event ->
+            handleCheckoutError(event.error)
         }
 
         onDismiss {
@@ -106,8 +116,12 @@ For Java integrations or shared listener implementations, extend `DefaultCheckou
 
 ```kotlin
 val listener = object : DefaultCheckoutListener() {
-    override fun onCheckoutFailed(error: CheckoutException) {
-        handleCheckoutError(error)
+    override fun onCheckoutCompleted(event: CheckoutCompleteEvent) {
+        handleCompletedCheckout(event.checkout)
+    }
+
+    override fun onCheckoutFailed(event: CheckoutFailureEvent) {
+        handleCheckoutError(event.error)
     }
 
     override fun onCheckoutDismissed() {
@@ -131,7 +145,7 @@ checkout?.dismiss()
 ## Embed checkout
 
 Use `ShopifyCheckout` when your app owns the presentation container. The view owns the checkout header, close control,
-loading indicator, WebView, browser/system callbacks, and checkout protocol connection. Your app owns the surrounding
+loading indicator, WebView, browser/system callbacks, and checkout events. Your app owns the surrounding
 sheet or navigation state, including its shape, scrim, drag handle, snap points, and dismissal gestures.
 
 Jetpack Compose apps can host `ShopifyCheckout` with `AndroidView`; Checkout Kit does not add a Compose dependency:
@@ -158,13 +172,15 @@ fun CartScreen(checkoutUrl: String) {
         AndroidView(
             factory = { context ->
                 ShopifyCheckout.create(context, checkoutUrl) {
-                    connect(protocolClient)
+                    onComplete { event ->
+                        handleCompletedCheckout(event.checkout)
+                    }
 
                     onDismiss { dismissCheckout() }
 
-                    onFail { error ->
+                    onFail { event ->
                         isCheckoutPresented = false
-                        handleCheckoutError(error)
+                        handleCheckoutError(event.error)
                     }
                 }
             },
@@ -175,7 +191,7 @@ fun CartScreen(checkoutUrl: String) {
 }
 ```
 
-View-system and Java hosts can construct `ShopifyCheckout(context, checkoutUrl, listener, protocolClient)` directly and
+View-system and Java hosts can construct `ShopifyCheckout(context, checkoutUrl, listener)` directly and
 must follow the same `destroy()` contract when removing it from their hierarchy.
 
 The close control and system back invoke `onDismiss`; back navigates WebView history first when possible. Sheet gestures
@@ -184,7 +200,7 @@ and tap-away belong to the host, so route `ModalBottomSheet.onDismissRequest` th
 `destroy()` once the view is permanently removed; Checkout Kit does not attempt to dismiss an unknown parent.
 Create a new `ShopifyCheckout` for any retry.
 
-`ShopifyCheckout` callbacks and protocol client are fixed when the view is created. Create a new view for a new checkout
+`ShopifyCheckout` callbacks are fixed when the view is created. Create a new view for a new checkout
 URL. If a Compose adapter accepts callbacks that can change during recomposition, forward them through stable delegates
 such as `rememberUpdatedState` rather than recreating an active checkout.
 
@@ -241,7 +257,7 @@ Checkout Kit can reuse a matching preloaded checkout when `present` is called la
 
 ```kotlin
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    onFail { error -> handleCheckoutError(error) }
+    onFail { event -> handleCheckoutError(event.error) }
     onDismiss { resetCheckoutUi() }
 }
 ```
@@ -249,6 +265,10 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
 
 A valid checkout preloaded and presented with `ShopifyCheckoutKit.present` is retained when its bottom sheet is dismissed, so presenting the same checkout URL again can reuse the loaded checkout. Invalidate the preload when the cart changes or the loaded checkout should no longer be reused.
+
+Checkout events received during preload, before presentation callbacks are bound, are not replayed when checkout is
+presented. In particular, `onStart` only observes start events received during its presentation; it is not guaranteed
+to run for every presentation or when reusing a loaded checkout. Use the preload listener to observe loading progress.
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
@@ -466,9 +486,8 @@ For example, `https://checkout.example.com/` is accepted, while
 entries require the scheme and match subdomains only; `https://*.example.org` does not match
 `https://example.org`. Use `"*"` to explicitly disable origin validation.
 
-`CheckoutMessageIngressPolicy` evaluates the WebView's authenticated source origin and frame
-metadata before a message reaches the protocol client. This keeps transport trust decisions at the
-native WebView boundary while ensuring the protocol client only handles admitted checkout messages.
+Checkout Kit evaluates the WebView's authenticated source origin and frame metadata before handling a message.
+Origin validation happens at the native WebView boundary, before checkout events are delivered to your app.
 
 Rejected messages are dropped and logged at warning level. A rejected message is untrusted input,
 not evidence that checkout failed, so it does not fail a preload or invoke `onFail` or
@@ -476,46 +495,75 @@ not evidence that checkout failed, so it does not fail a preload or invoke `onFa
 
 ## Checkout lifecycle
 
-Use `onFail` and `onDismiss` for checkout outcomes handled by your app. Use `CheckoutProtocol.Client` for typed checkout state, including completion. These descriptors wrap checkout protocol messages defined in the [protocol schema](../../protocol/services/shopping/embedded.openrpc.json).
+Register checkout callbacks directly when presenting or creating a checkout. Start, update, and completion events
+each provide a typed `Checkout` snapshot through `event.checkout`. Failures provide a `CheckoutException` through
+`event.error`.
 
 ```kotlin
-import com.shopify.checkoutkit.CheckoutProtocol
-
-val protocolClient = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.start) { checkout ->
-        // Checkout is loaded and interactive.
-    }
-    .on(CheckoutProtocol.complete) { checkout ->
-        // The order was completed. Clear or refresh the local cart.
-    }
-    .on(CheckoutProtocol.totalsChange) { checkout ->
-        // React to updated totals.
-    }
-    .on(CheckoutProtocol.lineItemsChange) { checkout ->
-        // React to line item changes.
-    }
-    .on(CheckoutProtocol.messagesChange) { checkout ->
-        // React to checkout messages.
-    }
-    .on(CheckoutProtocol.fulfillmentChange) { checkout ->
-        // React to fulfillment option or delivery changes.
-    }
-
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    connect(protocolClient)
-    onFail { error -> handleCheckoutError(error) }
+    onStart { event ->
+        recordCheckoutStarted(event.checkout)
+    }
+    onUpdate { event ->
+        // Observe totals, line items, messages, and fulfillment changes.
+        updateCheckoutSummary(event.checkout)
+    }
+    onComplete { event ->
+        // The order was completed. Clear or refresh the local cart.
+        handleCompletedCheckout(event.checkout)
+    }
+    onFail { event -> handleCheckoutError(event.error) }
     onDismiss { resetCheckoutUi() }
 }
 ```
 
-`ec.window.open_request` is handled by your registered `CheckoutProtocol.windowOpen` handler if you provide one. Otherwise, Checkout Kit opens web links in Android Custom Tabs and non-web links through Android intents.
+`onStart` and `onUpdate` observe checkout state; they do not send mutations to the checkout running in the WebView.
+Use `onComplete` to clear or refresh the cart so the app does not reuse a completed checkout.
 
-The public `CheckoutProtocol` descriptors are typed wrappers over UCP-backed checkout protocol messages.
+Callbacks observe events received during the current presentation. Events received before callbacks are bound,
+including during [preloading](#preload-checkout), are not replayed. `onStart` reports a checkout start event, not the
+act of presenting a view, so do not rely on it to initialize UI for every presentation.
+
+For Java integrations, override `onCheckoutStarted`, `onCheckoutUpdated`, and `onCheckoutCompleted` in
+`DefaultCheckoutListener`. These receive `CheckoutStartEvent`, `CheckoutUpdateEvent`, and `CheckoutCompleteEvent`;
+use `event.getCheckout()` to access their snapshot. Override `onCheckoutFailed` for `CheckoutFailureEvent` and
+`onCheckoutDismissed` for buyer dismissal. Unregistered callbacks have safe defaults.
+
+Use `onLinkClick` to choose how checkout links open; see [Offsite payments and links](#offsite-payments-and-links).
+
+### Constructing event fixtures
+
+Event constructors are public in Kotlin and Java: create `CheckoutStartEvent(checkout)`, `CheckoutUpdateEvent(checkout)`,
+`CheckoutCompleteEvent(checkout)`, or `CheckoutFailureEvent(error)` to exercise your app's callback handlers.
+Build checkout snapshots with `Checkout.Builder()` and derive variants with `toBuilder()`:
+
+```kotlin
+import com.shopify.checkoutkit.Checkout
+import com.shopify.checkoutkit.CheckoutStartEvent
+import com.shopify.checkoutkit.CheckoutUpdateEvent
+import com.shopify.ucp.embedded.checkout.CheckoutStatus
+
+val checkout = Checkout.Builder()
+    .id("fixture-checkout")
+    .currency("USD")
+    .status(CheckoutStatus.Incomplete)
+    .lineItems(emptyList())
+    .links(emptyList())
+    .totals(emptyList())
+    .build()
+
+val start = CheckoutStartEvent(checkout)
+val update = CheckoutUpdateEvent(checkout.toBuilder().currency("CAD").build())
+```
+
+`Checkout` has a private constructor and no data-class `copy` method. Its builder permits consumer fixtures and
+snapshot variants without exposing a constructor or `copy` signature containing every schema field, so adding
+optional fields can preserve binary compatibility. Set all required fields before calling `build()`.
 
 ### Error handling
 
-A checkout lifecycle failure is delivered as a `CheckoutException` to `onFail` or
-`onCheckoutFailed`. It has a stable `code`, diagnostic `message`, optional
+A checkout lifecycle failure is delivered as a `CheckoutFailureEvent` to `onFail` or
+`onCheckoutFailed`. Its `error` is a `CheckoutException` with a stable `code`, diagnostic `message`, optional
 `httpStatusCode`, and the optional native `cause`. Use the stable code for recovery
 and analytics. Use diagnostic text and causes only for debugging and logging.
 
@@ -537,6 +585,7 @@ Record `code` (and `httpStatusCode` when available) in analytics as appropriate 
 policy. Use `message` and `cause` only for debugging and logging; do not use them for recovery behavior.
 
 ```kotlin
+val error = event.error
 when (error.code) {
     CheckoutErrorCode.CART_EXPIRED,
     CheckoutErrorCode.INVALID_CART -> createAndPresentFreshCart()
@@ -551,23 +600,37 @@ opening a browser fallback, and re-presenting checkout.
 
 #### Checkout session errors
 
-`ec.error` ends the embedded checkout session. Checkout Kit first forwards it to
-`CheckoutProtocol.error`, then reports one lifecycle failure for a presented checkout. The first
-unrecoverable error message determines the lifecycle code; if none is present, the code is
-`UNKNOWN`. `ec.messages.change` reports checkout state only and never calls `onFail`.
-
-Add a protocol handler when you need the complete protocol payload; it runs before `onFail`:
-
-```kotlin
-val protocolClient = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.error) { terminalError ->
-        // Inspect the complete ECP terminal payload for advanced diagnostics.
-    }
-```
+A terminal checkout session error reports one failure for a presented checkout through `onFail` or
+`onCheckoutFailed`. The first unrecoverable error message determines the lifecycle code; if none is present,
+the code is `UNKNOWN`. Checkout message changes are state updates delivered through `onUpdate`; they do not
+trigger a lifecycle failure on their own.
 
 Failures during preload do not call `onFail` or `onCheckoutFailed`. Monitor them as
 `PreloadState.Failed` with the `PreloadStateListener` passed to `preload`, or with the returned
 `CheckoutPreload` handle's `listener`. A later `present` can load normally.
+
+### Migrating from the protocol-client prerelease API
+
+This is a breaking change to the Android prerelease API. Checkout callbacks now belong to Checkout Kit, and apps
+no longer construct or connect `CheckoutProtocol.Client` instances. Update both Kotlin builder calls and Java
+listener overrides when upgrading.
+
+| Previous API | Checkout event API |
+| --- | --- |
+| `.on(CheckoutProtocol.start)` | `onStart { event -> ... }` or `onCheckoutStarted(event)` |
+| `.on(CheckoutProtocol.complete)` | `onComplete { event -> ... }` or `onCheckoutCompleted(event)` |
+| Totals, line-item, message, and fulfillment change handlers | `onUpdate { event -> ... }` or `onCheckoutUpdated(event)` |
+| `onFail { error -> ... }` / `onCheckoutFailed(error)` | Receive `CheckoutFailureEvent` and read `event.error` |
+| `.on(CheckoutProtocol.error)` | Handle the terminal failure through `onFail` / `onCheckoutFailed` |
+| `.on(CheckoutProtocol.windowOpen)` | `onLinkClick { link -> ... }` or `onCheckoutLinkClicked(link)` |
+| `connect(client)` and `protocolClient` presentation arguments | Remove them and register checkout callbacks directly |
+
+Start, update, and completion callbacks receive event wrappers with `event.checkout`, instead of a raw protocol
+payload. Use the Kit-owned `Checkout` type for the snapshot. Failure callbacks receive `event.error`, so existing
+recovery code can continue to inspect the same `CheckoutErrorCode` and optional HTTP status.
+
+Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `CheckoutLinkAction.Open`,
+`CheckoutLinkAction.Handled`, or `CheckoutLinkAction.Cancel` instead of a protocol response.
 
 ## Browser and system callbacks
 
@@ -620,7 +683,31 @@ Keep Multipass secrets out of client-side code.
 
 Some payment providers redirect buyers to external banking apps or web pages. Configure Android App Links or deep links so buyers can return to your app after those flows complete.
 
-Checkout Kit opens delegated external HTTPS links in Android Custom Tabs by default. `mailto:`, `tel:`, and custom-scheme links still open through Android intents. If you want delegated web links to leave your app, register a `CheckoutProtocol.windowOpen` handler and launch an `Intent.ACTION_VIEW` yourself.
+Checkout Kit opens delegated external HTTPS links in Android Custom Tabs by default. `mailto:`, `tel:`, and
+custom-scheme links open through Android intents. Register `onLinkClick` to choose the action for a link:
+
+- Return `CheckoutLinkAction.Open` to use Checkout Kit's default handling.
+- Return `CheckoutLinkAction.Handled` after your app has opened or routed the link itself.
+- Return `CheckoutLinkAction.Cancel` to prevent the link from opening.
+
+For example, open links with Android intent handling instead of Custom Tabs:
+
+```kotlin
+ShopifyCheckoutKit.present(checkoutUrl, activity) {
+    onLinkClick { link ->
+        try {
+            activity.startActivity(Intent(Intent.ACTION_VIEW, link.url))
+            CheckoutLinkAction.Handled
+        } catch (_: ActivityNotFoundException) {
+            CheckoutLinkAction.Cancel
+        } catch (_: SecurityException) {
+            CheckoutLinkAction.Cancel
+        }
+    }
+}
+```
+
+Java hosts can override `DefaultCheckoutListener.onCheckoutLinkClicked(CheckoutLink)` and return the same action.
 
 Make sure your app has:
 

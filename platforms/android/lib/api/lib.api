@@ -6,6 +6,60 @@ public final class com/shopify/checkoutkit/BuildConfig {
 	public fun <init> ()V
 }
 
+public final class com/shopify/checkoutkit/Checkout {
+	public static final field Companion Lcom/shopify/checkoutkit/Checkout$Companion;
+	public synthetic fun <init> (Lcom/shopify/checkoutkit/Checkout$State;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdditionalProperties ()Ljava/util/Map;
+	public final fun getAttribution ()Ljava/util/Map;
+	public final fun getBuyer ()Lcom/shopify/ucp/embedded/checkout/Buyer;
+	public final fun getContext ()Lcom/shopify/ucp/embedded/checkout/Context;
+	public final fun getContinueURL ()Ljava/lang/String;
+	public final fun getCurrency ()Ljava/lang/String;
+	public final fun getDiscounts ()Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;
+	public final fun getExpiresAt ()Ljava/lang/String;
+	public final fun getFulfillment ()Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLineItems ()Ljava/util/List;
+	public final fun getLinks ()Ljava/util/List;
+	public final fun getMessages ()Ljava/util/List;
+	public final fun getOrder ()Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;
+	public final fun getPayment ()Lcom/shopify/ucp/embedded/checkout/Payment;
+	public final fun getSignals ()Lkotlinx/serialization/json/JsonObject;
+	public final fun getStatus ()Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;
+	public final fun getTotals ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun toBuilder ()Lcom/shopify/checkoutkit/Checkout$Builder;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/shopify/checkoutkit/Checkout$Builder {
+	public fun <init> ()V
+	public final fun additionalProperties (Ljava/util/Map;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun attribution (Ljava/util/Map;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun build ()Lcom/shopify/checkoutkit/Checkout;
+	public final fun buyer (Lcom/shopify/ucp/embedded/checkout/Buyer;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun context (Lcom/shopify/ucp/embedded/checkout/Context;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun continueURL (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun currency (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun discounts (Lcom/shopify/ucp/embedded/checkout/CheckoutDiscounts;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun expiresAt (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun fulfillment (Lcom/shopify/ucp/embedded/checkout/CheckoutFulfillment;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun id (Ljava/lang/String;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun lineItems (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun links (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun messages (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun order (Lcom/shopify/ucp/embedded/checkout/OrderConfirmation;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun payment (Lcom/shopify/ucp/embedded/checkout/Payment;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun signals (Lkotlinx/serialization/json/JsonObject;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun status (Lcom/shopify/ucp/embedded/checkout/CheckoutStatus;)Lcom/shopify/checkoutkit/Checkout$Builder;
+	public final fun totals (Ljava/util/List;)Lcom/shopify/checkoutkit/Checkout$Builder;
+}
+
+public final class com/shopify/checkoutkit/Checkout$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
 public abstract interface class com/shopify/checkoutkit/CheckoutAppearance {
 	public static final field Companion Lcom/shopify/checkoutkit/CheckoutAppearance$Companion;
 }
@@ -67,6 +121,11 @@ public final class com/shopify/checkoutkit/CheckoutAppearance$Storefront$Compani
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class com/shopify/checkoutkit/CheckoutCompleteEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
+	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
+}
+
 public final class com/shopify/checkoutkit/CheckoutErrorCode : java/lang/Enum {
 	public static final field CART_COMPLETED Lcom/shopify/checkoutkit/CheckoutErrorCode;
 	public static final field CART_EXPIRED Lcom/shopify/checkoutkit/CheckoutErrorCode;
@@ -94,13 +153,35 @@ public final class com/shopify/checkoutkit/CheckoutException : java/lang/Excepti
 	public fun getMessage ()Ljava/lang/String;
 }
 
+public final class com/shopify/checkoutkit/CheckoutFailureEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/CheckoutException;)V
+	public final fun getError ()Lcom/shopify/checkoutkit/CheckoutException;
+}
+
 public abstract interface class com/shopify/checkoutkit/CheckoutHandle {
 	public abstract fun dismiss ()V
 }
 
+public final class com/shopify/checkoutkit/CheckoutLink {
+	public final fun getUrl ()Landroid/net/Uri;
+}
+
+public final class com/shopify/checkoutkit/CheckoutLinkAction : java/lang/Enum {
+	public static final field Cancel Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public static final field Handled Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public static final field Open Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public static fun values ()[Lcom/shopify/checkoutkit/CheckoutLinkAction;
+}
+
 public abstract interface class com/shopify/checkoutkit/CheckoutListener {
+	public abstract fun onCheckoutCompleted (Lcom/shopify/checkoutkit/CheckoutCompleteEvent;)V
 	public abstract fun onCheckoutDismissed ()V
-	public abstract fun onCheckoutFailed (Lcom/shopify/checkoutkit/CheckoutException;)V
+	public abstract fun onCheckoutFailed (Lcom/shopify/checkoutkit/CheckoutFailureEvent;)V
+	public abstract fun onCheckoutLinkClicked (Lcom/shopify/checkoutkit/CheckoutLink;)Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public abstract fun onCheckoutStarted (Lcom/shopify/checkoutkit/CheckoutStartEvent;)V
+	public abstract fun onCheckoutUpdated (Lcom/shopify/checkoutkit/CheckoutUpdateEvent;)V
 	public abstract fun onGeolocationPermissionsHidePrompt ()V
 	public abstract fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public abstract fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
@@ -114,32 +195,16 @@ public final class com/shopify/checkoutkit/CheckoutPreload {
 }
 
 public final class com/shopify/checkoutkit/CheckoutPresentation {
-	public final fun connect (Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)V
+	public final fun onComplete (Lkotlin/jvm/functions/Function1;)V
 	public final fun onDismiss (Lkotlin/jvm/functions/Function0;)V
 	public final fun onFail (Lkotlin/jvm/functions/Function1;)V
 	public final fun onGeolocationPermissionsHidePrompt (Lkotlin/jvm/functions/Function0;)V
 	public final fun onGeolocationPermissionsShowPrompt (Lkotlin/jvm/functions/Function2;)V
+	public final fun onLinkClick (Lkotlin/jvm/functions/Function1;)V
 	public final fun onPermissionRequest (Lkotlin/jvm/functions/Function1;)V
 	public final fun onShowFileChooser (Lkotlin/jvm/functions/Function3;)V
-}
-
-public final class com/shopify/checkoutkit/CheckoutProtocol {
-	public static final field INSTANCE Lcom/shopify/checkoutkit/CheckoutProtocol;
-	public static final field SPEC_VERSION Ljava/lang/String;
-	public final fun getComplete ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getError ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getFulfillmentChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getLineItemsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getMessagesChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getStart ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getTotalsChange ()Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;
-	public final fun getWindowOpen ()Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;
-}
-
-public final class com/shopify/checkoutkit/CheckoutProtocol$Client {
-	public fun <init> ()V
-	public final fun on (Lcom/shopify/ucp/embedded/checkout/NotificationDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
-	public final fun on (Lcom/shopify/ucp/embedded/checkout/RequestDescriptor;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutProtocol$Client;
+	public final fun onStart (Lkotlin/jvm/functions/Function1;)V
+	public final fun onUpdate (Lkotlin/jvm/functions/Function1;)V
 }
 
 public final class com/shopify/checkoutkit/CheckoutSheetDismissal {
@@ -242,6 +307,16 @@ public final class com/shopify/checkoutkit/CheckoutSheetTitleAlignment : java/la
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
 	public static fun values ()[Lcom/shopify/checkoutkit/CheckoutSheetTitleAlignment;
+}
+
+public final class com/shopify/checkoutkit/CheckoutStartEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
+	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
+}
+
+public final class com/shopify/checkoutkit/CheckoutUpdateEvent {
+	public fun <init> (Lcom/shopify/checkoutkit/Checkout;)V
+	public final fun getCheckout ()Lcom/shopify/checkoutkit/Checkout;
 }
 
 public abstract class com/shopify/checkoutkit/Color {
@@ -522,6 +597,10 @@ public abstract interface class com/shopify/checkoutkit/ConfigurationUpdater {
 
 public abstract class com/shopify/checkoutkit/DefaultCheckoutListener : com/shopify/checkoutkit/CheckoutListener {
 	public fun <init> ()V
+	public fun onCheckoutCompleted (Lcom/shopify/checkoutkit/CheckoutCompleteEvent;)V
+	public fun onCheckoutLinkClicked (Lcom/shopify/checkoutkit/CheckoutLink;)Lcom/shopify/checkoutkit/CheckoutLinkAction;
+	public fun onCheckoutStarted (Lcom/shopify/checkoutkit/CheckoutStartEvent;)V
+	public fun onCheckoutUpdated (Lcom/shopify/checkoutkit/CheckoutUpdateEvent;)V
 	public fun onGeolocationPermissionsHidePrompt ()V
 	public fun onGeolocationPermissionsShowPrompt (Ljava/lang/String;Landroid/webkit/GeolocationPermissions$Callback;)V
 	public fun onPermissionRequest (Landroid/webkit/PermissionRequest;)V
@@ -685,8 +764,6 @@ public final class com/shopify/checkoutkit/Preloading {
 public final class com/shopify/checkoutkit/ShopifyCheckout : android/widget/FrameLayout {
 	public static final field Companion Lcom/shopify/checkoutkit/ShopifyCheckout$Companion;
 	public fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)V
-	public fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)V
-	public synthetic fun <init> (Landroid/content/Context;Ljava/lang/String;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun destroy ()V
 }
 
@@ -704,9 +781,7 @@ public final class com/shopify/checkoutkit/ShopifyCheckoutKit {
 	public static final fun preload (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/PreloadStateListener;)Lcom/shopify/checkoutkit/CheckoutPreload;
 	public static synthetic fun preload$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/PreloadStateListener;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutPreload;
 	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;)Lcom/shopify/checkoutkit/CheckoutHandle;
-	public static final fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;)Lcom/shopify/checkoutkit/CheckoutHandle;
 	public static final synthetic fun present (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lkotlin/jvm/functions/Function1;)Lcom/shopify/checkoutkit/CheckoutHandle;
-	public static synthetic fun present$default (Ljava/lang/String;Landroidx/activity/ComponentActivity;Lcom/shopify/checkoutkit/DefaultCheckoutListener;Lcom/shopify/checkoutkit/CheckoutProtocol$Client;ILjava/lang/Object;)Lcom/shopify/checkoutkit/CheckoutHandle;
 }
 
 public abstract interface class com/shopify/checkoutkit/StorefrontCustomizer {

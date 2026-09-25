@@ -1,6 +1,11 @@
 package com.shopify.checkoutkit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
+import android.net.Uri;
+
+import com.shopify.ucp.embedded.checkout.CheckoutStatus;
 
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
@@ -45,7 +50,7 @@ public class InteropTest {
     public void canInstantiateCustomListener() {
         DefaultCheckoutListener listener = new DefaultCheckoutListener() {
             @Override
-            public void onCheckoutFailed(@NonNull CheckoutException error) {
+            public void onCheckoutFailed(@NonNull CheckoutFailureEvent event) {
 
             }
 
@@ -56,6 +61,85 @@ public class InteropTest {
         };
 
         assertThat(listener).isNotNull();
+    }
+
+    @Test
+    public void canConsumeCheckoutEventsAndChooseLinkActionsFromJava() {
+        List<Checkout> snapshots = new ArrayList<>();
+        List<CheckoutException> errors = new ArrayList<>();
+        DefaultCheckoutListener listener = new DefaultCheckoutListener() {
+            @Override
+            public void onCheckoutStarted(@NonNull CheckoutStartEvent event) {
+                snapshots.add(event.getCheckout());
+            }
+
+            @Override
+            public void onCheckoutUpdated(@NonNull CheckoutUpdateEvent event) {
+                snapshots.add(event.getCheckout());
+            }
+
+            @Override
+            public void onCheckoutCompleted(@NonNull CheckoutCompleteEvent event) {
+                snapshots.add(event.getCheckout());
+            }
+
+            @Override
+            public void onCheckoutFailed(@NonNull CheckoutFailureEvent event) {
+                errors.add(event.getError());
+            }
+
+            @Override
+            public CheckoutLinkAction onCheckoutLinkClicked(@NonNull CheckoutLink link) {
+                return "example.com".equals(link.getUrl().getHost())
+                        ? CheckoutLinkAction.Handled : CheckoutLinkAction.Cancel;
+            }
+
+            @Override
+            public void onCheckoutDismissed() {
+                // do nothing
+            }
+        };
+        Checkout checkout = new Checkout.Builder()
+                .id("checkout-fixture")
+                .currency("USD")
+                .status(CheckoutStatus.Incomplete)
+                .lineItems(Collections.emptyList())
+                .links(Collections.emptyList())
+                .totals(Collections.emptyList())
+                .build();
+        CheckoutException error = new CheckoutException(CheckoutErrorCode.NETWORK_ERROR, "Offline");
+
+        listener.onCheckoutStarted(new CheckoutStartEvent(checkout));
+        listener.onCheckoutUpdated(new CheckoutUpdateEvent(checkout));
+        listener.onCheckoutCompleted(new CheckoutCompleteEvent(checkout));
+        listener.onCheckoutFailed(new CheckoutFailureEvent(error));
+
+        assertThat(snapshots).containsExactly(checkout, checkout, checkout);
+        assertThat(errors).containsExactly(error);
+        assertThat(listener.onCheckoutLinkClicked(new CheckoutLink(Uri.parse("https://example.com/privacy"))))
+                .isEqualTo(CheckoutLinkAction.Handled);
+        assertThat(listener.onCheckoutLinkClicked(new CheckoutLink(Uri.parse("https://shopify.dev"))))
+                .isEqualTo(CheckoutLinkAction.Cancel);
+    }
+
+    @Test
+    public void canDeriveCheckoutFixturesWithoutExposingSnapshotConstructors() {
+        Checkout checkout = new Checkout.Builder()
+                .id("checkout-fixture")
+                .currency("USD")
+                .status(CheckoutStatus.Incomplete)
+                .lineItems(Collections.emptyList())
+                .links(Collections.emptyList())
+                .totals(Collections.emptyList())
+                .build();
+        Checkout completed = checkout.toBuilder().status(CheckoutStatus.Completed).build();
+
+        assertThat(completed.getId()).isEqualTo(checkout.getId());
+        assertThat(completed.getStatus()).isEqualTo(CheckoutStatus.Completed);
+        assertThat(checkout.getStatus()).isEqualTo(CheckoutStatus.Incomplete);
+        assertThat(Checkout.class.getConstructors())
+                .filteredOn(constructor -> !constructor.isSynthetic())
+                .isEmpty();
     }
 
     @Test
@@ -231,7 +315,7 @@ public class InteropTest {
                     activity,
                     new DefaultCheckoutListener() {
                         @Override
-                        public void onCheckoutFailed(@NonNull CheckoutException error) {
+                        public void onCheckoutFailed(@NonNull CheckoutFailureEvent event) {
                             // do nothing
                         }
 
@@ -262,7 +346,7 @@ public class InteropTest {
             ComponentActivity activity = controller.get();
             DefaultCheckoutListener listener = new DefaultCheckoutListener() {
                 @Override
-                public void onCheckoutFailed(@NonNull CheckoutException error) {
+                public void onCheckoutFailed(@NonNull CheckoutFailureEvent event) {
                     // do nothing
                 }
 

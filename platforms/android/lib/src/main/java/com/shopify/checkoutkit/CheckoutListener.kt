@@ -10,20 +10,32 @@ import android.webkit.WebView
 /**
  * Interface to implement to allow responding to lifecycle events in checkout.
  * We'd strongly recommend extending DefaultCheckoutListener where possible.
- *
- * Completion (`ec.complete`) and in-checkout state updates (totals, line items,
- * messages) flow through [CheckoutProtocol.Client] / the Embedded Checkout
- * Protocol — not through this interface. Kit-level failures continue to surface
- * here via [onCheckoutFailed].
  */
 public interface CheckoutListener {
+    /**
+     * Called for checkout start events received during this presentation.
+     *
+     * Events received before presentation callbacks are bound, including during preload, are not replayed.
+     * This callback is not guaranteed for every presentation or when reusing a loaded checkout.
+     */
+    public fun onCheckoutStarted(event: CheckoutStartEvent)
+
+    /** Called when the buyer-visible checkout state changes. */
+    public fun onCheckoutUpdated(event: CheckoutUpdateEvent)
+
+    /** Called when checkout completes. */
+    public fun onCheckoutCompleted(event: CheckoutCompleteEvent)
+
+    /** Chooses how Checkout Kit handles a link that checkout asked the host app to open. */
+    public fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction
+
     /**
      * Called when checkout cannot continue.
      *
      * Use [CheckoutException.code] for your app's recovery policy. Use the
      * [CheckoutException.message] and exception cause only for debugging and logging.
      */
-    public fun onCheckoutFailed(error: CheckoutException)
+    public fun onCheckoutFailed(event: CheckoutFailureEvent)
 
     /**
      * Event representing dismissal of checkout by the buyer.
@@ -57,8 +69,8 @@ public interface CheckoutListener {
     public fun onGeolocationPermissionsHidePrompt()
 }
 
-internal class NoopCheckoutListener : CheckoutListener {
-    override fun onCheckoutFailed(error: CheckoutException) {
+internal class NoopCheckoutListener : DefaultCheckoutListener() {
+    override fun onCheckoutFailed(event: CheckoutFailureEvent) {
         /* noop */
     }
 
@@ -92,6 +104,20 @@ internal class NoopCheckoutListener : CheckoutListener {
  * for handling checkout events.
  */
 public abstract class DefaultCheckoutListener : CheckoutListener {
+
+    override fun onCheckoutStarted(event: CheckoutStartEvent) {
+        // no-op override to implement
+    }
+
+    override fun onCheckoutUpdated(event: CheckoutUpdateEvent) {
+        // no-op override to implement
+    }
+
+    override fun onCheckoutCompleted(event: CheckoutCompleteEvent) {
+        // no-op override to implement
+    }
+
+    override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction = CheckoutLinkAction.Open
 
     override fun onPermissionRequest(permissionRequest: PermissionRequest) {
         // no-op override to implement

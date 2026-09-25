@@ -20,14 +20,13 @@ import java.util.concurrent.CountDownLatch
 import com.shopify.ucp.embedded.checkout.Client as ProtocolClient
 
 /**
- * Consumer-facing typed Embedded Checkout Protocol API curated by Checkout Kit.
+ * Typed Embedded Checkout Protocol API curated for Checkout Kit's internal bridge.
  *
  * The lower-level `embedded-checkout-protocol` artifact owns generated models, raw wire
  * method names, and the generic dispatch [ProtocolClient]. Checkout Kit decides which of
- * those methods are supported for app developers and exposes them through this typed
- * namespace.
+ * those methods are supported and translates them into Kit-owned checkout events.
  */
-public object CheckoutProtocol {
+internal object CheckoutProtocol {
     public const val SPEC_VERSION: String = EmbeddedCheckoutProtocol.SPEC_VERSION
 
     public val start: NotificationDescriptor<Checkout> = EmbeddedCheckoutProtocol.start.map { it.checkout }
@@ -52,9 +51,8 @@ public object CheckoutProtocol {
     /**
      * Delivers the complete payload of a valid terminal `ec.error` notification.
      *
-     * This callback runs before Checkout Kit maps the terminal event to
-     * [CheckoutListener.onCheckoutFailed]. It is for advanced protocol diagnostics; use
-     * [CheckoutException.code] for normal lifecycle recovery.
+     * The bridge maps terminal errors to [CheckoutListener.onCheckoutFailed]. Consumers use
+     * [CheckoutException.code] for lifecycle recovery.
      */
     public val error: NotificationDescriptor<ErrorResponse> = EmbeddedCheckoutProtocol.error.map { it.error }
 
@@ -107,16 +105,16 @@ public object CheckoutProtocol {
     )
 
     /**
-     * A typed, fluent client for supported Checkout Kit protocol callbacks.
+     * A typed, fluent client for supported internal protocol callbacks.
      *
      * Wraps the generic protocol [ProtocolClient], adding Checkout Kit curation (only
-     * supported descriptors are registered), main-thread delivery of consumer handlers,
+     * supported descriptors are registered), main-thread delivery of handlers,
      * and unconditional logging of decode failures via the kit logger.
      *
      * Each [on] call returns a new [Client] instance, making it safe to share a base
      * configuration across multiple checkout presentations.
      */
-    public class Client private constructor(
+    internal class Client private constructor(
         private val delegate: ProtocolClient,
     ) {
         public constructor() : this(
