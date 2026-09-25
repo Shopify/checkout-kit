@@ -28,6 +28,13 @@ jobs:
           java-version: 17
           cache: 'gradle'
 
+      - uses: ruby/setup-ruby@bec3f19a76460dbe12f60def7d1a77585f07516c # v1.322.0
+        with:
+          ruby-version: .ruby-version
+
+      - name: Test protocol publication safeguards
+        run: ./scripts/test_protocol_dependency
+
       - name: Run Tests
         run: ./gradlew test --console=plain
 
