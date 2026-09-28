@@ -69,6 +69,21 @@ describe("<shopify-checkout>", () => {
       expect(closeEventSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("closes the blocked overlay when the target attribute changes", () => {
+      const checkout = renderCheckout({ target: "popup" });
+      vi.spyOn(window, "open").mockReturnValue(null);
+
+      const closeEventSpy = vi.fn();
+      checkout.addEventListener("close", closeEventSpy);
+
+      checkout.open();
+      expect(closeEventSpy).not.toHaveBeenCalled();
+
+      checkout.setAttribute("target", "auto");
+
+      expect(closeEventSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("is a no-op when the target attribute is set to the same value", () => {
       const checkout = renderCheckout({ target: "popup" });
       const wrapper = checkout.shadowRoot!.querySelector(".Shopify-target")!;
@@ -299,6 +314,25 @@ describe("<shopify-checkout>", () => {
             expect(windowOpenSpy).toHaveBeenCalledTimes(2);
             expect(dialog.dataset.state).toBeUndefined();
             expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
+        it("records a retry when the popup is blocked again from the blocked overlay", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const telemetrySpy = vi.spyOn(mockTelemetry(), "recordError");
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+
+            checkout.open();
+            checkout.open();
+
+            expect(telemetrySpy).toHaveBeenLastCalledWith({
+              category: "navigation",
+              stage: "presentation",
+              code: "blocked",
+              retryable: true,
+              isRetry: true,
+            });
           });
         });
 
@@ -631,6 +665,20 @@ describe("<shopify-checkout>", () => {
             checkout.close();
 
             expect(closeEventSpy).toHaveBeenCalled();
+          });
+        });
+
+        it("dispatches close event when the blocked overlay is showing", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+            checkout.open();
+            checkout.close();
+
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
           });
         });
 
