@@ -658,6 +658,20 @@ describe("<shopify-checkout>", () => {
             expect(dialogCloseSpy).toHaveBeenCalled();
           });
         });
+
+        it("does not close a session opened from a close listener", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            const mockWindow = createMockWindow();
+            vi.spyOn(window, "open").mockReturnValueOnce(null).mockReturnValue(mockWindow);
+
+            checkout.addEventListener("close", () => checkout.open(), { once: true });
+            checkout.open();
+            checkout.close();
+
+            expect(mockWindow.close).not.toHaveBeenCalled();
+          });
+        });
       });
     });
   });

@@ -599,8 +599,11 @@ export class ShopifyCheckout
   }
 
   close(): void {
-    this.#blockedOpen?.controller.abort();
-    this.#currentOpen?.controller.abort();
+    // Read both first: a `close` listener may open a new session while these abort
+    const blockedOpen = this.#blockedOpen;
+    const currentOpen = this.#currentOpen;
+    blockedOpen?.controller.abort();
+    currentOpen?.controller.abort();
   }
 
   /**
