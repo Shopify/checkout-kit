@@ -9,7 +9,15 @@ cd platforms/web
 pnpm sample
 ```
 
-Vite serves at `http://localhost:5173`.
+Vite serves the single-checkout sample at `http://localhost:5173/` and the Universal Checkout sample at `http://localhost:5173/universal.html`. The topbar links the two pages.
+
+## Universal Checkout sample
+
+The Universal page uses the same three-panel layout and cart controls as the single-checkout page. Enter a storefront domain and choose **Add shop** to load its public `/products.json` catalog immediately. Each selected shop has its own cart, product loading status, Retry and Remove controls, and an individual cart permalink preview. You can add multiple shops, including products with the same variant ID in different shops; quantities remain separate.
+
+Use a bare domain such as `store-one.myshopify.com` or its HTTPS homepage. The form rejects credentials, ports, other schemes, paths, and duplicate normalized domains. The selected domains, carts, and links stay in memory. Only presentation settings, panel collapse choices, and panel widths use Universal-specific local storage keys.
+
+The public products endpoint does not supply a currency code through this sample's catalog helper, so prices are shown without a currency symbol and carts are counted by items rather than combined into a cross-shop monetary total. A failed or empty shop remains selected and must be retried or removed before a Universal Checkout URL can be created. The session creation and Open controls are added in the following sample increments; this page currently stops at cart previews.
 
 ## What the demo shows
 
@@ -55,12 +63,12 @@ The demo relies on the public `/products.json` endpoint. If product loading fail
 - Confirm the storefront is reachable from your browser.
 - Use **Use existing checkout source** if you already have a checkout URL or cart permalink and do not need product loading.
 
-This sample does not currently call Storefront API `cartCreate`; it uses cart permalinks so the multi-item flow can be exercised without a Storefront access token.
+The single-checkout page does not call Storefront API `cartCreate`; it uses cart permalinks so the multi-item flow can be exercised without a Storefront access token. Universal session creation will use shop carts in its next increment.
 
 ## Build
 
 ```bash
-pnpm sample:build      # outputs to sample/dist/
+pnpm sample:build      # outputs index.html and universal.html to sample/dist/
 ```
 
 CI runs this on every PR (see `.github/workflows/web.yml`). The sample is not published to npm (`files` allowlist in `platforms/web/package.json`).
