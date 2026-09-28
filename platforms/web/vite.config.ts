@@ -32,9 +32,12 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: fromRoot('dist'),
     lib: {
-      entry: fromRoot('src/index.ts'),
+      entry: {
+        index: fromRoot('src/index.ts'),
+        universal: fromRoot('src/universal.ts'),
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
+      fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
       // Zero runtime deps — bundle everything reachable from src/index.ts.

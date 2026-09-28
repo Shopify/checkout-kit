@@ -32,6 +32,7 @@ export type TelemetryErrorCode =
 export type TelemetryProtocolMethod =
   | CheckoutProtocolCatalogMethod
   | CheckoutProtocolRequestMethod
+  | 'ec.update'
   | 'unknown';
 
 export type TelemetryDecodeFailureType =

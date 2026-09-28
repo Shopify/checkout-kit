@@ -28,13 +28,20 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./universal": {
+      "types": "./dist/universal.d.ts",
+      "import": "./dist/universal.js",
+      "default": "./dist/universal.js"
+    },
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
   "sideEffects": [
     "./src/index.ts",
     "./src/checkout-web-component.ts",
-    "./dist/index.js"
+    "./src/universal.ts",
+    "./dist/index.js",
+    "./dist/universal.js"
   ],
   "files": [
     "LICENSE",

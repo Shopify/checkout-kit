@@ -1,0 +1,281 @@
+{
+  "ready": {
+    "request": [
+      {
+        "jsonrpc": "2.0",
+        "id": "ready_1",
+        "method": "ec.ready",
+        "params": {
+          "delegate": ["window.open"]
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": "ready_2",
+        "method": "ec.ready",
+        "params": {
+          "delegate": ["window.open"]
+        }
+      }
+    ],
+    "response": [
+      {
+        "jsonrpc": "2.0",
+        "id": "ready_1",
+        "result": {
+          "ucp": {
+            "version": "2026-08-25",
+            "status": "success"
+          }
+        }
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": "ready_2",
+        "result": {
+          "ucp": {
+            "version": "2026-08-25",
+            "status": "success"
+          }
+        }
+      }
+    ]
+  },
+  "start": [
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.start",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 1,
+          "shop_id": "gid://shopify/Shop/123"
+        },
+        "checkout": {
+          "ucp": {
+            "version": "2026-08-25",
+            "capabilities": {},
+            "payment_handlers": {}
+          },
+          "id": "gid://shopify/Checkout/123",
+          "line_items": [
+            {
+              "id": "line_1",
+              "item": {
+                "id": "sku_canvas_tote",
+                "title": "Canvas tote",
+                "price": 12000
+              },
+              "quantity": 1,
+              "totals": [
+                { "type": "subtotal", "amount": 12000 },
+                { "type": "total", "amount": 12000 }
+              ]
+            }
+          ],
+          "status": "incomplete",
+          "currency": "USD",
+          "totals": [
+            { "type": "subtotal", "amount": 12000 },
+            { "type": "total", "amount": 12000 }
+          ],
+          "links": []
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.start",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 1,
+          "shop_id": "gid://shopify/Shop/456"
+        },
+        "checkout": {
+          "ucp": {
+            "version": "2026-08-25",
+            "capabilities": {},
+            "payment_handlers": {}
+          },
+          "id": "gid://shopify/Checkout/456",
+          "line_items": [
+            {
+              "id": "line_2",
+              "item": {
+                "id": "sku_wool_scarf",
+                "title": "Wool scarf",
+                "price": 8000
+              },
+              "quantity": 1,
+              "totals": [
+                { "type": "subtotal", "amount": 8000 },
+                { "type": "total", "amount": 8000 }
+              ]
+            }
+          ],
+          "status": "incomplete",
+          "currency": "USD",
+          "totals": [
+            { "type": "subtotal", "amount": 8000 },
+            { "type": "total", "amount": 8000 }
+          ],
+          "links": []
+        }
+      }
+    }
+  ],
+  "update": [
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.update",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 2,
+          "shop_id": "gid://shopify/Shop/123"
+        },
+        "checkout": {
+          "ucp": {
+            "version": "2026-08-25",
+            "capabilities": {},
+            "payment_handlers": {}
+          },
+          "id": "gid://shopify/Checkout/123",
+          "line_items": [
+            {
+              "id": "line_1",
+              "item": {
+                "id": "sku_canvas_tote",
+                "title": "Canvas tote",
+                "price": 12000
+              },
+              "quantity": 2,
+              "totals": [
+                { "type": "subtotal", "amount": 24000 },
+                { "type": "total", "amount": 24000 }
+              ]
+            }
+          ],
+          "status": "ready_for_complete",
+          "currency": "USD",
+          "totals": [
+            { "type": "subtotal", "amount": 24000 },
+            { "type": "total", "amount": 24000 }
+          ],
+          "links": []
+        }
+      }
+    }
+  ],
+  "complete": [
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.complete",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 3,
+          "shop_id": "gid://shopify/Shop/123"
+        },
+        "checkout": {
+          "ucp": {
+            "version": "2026-08-25",
+            "capabilities": {},
+            "payment_handlers": {}
+          },
+          "id": "gid://shopify/Checkout/123",
+          "line_items": [],
+          "status": "completed",
+          "currency": "USD",
+          "totals": [{ "type": "total", "amount": 24000 }],
+          "links": [],
+          "order": {
+            "id": "gid://shopify/Order/123",
+            "permalink_url": "https://shop.example.com/orders/123"
+          }
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.complete",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 3,
+          "shop_id": "gid://shopify/Shop/456"
+        },
+        "checkout": {
+          "ucp": {
+            "version": "2026-08-25",
+            "capabilities": {},
+            "payment_handlers": {}
+          },
+          "id": "gid://shopify/Checkout/456",
+          "line_items": [],
+          "status": "completed",
+          "currency": "USD",
+          "totals": [{ "type": "total", "amount": 8000 }],
+          "links": [],
+          "order": {
+            "id": "gid://shopify/Order/456",
+            "permalink_url": "https://shop.example.com/orders/456"
+          }
+        }
+      }
+    }
+  ],
+  "error": [
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.error",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 4,
+          "shop_id": "gid://shopify/Shop/123"
+        },
+        "error": {
+          "ucp": {
+            "version": "2026-08-25",
+            "status": "error"
+          },
+          "messages": [
+            {
+              "type": "error",
+              "code": "universal_checkout_unavailable",
+              "content": "Universal Checkout is unavailable.",
+              "severity": "unrecoverable"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "ec.error",
+      "params": {
+        "context": {
+          "session_id": "gid://shopify/UniversalCheckoutSession/123",
+          "revision": 4,
+          "shop_id": "gid://shopify/Shop/456"
+        },
+        "error": {
+          "ucp": {
+            "version": "2026-08-25",
+            "status": "error"
+          },
+          "messages": [
+            {
+              "type": "error",
+              "code": "universal_checkout_unavailable",
+              "content": "Universal Checkout is unavailable.",
+              "severity": "unrecoverable"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

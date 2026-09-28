@@ -3,6 +3,11 @@
   "dist/index.d.ts",
   "dist/index.js",
   "dist/index.js.map",
+  "dist/telemetry-BhYuVVw_.js",
+  "dist/telemetry-BhYuVVw_.js.map",
+  "dist/universal.d.ts",
+  "dist/universal.js",
+  "dist/universal.js.map",
   "LICENSE",
   "package.json",
   "README.md"

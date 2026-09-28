@@ -167,6 +167,25 @@ describe('CheckoutKitTelemetry', () => {
     expect(fetch.mock.calls[0]![1].body).toContain('ec.buyer.change');
   });
 
+  it('records Universal Checkout updates with a bounded method label', async () => {
+    const fetch = vi.fn().mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordProtocolDecodeError({
+      method: 'ec.update',
+      failureType: 'params',
+    });
+    await telemetry.flush();
+
+    const body = fetch.mock.calls[0]![1].body as string;
+    expect(body).toContain('ec.update');
+    expect(body).not.toContain('unknown');
+  });
+
   it('awaits an in-flight export during shutdown', async () => {
     let resolveFetch: ((value: {ok: boolean}) => void) | undefined;
     const fetch = vi.fn().mockImplementation(

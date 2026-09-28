@@ -49,7 +49,8 @@ Monotonic delta counter for ECP messages that cannot be decoded.
 
 Attributes:
 
-- `method`: a supported ECP method or `unknown`
+- `method`: a supported ECP method (including Universal Checkout's
+  full-snapshot `ec.update`) or `unknown`
 - `failure_type`: `envelope`, `params`, `serialization`, or `unknown`
 
 The raw message and decoder error are never recorded.
