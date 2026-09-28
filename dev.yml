@@ -314,6 +314,17 @@ commands:
     subcommands:
       local:
         desc: Run an Android command against in-repo protocol sources
+        long_desc: |
+          Android commands use the published ECP dependency by default. Use this wrapper
+          when developing Android Kit against unreleased ECP changes. It sets
+          useLocalProtocol=true for the command; remote publication remains blocked.
+
+          Examples:
+            dev android local test
+            dev android local build samples
+
+          For React Native, use `dev rn android --local` or `dev rn test android --local`.
+          Those commands already enable local ECP when publishing Kit and ECP to Maven Local.
         syntax: "<command> [args...]"
         run: |
           if [ "$#" -eq 0 ]; then
@@ -717,8 +728,9 @@ commands:
               `checkoutKit.nativeSdkVersions.android` in the React Native module, matching CI.
 
               --local
-                Resolve the in-repo Android SDK from Maven Local instead. Only for
-                unreleased native API that this PR changes.
+                Publish the in-repo Android Kit and ECP sources to Maven Local, then
+                resolve both from there. Enables useLocalProtocol=true automatically.
+                Only for unreleased native API that this PR changes.
             syntax:
               optional: --local
             run: |
@@ -887,7 +899,8 @@ commands:
           Builds and runs the Android sample app on an emulator.
 
           --local
-            Build against in-repo SDK sources (publishes a local Maven snapshot first).
+            Publish the in-repo Android Kit and ECP sources to Maven Local, then build
+            against them. Enables useLocalProtocol=true automatically.
             Only for unreleased native API that this PR adds; CI resolves published Maven
             artifacts, so the PR stays red until release.
         syntax:
