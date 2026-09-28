@@ -194,7 +194,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event {ShopifyCheckoutUpdateEvent} update - The checkout snapshot changed.
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
  * @event {ShopifyCheckoutErrorEvent} error - Checkout reported a terminal error; the session closes after this event.
- * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed.
+ * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed, including after a blocked window.
  *
  * @example
  * ```js

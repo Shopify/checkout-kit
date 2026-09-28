@@ -504,7 +504,7 @@ are available in `event.detail`.
 | `update`   | `{checkout}`   | A change to line items, fulfillment, totals, or checkout messages produces a different checkout snapshot. |
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
 | `error`    | `{error}`      | Checkout reported a terminal error, exposed as `{code, message}`. The component closes automatically after this event. |
-| `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
+| `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
 `event.detail.checkout`. It preserves checkout data, including unknown
