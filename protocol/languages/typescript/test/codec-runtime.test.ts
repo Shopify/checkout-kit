@@ -4,6 +4,8 @@ import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {
   decodeProtocolObject,
   encodeProtocolObject,
+  ProtocolValidationError,
+  type ProtocolValidationReason,
 } from '../src/protocol_codec_runtime';
 
 const wire = {
@@ -74,7 +76,179 @@ test('renames fields inside map values', () => {
 });
 
 test('throws when a required string field is not a string', () => {
-  expect(() => decodeProtocolObject({...wire, currency: 123}, 'Checkout')).toThrow(
-    'Invalid Checkout',
+  expectValidationError(
+    () => decodeProtocolObject({...wire, currency: 123}, 'Checkout'),
+    'Checkout.currency',
+    'invalid_type',
   );
 });
+
+test('treats structured-cloned undefined properties as absent without changing extension payloads', () => {
+  const checkout = structuredClone({
+    ...wire,
+    buyer: {email: 'buyer@example.test', first_name: undefined},
+    fulfillment: undefined,
+    order: undefined,
+    x_partner_data: {nested_key: 'value', optional_key: undefined},
+  });
+  const omitted = {
+    ...wire,
+    buyer: {email: 'buyer@example.test'},
+    x_partner_data: {nested_key: 'value', optional_key: undefined},
+  };
+
+  expect(Object.hasOwn(checkout, 'order')).toBe(true);
+  expect(decodeProtocolObject(checkout, 'Checkout')).toStrictEqual(
+    decodeProtocolObject(omitted, 'Checkout'),
+  );
+  const decoded = decodeProtocolObject(checkout, 'Checkout');
+  expect(decoded).not.toHaveProperty('order');
+  expect(decoded).not.toHaveProperty('fulfillment');
+  expect(decoded.buyer).not.toHaveProperty('firstName');
+  expect(decoded.x_partner_data).toBe(checkout.x_partner_data);
+  expect(checkout.order).toBeUndefined();
+  expect(Object.hasOwn(checkout.buyer, 'first_name')).toBe(true);
+});
+
+test('decodes direct objects and JSON-serialized delivery the same way', () => {
+  const checkout = structuredClone({
+    ...wire,
+    order: undefined,
+    fulfillment: undefined,
+  });
+  const serializedCheckout = JSON.parse(JSON.stringify(checkout));
+
+  expect(decodeProtocolObject(checkout, 'Checkout')).toStrictEqual(
+    decodeProtocolObject(serializedCheckout, 'Checkout'),
+  );
+});
+
+test('preserves schema-valid null instead of treating it as absent', () => {
+  const decoded = decodeProtocolObject(
+    {
+      ...wire,
+      fulfillment: {
+        available_methods: [
+          {line_item_ids: [], type: 'shipping', fulfillable_on: null},
+        ],
+        methods: undefined,
+      },
+    },
+    'Checkout',
+  );
+
+  expect(decoded.fulfillment).toStrictEqual({
+    availableMethods: [{lineItemIds: [], type: 'shipping', fulfillableOn: null}],
+  });
+});
+
+test.each(['currency', 'totals', 'ucp'])(
+  'rejects an undefined required Checkout.%s',
+  field => {
+    expectValidationError(
+      () => decodeProtocolObject({...wire, [field]: undefined}, 'Checkout'),
+      `Checkout.${field}`,
+      'missing_required',
+    );
+  },
+);
+
+test('rejects undefined and malformed required fields inside a present order', () => {
+  const permalink_url = 'https://example.test/orders/order-1';
+
+  expectValidationError(
+    () => decodeProtocolObject(
+      {...wire, order: {id: undefined, permalink_url}},
+      'Checkout',
+    ),
+    'Checkout.order.id',
+    'missing_required',
+  );
+  expectValidationError(
+    () => decodeProtocolObject(
+      {...wire, order: {id: 'order-1', permalink_url: undefined}},
+      'Checkout',
+    ),
+    'Checkout.order.permalink_url',
+    'missing_required',
+  );
+  expectValidationError(
+    () => decodeProtocolObject({...wire, order: 123}, 'Checkout'),
+    'Checkout.order',
+    'invalid_type',
+  );
+});
+
+test('requires the version of a present ucp object', () => {
+  expectValidationError(
+    () => decodeProtocolObject({...wire, ucp: {version: undefined}}, 'Checkout'),
+    'Checkout.ucp.version',
+    'missing_required',
+  );
+});
+
+test.each([
+  [
+    'order.id',
+    {order: {id: 123, permalink_url: 'https://example.test/orders/order-1'}},
+  ],
+  ['order.permalink_url', {order: {id: 'order-1', permalink_url: null}}],
+  ['ucp.version', {ucp: {version: {value: '2026-04-08'}}}],
+])('rejects non-string Checkout.%s', (field, nested) => {
+  expectValidationError(
+    () => decodeProtocolObject({...wire, ...nested}, 'Checkout'),
+    `Checkout.${field}`,
+    'invalid_type',
+  );
+});
+
+test('does not accept inherited required fields', () => {
+  const inheritedCheckout = Object.create(wire) as Record<string, unknown>;
+  expectValidationError(
+    () => decodeProtocolObject(inheritedCheckout, 'Checkout'),
+    'Checkout.currency',
+    'missing_required',
+  );
+
+  const inheritedOrder = Object.create({id: 'order-1'}) as Record<
+    string,
+    unknown
+  >;
+  inheritedOrder.permalink_url = 'https://example.test/orders/order-1';
+  expectValidationError(
+    () => decodeProtocolObject({...wire, order: inheritedOrder}, 'Checkout'),
+    'Checkout.order.id',
+    'missing_required',
+  );
+});
+
+test('does not include a value in its validation error', () => {
+  const malformedValue = {private_url: 'https://example.test/private/order-123'};
+  expectValidationError(
+    () => decodeProtocolObject({...wire, currency: malformedValue}, 'Checkout'),
+    'Checkout.currency',
+    'invalid_type',
+  );
+  expect(new ProtocolValidationError('Checkout.raw\nsecret', 'invalid_type')).toMatchObject({
+    modelPath: 'ProtocolObject',
+    message: 'Invalid ProtocolObject',
+  });
+});
+
+function expectValidationError(
+  decode: () => unknown,
+  modelPath: string,
+  reason: ProtocolValidationReason,
+) {
+  try {
+    decode();
+    throw new Error('Expected protocol validation to fail');
+  } catch (error) {
+    expect(error).toBeInstanceOf(ProtocolValidationError);
+    expect(error).toMatchObject({
+      modelPath,
+      reason,
+      message: `Invalid ${modelPath}`,
+    });
+  }
+}
