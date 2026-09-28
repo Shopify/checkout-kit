@@ -80,6 +80,32 @@ describe("<shopify-checkout>", () => {
     });
   });
 
+  describe("src", () => {
+    it("closes the active presentation when the URL changes", () => {
+      const checkout = renderCheckout({ target: "popup" });
+      const firstWindow = createMockWindow();
+      const secondWindow = createMockWindow();
+      const windowOpenSpy = vi
+        .spyOn(window, "open")
+        .mockReturnValueOnce(firstWindow)
+        .mockReturnValueOnce(secondWindow);
+      vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+      vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+      const onClose = vi.fn();
+      checkout.addEventListener("close", onClose);
+
+      checkout.open();
+      checkout.src = "https://new.example/checkout";
+
+      expect(firstWindow.close).toHaveBeenCalledOnce();
+      expect(onClose).toHaveBeenCalledOnce();
+
+      checkout.open();
+      expect(new URL(windowOpenSpy.mock.calls[1]![0]!).origin).toBe("https://new.example");
+      expect(secondWindow.close).not.toHaveBeenCalled();
+    });
+  });
+
   describe("methods", () => {
     describe("open", () => {
       describe("when target is not specified", () => {
@@ -296,6 +322,7 @@ describe("<shopify-checkout>", () => {
             checkout.open();
 
             const dialog = checkout.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
+            dialog.removeAttribute("open");
             dialog.dispatchEvent(new Event("close"));
 
             expect(mockPopup.close).toHaveBeenCalled();
@@ -389,6 +416,54 @@ describe("<shopify-checkout>", () => {
           expect(closeEventSpy).toHaveBeenCalledTimes(1);
           expect(openSpy).toHaveBeenCalledTimes(2);
         });
+
+        it("ignores a queued dialog close event after opening the next session", () => {
+          vi.useFakeTimers();
+          try {
+            const checkout = renderCheckout({ target: "popup" });
+            const firstWindow = createMockWindow();
+            const secondWindow = createMockWindow();
+            vi.spyOn(window, "open")
+              .mockReturnValueOnce(firstWindow)
+              .mockReturnValueOnce(secondWindow);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(
+              function (this: HTMLDialogElement) {
+                this.setAttribute("open", "");
+              },
+            );
+            vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(
+              function (this: HTMLDialogElement) {
+                if (!this.open) return;
+                this.removeAttribute("open");
+                setTimeout(() => this.dispatchEvent(new Event("close")), 0);
+              },
+            );
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+            const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+
+            checkout.open();
+            checkout.open();
+
+            expect(dialog.open).toBe(true);
+            expect(firstWindow.close).toHaveBeenCalledOnce();
+            expect(secondWindow.close).not.toHaveBeenCalled();
+
+            // Native dialog.close() queues the event after a new showModal() can run.
+            vi.advanceTimersByTime(0);
+            expect(dialog.open).toBe(true);
+            expect(secondWindow.close).not.toHaveBeenCalled();
+            expect(closeEventSpy).toHaveBeenCalledOnce();
+
+            dialog.close();
+            vi.advanceTimersByTime(0);
+            expect(secondWindow.close).toHaveBeenCalledOnce();
+            expect(closeEventSpy).toHaveBeenCalledTimes(2);
+          } finally {
+            vi.useRealTimers();
+          }
+        });
       });
 
       describe("overlay scrim", () => {
@@ -417,6 +492,30 @@ describe("<shopify-checkout>", () => {
 
           expect(dialogCloseSpy).toHaveBeenCalled();
           expect(dialog).toBeTruthy();
+        });
+
+        it("keeps the overlay slot usable for custom focus and close controls", () => {
+          const checkout = renderCheckout({ target: "popup" });
+          const customOverlay = document.createElement("div");
+          customOverlay.slot = "overlay";
+          const focusButton = document.createElement("button");
+          const closeButton = document.createElement("button");
+          focusButton.addEventListener("click", () => checkout.focus());
+          closeButton.addEventListener("click", () => checkout.close());
+          customOverlay.append(focusButton, closeButton);
+          checkout.append(customOverlay);
+
+          const mockWindow = createMockWindow();
+          vi.spyOn(window, "open").mockReturnValue(mockWindow);
+          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+          vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+          checkout.open();
+
+          expect(checkout.shadowRoot!.querySelector('slot[name="overlay"]')).not.toBeNull();
+          focusButton.click();
+          closeButton.click();
+          expect(mockWindow.focus).toHaveBeenCalledOnce();
+          expect(mockWindow.close).toHaveBeenCalledOnce();
         });
 
         it("focuses the popup when the overlay button is clicked", () => {
@@ -543,6 +642,30 @@ describe("<shopify-checkout>", () => {
     });
 
     describe("close", () => {
+      it("dispatches once per presentation across repeated close and disconnect", () => {
+        const checkout = renderCheckout({ target: "popup" });
+        const firstWindow = createMockWindow();
+        const secondWindow = createMockWindow();
+        vi.spyOn(window, "open").mockReturnValueOnce(firstWindow).mockReturnValueOnce(secondWindow);
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+        const onClose = vi.fn();
+        checkout.addEventListener("close", onClose);
+
+        checkout.open();
+        checkout.close();
+        checkout.close();
+        checkout.remove();
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(firstWindow.close).toHaveBeenCalledOnce();
+
+        document.body.append(checkout);
+        checkout.open();
+        checkout.remove();
+        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(secondWindow.close).toHaveBeenCalledOnce();
+      });
+
       describe('when target="popup", "auto", or undefined', () => {
         it("dispatches close event when popup is closed", () => {
           POPUP_TARGETS.forEach((target) => {

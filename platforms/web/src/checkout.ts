@@ -1,11 +1,7 @@
 import {
   EmbeddedCheckoutProtocol,
   decodeProtocolMessage,
-  windowOpenSuccess,
-  windowOpenRejected,
   INVALID_PARAMS_CODE,
-  type WindowOpenRequest,
-  type WindowOpenResult,
   type Checkout as ProtocolCheckout,
 } from "@shopify/checkout-kit-protocol";
 
@@ -19,10 +15,25 @@ import {
   ShopifyCheckoutCloseEvent,
   type ShopifyCheckoutEventMap,
 } from "./checkout-events";
-import stylesText from "./checkout.css?inline";
+
+import {
+  applyCheckoutTargetClass,
+  attachCheckoutShadow,
+  checkoutAllowedOrigins,
+  checkoutSourceURL,
+  handleWindowOpenRequest,
+  isCheckoutMessageFromPresentation,
+  openCheckoutPresentation,
+  rejectCheckoutMessage,
+  removeCheckoutTargetClass,
+  setCheckoutAttribute,
+  validateCheckoutMessageOrigin,
+  WINDOW_OPEN_INVALID_URL_WARNING,
+  type CheckoutPresentation,
+} from "./internal/checkout-element";
+
 import { Logger, coerceLogLevel } from "./logger";
 import { createTelemetry, telemetryProtocolMethod, type CheckoutKitTelemetry } from "./telemetry";
-import { createTemplate, html, safe } from "./utils";
 import { CK_VERSION } from "./version";
 import type {
   CheckoutAttributes,
@@ -37,86 +48,12 @@ import type {
   MessageRejectedDetail,
 } from "./checkout.types";
 
-export const DEFAULT_POPUP_WIDTH = 600;
-export const DEFAULT_POPUP_HEIGHT = 600;
+export {
+  DEFAULT_POPUP_WIDTH,
+  DEFAULT_POPUP_HEIGHT,
+  SHOP_APP_ORIGIN,
+} from "./internal/checkout-element";
 export { CK_VERSION } from "./version";
-
-/**
- * Trusted origin always allowed to post messages, alongside the cart URL
- * origin derived from `src`. Both are included whether or not the integrator
- * configures an explicit `allowedOrigins` list.
- */
-export const SHOP_APP_ORIGIN = "https://shop.app";
-
-/**
- * Default trusted origin patterns for `shop.app`: the apex origin plus a
- * wildcard covering its subdomains (e.g. regional or checkout subdomains).
- */
-const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"];
-
-/** Matches a wildcard-subdomain origin pattern, e.g. `https://*.example.com[:8443]`. */
-const WILDCARD_ORIGIN_PATTERN = /^(https?):\/\/\*\.([^/:]+)(?::(\d+))?\/?$/i;
-
-/** Returns whether `pattern` is a usable origin pattern (`*`, wildcard, or exact origin). */
-function isValidOriginPattern(pattern: string): boolean {
-  if (pattern === "*") return true;
-  if (pattern.includes("*")) return WILDCARD_ORIGIN_PATTERN.test(pattern);
-  try {
-    const url = new URL(pattern);
-    return (
-      (url.protocol === "https:" || url.protocol === "http:") &&
-      url.username === "" &&
-      url.password === "" &&
-      url.pathname === "/" &&
-      url.search === "" &&
-      url.hash === ""
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** Returns the serialized port browsers use for an origin. */
-function normalizedOriginPort(protocol: string, port: string | undefined): string {
-  if (port === undefined) return "";
-  if ((protocol === "http" && port === "80") || (protocol === "https" && port === "443")) {
-    return "";
-  }
-  return port;
-}
-
-/**
- * Tests whether `origin` satisfies an allowlist `pattern`:
- * - `"*"` matches every origin.
- * - `https://*.example.com` matches proper subdomains of `example.com` (not the
- *   apex), requiring the scheme and port to match too.
- * - Anything else is treated as an exact origin (normalized via `URL`).
- */
-function originMatchesPattern(pattern: string, origin: URL): boolean {
-  if (pattern === "*") return true;
-
-  if (!pattern.includes("*")) {
-    try {
-      return isValidOriginPattern(pattern) && new URL(pattern).origin === origin.origin;
-    } catch {
-      return false;
-    }
-  }
-
-  const match = WILDCARD_ORIGIN_PATTERN.exec(pattern);
-  if (!match) return false;
-  const [, scheme, suffix, port] = match;
-  if (scheme === undefined || suffix === undefined) return false;
-
-  if (`${scheme.toLowerCase()}:` !== origin.protocol) return false;
-  if (normalizedOriginPort(scheme.toLowerCase(), port) !== origin.port) return false;
-
-  const host = origin.hostname.toLowerCase();
-  const suffixHost = suffix.toLowerCase();
-  return host !== suffixHost && host.endsWith(`.${suffixHost}`);
-}
-
-const WINDOW_OPEN_INVALID_URL_WARNING = "ec.window.open_request received without a valid url";
 
 const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
 const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
@@ -125,39 +62,6 @@ const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: st
   ["app:automatic", { colorScheme: "automatic", branding: "app" }],
   ["storefront", { colorScheme: "web_default", branding: "shop" }],
 ]);
-
-const SHADOW_TEMPLATE = createTemplate(html`
-  <div id="shopify-element-wrapper">
-    <style>
-      ${safe(stylesText)}
-    </style>
-
-    <div class="Shopify-target">
-      <dialog class="overlay" id="overlay">
-        <div class="overlay-background" part="overlay" id="overlay-background">
-          <slot name="overlay">
-            <div class="overlay-content-wrapper">
-              <div class="overlay-content">
-                Continue your purchase in the <br />
-                <button class="overlay-focus-button" id="overlay-link" type="button">
-                  checkout window
-                </button>
-              </div>
-              <button class="overlay-close-button" id="overlay-close-button">
-                Close
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                  <path
-                    d="M15.1 2.3L13.7.9 8 6.6 2.3.9.9 2.3 6.6 8 .9 13.7l1.4 1.4L8 9.4l5.7 5.7 1.4-1.4L9.4 8"
-                  />
-                </svg>
-              </button>
-            </div>
-          </slot>
-        </div>
-      </dialog>
-    </div>
-  </div>
-`);
 
 /**
  * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
@@ -195,17 +99,14 @@ export class ShopifyCheckout
   constructor() {
     super();
 
-    this.attachShadow({ mode: "open" }).appendChild(SHADOW_TEMPLATE.content.cloneNode(true));
+    attachCheckoutShadow(this);
   }
 
   #checkout?: Checkout;
   #error?: CheckoutError;
   #checkoutComparisonKey?: string;
 
-  #checkoutWindow: WindowProxy | null = null;
-
-  // Manages the listeners for the popup window, new tabs, and scrim dialog
-  #currentOpen: { controller: AbortController } | null = null;
+  #presentation?: CheckoutPresentation;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
   // Shared protocol client that decodes messages and dispatches to handlers
@@ -233,13 +134,8 @@ export class ShopifyCheckout
    * `https:` scheme.
    */
   #srcAsURL({ warnInvalidAppearance = false } = {}) {
-    let url: URL;
-    try {
-      url = new URL(this.src);
-    } catch {
-      return undefined;
-    }
-    if (url.protocol !== "https:") return undefined;
+    const url = checkoutSourceURL(this.src);
+    if (!url) return undefined;
 
     url.searchParams.delete("ck_branding");
 
@@ -327,9 +223,7 @@ export class ShopifyCheckout
    * attribute and property can be used interchangeably.
    */
   get allowedOrigins(): string[] {
-    const attr = this.getAttribute("allowed-origins");
-    if (!attr) return [];
-    return attr.split(/[\s,]+/).filter(Boolean);
+    return checkoutAllowedOrigins(this);
   }
 
   set allowedOrigins(value: string[] | string | undefined) {
@@ -351,13 +245,7 @@ export class ShopifyCheckout
   onMessageRejected?: (detail: MessageRejectedDetail) => void;
 
   #setAttribute(name: string, value: string | boolean | undefined) {
-    if (value === true) {
-      this.setAttribute(name, "");
-    } else if (value != null && value !== false) {
-      this.setAttribute(name, value);
-    } else {
-      this.removeAttribute(name);
-    }
+    setCheckoutAttribute(this, name, value);
   }
 
   /* ------------------------------------------------------------
@@ -392,26 +280,6 @@ export class ShopifyCheckout
     return this.#error;
   }
 
-  get #dialogElement(): HTMLDialogElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay") ?? undefined;
-  }
-
-  get #dialogBackgroundElement(): HTMLDivElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-background") ?? undefined;
-  }
-
-  get #dialogCloseButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-close-button") ?? undefined;
-  }
-
-  get #dialogButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
-  }
-
-  get #targetElement(): HTMLDivElement | undefined {
-    return this.shadowRoot?.querySelector(".Shopify-target") ?? undefined;
-  }
-
   /* ------------------------------------------------------------
    * Methods
    * ------------------------------------------------------------
@@ -436,136 +304,30 @@ export class ShopifyCheckout
       return;
     }
 
-    // Close any existing sessions before opening a new one
-    if (this.#currentOpen) {
-      this.close();
-    }
-
+    // Close any existing session before opening another one.
+    this.close();
     this.#checkout = undefined;
     this.#error = undefined;
     this.#checkoutComparisonKey = undefined;
-
-    let checkoutWindow: WindowProxy | null = null;
     const navigationStartedAt = performance.now();
-
-    switch (target) {
-      case "popup": {
-        const features = this.#getPopupFeatures();
-        checkoutWindow = window.open(src, "", features);
-        break;
-      }
-
-      case "auto":
-      case "_blank":
-      default: {
-        if (target === "_self" || target === "_parent" || target === "_top") {
-          this.#logger.warn(
-            `target="${target}" would navigate the current page; falling back to "auto"`,
-          );
-          checkoutWindow = window.open(src, "auto");
-        } else {
-          checkoutWindow = window.open(src, target);
-        }
-        break;
-      }
-    }
-
-    const abortController = new AbortController();
-
-    //  Opens a dialog element to act as a scrim over the current window while the popup is open.
-    //  The dialog can be closed by the user, or will close itself when the popup is closed.
-    const dialog = this.#dialogElement;
-    const dialogBackground = this.#dialogBackgroundElement;
-    const dialogCloseButton = this.#dialogCloseButtonElement;
-    const dialogButton = this.#dialogButtonElement;
-
-    if (dialog && dialogBackground) {
-      // By default we show the scrim.
-      // If a consumer wants to hide it, they can either:
-      // 1. Set `display: none` on the `<shopify-checkout>` element itself
-      // 2. Set `display: none` on the overlay using CSS parts, e.g.,
-      // ```
-      //   shopify-checkout::part(overlay) {
-      //     display: none;
-      //   }
-      // ```
-      // It's important not to call `dialog.showModal()` if the dialog is not visible because it traps focus and
-      // hides the rest of the page from the accessibility tree.
-      const isElementHidden = window.getComputedStyle(this).getPropertyValue("display") === "none";
-      const isOverlayHidden =
-        window.getComputedStyle(dialogBackground).getPropertyValue("display") === "none";
-      const showDialog = !isElementHidden && !isOverlayHidden;
-
-      if (showDialog) {
-        dialog.showModal();
-
-        dialogCloseButton?.addEventListener(
-          "click",
-          () => {
-            dialog.close();
-          },
-          {
-            signal: abortController.signal,
-          },
+    const presentation = openCheckoutPresentation({
+      element: this,
+      src,
+      target,
+      onUnsafeTarget: (unsafeTarget) => {
+        this.#logger.warn(
+          `target="${unsafeTarget}" would navigate the current page; falling back to "auto"`,
         );
-
-        dialog.addEventListener(
-          "close",
-          () => {
-            abortController.abort();
-          },
-          {
-            signal: abortController.signal,
-          },
-        );
-
-        dialogButton?.addEventListener(
-          "click",
-          (event: MouseEvent) => {
-            event.preventDefault();
-            this.#checkoutWindow?.focus();
-          },
-          {
-            signal: abortController.signal,
-          },
-        );
-
-        abortController.signal.addEventListener("abort", () => {
-          dialog.close();
-        });
-      }
-    }
-
-    abortController.signal.addEventListener("abort", () => {
-      this.#navigationStartedAt = undefined;
-      checkoutWindow?.close();
-      this.#checkoutWindow = null;
-      this.#currentOpen = null;
-      /** @ignore - Events are documented by the class @event tags. */
-      this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      },
+      onClose: () => {
+        this.#navigationStartedAt = undefined;
+        this.#presentation = undefined;
+        this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      },
     });
+    this.#presentation = presentation;
 
-    // Handles cases where the user closed the window and returned to the page.
-    window.addEventListener(
-      "focus",
-      () => {
-        // Small delay to allow browser to update the closed property
-        const timer = setTimeout(() => {
-          if (checkoutWindow?.closed) {
-            abortController.abort();
-          }
-        }, 50);
-        abortController.signal.addEventListener("abort", () => {
-          clearTimeout(timer);
-        });
-      },
-      {
-        signal: abortController.signal,
-      },
-    );
-
-    this.#currentOpen = { controller: abortController };
-    this.#checkoutWindow = checkoutWindow;
+    const { checkoutWindow } = presentation;
     this.#navigationStartedAt = checkoutWindow && this.telemetry ? navigationStartedAt : undefined;
 
     if (!checkoutWindow) {
@@ -580,9 +342,7 @@ export class ShopifyCheckout
   }
 
   close(): void {
-    if (this.#currentOpen) {
-      this.#currentOpen.controller.abort();
-    }
+    this.#presentation?.close();
   }
 
   #recordNavigationSuccess(): void {
@@ -605,66 +365,15 @@ export class ShopifyCheckout
   }
 
   override focus(): void {
-    this.#checkoutWindow?.focus();
+    this.#presentation?.focus();
   }
 
-  /**
-   * Adds the `Shopify-target--<target>` modifier class to the rendered
-   * target element
-   */
-  #applyTargetClass() {
-    const value = this.target;
-    if (!value || /\s/.test(value)) return;
-    this.#targetElement?.classList.add(`Shopify-target--${value}`);
+  #applyTargetClass(): void {
+    applyCheckoutTargetClass(this, this.target);
   }
 
-  /** Mirror of `#applyTargetClass` for removing a previous modifier. */
-  #removeTargetClass(value: string | null) {
-    if (!value || /\s/.test(value)) return;
-    this.#targetElement?.classList.remove(`Shopify-target--${value}`);
-  }
-
-  #getPopupFeatures() {
-    const computedStyle = window.getComputedStyle(this);
-    const widthFromCustomProperty = computedStyle.getPropertyValue(
-      "--shopify-checkout-dialog-width",
-    );
-    const desiredWidth = widthFromCustomProperty
-      ? Number.parseInt(widthFromCustomProperty, 10)
-      : DEFAULT_POPUP_WIDTH;
-    const screenLeft = window.screenLeft ?? window.screenX;
-    const windowWidth = window.outerWidth ?? document.documentElement.clientWidth ?? screen.width;
-    const maxWidth = Math.floor(windowWidth * 0.9);
-    const width = Math.min(desiredWidth, maxWidth);
-
-    const heightFromCustomProperty = computedStyle.getPropertyValue(
-      "--shopify-checkout-dialog-height",
-    );
-    const desiredHeight = heightFromCustomProperty
-      ? Number.parseInt(heightFromCustomProperty, 10)
-      : DEFAULT_POPUP_HEIGHT;
-
-    const screenTop = window.screenTop ?? window.screenY;
-    const windowHeight =
-      window.outerHeight ?? document.documentElement.clientHeight ?? screen.height;
-    const maxHeight = Math.floor(windowHeight * 0.9);
-    const height = Math.min(desiredHeight, maxHeight);
-
-    const left = Math.floor((windowWidth - width) / 2) + screenLeft;
-    const top = Math.floor((windowHeight - height) / 2) + screenTop;
-
-    const features = [
-      `width=${width}`,
-      `height=${height}`,
-      `left=${left}`,
-      `top=${top}`,
-      `scrollbars=yes`,
-      `status=no`,
-      `toolbar=no`,
-      `resizable=yes`,
-    ].join(",");
-
-    return features;
+  #removeTargetClass(value: string | null): void {
+    removeCheckoutTargetClass(this, value);
   }
 
   /* ------------------------------------------------------------
@@ -672,69 +381,14 @@ export class ShopifyCheckout
    * ------------------------------------------------------------
    */
 
-  #validateMessageOrigin(event: MessageEvent) {
-    const src = this.#srcAsURL();
-    if (!src) {
-      throw new Error("Dropped message because src is invalid or unset");
-    }
-
-    let origin: URL;
-    try {
-      origin = new URL(event.origin);
-    } catch {
-      throw new Error(`Dropped message from non-HTTPS origin "${event.origin}"`);
-    }
-
-    if (origin.protocol !== "https:") {
-      throw new Error(`Dropped message from non-HTTPS origin "${event.origin}"`);
-    }
-
-    const patterns = this.#allowedOriginPatterns(src);
-    if (patterns !== null && !patterns.some((pattern) => originMatchesPattern(pattern, origin))) {
-      throw new Error(`Dropped message from origin "${origin.origin}" not in allowlist`);
-    }
+  #validateMessageOrigin(event: MessageEvent): void {
+    validateCheckoutMessageOrigin(event, this.#srcAsURL(), this.allowedOrigins, (message) => {
+      this.#logger.warn(message);
+    });
   }
 
-  /**
-   * Computes the effective set of trusted origins for incoming messages, or
-   * `null` when validation is disabled via the `"*"` escape hatch.
-   *
-   * Web is closed by default: the cart URL origin (from `src`) and `shop.app`
-   * are always trusted, and any configured `allowedOrigins` are added on top.
-   */
-  #allowedOriginPatterns(src: URL): string[] | null {
-    const configured = this.allowedOrigins;
-    if (configured.includes("*")) return null;
-
-    const patterns = [src.origin, ...SHOP_APP_ORIGIN_PATTERNS];
-    for (const entry of configured) {
-      if (isValidOriginPattern(entry)) {
-        patterns.push(entry);
-      } else {
-        this.#logger.warn(`Ignoring invalid allowed origin "${entry}"`);
-      }
-    }
-    return patterns;
-  }
-
-  /**
-   * Routes a dropped message to the {@link onMessageRejected} callback, falling
-   * back to a logged warning when no callback is set.
-   */
-  #rejectMessage(event: MessageEvent, error: unknown) {
-    const reason = error instanceof Error ? error.message : String(error);
-    if (this.onMessageRejected) {
-      try {
-        this.onMessageRejected({ origin: event.origin, data: event.data, reason });
-      } catch (callbackError) {
-        this.#logger.error(
-          "onMessageRejected callback threw",
-          callbackError instanceof Error ? callbackError.message : String(callbackError),
-        );
-      }
-      return;
-    }
-    this.#logger.warn(reason);
+  #rejectMessage(event: MessageEvent, error: unknown): void {
+    rejectCheckoutMessage(this, event, error, this.#logger);
   }
 
   #initCheckoutProtocol() {
@@ -762,7 +416,8 @@ export class ShopifyCheckout
     // Source check: messages must come from the embedded checkout window
     // we opened. Unrelated postMessage traffic on the host page (other
     // SDKs, browser extensions, etc.) is dropped silently.
-    if (event.source !== this.#checkoutWindow) return;
+    const presentation = this.#presentation;
+    if (!isCheckoutMessageFromPresentation(event, presentation)) return;
 
     try {
       this.#validateMessageOrigin(event);
@@ -787,7 +442,7 @@ export class ShopifyCheckout
       return;
     }
 
-    void this.#dispatchProtocolMessage(serialized, event);
+    void this.#dispatchProtocolMessage(serialized, event, presentation);
   };
 
   /**
@@ -858,7 +513,9 @@ export class ShopifyCheckout
       .on(Event.messagesChange, ({ params: { checkout } }) => {
         this.#updateCheckout(checkout);
       })
-      .on(Event.windowOpen, ({ params }) => this.#handleWindowOpen(params));
+      .on(Event.windowOpen, ({ params }) =>
+        handleWindowOpenRequest(params, EmbeddedCheckoutProtocol.specVersion, this.#logger),
+      );
   }
 
   #recordCheckout(checkout: ProtocolCheckout): Checkout {
@@ -883,9 +540,19 @@ export class ShopifyCheckout
    * requests (`ec.ready`, `ec.window.open_request`, unknown methods);
    * notifications resolve to `undefined` and post nothing.
    */
-  async #dispatchProtocolMessage(serialized: string, event: MessageEvent): Promise<void> {
+  async #dispatchProtocolMessage(
+    serialized: string,
+    event: MessageEvent,
+    presentation: CheckoutPresentation,
+  ): Promise<void> {
+    // The source and origin were authenticated before the async protocol handler.
+    // A later presentation must never receive this response.
+    const source = event.source as WindowProxy;
+    const origin = event.origin;
     const response = await this.#client.process(serialized);
-    if (response === undefined) return;
+    if (response === undefined || this.#presentation !== presentation || !presentation.isActive()) {
+      return;
+    }
 
     const parsed = JSON.parse(response) as {
       error?: { code?: number };
@@ -897,36 +564,10 @@ export class ShopifyCheckout
       parsed.error?.code === INVALID_PARAMS_CODE &&
       decodeProtocolMessage(serialized)?.method === EmbeddedCheckoutProtocol.Event.windowOpen.method
     ) {
-      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, event.data);
+      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING);
     }
 
-    const { source } = event;
-    if (source) {
-      (source as WindowProxy).postMessage(parsed, event.origin);
-    }
-  }
-
-  /**
-   * Handles an `ec.window.open_request` delegation: opens a validated `https:`
-   * URL in a new tab and returns a UCP result. Invalid or non-`https:` URLs
-   * are rejected (and warned about) rather than opened.
-   */
-  #handleWindowOpen(request: WindowOpenRequest): WindowOpenResult {
-    let targetUrl: URL;
-    try {
-      targetUrl = new URL(request.url);
-    } catch {
-      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
-      return windowOpenRejected("url is not a valid URL");
-    }
-
-    if (targetUrl.protocol !== "https:") {
-      this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, request);
-      return windowOpenRejected("url must use https scheme");
-    }
-
-    window.open(targetUrl.href, "_blank", "noopener");
-    return windowOpenSuccess();
+    source.postMessage(parsed, origin);
   }
 
   /* ------------------------------------------------------------
@@ -958,8 +599,12 @@ export class ShopifyCheckout
     if (oldValue === newValue) return;
 
     switch (name) {
+      case "src": {
+        if (this.#presentation) this.close();
+        break;
+      }
       case "target": {
-        if (oldValue !== newValue && this.#currentOpen) {
+        if (this.#presentation) {
           this.close();
         }
 

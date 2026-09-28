@@ -70,6 +70,76 @@ describe("<shopify-checkout>", () => {
 
         expect(mockCheckoutWindow.postMessage).not.toHaveBeenCalled();
       });
+
+      it("does not reply to a sender after its presentation is replaced", async () => {
+        const { checkout, mockCheckoutWindow: firstWindow } = openPopupCheckout();
+        const secondWindow = createMockWindow();
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          {
+            id: "stale-ready",
+            source: firstWindow,
+          },
+        );
+        vi.mocked(window.open).mockReturnValue(secondWindow);
+        checkout.open();
+        await flushProtocolDispatch();
+
+        expect(firstWindow.postMessage).not.toHaveBeenCalled();
+        expect(secondWindow.postMessage).not.toHaveBeenCalled();
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          {
+            id: "current-ready",
+            source: secondWindow,
+          },
+        );
+        await flushProtocolDispatch();
+
+        expect(secondWindow.postMessage).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "current-ready",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
+          new URL(checkout.src).origin,
+        );
+      });
+
+      it("keeps sender and response routing independent across elements", async () => {
+        const first = renderCheckout({ target: "popup", src: "https://first.example/checkout" });
+        const second = renderCheckout({ target: "popup", src: "https://second.example/checkout" });
+        const firstWindow = createMockWindow();
+        const secondWindow = createMockWindow();
+        vi.spyOn(window, "open").mockReturnValueOnce(firstWindow).mockReturnValueOnce(secondWindow);
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+        first.open();
+        second.open();
+
+        simulateProtocolMessageEvent(
+          first,
+          "ec.ready",
+          { delegate: [] },
+          {
+            id: "first-ready",
+            source: firstWindow,
+          },
+        );
+        await flushProtocolDispatch();
+
+        expect(firstWindow.postMessage).toHaveBeenCalledWith(
+          expect.objectContaining({ id: "first-ready" }),
+          "https://first.example",
+        );
+        expect(secondWindow.postMessage).not.toHaveBeenCalled();
+      });
     });
 
     describe("unsupported protocol methods", () => {
@@ -909,11 +979,9 @@ describe("<shopify-checkout>", () => {
         const targetOrigin = new URL(checkout.src).origin;
 
         // The shared client can't decode a request without a valid `url`, so
-        // the handler never runs. The host preserves the diagnostic warning,
-        // logging the raw message data that failed to decode.
+        // the handler never runs. The host preserves a safe diagnostic warning.
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           expect.stringContaining("ec.window.open_request received without a valid url"),
-          expect.objectContaining({ method: "ec.window.open_request" }),
         );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           {
@@ -954,8 +1022,8 @@ describe("<shopify-checkout>", () => {
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           expect.stringContaining("ec.window.open_request received without a valid url"),
-          expect.objectContaining({ url: "not a real url" }),
         );
+        expect(consoleWarnSpy.mock.calls.flat().join(" ")).not.toContain("not a real url");
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             jsonrpc: "2.0",
@@ -984,8 +1052,8 @@ describe("<shopify-checkout>", () => {
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           expect.stringContaining("ec.window.open_request received without a valid url"),
-          expect.objectContaining({ url: "http://example.com/insecure" }),
         );
+        expect(consoleWarnSpy.mock.calls.flat().join(" ")).not.toContain("example.com/insecure");
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           expect.objectContaining({
             jsonrpc: "2.0",
@@ -1020,7 +1088,6 @@ describe("<shopify-checkout>", () => {
 
         expect(consoleWarnSpy).not.toHaveBeenCalledWith(
           expect.stringContaining("ec.window.open_request received without a valid url"),
-          expect.anything(),
         );
         expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -1276,6 +1343,24 @@ describe("<shopify-checkout>", () => {
         await flushProtocolDispatch();
 
         expect(onStartSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+      });
+
+      it("does not trust a null sender when the popup was blocked", async () => {
+        const checkout = renderCheckout({ target: "popup" });
+        vi.spyOn(window, "open").mockReturnValue(null);
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+        checkout.open();
+        const onStart = vi.fn();
+        checkout.addEventListener("start", onStart);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+          source: null,
+        });
+        await flushProtocolDispatch();
+
+        expect(onStart).not.toHaveBeenCalled();
         expect(checkout.checkout).toBeUndefined();
       });
 
