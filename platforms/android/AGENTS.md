@@ -75,6 +75,7 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 ## Common commands
 
+- Published protocol resolution: `./gradlew :lib:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
 - Tests: `./gradlew test` (or `dev android test`)
 - API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` for Checkout Kit, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`)

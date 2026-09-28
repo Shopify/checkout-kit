@@ -365,6 +365,11 @@ Open a pull request with the following changes:
 The Android library and sample compile against the protocol artifact pinned in
 `platforms/android/gradle/libs.versions.toml` from Maven Central. CI uses the same
 dependency, and the publish workflow runs unit tests and API checks before uploading.
+Unit tests and remote publication also run `:lib:verifyPublishedProtocol`, which
+checks that the release and unit-test classpaths resolve ECP as an external module
+at exactly the catalog-pinned dependency version. This rejects accidental project
+substitution or version changes introduced by dependency resolution. Explicit local
+mode skips this assertion; remote publication still rejects local mode.
 Changes to protocol source are tested separately with `dev protocol test kotlin`.
 
 For joint development against unreleased protocol changes, run `dev android local test`,

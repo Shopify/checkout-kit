@@ -1,4 +1,7 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Classpath
@@ -148,9 +151,39 @@ dependencies {
     implementation libs.androidx.webkit
 }
 
+def protocolDependency = libs.embedded.checkout.protocol.get()
+def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
+    group = 'verification'
+    description = 'Verify release and unit-test classpaths use the declared published protocol.'
+    onlyIf { !useLocalProtocol }
+    doLast {
+        def classpaths = ['releaseCompileClasspath', 'releaseRuntimeClasspath'] + configurations.names.findAll {
+            it.endsWith('UnitTestCompileClasspath') || it.endsWith('UnitTestRuntimeClasspath')
+        }
+        classpaths.each { classpath ->
+            // Follow the requested module so substitutions cannot hide the selected component.
+            def dependency = configurations.getByName(classpath).incoming.resolutionResult.rootComponent.get().dependencies.find {
+                it.requested instanceof ModuleComponentSelector &&
+                    it.requested.group == protocolDependency.group && it.requested.module == protocolDependency.name
+            }
+            def resolved = dependency instanceof ResolvedDependencyResult ? dependency.selected.id : null
+            if (!(resolved instanceof ModuleComponentIdentifier) ||
+                resolved.group != protocolDependency.group || resolved.module != protocolDependency.name ||
+                resolved.version != protocolDependency.version) {
+                throw new GradleException("$classpath must resolve the published $protocolDependency; found ${resolved ?: dependency}")
+            }
+        }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    dependsOn verifyPublishedProtocol
+}
+
 // Local protocol sources are for joint development only. Maven Local remains
 // available for React Native's explicit --local builds.
 tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn verifyPublishedProtocol
     doFirst {
         if (useLocalProtocol) {
             throw new GradleException('Cannot publish Checkout Kit with useLocalProtocol=true. Build against the published protocol first.')
