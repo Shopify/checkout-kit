@@ -336,6 +336,47 @@ describe("<shopify-checkout>", () => {
           });
         });
 
+        it("ignores the previous dialog's late close event after a retry opens checkout", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            const mockWindow = createMockWindow();
+            vi.spyOn(window, "open").mockReturnValueOnce(null).mockReturnValueOnce(mockWindow);
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+
+            checkout.open();
+            checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-retry-button")!.click();
+
+            // Browsers queue the dialog's `close` event, so it lands after the dialog is re-shown
+            const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+            expect(dialog.open).toBe(true);
+            dialog.dispatchEvent(new Event("close"));
+
+            expect(mockWindow.close).not.toHaveBeenCalled();
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
+        it("ignores the previous dialog's late close event when a retry is blocked again", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+
+            checkout.open();
+            checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-retry-button")!.click();
+
+            // Browsers queue the dialog's `close` event, so it lands after the dialog is re-shown
+            const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
+            expect(dialog.open).toBe(true);
+            dialog.dispatchEvent(new Event("close"));
+
+            expect(dialog.dataset.state).toBe("blocked");
+            expect(closeEventSpy).not.toHaveBeenCalled();
+          });
+        });
+
         it("does not dispatch close when open() is called while the blocked overlay is showing", () => {
           POPUP_TARGETS.forEach((target) => {
             const checkout = renderCheckout({ target });
