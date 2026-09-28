@@ -39,6 +39,7 @@ Check out our blog to
   - [Popup dimensions](#popup-dimensions)
   - [Overlay scrim](#overlay-scrim)
 - [Checkout lifecycle](#checkout-lifecycle)
+- [Universal Checkout (experimental preview)](#universal-checkout-experimental-preview)
 - [Explore the sample app](#explore-the-sample-app)
 - [Contributing](#contributing)
 - [License](#license)
@@ -558,19 +559,59 @@ These properties are useful for handlers that don't have a reference to the
 originating event. TypeScript users get fully typed events through overloaded
 `addEventListener` signatures with no additional setup.
 
+## Universal Checkout (experimental preview)
+
+The repository contains a separate Universal Checkout entry point. Importing
+`@shopify/checkout-kit/universal` registers
+`<shopify-universal-checkout>`; importing the standard entry point above does
+not register it. This experimental API may change and has not been
+released as a supported public API.
+Pass it a keyed Universal Checkout `continue_url` produced from the
+participating shops' cart IDs, then call `open()` from a buyer click. The buyer
+needs a Shop Pay session to continue through the checkout; session creation and
+buyer authentication are separate steps.
+
+```ts
+import '@shopify/checkout-kit/universal';
+import type {ShopifyUniversalCheckout} from '@shopify/checkout-kit/universal';
+
+const checkout = document.querySelector<ShopifyUniversalCheckout>(
+  'shopify-universal-checkout',
+)!;
+
+checkout.addEventListener('update', (event) => {
+  // Each entry is a full snapshot for one changed shop, not a partial patch.
+  for (const {context, checkout: snapshot} of event.detail) {
+    renderShopStatus(context.shopId, snapshot.status);
+  }
+  renderSession(checkout.checkout); // Aggregate already contains the whole batch.
+});
+```
+
+The Universal element emits `start`, `update`, `complete`, `error`, and
+`close`. Resource event details are arrays of `{context, checkout}` entries;
+`context` has `sessionId`, `revision`, and `shopId`, while `status` lives on the
+checkout snapshot. `checkout.checkout` retains the aggregate of observed
+resources, including shops omitted from a changed-shop update. `close` reports
+presentation dismissal independently of a checkout outcome and carries
+`detail: null`.
+
 ## Explore the sample app
 
-See the [`sample/`](./sample) directory for a small Vite playground that mounts
-the real `<shopify-checkout>` element next to a faux storefront. Run it from
-this directory with:
+See the [sample guide](./sample/README.md) for the two-page Vite playground.
+The default page uses `<shopify-checkout>` with a single-shop cart builder.
+The experimental Universal page selects multiple shops, prepares a session,
+opens it with `<shopify-universal-checkout>`, and shows received events in a
+redacted overlay. From `platforms/web`, run:
 
 ```sh
 pnpm install
 pnpm sample
 ```
 
-Then open the dev server URL and paste a valid checkout URL into the `src`
-field to try `open()` / `close()` / `focus()` and see the live event stream.
+Open the local URLs printed by Vite. The sample guide describes the Universal
+page's required shops, environment configuration, session preparation, and
+validation limits.
 
 ## Contributing
 
