@@ -682,6 +682,26 @@ describe("<shopify-checkout>", () => {
           });
         });
 
+        it("dispatches close event when the popup was blocked and the overlay is hidden", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            vi.spyOn(window, "getComputedStyle").mockReturnValue({
+              getPropertyValue: (prop: string) => {
+                if (prop === "display") return "none";
+                return "";
+              },
+            } as CSSStyleDeclaration);
+
+            const closeEventSpy = vi.fn();
+            checkout.addEventListener("close", closeEventSpy);
+            checkout.open();
+            checkout.close();
+
+            expect(closeEventSpy).toHaveBeenCalledTimes(1);
+          });
+        });
+
         it("closes the checkout scrim dialog", async () => {
           POPUP_TARGETS.forEach((target) => {
             const checkout = renderCheckout({ target });

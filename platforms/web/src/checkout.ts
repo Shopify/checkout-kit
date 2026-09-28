@@ -226,7 +226,7 @@ export class ShopifyCheckout
 
   // Manages the listeners for the popup window, new tabs, and scrim dialog
   #currentOpen: { controller: AbortController } | null = null;
-  // Manages the listeners for the scrim dialog while it shows the blocked-window state
+  // Manages a blocked open, and the scrim dialog while it shows the blocked-window state
   #blockedOpen: { controller: AbortController } | null = null;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
@@ -628,48 +628,51 @@ export class ShopifyCheckout
   }
 
   #showBlockedOverlay(): void {
-    const dialog = this.#dialogElement;
-    if (!dialog || !this.#isDialogVisible()) return;
-
     const abortController = new AbortController();
+    const dialog = this.#dialogElement;
 
-    dialog.dataset.state = "blocked";
-    dialog.showModal();
+    if (dialog && this.#isDialogVisible()) {
+      dialog.dataset.state = "blocked";
+      dialog.showModal();
 
-    this.#dialogRetryButtonElement?.addEventListener(
-      "click",
-      () => {
-        this.open();
-      },
-      {
-        signal: abortController.signal,
-      },
-    );
+      this.#dialogRetryButtonElement?.addEventListener(
+        "click",
+        () => {
+          this.open();
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
 
-    this.#dialogBlockedCloseButtonElement?.addEventListener(
-      "click",
-      () => {
-        dialog.close();
-      },
-      {
-        signal: abortController.signal,
-      },
-    );
+      this.#dialogBlockedCloseButtonElement?.addEventListener(
+        "click",
+        () => {
+          dialog.close();
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
 
-    dialog.addEventListener(
-      "close",
-      () => {
-        // `close` fires asynchronously; ignore it if the dialog has since been re-shown
-        if (dialog.open) return;
-        abortController.abort();
-      },
-      {
-        signal: abortController.signal,
-      },
-    );
+      dialog.addEventListener(
+        "close",
+        () => {
+          // `close` fires asynchronously; ignore it if the dialog has since been re-shown
+          if (dialog.open) return;
+          abortController.abort();
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
+
+      abortController.signal.addEventListener("abort", () => {
+        if (dialog.open) dialog.close();
+      });
+    }
 
     abortController.signal.addEventListener("abort", () => {
-      if (dialog.open) dialog.close();
       this.#blockedOpen = null;
       if (abortController.signal.reason !== RETRY_ABORT_REASON) {
         /** @ignore - Events are documented by the class @event tags. */
