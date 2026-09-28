@@ -1171,6 +1171,15 @@ button:disabled {
   display: none;
 }
 
+.universal-page .uc-preparation-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.universal-page .uc-preparation-actions button {
+  width: 100%;
+}
+
 .universal-page .uc-shop-list {
   display: flex;
   flex-direction: column;
@@ -1241,6 +1250,14 @@ button:disabled {
 .universal-page #component-state p {
   margin: 12px 0 0;
   line-height: 1.45;
+}
+
+.universal-page #uc-preparation-status[data-tone="error"] {
+  color: var(--error);
+}
+
+.universal-page #uc-preparation-status[data-tone="success"] {
+  color: var(--success);
 }
 
 .universal-page .events-collapsed #uc-runtime-notice {

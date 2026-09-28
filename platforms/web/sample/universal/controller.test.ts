@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ProductVariantOption } from "../cart";
 import { UniversalController } from "./controller";
+import { MAX_CART_LINES } from "./policy";
 import {
   createInitialState,
   createUniversalStore,
@@ -32,6 +33,33 @@ function deferred<T>() {
 }
 
 describe("Universal shop controller", () => {
+  it("keeps the prepare action disabled when a shop exceeds the adapter cart-line limit", () => {
+    const variants = Array.from({ length: MAX_CART_LINES + 1 }, (_, index) =>
+      variant(String(index + 1)),
+    );
+    const base = createInitialState();
+    const shop = {
+      key: "shop-one",
+      domain: "shop-one.example.com",
+      catalogStatus: "ready" as const,
+      catalogError: "",
+      variants,
+      cartLines: variants.map((entry) => ({ variantId: entry.id, quantity: 1 })),
+      cartRevision: 1,
+    };
+
+    expect(selectCartReadiness({ ...base, shops: [shop] })).toMatchObject({
+      ready: false,
+      hint: `Choose at most ${MAX_CART_LINES} products for shop-one.example.com's cart.`,
+    });
+    expect(
+      selectCartReadiness({
+        ...base,
+        shops: [{ ...shop, cartLines: shop.cartLines.slice(0, MAX_CART_LINES) }],
+      }).ready,
+    ).toBe(true);
+  });
+
   it("keeps identical variant IDs independent across two shops and derives separate previews", async () => {
     const store = createUniversalStore(createInitialState());
     const controller = new UniversalController({

@@ -6,6 +6,13 @@ import {
   type CartLine,
   type ProductVariantOption,
 } from "../cart";
+import {
+  DEFAULT_BUYER_COUNTRY,
+  MAX_CART_LINES,
+  MAX_SESSION_CARTS,
+  type BuyerCountry,
+  type CheckoutEnvironment,
+} from "./policy";
 
 export type CatalogStatus = "loading" | "ready" | "error";
 
@@ -25,6 +32,7 @@ export interface PreparationState {
   url: string;
   readyGeneration: number | null;
   error: string;
+  carts: Record<string, { phase: "creating" | "ready" | "error"; currencyCode: string }>;
 }
 
 export interface DisplayState {
@@ -38,6 +46,8 @@ export interface DisplayState {
 export interface UniversalState {
   shops: ShopState[];
   addShopError: string;
+  environment: CheckoutEnvironment;
+  buyerCountry: BuyerCountry;
   preparation: PreparationState;
   display: DisplayState;
   runtime: { notice: string };
@@ -63,7 +73,16 @@ export function createInitialState(display: DisplayState = DEFAULT_DISPLAY): Uni
   return {
     shops: [],
     addShopError: "",
-    preparation: { generation: 0, phase: "editing", url: "", readyGeneration: null, error: "" },
+    environment: "production",
+    buyerCountry: DEFAULT_BUYER_COUNTRY,
+    preparation: {
+      generation: 0,
+      phase: "editing",
+      url: "",
+      readyGeneration: null,
+      error: "",
+      carts: {},
+    },
     display,
     runtime: { notice: "Open a universal checkout to see received events." },
   };
@@ -100,6 +119,7 @@ export function withInputChange(state: UniversalState, shops: ShopState[]): Univ
       url: "",
       readyGeneration: null,
       error: "",
+      carts: {},
     },
   };
 }
@@ -151,6 +171,13 @@ export function selectCartReadiness(state: UniversalState): CartReadiness {
   if (shopCount === 0) {
     return { ...base, ready: false, hint: "Add a shop to start building carts." };
   }
+  if (shopCount > MAX_SESSION_CARTS) {
+    return {
+      ...base,
+      ready: false,
+      hint: `Choose at most ${MAX_SESSION_CARTS} shops for one Universal Checkout session.`,
+    };
+  }
 
   for (const shop of state.shops) {
     if (shop.catalogStatus === "loading") {
@@ -161,6 +188,13 @@ export function selectCartReadiness(state: UniversalState): CartReadiness {
     }
     if (shop.cartLines.length === 0) {
       return { ...base, ready: false, hint: `Add a product to ${shop.domain}'s cart.` };
+    }
+    if (shop.cartLines.length > MAX_CART_LINES) {
+      return {
+        ...base,
+        ready: false,
+        hint: `Choose at most ${MAX_CART_LINES} products for ${shop.domain}'s cart.`,
+      };
     }
     if (invalidCartLines(shop).length > 0) {
       return {

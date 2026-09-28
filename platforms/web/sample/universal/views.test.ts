@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import page from "../universal.html?raw";
 import type { ProductVariantOption } from "../cart";
 import { UniversalController } from "./controller";
+import { createSessionPreparationController } from "./preparation";
 import { createInitialState, createUniversalStore, type ShopState } from "./state";
+import type { CreatedCart, PreparationTransport } from "./transport";
 import { queryUniversalRefs, renderUniversalApp, renderUniversalChange } from "./views";
 
 function fixture(): void {
@@ -34,6 +36,14 @@ function shop(): ShopState {
     cartLines: [{ variantId: "123", quantity: 2 }],
     cartRevision: 1,
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolver) => {
+    resolve = resolver;
+  });
+  return { promise, resolve };
 }
 
 beforeEach(fixture);
@@ -172,5 +182,51 @@ describe("Universal sample views", () => {
     expect(refs.shopList.querySelector(".cart-line")?.textContent).toContain("Unavailable");
     expect(refs.shopList.querySelector(".permalink-link")?.hasAttribute("href")).toBe(false);
     expect(refs.readiness.textContent).toContain("Remove unavailable");
+  });
+
+  it("shows preparation progress without rendering cart IDs or the continuation URL", async () => {
+    const refs = queryUniversalRefs();
+    const store = createUniversalStore({ ...createInitialState(), shops: [shop()] });
+    const cart = deferred<CreatedCart>();
+    const session = deferred<string>();
+    const transport: PreparationTransport = {
+      createCart: vi.fn().mockReturnValue(cart.promise),
+      createSession: vi.fn().mockReturnValue(session.promise),
+    };
+    const controller = createSessionPreparationController({ store, transport });
+    renderUniversalApp(refs, store.getState());
+    const unsubscribe = store.subscribe((state, previous) =>
+      renderUniversalChange(refs, state, previous),
+    );
+
+    expect(refs.prepareButton.disabled).toBe(false);
+    const preparing = controller.prepare();
+    expect(refs.prepareButton.disabled).toBe(true);
+    expect(refs.preparationStatus.textContent).toContain("Creating a Storefront cart");
+    expect(refs.selectedShops.textContent).toContain("creating cart");
+
+    const cartId = "gid://shopify/Cart/c1-synthetic?key=synthetic-cart-secret";
+    cart.resolve({ cartId, currencyCode: "CAD" });
+    await vi.waitFor(() => {
+      expect(refs.preparationStatus.textContent).toContain(
+        "Creating the Universal Checkout session",
+      );
+    });
+    expect(refs.selectedShops.textContent).toContain("cart created (CAD)");
+    expect(refs.prepareButton.disabled).toBe(true);
+    expect(document.body.innerHTML).not.toContain(cartId);
+
+    const url = "https://shop.app/checkouts/uc/synthetic-session?key=synthetic-url-secret";
+    session.resolve(url);
+    await preparing;
+    expect(refs.prepareButton.disabled).toBe(false);
+    expect(refs.prepareButton.textContent).toBe("Regenerate Universal Checkout URL");
+    expect(refs.preparationStatus.textContent).toContain("Checkout URL ready");
+    expect(document.body.innerHTML).not.toContain(cartId);
+    expect(document.body.innerHTML).not.toContain(url);
+    expect(document.body.innerHTML).not.toContain("synthetic-url-secret");
+
+    unsubscribe();
+    controller.dispose();
   });
 });

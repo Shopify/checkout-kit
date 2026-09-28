@@ -4,10 +4,15 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
 import packageJson from "../package.json";
+import { universalSampleApiPlugin } from "./universal/server";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  plugins: [universalSampleApiPlugin(resolve(here, "../../.."))],
+  // The local configuration route supplies the page's allowlisted runtime fields.
+  envDir: false,
+  envPrefix: [],
   define: {
     CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
   },
@@ -36,7 +41,11 @@ export default defineConfig({
     },
   },
   server: {
+    host: "127.0.0.1",
     port: 5173,
     open: true,
+  },
+  preview: {
+    host: "127.0.0.1",
   },
 });

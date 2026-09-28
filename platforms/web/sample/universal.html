@@ -46,6 +46,32 @@
           </fieldset>
 
           <fieldset class="source-group source-fields">
+            <legend>Checkout session</legend>
+            <label>
+              <span>Environment</span>
+              <select id="uc-environment" name="environment">
+                <option value="production">Production</option>
+                <option value="development">Local development</option>
+              </select>
+            </label>
+            <label>
+              <span>Buyer country</span>
+              <select id="uc-buyer-country" name="buyer-country">
+                <option value="CA">Canada (CAD)</option>
+                <option value="US">United States (USD)</option>
+                <option value="DE">Germany (EUR)</option>
+                <option value="GB">United Kingdom (GBP)</option>
+                <option value="AU">Australia (AUD)</option>
+                <option value="NZ">New Zealand (NZD)</option>
+                <option value="JP">Japan (JPY)</option>
+              </select>
+            </label>
+            <p class="field-help">
+              Each shop gets a separate Storefront cart. All carts must use the same currency.
+            </p>
+          </fieldset>
+
+          <fieldset class="source-group source-fields">
             <legend>Presentation</legend>
             <label>
               <span>target</span>
@@ -122,6 +148,11 @@
             <p id="uc-readiness" class="notice" role="status">
               Add a shop to start building carts.
             </p>
+            <div class="uc-preparation-actions">
+              <button id="uc-prepare" type="button" class="primary-action" disabled>
+                Create Universal Checkout URL
+              </button>
+            </div>
           </section>
 
           <div class="panel-header storefront-header">
@@ -153,7 +184,9 @@
         <div class="runtime-scroll">
           <details id="component-state" open>
             <summary>Preparation</summary>
-            <p id="uc-preparation-status" class="muted">Add a shop to start building carts.</p>
+            <p id="uc-preparation-status" class="muted" role="status" aria-live="polite">
+              Add a shop to start building carts.
+            </p>
           </details>
           <div class="panel-header events-header">
             <h2 id="events-heading">Events</h2>

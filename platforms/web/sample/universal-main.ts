@@ -1,6 +1,10 @@
 import { normalizeQuantity } from "./cart";
 import { createColumnResizer } from "./column-resizer";
+import { setDevelopmentContinuationHost } from "./universal/browser-policy";
+import { loadSampleConfiguration } from "./universal/configuration";
 import { UniversalController } from "./universal/controller";
+import { createSessionPreparationController } from "./universal/preparation";
+import { isBuyerCountry, isCheckoutEnvironment } from "./universal/policy";
 import {
   createInitialState,
   createUniversalStore,
@@ -20,6 +24,7 @@ import "./styles.css";
 const refs = queryUniversalRefs();
 const store = createUniversalStore(createInitialState(loadUniversalDisplay()));
 const controller = new UniversalController({ store });
+const preparation = createSessionPreparationController({ store });
 const resizer = createColumnResizer({
   layout: refs.layout,
   leftPanel: refs.settingsPanel,
@@ -56,6 +61,10 @@ refs.form.addEventListener("change", (event) => {
   if (!(target instanceof HTMLSelectElement)) return;
   if (target === refs.targetInput) {
     updateDisplay({ target: target.value === "auto" ? "auto" : "popup" });
+  } else if (target === refs.environmentInput) {
+    if (isCheckoutEnvironment(target.value)) preparation.setEnvironment(target.value);
+  } else if (target === refs.buyerCountryInput) {
+    if (isBuyerCountry(target.value)) preparation.setBuyerCountry(target.value);
   } else if (target === refs.appearanceInput) {
     updateDisplay({ appearance: target.value });
   } else if (target === refs.logLevelInput) {
@@ -69,6 +78,10 @@ refs.form.addEventListener("change", (event) => {
       updateDisplay({ logLevel });
     }
   }
+});
+
+refs.prepareButton.addEventListener("click", () => {
+  void preparation.prepare();
 });
 
 refs.settingsToggle.addEventListener("click", () => {
@@ -138,10 +151,25 @@ refs.shopList.addEventListener("change", (event) => {
 
 renderUniversalApp(refs, store.getState());
 resizer.applyWidths();
+void loadSampleConfiguration()
+  .then((configuration) => {
+    setDevelopmentContinuationHost(configuration.developmentContinuationHost);
+    for (const domain of configuration.shopDomains) {
+      if (!store.getState().shops.some((shop) => shop.domain === domain))
+        controller.addShop(domain);
+    }
+    return undefined;
+  })
+  .catch(() => {
+    controller.setRuntimeNotice(
+      "Could not load sample configuration. Start the local sample server, then reload the page.",
+    );
+  });
 window.addEventListener("resize", resizer.reposition);
 window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   unsubscribe();
   controller.dispose();
+  preparation.dispose();
   window.removeEventListener("resize", resizer.reposition);
 });

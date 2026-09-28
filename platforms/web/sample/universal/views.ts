@@ -23,6 +23,8 @@ export interface UniversalRefs {
   targetInput: HTMLSelectElement;
   appearanceInput: HTMLSelectElement;
   logLevelInput: HTMLSelectElement;
+  environmentInput: HTMLSelectElement;
+  buyerCountryInput: HTMLSelectElement;
   shopList: HTMLDivElement;
   shopsEmpty: HTMLDivElement;
   shopCount: HTMLSpanElement;
@@ -30,6 +32,7 @@ export interface UniversalRefs {
   cartSummary: HTMLParagraphElement;
   selectedShops: HTMLUListElement;
   readiness: HTMLParagraphElement;
+  prepareButton: HTMLButtonElement;
   preparationStatus: HTMLParagraphElement;
   runtimeNotice: HTMLParagraphElement;
 }
@@ -49,6 +52,8 @@ export function queryUniversalRefs(): UniversalRefs {
     targetInput: $<HTMLSelectElement>("#uc-target"),
     appearanceInput: $<HTMLSelectElement>("#uc-appearance"),
     logLevelInput: $<HTMLSelectElement>("#uc-log-level"),
+    environmentInput: $<HTMLSelectElement>("#uc-environment"),
+    buyerCountryInput: $<HTMLSelectElement>("#uc-buyer-country"),
     shopList: $<HTMLDivElement>("#uc-shop-list"),
     shopsEmpty: $<HTMLDivElement>("#uc-shops-empty"),
     shopCount: $<HTMLSpanElement>("#uc-shop-count"),
@@ -56,6 +61,7 @@ export function queryUniversalRefs(): UniversalRefs {
     cartSummary: $<HTMLParagraphElement>("#uc-cart-summary"),
     selectedShops: $<HTMLUListElement>("#uc-selected-shops"),
     readiness: $<HTMLParagraphElement>("#uc-readiness"),
+    prepareButton: $<HTMLButtonElement>("#uc-prepare"),
     preparationStatus: $<HTMLParagraphElement>("#uc-preparation-status"),
     runtimeNotice: $<HTMLParagraphElement>("#uc-runtime-notice"),
   };
@@ -331,20 +337,64 @@ export function renderSummary(refs: UniversalRefs, state: UniversalState): void 
       : `${summary.shopCount} selected ${summary.shopCount === 1 ? "shop" : "shops"} · ${summary.itemCount} selected ${summary.itemCount === 1 ? "item" : "items"}`;
   refs.readiness.textContent = summary.hint;
   refs.readiness.dataset["tone"] = summary.ready ? "success" : "info";
+  if (state.preparation.phase === "ready") {
+    refs.readiness.textContent = "Universal Checkout URL ready for the selected carts.";
+  }
   refs.selectedShops.replaceChildren();
   for (const shop of state.shops) {
     const item = document.createElement("li");
     const count = cartLineTotalQuantity(shop.cartLines);
-    item.textContent = `${shop.domain}: ${count} ${count === 1 ? "item" : "items"}`;
+    const cart = state.preparation.carts[shop.key];
+    const progress =
+      cart?.phase === "ready"
+        ? ` · cart created (${cart.currencyCode})`
+        : cart?.phase === "error"
+          ? " · cart failed"
+          : cart?.phase === "creating"
+            ? " · creating cart…"
+            : "";
+    item.textContent = `${shop.domain}: ${count} ${count === 1 ? "item" : "items"}${progress}`;
     refs.selectedShops.append(item);
   }
 }
 
 export function renderPreparation(refs: UniversalRefs, state: UniversalState): void {
   const summary = selectCartReadiness(state);
-  refs.preparationStatus.textContent = summary.ready
-    ? "All selected shop carts are ready for URL creation."
-    : summary.hint;
+  const preparation = state.preparation;
+  refs.prepareButton.disabled =
+    !summary.ready ||
+    preparation.phase === "creatingCarts" ||
+    preparation.phase === "creatingSession";
+  refs.prepareButton.textContent =
+    preparation.phase === "ready"
+      ? "Regenerate Universal Checkout URL"
+      : "Create Universal Checkout URL";
+
+  switch (preparation.phase) {
+    case "creatingCarts":
+      refs.preparationStatus.textContent = "Creating a Storefront cart for each shop…";
+      refs.preparationStatus.dataset["tone"] = "info";
+      break;
+    case "creatingSession":
+      refs.preparationStatus.textContent = "Creating the Universal Checkout session…";
+      refs.preparationStatus.dataset["tone"] = "info";
+      break;
+    case "ready":
+      refs.preparationStatus.textContent =
+        "Checkout URL ready. The next step can open it with Checkout Kit.";
+      refs.preparationStatus.dataset["tone"] = "success";
+      break;
+    case "error":
+      refs.preparationStatus.textContent = preparation.error;
+      refs.preparationStatus.dataset["tone"] = "error";
+      break;
+    case "editing":
+      refs.preparationStatus.textContent = summary.ready
+        ? "All selected shop carts are ready for URL creation."
+        : summary.hint;
+      refs.preparationStatus.dataset["tone"] = "info";
+      break;
+  }
 }
 
 export function renderRuntime(refs: UniversalRefs, state: UniversalState): void {
@@ -370,6 +420,8 @@ export function renderSettings(refs: UniversalRefs, state: UniversalState): void
   refs.targetInput.value = state.display.target;
   refs.appearanceInput.value = state.display.appearance;
   refs.logLevelInput.value = state.display.logLevel;
+  refs.environmentInput.value = state.environment;
+  refs.buyerCountryInput.value = state.buyerCountry;
 }
 
 export function renderUniversalApp(refs: UniversalRefs, state: UniversalState): void {
@@ -394,7 +446,12 @@ export function renderUniversalChange(
     renderSummary(refs, state);
     renderPreparation(refs, state);
   }
-  if (state.display !== previous.display || state.addShopError !== previous.addShopError) {
+  if (
+    state.display !== previous.display ||
+    state.addShopError !== previous.addShopError ||
+    state.environment !== previous.environment ||
+    state.buyerCountry !== previous.buyerCountry
+  ) {
     renderSettings(refs, state);
   }
   if (state.runtime !== previous.runtime) renderRuntime(refs, state);
