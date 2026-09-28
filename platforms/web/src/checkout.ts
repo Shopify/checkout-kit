@@ -523,6 +523,7 @@ export class ShopifyCheckout
     const dialogButton = this.#dialogButtonElement;
 
     if (dialog && this.#isDialogVisible()) {
+      delete dialog.dataset.state;
       dialog.showModal();
 
       dialogCloseButton?.addEventListener(
@@ -665,7 +666,6 @@ export class ShopifyCheckout
     );
 
     abortController.signal.addEventListener("abort", () => {
-      delete dialog.dataset.state;
       if (dialog.open) dialog.close();
       this.#blockedOpen = null;
       if (abortController.signal.reason !== RETRY_ABORT_REASON) {
