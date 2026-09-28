@@ -156,6 +156,91 @@ where they help consumers understand the change or migrate. Keep `None.` for
 sections that do not apply. The generated list of included pull requests and
 contributors remains below the curated sections.
 
+### Coordinating ECP, Android, and React Native releases
+
+When a feature needs changes across all three packages, release them in this order:
+
+```text
+Embedded Checkout Protocol (Maven Central)
+  → Checkout Kit Android (Maven Central)
+    → Checkout Kit React Native (npm)
+```
+
+Each downstream package must build and pass CI against its newly published
+dependency before it is released. A GitHub tag or release alone is not enough:
+wait for the upstream publish workflow and any registry approval/propagation to
+finish, then let the downstream Gradle build resolve the artifact from Maven
+Central. The release workflows run independently; they do not automatically
+sequence these three stages.
+
+The version declarations have different jobs. The Android catalog is
+`platforms/android/gradle/libs.versions.toml`; the RN manifest is
+`platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`.
+
+| Package | Its release version | Dependency it consumes |
+| --- | --- | --- |
+| Kotlin ECP | Catalog: `embeddedCheckoutProtocolAndroid` | — |
+| Android Kit | Catalog: `checkoutKitAndroid` | Catalog: `embeddedCheckoutProtocolAndroidDependency` |
+| React Native | RN manifest: `version` | RN manifest: `checkoutKit.nativeSdkVersions.android` |
+
+1. **Release ECP.** Merge the protocol changes, any API baseline changes, and
+   `embeddedCheckoutProtocolAndroid` bump after protocol tests/API checks pass.
+   Leave Kit's dependency pin and RN's native SDK pins at their existing published
+   versions. Follow [the ECP release steps](#releasing-a-new-embedded-checkout-protocol-version)
+   and wait for the new protocol JAR and metadata to be available on Maven Central.
+2. **Adopt ECP and release Android.** In the Kit PR, update
+   `embeddedCheckoutProtocolAndroidDependency`, make the SDK changes, and bump
+   `checkoutKitAndroid` and the installation snippets. Run normal SDK and sample
+   tests/builds and API checks against the published ECP dependency. Merge with
+   passing CI, follow [the Android release steps](#releasing-a-new-android-version),
+   and wait for the Kit AAR and metadata to be available on Maven Central.
+3. **Adopt Android and release RN.** In the RN PR, update
+   `checkoutKit.nativeSdkVersions.android` to the published Kit version, make the
+   wrapper changes, and bump the RN package's own `version`. Run the normal RN
+   Android tests and sample build, plus the other required RN checks, before
+   merging. Follow [the RN release steps](#releasing-a-new-react-native-version)
+   to publish the npm package. RN resolves ECP transitively through Kit; it does
+   not need a separate ECP version pin. Update the iOS pin only when needed, after
+   the required Swift release is available on CocoaPods.
+
+This is a dependency waterfall, not a requirement to release every package every
+time. An Android-only fix can retain its ECP pin and start at stage 2. An RN-only
+fix can retain its native SDK pins and start at stage 3. An ECP release does not
+force Kit or RN to adopt it immediately, and the package versions need not match.
+
+#### Why publish in this order?
+
+- **Each layer tests the artifacts it declares.** Kit compiles against the same
+  published ECP API it asks consumers to resolve. RN then compiles against the
+  released Kit and its transitive protocol dependency. Missing types or methods
+  can fail those builds before a downstream release ships.
+- **Versions form an explicit boundary.** A protocol source change does not
+  silently change Kit's dependency, and a Kit source change does not silently
+  change RN's dependency. Each adoption is a reviewable pin update with CI results.
+- **The packages remain composable.** Apps and other SDKs can use standalone ECP
+  or Kit's normal transitive dependency without Kit embedding another copy of the
+  protocol classes. Gradle can resolve the shared dependency through its metadata.
+
+The cost is waiting for upstream publication and running downstream CI between
+releases. That waiting is deliberate: a successful local source build does not
+prove that the declared published dependency supports the new code. The RN npm
+publish job builds and packs the JavaScript module; it does not rerun Android
+compilation, so passing RN Android CI against the published SDK is required before
+the RN release.
+
+#### Developing changes across packages
+
+Develop the changes together on stacked branches using `dev android local test`
+or `dev android local api check` for Kit/ECP, and `dev rn test android --local`
+or `dev rn android --local` for RN/native changes. These explicit overrides allow
+early integration before publication. On the RN development branch, set
+`checkoutKit.nativeSdkVersions.android` to the in-repo `checkoutKitAndroid` version
+so Maven Local resolves the artifact just built. Keep downstream adoption PRs open
+until their upstream artifacts are published, then rerun normal builds and CI without
+the overrides. Clear `USE_LOCAL_SDK` and `ORG_GRADLE_PROJECT_useLocalProtocol` if
+they were exported in your shell. Local success does not replace the published
+dependency checks or change the release order.
+
 ---
 
 ## Swift (`platforms/swift/`)
@@ -320,6 +405,10 @@ The React Native package reads its published native SDK dependency versions from
 When updating the Swift or Android SDK version that React Native should consume, update the matching `checkoutKit.nativeSdkVersions` entry in this package file after the native SDK version has been published. These values drive `RNShopifyCheckoutKit.podspec` for iOS and the module/sample Gradle dependencies for Android, so they must stay aligned with the published native SDK versions used by the React Native release. Android CI uses the published Maven artifact by default, so `nativeSdkVersions.android` must reference a `com.shopify:checkout-kit` version that is already available from Maven Central.
 
 For coordinated native and React Native releases, publish Android and Swift first, then update these React Native native SDK version pointers and publish React Native.
+
+For an Android change that also needs a new protocol version, use the full
+[ECP → Android → RN release sequence](#coordinating-ecp-android-and-react-native-releases).
+Keep an unchanged iOS dependency pinned to its existing published release.
 
 ### Public API surface
 
