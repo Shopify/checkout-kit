@@ -255,6 +255,10 @@ Open a pull request with the following changes:
 1. Bump `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. Update `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
 
+Keep `embeddedCheckoutProtocolAndroidDependency` at the existing published version
+until the new protocol artifact is available. This lets the protocol release PR
+merge while Kit continues building against its current dependency.
+
 Supported protocol release versions are `YYYY.MM.DD.PATCH` and prerelease versions are `YYYY.MM.DD.PATCH-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
@@ -270,7 +274,21 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 Open a pull request with the following changes:
 
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
-2. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
+2. If Kit needs a new protocol version, publish that protocol release first, then
+   update `embeddedCheckoutProtocolAndroidDependency` to it in the same catalog.
+
+The Android library and sample compile against the protocol artifact pinned in
+`platforms/android/gradle/libs.versions.toml` from Maven Central. CI uses the same
+dependency, and the publish workflow runs unit tests and API checks before uploading.
+Changes to protocol source are tested separately with `dev protocol test kotlin`.
+
+For joint development against unreleased protocol changes, run `dev android local test`,
+`dev android local build`, or `dev android local start`. The `local` prefix works with
+any Android command and sets the Gradle property `useLocalProtocol=true` for that
+invocation. When running Gradle directly, pass `-PuseLocalProtocol=true`.
+Remote publication rejects local mode; React Native's explicit `--local` flow can
+still publish both artifacts to Maven Local. Kit changes that need a new protocol
+version become mergeable once that version is published and normal CI passes.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 

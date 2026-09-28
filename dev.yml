@@ -218,7 +218,7 @@ commands:
           }
           run_kotlin() {
             echo "Running tests for Kotlin..."
-            platforms/android/gradlew -p platforms/android :embedded-checkout-protocol:test
+            protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:test
           }
           run_typescript() {
             cd $root/protocol
@@ -312,6 +312,16 @@ commands:
     aliases: ["kotlin"]
     desc: "Android Checkout Kit commands"
     subcommands:
+      local:
+        desc: Run an Android command against in-repo protocol sources
+        syntax: "<command> [args...]"
+        run: |
+          if [ "$#" -eq 0 ]; then
+            echo "Usage: dev android local <command> [args...]" >&2
+            exit 1
+          fi
+          ORG_GRADLE_PROJECT_useLocalProtocol=true /opt/dev/bin/dev android "$@"
+
       build:
         desc: Build the library
         run: platforms/android/gradlew -p platforms/android :lib:build

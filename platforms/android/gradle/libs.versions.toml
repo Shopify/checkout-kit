@@ -1,6 +1,8 @@
 [versions]
 checkoutKitAndroid = "4.0.0-alpha.8"
+# Protocol release version; bump independently of the published dependency below.
 embeddedCheckoutProtocolAndroid = "2026.08.25.1-alpha.1"
+embeddedCheckoutProtocolAndroidDependency = "2026.08.25.1-alpha.1"
 
 androidApplicationGradlePlugin = "9.3.1"
 androidLibraryGradlePlugin = "9.3.1"
@@ -66,6 +68,7 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+embedded-checkout-protocol = { module = "com.shopify:embedded-checkout-protocol", version.ref = "embeddedCheckoutProtocolAndroidDependency" }
 junit = { module = "junit:junit", version.ref = "junit" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidCompose" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }

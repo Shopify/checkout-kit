@@ -31,6 +31,10 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Run Protocol Unit Tests
+        working-directory: protocol/languages/kotlin
+        run: ./gradlew test --console=plain
+
       - name: Setup sample app environment
         id: sample_env
         if: ${{ !cancelled() }}
@@ -145,6 +149,10 @@ jobs:
           cache: 'gradle'
 
       - name: Kotlin Lint
+        run: ./gradlew detekt
+
+      - name: Protocol Kotlin Lint
+        working-directory: protocol/languages/kotlin
         run: ./gradlew detekt
 
       - name: Setup sample app environment
