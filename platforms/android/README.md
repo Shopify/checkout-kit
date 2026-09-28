@@ -750,7 +750,7 @@ See [samples](samples/README.md). `CheckoutKitAndroidDemo` demonstrates an Apoll
 See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
 
 The SDK and sample use the published ECP dependency by default. For joint protocol
-development, use `dev android local <command>` or Gradle's `-PuseLocalProtocol=true`.
+development, use an Android command's `--local` flag (for example, `dev android test --local`) or Gradle's `-PuseLocalProtocol=true`.
 Changes spanning the protocol, Android SDK, and React Native follow the
 [ECP → Android → RN release sequence](../../.github/CONTRIBUTING.md#coordinating-ecp-android-and-react-native-releases),
 with normal CI against each published dependency before releasing its consumer.

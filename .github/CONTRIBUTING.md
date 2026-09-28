@@ -230,8 +230,8 @@ the RN release.
 
 #### Developing changes across packages
 
-Develop the changes together on stacked branches using `dev android local test`
-or `dev android local api check` for Kit/ECP, and `dev rn test android --local`
+Develop the changes together on stacked branches using `dev android test --local`
+or `dev android api check --local` for Kit/ECP, and `dev rn test android --local`
 or `dev rn android --local` for RN/native changes. These explicit overrides allow
 early integration before publication. On the RN development branch, set
 `checkoutKit.nativeSdkVersions.android` to the in-repo `checkoutKitAndroid` version
@@ -372,10 +372,10 @@ substitution or version changes introduced by dependency resolution. Explicit lo
 mode skips this assertion; remote publication still rejects local mode.
 Changes to protocol source are tested separately with `dev protocol test kotlin`.
 
-For joint development against unreleased protocol changes, run `dev android local test`,
-`dev android local build`, or `dev android local start`. The `local` prefix works with
-any Android command and sets the Gradle property `useLocalProtocol=true` for that
-invocation. When running Gradle directly, pass `-PuseLocalProtocol=true`.
+For joint development against unreleased protocol changes, run `dev android test --local`,
+`dev android build --local`, or `dev android start --local`. The `--local` flag works with
+Android build, test, lint, format, check, and API commands and sets the Gradle property
+`useLocalProtocol=true` for that invocation. When running Gradle directly, pass `-PuseLocalProtocol=true`.
 Remote publication rejects local mode; React Native's explicit `--local` flow can
 still publish both artifacts to Maven Local. Kit changes that need a new protocol
 version become mergeable once that version is published and normal CI passes.

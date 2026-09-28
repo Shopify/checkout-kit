@@ -312,38 +312,35 @@ commands:
     aliases: ["kotlin"]
     desc: "Android Checkout Kit commands"
     subcommands:
-      local:
-        desc: Run an Android command against in-repo protocol sources
-        long_desc: |
-          Android commands use the published ECP dependency by default. Use this wrapper
-          when developing Android Kit against unreleased ECP changes. It sets
-          useLocalProtocol=true for the command; remote publication remains blocked.
-
-          Examples:
-            dev android local test
-            dev android local build samples
-
-          For React Native, use `dev rn android --local` or `dev rn test android --local`.
-          Those commands already enable local ECP when publishing Kit and ECP to Maven Local.
-        syntax: "<command> [args...]"
-        run: |
-          if [ "$#" -eq 0 ]; then
-            echo "Usage: dev android local <command> [args...]" >&2
-            exit 1
-          fi
-          ORG_GRADLE_PROJECT_useLocalProtocol=true /opt/dev/bin/dev android "$@"
-
       build:
         desc: Build the library
-        run: platforms/android/gradlew -p platforms/android :lib:build
+        long_desc: |
+          --local
+            Build against the in-repo ECP source rather than the published dependency.
+        syntax:
+          optional: --local
+        run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
+          platforms/android/gradlew -p platforms/android :lib:build
         subcommands:
           samples:
             desc: Build all sample applications
-            run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo build
+            syntax:
+              optional: --local
+            run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
+              platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo build
 
       start:
         desc: Build the android sample app and install it to the booted emulator
-        run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
+        syntax:
+          optional: --local
+        run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
+          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       e2e:
         desc: Run Android sample end-to-end tests
@@ -362,7 +359,11 @@ commands:
 
       test:
         desc: Run all library and demo app tests
+        syntax:
+          optional: --local
         run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
           set -e
           scripts/check_storefront_env
           platforms/android/gradlew -p platforms/android clean test --console=plain
@@ -370,21 +371,39 @@ commands:
         subcommands:
           samples:
             desc: Run JVM tests for the Checkout Kit Android sample app
-            run: platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
+            syntax:
+              optional: --local
+            run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
+              platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
           specific:
             desc: Run specific test class
-            syntax: <TestClassName> (e.g. CheckoutBridgeTest)
-            run: platforms/android/gradlew -p platforms/android :lib:testDebugUnitTest --tests "$1"
+            syntax: <TestClassName> [--local] (e.g. CheckoutBridgeTest)
+            run: |
+              test_class="$1"
+              shift
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
+              platforms/android/gradlew -p platforms/android :lib:testDebugUnitTest --tests "$test_class"
           demo:
             desc: Run demo app unit tests
+            syntax:
+              optional: --local
             run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
               scripts/check_storefront_env
               platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
 
       lint:
         desc: Check code style and lint (detekt + Android lint, including the sample)
         aliases: [style]
+        syntax:
+          optional: --local
         run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
           scripts/check_storefront_env
           platforms/android/gradlew -p platforms/android detekt lintRelease
           platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt :app:lintRelease
@@ -392,27 +411,43 @@ commands:
       format:
         desc: Auto-format and apply safe lint autocorrections, including the sample
         aliases: [fix]
+        syntax:
+          optional: --local
         run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
           scripts/check_storefront_env
           platforms/android/gradlew -p platforms/android detekt --auto-correct
           platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt --auto-correct
 
       check:
         desc: Run all Android checks (detekt, Android lint)
+        syntax:
+          optional: --local
         run: |
+          source platforms/android/scripts/parse_local_protocol_flag
+          parse_local_protocol_flag "$@"
           set -e
-          /opt/dev/bin/dev android check detekt
-          /opt/dev/bin/dev android check android-lint
+          /opt/dev/bin/dev android check detekt "$@"
+          /opt/dev/bin/dev android check android-lint "$@"
         subcommands:
           detekt:
             desc: Run library static analysis and sample formatting/linting checks
+            syntax:
+              optional: --local
             run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
               scripts/check_storefront_env
               platforms/android/gradlew -p platforms/android detekt
               platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:detekt
           android-lint:
             desc: Run Android lint, including the sample
+            syntax:
+              optional: --local
             run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
               scripts/check_storefront_env
               platforms/android/gradlew -p platforms/android lintRelease
               platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:lintRelease
@@ -460,13 +495,21 @@ commands:
         subcommands:
           check:
             desc: Verify public APIs match the committed baselines
+            syntax:
+              optional: --local
             run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
               set -e
               platforms/android/gradlew -p platforms/android :lib:apiCheck
               protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:apiCheck
           dump:
             desc: Regenerate the baselines after intentional public API changes
+            syntax:
+              optional: --local
             run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
               set -e
               platforms/android/gradlew -p platforms/android :lib:apiDump
               protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:apiDump

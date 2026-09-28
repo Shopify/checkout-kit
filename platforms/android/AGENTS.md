@@ -14,7 +14,7 @@ The main modules are:
 
 The sample is a separate Gradle build (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:lib` from source. The sample's `gradle.properties` and Gradle wrapper are independent of the Android root's. The standalone Kotlin protocol Gradle root also has its own wrapper at `../../protocol/languages/kotlin/gradlew`; keep its Gradle version aligned with the Android root wrapper.
 
-The library and sample resolve the pinned protocol artifact from Maven Central by default, including in CI. To develop against unreleased protocol source, use `dev android local <command>` (for example `dev android local test`) or pass `-PuseLocalProtocol=true` to Gradle. Only this explicit mode includes `:embedded-checkout-protocol` in the Android builds. Remote Kit publication rejects local mode; `publishToMavenLocal` remains available for React Native's explicit `--local` workflow. Test protocol source independently with `dev protocol test kotlin`.
+The library and sample resolve the pinned protocol artifact from Maven Central by default, including in CI. To develop against unreleased protocol source, pass `--local` to an Android build, test, lint, format, check, or API command (for example `dev android test --local`) or pass `-PuseLocalProtocol=true` to Gradle. Only this explicit mode includes `:embedded-checkout-protocol` in the Android builds. Remote Kit publication rejects local mode; `publishToMavenLocal` remains available for React Native's explicit `--local` workflow. Test protocol source independently with `dev protocol test kotlin`.
 
 ## Where to make changes
 
