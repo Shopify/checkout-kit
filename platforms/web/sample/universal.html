@@ -77,7 +77,7 @@
               <span>target</span>
               <select id="uc-target" name="target">
                 <option value="popup">popup (window)</option>
-                <option value="auto">auto (new tab)</option>
+                <option value="auto">auto (browser window)</option>
               </select>
             </label>
             <label>
@@ -153,6 +153,48 @@
                 Create Universal Checkout URL
               </button>
             </div>
+          </section>
+
+          <section class="uc-open-card" aria-labelledby="uc-open-heading">
+            <div class="uc-open-heading">
+              <h2 id="uc-open-heading">Open with Checkout Kit</h2>
+              <p class="muted">
+                Checkout Kit displays events from each shop in its checkout overlay.
+              </p>
+            </div>
+            <fieldset class="uc-source-options">
+              <legend>Checkout URL source</legend>
+              <label>
+                <input id="uc-source-generated" type="radio" name="uc-source-mode" checked />
+                <span>Use the URL created from selected carts</span>
+              </label>
+              <label>
+                <input id="uc-source-pasted" type="radio" name="uc-source-mode" />
+                <span>Advanced: paste an existing Universal Checkout URL</span>
+              </label>
+            </fieldset>
+            <div id="uc-pasted-fields" class="uc-pasted-fields" hidden>
+              <label for="uc-pasted-url">Existing Universal Checkout URL</label>
+              <input
+                id="uc-pasted-url"
+                type="url"
+                inputmode="url"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="https://shop.app/checkouts/uc/…"
+                aria-describedby="uc-source-status"
+              />
+              <p class="field-help">
+                This advanced input stays on this page only and is cleared when you change modes.
+              </p>
+            </div>
+            <p id="uc-source-status" class="notice" data-tone="info" role="status">
+              Create a Universal Checkout URL from the selected carts first.
+            </p>
+            <button id="uc-open" type="button" class="primary-action" disabled>
+              Open Universal Checkout
+            </button>
           </section>
 
           <div class="panel-header storefront-header">

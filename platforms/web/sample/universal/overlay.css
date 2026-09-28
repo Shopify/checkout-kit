@@ -1,0 +1,293 @@
+.universal-page .uc-open-card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+}
+
+.universal-page .uc-open-heading h2,
+.universal-page .uc-open-heading p {
+  margin: 0;
+}
+
+.universal-page .uc-open-heading h2 {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.universal-page .uc-open-heading p {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.universal-page .uc-source-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 10px;
+}
+
+.universal-page .uc-source-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.universal-page .uc-source-options input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.universal-page .uc-pasted-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.universal-page .uc-pasted-fields label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.universal-page .uc-pasted-fields input {
+  width: 100%;
+}
+
+.universal-page .uc-pasted-fields .field-help {
+  margin: 0;
+}
+
+.universal-page #uc-source-status {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.universal-page #uc-open {
+  align-self: flex-end;
+}
+
+.universal-page .uc-checkout-host {
+  position: fixed;
+  width: 0;
+  height: 0;
+}
+
+.universal-page .uc-checkout-host:not(:defined) > [slot="overlay"] {
+  display: none;
+}
+
+.universal-page .uc-overlay-surface {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 14px;
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(820px, calc(100dvh - 40px));
+  padding: 20px;
+  overflow: hidden;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.universal-page .uc-overlay-header,
+.universal-page .uc-overlay-activity-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.universal-page .uc-overlay-header h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.universal-page .uc-overlay-eyebrow {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.universal-page .uc-overlay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.universal-page .uc-overlay-controls button,
+.universal-page .uc-overlay-activity-header button {
+  white-space: nowrap;
+}
+
+.universal-page .uc-overlay-notice {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--info-text);
+  background: var(--info-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.universal-page .uc-overlay-resources,
+.universal-page .uc-overlay-activity {
+  min-height: 0;
+  padding: 12px;
+  background: var(--surface-subdued);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.universal-page .uc-overlay-resources h3,
+.universal-page .uc-overlay-activity h3 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.universal-page .uc-overlay-resources p {
+  margin: 8px 0 0;
+}
+
+.universal-page .uc-overlay-resources ol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 112px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.universal-page .uc-overlay-resources li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.universal-page .uc-resource-error {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.universal-page .uc-overlay-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.universal-page .uc-overlay-activity > p {
+  margin: 0;
+}
+
+.universal-page .uc-overlay-event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.universal-page .uc-event-entry {
+  min-width: 0;
+}
+
+.universal-page .uc-event-entry details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.universal-page .uc-event-entry details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.universal-page .uc-event-entry details > summary::before {
+  content: "▸";
+  color: var(--text-muted);
+}
+
+.universal-page .uc-event-entry details[open] > summary::before {
+  content: "▾";
+}
+
+.universal-page .uc-event-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.universal-page .uc-event-resource {
+  font-weight: 600;
+}
+
+.universal-page .uc-event-status {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.universal-page .uc-event-attribution {
+  margin: 8px 0 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.universal-page .uc-event-clear {
+  margin-left: auto;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+@media (min-width: 1181px) {
+  .universal-page .events-collapsed .uc-event-clear {
+    display: none;
+  }
+}
+
+.universal-page .uc-overlay-surface button:focus-visible,
+.universal-page .uc-event-entry summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .universal-page .uc-overlay-surface {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .universal-page .uc-overlay-header {
+    flex-direction: column;
+  }
+}

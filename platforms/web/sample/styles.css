@@ -1264,6 +1264,19 @@ button:disabled {
   display: none;
 }
 
+.universal-page .product-scroll {
+  flex: none;
+  overflow: visible;
+}
+
+@media (min-width: 1181px) {
+  .universal-page .workspace {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+}
+
 @media (max-width: 1180px) {
   html.universal-page {
     height: auto;
@@ -1297,7 +1310,6 @@ button:disabled {
     overflow: visible;
   }
 
-  body.universal-page .product-scroll,
   body.universal-page .runtime-scroll {
     overflow: visible;
   }

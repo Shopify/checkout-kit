@@ -1,10 +1,19 @@
+import "@shopify/checkout-kit/universal";
+
 import { normalizeQuantity } from "./cart";
 import { createColumnResizer } from "./column-resizer";
-import { setDevelopmentContinuationHost } from "./universal/browser-policy";
+import { $ } from "./dom";
+import {
+  isConfiguredContinuationUrl,
+  setDevelopmentContinuationHost,
+} from "./universal/browser-policy";
 import { loadSampleConfiguration } from "./universal/configuration";
 import { UniversalController } from "./universal/controller";
+import { mountUniversalOverlay } from "./universal/overlay";
 import { createSessionPreparationController } from "./universal/preparation";
 import { isBuyerCountry, isCheckoutEnvironment } from "./universal/policy";
+import { createSourceSelection } from "./universal/source-selection";
+import { querySourceViewRefs, renderSourceView } from "./universal/source-view";
 import {
   createInitialState,
   createUniversalStore,
@@ -22,9 +31,24 @@ import { queryUniversalRefs, renderUniversalApp, renderUniversalChange } from ".
 import "./styles.css";
 
 const refs = queryUniversalRefs();
+const sourceRefs = querySourceViewRefs();
 const store = createUniversalStore(createInitialState(loadUniversalDisplay()));
 const controller = new UniversalController({ store });
 const preparation = createSessionPreparationController({ store });
+const sourceSelection = createSourceSelection(isConfiguredContinuationUrl);
+const overlay = mountUniversalOverlay({
+  parent: document.body,
+  hostLog: $<HTMLElement>("#event-log"),
+  hostHeader: $<HTMLElement>(".events-header"),
+  hostNotice: refs.runtimeNotice,
+  validateSource: (value) =>
+    isConfiguredContinuationUrl(value, store.getState().environment) ? value : undefined,
+  onChange: (snapshot) => {
+    if (store.getState().runtime.notice !== snapshot.notice) {
+      controller.setRuntimeNotice(snapshot.notice);
+    }
+  },
+});
 const resizer = createColumnResizer({
   layout: refs.layout,
   leftPanel: refs.settingsPanel,
@@ -37,8 +61,21 @@ const resizer = createColumnResizer({
 
 const unsubscribe = store.subscribe((state, previous) => {
   renderUniversalChange(refs, state, previous);
+  syncSelectedSource();
   resizer.reposition();
 });
+
+function syncSelectedSource(): void {
+  const state = store.getState();
+  const selected = sourceSelection.select(state.preparation, state.environment);
+  renderSourceView(sourceRefs, sourceSelection.mode, sourceSelection.pastedDraft, selected);
+  overlay.configure({
+    src: selected.url,
+    target: state.display.target,
+    appearance: state.display.appearance,
+    logLevel: state.display.logLevel,
+  });
+}
 
 function updateDisplay(partial: Partial<DisplayState>): void {
   const display = { ...store.getState().display, ...partial };
@@ -55,6 +92,30 @@ refs.form.addEventListener("submit", (event) => {
 });
 
 refs.domainInput.addEventListener("input", controller.clearAddError);
+
+sourceRefs.generatedInput.addEventListener("change", () => {
+  if (!sourceRefs.generatedInput.checked) return;
+  sourceSelection.setMode("generated");
+  syncSelectedSource();
+});
+
+sourceRefs.pastedInput.addEventListener("change", () => {
+  if (!sourceRefs.pastedInput.checked) return;
+  sourceSelection.setMode("pasted");
+  syncSelectedSource();
+  sourceRefs.pastedUrl.focus();
+});
+
+sourceRefs.pastedUrl.addEventListener("input", () => {
+  sourceSelection.setPastedDraft(sourceRefs.pastedUrl.value);
+  syncSelectedSource();
+});
+
+sourceRefs.openButton.addEventListener("click", () => {
+  const state = store.getState();
+  if (!sourceSelection.select(state.preparation, state.environment).ready) return;
+  overlay.attemptOpen();
+});
 
 refs.form.addEventListener("change", (event) => {
   const target = event.target;
@@ -150,6 +211,7 @@ refs.shopList.addEventListener("change", (event) => {
 });
 
 renderUniversalApp(refs, store.getState());
+syncSelectedSource();
 resizer.applyWidths();
 void loadSampleConfiguration()
   .then((configuration) => {
@@ -158,6 +220,7 @@ void loadSampleConfiguration()
       if (!store.getState().shops.some((shop) => shop.domain === domain))
         controller.addShop(domain);
     }
+    syncSelectedSource();
     return undefined;
   })
   .catch(() => {
@@ -169,6 +232,7 @@ window.addEventListener("resize", resizer.reposition);
 window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   unsubscribe();
+  overlay.dispose();
   controller.dispose();
   preparation.dispose();
   window.removeEventListener("resize", resizer.reposition);
