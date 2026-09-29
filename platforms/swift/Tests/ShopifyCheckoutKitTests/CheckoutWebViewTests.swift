@@ -126,6 +126,43 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertEqual(handler.openedURL, link, "The deep link should be opened via the external URL handler exactly once")
     }
 
+    func testDeepLinkHandledByLinkActionProviderIsNotOpenedExternally() throws {
+        let link = try XCTUnwrap(URL(string: "myapp://checkout"))
+        let handler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = handler
+        var handledLink: CheckoutLink?
+        view.linkActionProvider = { checkoutLink in
+            handledLink = checkoutLink
+            return .handled
+        }
+        let received = expectation(description: "policy decided")
+
+        view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
+            XCTAssertEqual(policy, .cancel)
+            received.fulfill()
+        }
+
+        wait(for: [received], timeout: 2.0)
+        XCTAssertEqual(handledLink?.url, link)
+        XCTAssertNil(handler.openedURL)
+    }
+
+    func testDeepLinkCanceledByLinkActionProviderIsNotOpenedExternally() throws {
+        let link = try XCTUnwrap(URL(string: "myapp://checkout"))
+        let handler = MockExternalURLHandler(didOpen: true)
+        view.externalURLHandler = handler
+        view.linkActionProvider = { _ in .cancel }
+        let received = expectation(description: "policy decided")
+
+        view.webView(view, decidePolicyFor: MockExternalNavigationAction(url: link)) { policy in
+            XCTAssertEqual(policy, .cancel)
+            received.fulfill()
+        }
+
+        wait(for: [received], timeout: 2.0)
+        XCTAssertNil(handler.openedURL)
+    }
+
     func testHTTPSubframeRequestIsAllowed() throws {
         let link = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
         let received = expectation(description: "policy decided")

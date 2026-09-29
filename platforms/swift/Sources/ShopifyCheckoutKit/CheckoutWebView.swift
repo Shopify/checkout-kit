@@ -860,11 +860,18 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
-            Task { @MainActor [externalURLHandler] in
-                if await externalURLHandler.open(url) {
-                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
-                } else {
-                    OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). No installed app can open this scheme.")
+            Task { @MainActor [externalURLHandler, linkActionProvider] in
+                switch linkActionProvider?(CheckoutLink(url: url)) ?? .open {
+                case .handled:
+                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - handled")
+                case .cancel:
+                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - canceled")
+                case .open:
+                    if await externalURLHandler.open(url) {
+                        OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
+                    } else {
+                        OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). No installed app can open this scheme.")
+                    }
                 }
                 decisionHandler(.cancel)
             }
