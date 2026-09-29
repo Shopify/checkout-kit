@@ -860,17 +860,19 @@ extension CheckoutWebView: WKNavigationDelegate {
         // 	- Deep links on offsite payment sites
         //
         if CheckoutURL(from: url).isDeepLink() {
+            OSLogger.shared.debug("Raw navigation link intercepted: \(LogSafeURL.string(url))")
             Task { @MainActor [externalURLHandler, linkActionProvider] in
                 switch linkActionProvider?(CheckoutLink(url: url)) ?? .open {
                 case .handled:
-                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - handled")
+                    OSLogger.shared.debug("Raw navigation link handled by host")
                 case .cancel:
-                    OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - canceled")
+                    OSLogger.shared.debug("Raw navigation link canceled by host")
                 case .open:
+                    OSLogger.shared.debug("Raw navigation link delegated to SDK default handler")
                     if await externalURLHandler.open(url) {
-                        OSLogger.shared.debug("Deep link intercepted: \(LogSafeURL.string(url)) - opened externally")
+                        OSLogger.shared.debug("Raw navigation link opened with SDK default handler")
                     } else {
-                        OSLogger.shared.error("Deep link rejected: \(LogSafeURL.string(url)). No installed app can open this scheme.")
+                        OSLogger.shared.error("Raw navigation link rejected by SDK default handler")
                     }
                 }
                 decisionHandler(.cancel)
