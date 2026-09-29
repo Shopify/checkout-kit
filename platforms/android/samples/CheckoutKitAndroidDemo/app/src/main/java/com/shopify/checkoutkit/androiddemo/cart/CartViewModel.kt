@@ -305,10 +305,13 @@ class CartViewModel(
         activity: ComponentActivity,
         handler: WindowOpenHandler,
     ): CheckoutLinkAction {
-        // Returning Open keeps Checkout Kit's Custom Tab and non-web intent handling.
-        if (handler == WindowOpenHandler.Default) return CheckoutLinkAction.Open
-
         recordSdkEvent("Checkout link clicked", mapOf("url" to link.url.toString()))
+        // Returning Open keeps Checkout Kit's Custom Tab and non-web intent handling.
+        if (handler == WindowOpenHandler.Default) {
+            recordSdkEvent("Checkout link delegated to Checkout Kit", mapOf("url" to link.url.toString()))
+            return CheckoutLinkAction.Open
+        }
+
         return try {
             val intent = Intent(Intent.ACTION_VIEW, link.url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
