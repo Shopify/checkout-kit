@@ -417,14 +417,24 @@ internal class CheckoutWebView private constructor(
             return when {
                 uri == null -> false
                 uri.isContactLink() || uri.isDeepLink() -> {
-                    when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
-                        is ExternalUriLauncher.Result.Launched ->
-                            log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
-                        is ExternalUriLauncher.Result.Rejected ->
-                            log.d(
-                                LOG_TAG,
-                                "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
-                            )
+                    log.d(LOG_TAG, "Raw navigation link intercepted: ${uri.redactedForLogging()}")
+                    when (listener.onCheckoutLinkClicked(CheckoutLink(uri))) {
+                        CheckoutLinkAction.Open -> {
+                            log.d(LOG_TAG, "Raw navigation link delegated to SDK default handler")
+                            when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
+                                is ExternalUriLauncher.Result.Launched ->
+                                    log.d(LOG_TAG, "Raw navigation link opened with SDK default handler")
+                                is ExternalUriLauncher.Result.Rejected ->
+                                    log.d(
+                                        LOG_TAG,
+                                        "Raw navigation link rejected by SDK default handler: ${result.reason}"
+                                    )
+                            }
+                        }
+                        CheckoutLinkAction.Handled ->
+                            log.d(LOG_TAG, "Raw navigation link handled by host")
+                        CheckoutLinkAction.Cancel ->
+                            log.d(LOG_TAG, "Raw navigation link canceled by host")
                     }
                     true
                 }

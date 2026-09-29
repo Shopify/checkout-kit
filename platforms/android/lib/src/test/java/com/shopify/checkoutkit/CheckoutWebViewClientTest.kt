@@ -50,6 +50,7 @@ class CheckoutWebViewClientTest {
         // no activity resolves the intent. Robolectric defaults to silently recording the
         // intent instead — turning on checkActivities aligns the shadow with production.
         shadowOf(activity.application).checkActivities(true)
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Open)
     }
 
     @After
@@ -102,6 +103,50 @@ class CheckoutWebViewClientTest {
 
         assertThat(overridden).isTrue
         assertThat(shadowOf(activity).nextStartedActivity).isNotNull
+    }
+
+    @Test
+    fun `delegates deep links to the listener before opening them`() {
+        val uri = Uri.parse("geo:40.712776,-74.005974?q=Statue+of+Liberty")
+        registerResolverFor(uri)
+        val mockRequest = mockWebRequest(uri)
+
+        val view = viewWithProcessor(activity)
+        val overridden = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, mockRequest)
+
+        assertThat(overridden).isTrue
+        val link = argumentCaptor<CheckoutLink>()
+        verify(mockListener).onCheckoutLinkClicked(link.capture())
+        assertThat(link.firstValue.url).isEqualTo(uri)
+        assertThat(shadowOf(activity).nextStartedActivity).isNotNull
+    }
+
+    @Test
+    fun `does not open a deep link handled by the listener`() {
+        val listener = mock<CheckoutListener>()
+        whenever(listener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Handled)
+        val uri = Uri.parse("myapp://path")
+        val view = viewWithProcessor(activity, CheckoutWebViewListener(listener))
+
+        val overridden = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, mockWebRequest(uri))
+
+        assertThat(overridden).isTrue
+        verify(listener).onCheckoutLinkClicked(any())
+        assertThat(shadowOf(activity).peekNextStartedActivityForResult()).isNull()
+    }
+
+    @Test
+    fun `does not open a deep link canceled by the listener`() {
+        val listener = mock<CheckoutListener>()
+        whenever(listener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Cancel)
+        val uri = Uri.parse("myapp://path")
+        val view = viewWithProcessor(activity, CheckoutWebViewListener(listener))
+
+        val overridden = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, mockWebRequest(uri))
+
+        assertThat(overridden).isTrue
+        verify(listener).onCheckoutLinkClicked(any())
+        assertThat(shadowOf(activity).peekNextStartedActivityForResult()).isNull()
     }
 
     @Test
