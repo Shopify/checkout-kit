@@ -64,6 +64,30 @@ describe('CheckoutProtocol', () => {
       ).toBe('checkout-123');
     });
 
+    it('treats undefined optional checkout fields as absent but rejects undefined required fields', () => {
+      const checkoutEnvelope = {
+        id: 'checkout-123',
+        currency: 'USD',
+        status: 'incomplete',
+        line_items: [],
+        totals: [],
+        links: [],
+        ucp: {version: '2026-04-08'},
+        order: undefined,
+        fulfillment: undefined,
+      };
+
+      const decoded = decodeProtocolPayload(CheckoutProtocol.start, checkoutEnvelope);
+      expect(decoded).not.toHaveProperty('order');
+      expect(decoded).not.toHaveProperty('fulfillment');
+      expect(() =>
+        decodeProtocolPayload(CheckoutProtocol.start, {
+          ...checkoutEnvelope,
+          totals: undefined,
+        }),
+      ).toThrow('Invalid Checkout.totals');
+    });
+
     it.each(checkoutPayloadMethods)(
       'converts %s checkout schema fields to camelCase while preserving dynamic map keys',
       method => {

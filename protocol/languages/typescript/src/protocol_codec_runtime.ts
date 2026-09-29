@@ -4,6 +4,28 @@ import type {RenameChild, RenameEntry} from './generated/ProtocolRenameMap';
 type JSONRecord = Record<string, unknown>;
 type Direction = 'decode' | 'encode';
 
+export type ProtocolValidationReason = 'missing_required' | 'invalid_type';
+
+/** A schema path and reason that can be reported without exposing payload values. */
+export class ProtocolValidationError extends TypeError {
+  readonly modelPath: string;
+  readonly reason: ProtocolValidationReason;
+
+  constructor(modelPath: string, reason: ProtocolValidationReason) {
+    // The generated decoders supply model names and the checks below supply
+    // schema fields. Keep even direct calls with arbitrary names safe to log.
+    const safePath = /^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/.test(
+      modelPath,
+    )
+      ? modelPath
+      : 'ProtocolObject';
+    super(`Invalid ${safePath}`);
+    this.name = 'ProtocolValidationError';
+    this.modelPath = safePath;
+    this.reason = reason;
+  }
+}
+
 const REQUIRED_FIELDS: Record<string, readonly string[]> = {
   Checkout: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
   ErrorResponse: ['messages', 'ucp'],
@@ -16,7 +38,7 @@ const REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
   WindowOpenRequest: ['url'],
 };
 
-const NESTED_REQUIRED_FIELDS: Record<string, readonly string[]> = {
+const NESTED_REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
   order: ['id', 'permalink_url'],
   ucp: ['version'],
 };
@@ -49,7 +71,7 @@ function walkObject(
     direction === 'decode' && modelName === 'FulfillmentOption'
       ? normalizeLegacyFulfillmentOptionDescription(value)
       : value;
-  if (!entries || !isObjectRecord(input)) {
+  if (!isObjectRecord(input) || (!entries && direction === 'encode')) {
     return input;
   }
 
@@ -57,12 +79,18 @@ function walkObject(
   const targetIndex = direction === 'decode' ? 1 : 0;
 
   const entryBySource = new Map<string, RenameEntry>();
-  for (const entry of entries) {
+  for (const entry of entries ?? []) {
     entryBySource.set(entry[sourceIndex], entry);
   }
 
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(input)) {
+    // Structured clone preserves undefined-valued own properties whereas JSON
+    // omits them. Only normalize objects being walked as protocol models; an
+    // unknown extension value is passed through without changing its contents.
+    if (direction === 'decode' && item === undefined) {
+      continue;
+    }
     const entry = entryBySource.get(key);
     if (entry) {
       output[entry[targetIndex]] = walkChild(item, entry[2], direction);
@@ -141,9 +169,13 @@ function isObjectRecord(value: unknown): value is JSONRecord {
 
 function requireObject(value: unknown, label: string): JSONRecord {
   if (!isObjectRecord(value)) {
-    throw new TypeError(`Invalid ${label}`);
+    throw new ProtocolValidationError(label, 'invalid_type');
   }
   return value;
+}
+
+function hasOwnField(value: JSONRecord, field: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, field);
 }
 
 function requireFields(
@@ -152,8 +184,8 @@ function requireFields(
   label: string,
 ): void {
   for (const field of fields) {
-    if (!(field in value)) {
-      throw new TypeError(`Invalid ${label}`);
+    if (!hasOwnField(value, field) || value[field] === undefined) {
+      throw new ProtocolValidationError(`${label}.${field}`, 'missing_required');
     }
   }
 }
@@ -164,18 +196,25 @@ function requireStringFields(
   label: string,
 ): void {
   for (const field of fields) {
-    if (field in value && typeof value[field] !== 'string') {
-      throw new TypeError(`Invalid ${label}`);
+    if (
+      hasOwnField(value, field) &&
+      value[field] !== undefined &&
+      typeof value[field] !== 'string'
+    ) {
+      throw new ProtocolValidationError(`${label}.${field}`, 'invalid_type');
     }
   }
 }
 
 function requireNestedFields(value: JSONRecord, label: string): void {
-  for (const [field, requiredFields] of Object.entries(NESTED_REQUIRED_FIELDS)) {
-    if (!(field in value)) {
+  for (const [field, requiredStringFields] of Object.entries(
+    NESTED_REQUIRED_STRING_FIELDS,
+  )) {
+    if (!hasOwnField(value, field) || value[field] === undefined) {
       continue;
     }
     const nested = requireObject(value[field], `${label}.${field}`);
-    requireFields(nested, requiredFields, `${label}.${field}`);
+    requireFields(nested, requiredStringFields, `${label}.${field}`);
+    requireStringFields(nested, requiredStringFields, `${label}.${field}`);
   }
 }

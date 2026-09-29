@@ -228,6 +228,55 @@ describe("<shopify-checkout>", () => {
         expect(onStartSpy).toHaveBeenCalledOnce();
       });
 
+      it("delivers a structured-cloned checkout with undefined optional fields", async () => {
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        const listenForEvent = waitForEvent(checkout, "start", onStartSpy);
+        const payload = structuredClone(
+          makeCheckoutPayload({ order: undefined, fulfillment: undefined }),
+        );
+
+        expect(Object.hasOwn(payload.checkout, "order")).toBe(true);
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: mockCheckoutWindow,
+        });
+        await listenForEvent;
+
+        expect(onStartSpy).toHaveBeenCalledOnce();
+        const event = onStartSpy.mock.calls[0]![0] as CustomEvent;
+        expect(event.detail.checkout).not.toHaveProperty("order");
+        expect(event.detail.checkout).not.toHaveProperty("fulfillment");
+        expect(checkout.checkout).toStrictEqual(event.detail.checkout);
+      });
+
+      it("drops an invalid present order and records a decode error", async () => {
+        const telemetrySpy = vi.spyOn(mockTelemetry(), "recordProtocolDecodeError");
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const { checkout, mockCheckoutWindow } = openPopupCheckout();
+        const onStartSpy = vi.fn();
+        checkout.addEventListener("start", onStartSpy);
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.start",
+          makeCheckoutPayload({
+            order: {
+              id: undefined,
+              permalink_url: "https://example.test/orders/order-1",
+            },
+          }),
+          { source: mockCheckoutWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(onStartSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).toHaveBeenCalledWith({ method: "ec.start", failureType: "params" });
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "<shopify-checkout>: dropped ec.start: failed to decode payload",
+          "Invalid Checkout.order.id",
+        );
+      });
+
       it("measures navigation from before the checkout window opens", async () => {
         let now = 100;
         vi.spyOn(performance, "now").mockImplementation(() => now);
