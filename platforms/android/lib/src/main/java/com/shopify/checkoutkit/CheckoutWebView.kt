@@ -417,14 +417,22 @@ internal class CheckoutWebView private constructor(
             return when {
                 uri == null -> false
                 uri.isContactLink() || uri.isDeepLink() -> {
-                    when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
-                        is ExternalUriLauncher.Result.Launched ->
-                            log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
-                        is ExternalUriLauncher.Result.Rejected ->
-                            log.d(
-                                LOG_TAG,
-                                "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
-                            )
+                    when (listener.onCheckoutLinkClicked(CheckoutLink(uri))) {
+                        CheckoutLinkAction.Open -> {
+                            when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
+                                is ExternalUriLauncher.Result.Launched ->
+                                    log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — allowed")
+                                is ExternalUriLauncher.Result.Rejected ->
+                                    log.d(
+                                        LOG_TAG,
+                                        "Deep link intercepted: ${uri.redactedForLogging()} — rejected (${result.reason})"
+                                    )
+                            }
+                        }
+                        CheckoutLinkAction.Handled ->
+                            log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — handled")
+                        CheckoutLinkAction.Cancel ->
+                            log.d(LOG_TAG, "Deep link intercepted: ${uri.redactedForLogging()} — canceled")
                     }
                     true
                 }
