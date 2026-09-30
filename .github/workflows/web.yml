@@ -44,6 +44,26 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Typecheck web E2E tests
+        run: pnpm --dir ../../e2e/web typecheck
+
+      - name: Install Playwright Chromium
+        run: pnpm --dir ../../e2e/web exec playwright install --with-deps chromium
+
+      - name: Web browser happy path
+        run: pnpm --dir ../../e2e/web test
+
+      - name: Upload browser test report and failure traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-playwright
+          path: |
+            e2e/web/playwright-report/
+            e2e/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Verify package (publint)
         run: pnpm verify
 

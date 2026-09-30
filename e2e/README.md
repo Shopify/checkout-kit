@@ -1,5 +1,9 @@
 # Checkout Kit End-to-End Tests
 
+The web platform has a [Playwright browser suite](web/README.md) against the built
+package with synthetic checkout fixtures. Run it with `dev web e2e`; it needs no
+storefront configuration. The sections below describe the native Maestro suites.
+
 This directory contains Maestro end-to-end flows and configuration for Checkout
 Kit sample apps. Two complementary setups live here:
 
