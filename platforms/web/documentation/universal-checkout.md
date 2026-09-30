@@ -6,8 +6,8 @@
 
 This guide describes the Web element's observable behavior and the current
 integration assumptions. The [sample guide](../sample/README.md) covers the
-local storefront-to-session flow. A live multi-shop buyer run is still required
-before release.
+local storefront-to-session flow. Live two-shop completion and resource-error
+isolation have been observed; the remaining release gates are listed below.
 
 ## Open a session
 
@@ -128,8 +128,9 @@ provide usable controls when it supplies that slot.
 
 ## Expected producer exchange for this preview
 
-The integration fixtures cover the expected exchange below. It reflects
-source inspection and synthetic tests, not a completed live buyer run. The
+The integration fixtures cover the expected exchange below. Live browser runs
+also verified start/update delivery, partial and explicit final completion, and
+resource-error isolation. Synthetic tests cover additional edge cases; the
 producer contract may change before a supported release.
 
 1. Checkout sends one `ec.ready` request per shop in a batch. Kit replies with
@@ -148,10 +149,12 @@ producer contract may change before a supported release.
    rejected. A malformed member is dropped without discarding valid siblings;
    Kit logs a safe reason and records decode telemetry for each dropped member.
 
-Resource errors, missing initial snapshots, retry or replacement, and ejection
-still need final producer agreement or live validation. Kit's error parser has
-synthetic coverage, but real producer error outcomes remain unverified. Kit
-removes child transport version metadata from public checkout snapshots.
+A live child-checkout reload produced a resource error, and the healthy sibling
+subsequently completed while the failed resource's snapshot and error remained
+visible. Session-scoped producer errors, late first snapshots, all-unavailable
+startup, retry or replacement, and ejection still need final producer agreement or live
+validation. Kit removes child transport version metadata from public checkout
+snapshots.
 
 ## Conformance evidence and remaining gates
 
@@ -163,19 +166,33 @@ state. A sample integration fixture sends trusted batches through the
 registered element and checks the slotted overlay DOM. These tests use a mocked popup;
 they do not prove cart/session creation or real event delivery in a browser.
 
-Before treating the sample as complete, record the Kit and producer versions,
-environment, and results of an approved two-shop browser run: domains → product
-selection → separate carts → session URL → Kit open → overlay events. Exercise
-partial and full completion separately, and use approved test payment flows.
-Keep keyed URLs out of logs, screenshots, and reports.
+On 30 September 2026, Chrome runs against Kit revision `57dec1a4` used approved
+test-payment stores and exercised product selection, separate carts, session
+creation, Kit presentation, and received overlay events. A completed-shop
+update retained its incomplete sibling, followed by an explicit final completion
+batch for both shops. In a separate session, one child failed and its healthy
+sibling completed without clearing the failed snapshot or error. The final live
+batch changed one shop's state; preservation of a fully identical final snapshot
+is covered by synthetic tests, not established by that run.
+
+Closing and reopening the completed URL reset Kit's resources and event history,
+but the producer displayed an error page before sending any protocol events.
+This verified fresh presentation state, not successful completed-session replay
+or a session-scoped protocol error.
+
+The completion runs were observed live but were not recorded, and the deployed
+producer revision was not independently pinned. For reproducible release
+validation, record both versions, the environment, and the remaining outcomes
+below. Use approved test payment flows and keep keyed URLs and buyer data out of
+logs, screenshots, and public reports.
 
 | Case | Required evidence or decision |
 | --- | --- |
-| Resource and session errors | Agree the producer wire shape and validate real errors through Kit. |
-| Child failure before its first snapshot | Agree startup and late-arrival behavior, then verify healthy shops can proceed without fabricated checkout data. |
+| Session-scoped producer errors | Agree the producer wire shape and validate real session errors through Kit; resource-error isolation and healthy-sibling completion were observed. |
+| Child failure before its first snapshot | Validate interim valid-snapshot startup; settle late first snapshots, omitted-resource representation, and all-unavailable behavior without fabricated checkout data. |
 | Retry, replacement, and resource ejection | Settle the resource lifecycle contract and add source-pinned fixtures plus browser coverage. |
-| Reopen and replay | Confirm behavior after completion and test fresh presentation state without duplicate callbacks. |
-| Full sample flow | Record the two-shop browser path; fixtures alone do not satisfy this gate. |
+| Reopen and replay | Fresh Kit state was observed. Confirm successful producer replay after completion; the attempted completed URL returned an error page before events. |
+| Reproducible release evidence | Pin Kit and producer versions and record the approved two-shop browser path; the live completion runs above were not recorded. |
 | Release readiness | Finish the wider rollout, observability, documentation, and live validation checks before supporting this API publicly. |
 
 Keep this guide and the conformance tests synchronized with the final producer

@@ -160,9 +160,14 @@ when selected. It does not create carts or a new session.
 
 The cart, catalog, and session routes exist in the local Vite development and
 preview servers. Opening the built HTML file directly or serving it from an
-unrelated static host will not provide those routes. The complete two-shop
-buyer flow and real producer error events still require a recorded browser
-run; unit tests and source inspection alone do not establish that validation.
+unrelated static host will not provide those routes. Live Chrome runs at Kit
+revision `57dec1a4` verified the two-shop flow through partial and final
+completion, plus healthy-shop completion after a sibling resource error. Those
+completion runs were observed but not recorded. Reopening a completed URL reset
+Kit's state, but the producer returned an error page before any protocol events;
+successful completed-session replay remains unverified. See the
+[conformance evidence and remaining gates](../documentation/universal-checkout.md#conformance-evidence-and-remaining-gates)
+for the evidence limits and release follow-ups.
 
 ## Build
 
