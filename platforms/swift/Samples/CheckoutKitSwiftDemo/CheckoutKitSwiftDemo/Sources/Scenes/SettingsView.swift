@@ -65,12 +65,17 @@ struct SettingsView: View {
                             }
                         }
 
-                    Picker("Window open handler", selection: $windowOpenHandler) {
-                        ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
-                            Text(option.title).tag(option)
+                    HStack {
+                        Text("Link opening")
+                        Spacer()
+                        Picker("Link opening", selection: $windowOpenHandler) {
+                            ForEach(WindowOpenHandlerOption.allCases, id: \.self) { option in
+                                Text(option.title).tag(option)
+                            }
                         }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
 
                 Section(header: Text("Accelerated Checkouts")) {
@@ -190,6 +195,7 @@ struct SettingsView: View {
                 logs = LogReader.shared.readLogs() ?? []
             }
         }
+        .navigationViewStyle(.stack)
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
         .alert("Session reset", isPresented: $showingSessionReset) {
