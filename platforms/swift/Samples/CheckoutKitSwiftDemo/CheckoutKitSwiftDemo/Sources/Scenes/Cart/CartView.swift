@@ -204,10 +204,13 @@ struct CartView: View {
     }
 
     private func handleCheckoutLink(_ link: CheckoutLink) -> CheckoutLinkAction {
+        print("[CheckoutKitSwiftDemo] Checkout link clicked: \(link.url)")
         switch windowOpenHandler {
         case .default:
+            print("[CheckoutKitSwiftDemo] Checkout link delegated to Checkout Kit: \(link.url)")
             return .open
         case .externalApp:
+            print("[CheckoutKitSwiftDemo] Checkout link handled by sample: \(link.url)")
             UIApplication.shared.open(link.url)
             return .handled
         }
