@@ -144,6 +144,7 @@ commands:
       /opt/dev/bin/dev swift format
       /opt/dev/bin/dev react-native format
       /opt/dev/bin/dev web format
+      /opt/dev/bin/dev protocol format
 
   lint:
     desc: Run lint checks across supported workspaces
@@ -165,6 +166,7 @@ commands:
       /opt/dev/bin/dev swift test
       /opt/dev/bin/dev react-native test
       /opt/dev/bin/dev web test
+      /opt/dev/bin/dev protocol test kotlin
       /opt/dev/bin/dev protocol test typescript
       /opt/dev/bin/dev telemetry test typescript
 
@@ -236,12 +238,18 @@ commands:
           esac
 
       lint:
-        desc: "Lint protocol TypeScript test files"
+        desc: "Lint Kotlin protocol source and TypeScript test files"
         run: |
           set -e
-          root=$(pwd)
-          cd $root/protocol
+          protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:detekt
+          cd protocol
           pnpm lint
+
+      format:
+        desc: Auto-format and apply safe lint autocorrections to Kotlin protocol source
+        aliases: [fix]
+        run: protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:detekt --auto-correct
+
       check:
         desc: Build and test the protocol package
         run: |

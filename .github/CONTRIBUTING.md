@@ -371,6 +371,9 @@ at exactly the catalog-pinned dependency version. This rejects accidental projec
 substitution or version changes introduced by dependency resolution. Explicit local
 mode skips this assertion; remote publication still rejects local mode.
 Changes to protocol source are tested separately with `dev protocol test kotlin`.
+Repository-wide `dev test`, `dev lint`, and `dev format` also cover Kotlin protocol
+source independently of Kit's published dependency. Use `dev protocol lint` or
+`dev protocol format` to run the protocol checks and formatting directly.
 
 For joint development against unreleased protocol changes, run `dev android test --local`,
 `dev android build --local`, or `dev android start --local`. The `--local` flag works with
