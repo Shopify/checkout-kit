@@ -27,6 +27,12 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+  - custom:
+      name: Install Playwright Chromium for web E2E
+      # Playwright checks its own browser revisions; current installs are a no-op.
+      met?: pnpm --dir e2e/web exec playwright install chromium
+      # Do not hide installation failures behind a successful meet command.
+      meet: "false"
   - jdk:
       version: "17"
       distribution: openjdk
@@ -1004,7 +1010,8 @@ commands:
       e2e:
         desc: Build the web package and run Playwright in Chromium
         long_desc: |
-          Run `dev web e2e install` once to install Chromium after `dev up`.
+          `dev up` installs Chromium for the current Playwright version.
+          Use `dev web e2e install` for targeted setup or recovery.
           Tests use synthetic checkout fixtures and require no storefront config.
           Extra arguments are forwarded to Playwright, for example:
 
@@ -1019,7 +1026,7 @@ commands:
           pnpm --dir e2e/web test "$@"
         subcommands:
           install:
-            desc: Install Playwright Chromium and its system dependencies
+            desc: Install or repair Playwright Chromium and its system dependencies
             run: pnpm --dir e2e/web exec playwright install --with-deps chromium
           report:
             desc: Open the last Playwright HTML report

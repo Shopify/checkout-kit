@@ -11,8 +11,7 @@ tokens, or `.env` values are needed to run the suite.
 From the repository root:
 
 ```sh
-dev up
-dev web e2e install       # Install Chromium once, and again after Playwright updates
+dev up                   # Install dependencies and the matching Chromium browsers
 dev web e2e               # Build, typecheck the tests, then run Chromium
 dev web e2e --headed
 dev web e2e --ui
@@ -21,7 +20,11 @@ dev web e2e report
 
 The package is a member of the web pnpm workspace and uses
 `platforms/web/pnpm-lock.yaml`. For a web-only setup, install dependencies with
-`pnpm --dir platforms/web install --frozen-lockfile`, then install Chromium as above.
+`pnpm --dir platforms/web install --frozen-lockfile`, then run `dev web e2e install`.
+That command also provides targeted browser setup or recovery, including system
+dependencies on Linux. After Playwright updates, rerun `dev up` or
+`dev web e2e install` to install the matching browsers. Existing browser installs
+are reused when they match the installed Playwright version.
 Once the package is built, `pnpm --dir e2e/web test` runs without rebuilding.
 `dev web check` also includes the browser suite; `dev web format` formats its code.
 
