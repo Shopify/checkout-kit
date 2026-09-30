@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { access, readFile } from "node:fs/promises";
 
-const bundle = new URL("../../platforms/web/dist/index.js", import.meta.url);
+const bundle = new URL("../../dist/index.js", import.meta.url);
 await access(bundle).catch(() => {
   throw new Error("Built web component not found. Run `dev web build` first.");
 });

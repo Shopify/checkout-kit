@@ -48,27 +48,6 @@ importers:
         specifier: ^4.1.0
         version: 4.1.11(@types/node@22.19.18)(@vitest/coverage-v8@4.1.11)(happy-dom@20.8.9)(vite@8.0.16(@types/node@22.19.18)(esbuild@0.28.1))
 
-  ../../e2e/web:
-    devDependencies:
-      '@playwright/test':
-        specifier: ^1.61.1
-        version: 1.63.0
-      '@shopify/checkout-kit':
-        specifier: workspace:*
-        version: link:../../platforms/web
-      '@types/node':
-        specifier: ^22.10.0
-        version: 22.19.18
-      oxfmt:
-        specifier: ^0.47.0
-        version: 0.47.0
-      oxlint:
-        specifier: ^1.62.0
-        version: 1.63.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-
   ../../protocol/languages/typescript:
     dependencies:
       '@babel/runtime':
@@ -94,6 +73,27 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.11(@types/node@22.19.18)(@vitest/coverage-v8@4.1.11)(happy-dom@20.8.9)(vite@8.2.2(@types/node@22.19.18)(esbuild@0.28.1))
+
+  test/e2e:
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.61.1
+        version: 1.63.0
+      '@shopify/checkout-kit':
+        specifier: workspace:*
+        version: link:../..
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.18
+      oxfmt:
+        specifier: ^0.47.0
+        version: 0.47.0
+      oxlint:
+        specifier: ^1.62.0
+        version: 1.63.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
 packages:
 

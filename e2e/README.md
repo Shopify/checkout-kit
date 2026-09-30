@@ -1,6 +1,7 @@
 # Checkout Kit End-to-End Tests
 
-The web platform has a [Playwright browser suite](web/README.md) against the built
+The web platform has a
+[Playwright browser suite](../platforms/web/test/e2e/README.md) against the built
 package with synthetic checkout fixtures. Run it with `dev web e2e`; it needs no
 storefront configuration. The sections below describe the native Maestro suites.
 

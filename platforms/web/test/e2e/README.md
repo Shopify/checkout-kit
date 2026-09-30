@@ -25,7 +25,7 @@ That command also provides targeted browser setup or recovery, including system
 dependencies on Linux. After Playwright updates, rerun `dev up` or
 `dev web e2e install` to install the matching browsers. Existing browser installs
 are reused when they match the installed Playwright version.
-Once the package is built, `pnpm --dir e2e/web test` runs without rebuilding.
+Once the package is built, `pnpm --dir platforms/web/test/e2e test` runs without rebuilding.
 `dev web check` also includes the browser suite; `dev web format` formats its code.
 
 The fixture server binds to `127.0.0.1:4321`. Set `WEB_E2E_PORT` to use another port.

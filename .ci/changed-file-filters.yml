@@ -16,7 +16,6 @@ reactNative:
   - *exclude-docs-directory
 web:
   - 'platforms/web/**'
-  - 'e2e/web/**'
   - 'telemetry/languages/typescript/**'
   - 'telemetry/contract/**'
   - *exclude-markdown
@@ -54,7 +53,6 @@ packageSwift:
   - 'Package.resolved'
 e2e:
   - 'e2e/**'
-  - '!e2e/web/**'
   - *exclude-markdown
   - *exclude-docs-directory
 ciFilters:

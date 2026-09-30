@@ -67,10 +67,10 @@ class ChangedFileFiltersTest < Minitest::Test
   end
 
   def test_web_browser_tests_trigger_web_without_triggering_native_e2e
-    paths = ["e2e/web/tests/checkout.spec.ts"]
+    paths = ["platforms/web/test/e2e/tests/checkout.spec.ts"]
     assert @filters.match?("web", paths)
     refute @filters.match?("e2e", paths)
-    refute @filters.match?("web", ["e2e/web/README.md"])
+    refute @filters.match?("web", ["platforms/web/test/e2e/README.md"])
     assert @filters.match?("e2e", ["e2e/tests/shared/checkout-guest.yaml"])
   end
 

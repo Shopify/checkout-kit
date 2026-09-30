@@ -30,7 +30,7 @@ up:
   - custom:
       name: Install Playwright Chromium for web E2E
       # Playwright checks its own browser revisions; current installs are a no-op.
-      met?: pnpm --dir e2e/web exec playwright install chromium
+      met?: pnpm --dir platforms/web/test/e2e exec playwright install chromium
       # Do not hide installation failures behind a successful meet command.
       meet: "false"
   - jdk:
@@ -1022,15 +1022,15 @@ commands:
         run: |
           set -e
           /opt/dev/bin/dev web build
-          pnpm --dir e2e/web typecheck
-          pnpm --dir e2e/web test "$@"
+          pnpm --dir platforms/web/test/e2e typecheck
+          pnpm --dir platforms/web/test/e2e test "$@"
         subcommands:
           install:
             desc: Install or repair Playwright Chromium and its system dependencies
-            run: pnpm --dir e2e/web exec playwright install --with-deps chromium
+            run: pnpm --dir platforms/web/test/e2e exec playwright install --with-deps chromium
           report:
             desc: Open the last Playwright HTML report
-            run: pnpm --dir e2e/web report
+            run: pnpm --dir platforms/web/test/e2e report
 
       snapshot:
         desc: Manage snapshots for packaged contents

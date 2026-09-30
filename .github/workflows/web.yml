@@ -45,13 +45,13 @@ jobs:
         run: pnpm build
 
       - name: Typecheck web E2E tests
-        run: pnpm --dir ../../e2e/web typecheck
+        run: pnpm --dir test/e2e typecheck
 
       - name: Install Playwright Chromium
-        run: pnpm --dir ../../e2e/web exec playwright install --with-deps chromium
+        run: pnpm --dir test/e2e exec playwright install --with-deps chromium
 
       - name: Web browser happy path
-        run: pnpm --dir ../../e2e/web test
+        run: pnpm --dir test/e2e test
 
       - name: Upload browser test report and failure traces
         if: ${{ !cancelled() }}
@@ -59,8 +59,8 @@ jobs:
         with:
           name: web-playwright
           path: |
-            e2e/web/playwright-report/
-            e2e/web/test-results/
+            platforms/web/test/e2e/playwright-report/
+            platforms/web/test/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 7
 

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "playwright test",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint --config ../../platforms/web/.oxlintrc.json --report-unused-disable-directives --max-warnings 0 support tests playwright.config.ts server.mjs",
+    "lint": "oxlint --config ../../.oxlintrc.json --report-unused-disable-directives --max-warnings 0 support tests playwright.config.ts server.mjs",
     "lint:fix": "pnpm lint --fix",
     "format": "oxfmt support tests fixtures playwright.config.ts server.mjs package.json tsconfig.json",
     "format:check": "pnpm format --check",
