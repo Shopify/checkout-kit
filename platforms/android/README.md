@@ -498,6 +498,8 @@ Register checkout callbacks directly when presenting or creating a checkout. Sta
 each provide a typed `Checkout` snapshot through `event.checkout`. Failures provide a `CheckoutException` through
 `event.error`.
 
+Web pixel events are not relayed to the app — Checkout Sheet Kit's `onWebPixelEvent` has no equivalent here. Merchant [web pixels](https://shopify.dev/docs/api/web-pixels-api) run inside checkout automatically.
+
 ```kotlin
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
     onStart { event ->
