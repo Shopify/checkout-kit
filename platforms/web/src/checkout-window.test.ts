@@ -406,6 +406,24 @@ describe("<shopify-checkout>", () => {
           });
         });
 
+        it("dispatches blocked to document listeners", () => {
+          POPUP_TARGETS.forEach((target) => {
+            const checkout = renderCheckout({ target });
+            vi.spyOn(window, "open").mockReturnValue(null);
+            vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            const documentBlockedSpy = vi.fn();
+            document.addEventListener("blocked", documentBlockedSpy);
+
+            try {
+              checkout.open();
+
+              expect(documentBlockedSpy).toHaveBeenCalledTimes(1);
+            } finally {
+              document.removeEventListener("blocked", documentBlockedSpy);
+            }
+          });
+        });
+
         it("dispatches blocked when the popup is blocked and the overlay is hidden", () => {
           POPUP_TARGETS.forEach((target) => {
             const checkout = renderCheckout({ target });
