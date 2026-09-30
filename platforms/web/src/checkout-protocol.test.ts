@@ -113,8 +113,8 @@ describe("<shopify-checkout>", () => {
       });
 
       it("keeps sender and response routing independent across elements", async () => {
-        const first = renderCheckout({ target: "popup", src: "https://first.example/checkout" });
-        const second = renderCheckout({ target: "popup", src: "https://second.example/checkout" });
+        const first = renderCheckout({ target: "popup", src: "https://shop.example/checkout" });
+        const second = renderCheckout({ target: "popup", src: "https://shop.example/checkout" });
         const firstWindow = createMockWindow();
         const secondWindow = createMockWindow();
         vi.spyOn(window, "open").mockReturnValueOnce(firstWindow).mockReturnValueOnce(secondWindow);
@@ -134,9 +134,13 @@ describe("<shopify-checkout>", () => {
         );
         await flushProtocolDispatch();
 
-        expect(firstWindow.postMessage).toHaveBeenCalledWith(
-          expect.objectContaining({ id: "first-ready" }),
-          "https://first.example",
+        expect(firstWindow.postMessage).toHaveBeenCalledExactlyOnceWith(
+          {
+            jsonrpc: "2.0",
+            id: "first-ready",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
+          "https://shop.example",
         );
         expect(secondWindow.postMessage).not.toHaveBeenCalled();
       });

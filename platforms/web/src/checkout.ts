@@ -322,6 +322,7 @@ export class ShopifyCheckout
       onClose: () => {
         this.#navigationStartedAt = undefined;
         this.#presentation = undefined;
+        /** @ignore - Events are documented by the class @event tags. */
         this.dispatchEvent(new ShopifyCheckoutCloseEvent());
       },
     });
