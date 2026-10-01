@@ -43,7 +43,3 @@ SDK's browser integration; it does not place a real order or exercise checkout-w
 - `fixtures/` contains the host page and synthetic checkout.
 - `support/fixtures.ts` installs checkout routing and the network guard.
 - `tests/checkout.spec.ts` drives the happy path through browser interactions.
-
-The harness builds on Mark Murray's [original Playwright PR #418](https://github.com/Shopify/checkout-kit/pull/418),
-updated for the current public lifecycle API and web workspace. Additional
-presentation, error, origin-validation, and cross-browser cases can build on it.
