@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import page from "../universal.html?raw";
 import type { ProductVariantOption } from "../cart";
-import { createUniversalController } from "./controller";
+import { UniversalController } from "./controller";
 import { createInitialState, createUniversalStore, type ShopState } from "./state";
 import { queryUniversalRefs, renderUniversalApp, renderUniversalChange } from "./views";
 
@@ -39,6 +39,21 @@ function shop(): ShopState {
 beforeEach(fixture);
 
 describe("Universal sample views", () => {
+  it("clears the domain error when the controller is used as an input listener", () => {
+    const refs = queryUniversalRefs();
+    const store = createUniversalStore(createInitialState());
+    const controller = new UniversalController({ store });
+    refs.domainInput.addEventListener("input", controller.clearAddError);
+
+    expect(controller.addShop("not a domain")).toBe(false);
+    expect(store.getState().addShopError).not.toBe("");
+    refs.domainInput.dispatchEvent(new Event("input"));
+    expect(store.getState().addShopError).toBe("");
+
+    refs.domainInput.removeEventListener("input", controller.clearAddError);
+    controller.dispose();
+  });
+
   it("renders independent shop cards, cart controls, and neutral price text", () => {
     const refs = queryUniversalRefs();
     renderUniversalApp(refs, { ...createInitialState(), shops: [shop()] });
@@ -65,7 +80,7 @@ describe("Universal sample views", () => {
   it("updates runtime without rebuilding product controls or losing the shop draft focus", () => {
     const refs = queryUniversalRefs();
     const store = createUniversalStore({ ...createInitialState(), shops: [shop()] });
-    const controller = createUniversalController({ store });
+    const controller = new UniversalController({ store });
     renderUniversalApp(refs, store.getState());
     const unsubscribe = store.subscribe((state, previous) =>
       renderUniversalChange(refs, state, previous),

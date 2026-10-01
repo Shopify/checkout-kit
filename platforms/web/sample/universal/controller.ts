@@ -13,42 +13,37 @@ const CATALOG_FAILURE =
   "Could not load public products. Check the domain and published products, then retry.";
 const EMPTY_CATALOG = "No products were found. Publish products to this shop and retry.";
 
-export interface UniversalController {
-  addShop(rawDomain: string): boolean;
-  clearAddError(): void;
-  retryShop(key: string): void;
-  removeShop(key: string): void;
-  setQuantity(key: string, variantId: string, quantity: unknown): void;
-  setRuntimeNotice(notice: string): void;
-  dispose(): void;
-}
-
 interface ControllerOptions {
   store: UniversalStore;
   catalogLoader?: CatalogLoader;
 }
 
-export function createUniversalController(options: ControllerOptions): UniversalController {
-  const { store } = options;
-  const fetchCatalog = options.catalogLoader ?? loadCatalog;
-  const requests = new Map<string, AbortController>();
-  let nextKey = 0;
-  let disposed = false;
+export class UniversalController {
+  readonly #store: UniversalStore;
+  readonly #fetchCatalog: CatalogLoader;
+  readonly #requests = new Map<string, AbortController>();
+  #nextKey = 0;
+  #disposed = false;
 
-  function clearAddError(): void {
-    store.update((state) => (state.addShopError ? { ...state, addShopError: "" } : state));
+  constructor(options: ControllerOptions) {
+    this.#store = options.store;
+    this.#fetchCatalog = options.catalogLoader ?? loadCatalog;
   }
 
-  function loadShop(key: string): void {
-    if (disposed) return;
-    const initialShop = selectShop(store.getState(), key);
+  readonly clearAddError = (): void => {
+    this.#store.update((state) => (state.addShopError ? { ...state, addShopError: "" } : state));
+  };
+
+  #loadShop(key: string): void {
+    if (this.#disposed) return;
+    const initialShop = selectShop(this.#store.getState(), key);
     if (!initialShop) return;
 
-    requests.get(key)?.abort();
+    this.#requests.get(key)?.abort();
     const request = new AbortController();
-    requests.set(key, request);
+    this.#requests.set(key, request);
 
-    store.update((state) => {
+    this.#store.update((state) => {
       const shop = selectShop(state, key);
       if (!shop) return state;
       if (shop.catalogStatus === "loading" && !shop.catalogError) return state;
@@ -60,11 +55,12 @@ export function createUniversalController(options: ControllerOptions): Universal
       return withInputChange(state, shops);
     });
 
-    void fetchCatalog(initialShop.domain, request.signal)
+    void this.#fetchCatalog(initialShop.domain, request.signal)
       .then((variants) => {
-        if (disposed || request.signal.aborted || requests.get(key) !== request) return undefined;
-        requests.delete(key);
-        return store.update((state) => {
+        if (this.#disposed || request.signal.aborted || this.#requests.get(key) !== request)
+          return undefined;
+        this.#requests.delete(key);
+        return this.#store.update((state) => {
           if (!selectShop(state, key)) return state;
           if (variants.length === 0) {
             return {
@@ -87,9 +83,9 @@ export function createUniversalController(options: ControllerOptions): Universal
         });
       })
       .catch(() => {
-        if (disposed || request.signal.aborted || requests.get(key) !== request) return;
-        requests.delete(key);
-        store.update((state) => {
+        if (this.#disposed || request.signal.aborted || this.#requests.get(key) !== request) return;
+        this.#requests.delete(key);
+        this.#store.update((state) => {
           if (!selectShop(state, key)) return state;
           return {
             ...state,
@@ -103,22 +99,22 @@ export function createUniversalController(options: ControllerOptions): Universal
       });
   }
 
-  function addShop(rawDomain: string): boolean {
-    if (disposed) return false;
+  addShop(rawDomain: string): boolean {
+    if (this.#disposed) return false;
     const parsed = parseShopDomain(rawDomain);
     if (!parsed.ok) {
-      store.update((state) => ({ ...state, addShopError: parsed.message }));
+      this.#store.update((state) => ({ ...state, addShopError: parsed.message }));
       return false;
     }
-    if (store.getState().shops.some((shop) => shop.domain === parsed.domain)) {
-      store.update((state) => ({
+    if (this.#store.getState().shops.some((shop) => shop.domain === parsed.domain)) {
+      this.#store.update((state) => ({
         ...state,
         addShopError: `${parsed.domain} is already selected.`,
       }));
       return false;
     }
 
-    const key = `shop-${++nextKey}`;
+    const key = `shop-${++this.#nextKey}`;
     const shop: ShopState = {
       key,
       domain: parsed.domain,
@@ -128,25 +124,25 @@ export function createUniversalController(options: ControllerOptions): Universal
       cartLines: [],
       cartRevision: 0,
     };
-    store.update((state) => ({
+    this.#store.update((state) => ({
       ...withInputChange(state, [...state.shops, shop]),
       addShopError: "",
     }));
-    loadShop(key);
+    this.#loadShop(key);
     return true;
   }
 
-  function retryShop(key: string): void {
-    const shop = selectShop(store.getState(), key);
+  retryShop(key: string): void {
+    const shop = selectShop(this.#store.getState(), key);
     if (!shop || shop.catalogStatus === "loading") return;
-    loadShop(key);
+    this.#loadShop(key);
   }
 
-  function removeShop(key: string): void {
-    if (!selectShop(store.getState(), key)) return;
-    requests.get(key)?.abort();
-    requests.delete(key);
-    store.update((state) =>
+  removeShop(key: string): void {
+    if (!selectShop(this.#store.getState(), key)) return;
+    this.#requests.get(key)?.abort();
+    this.#requests.delete(key);
+    this.#store.update((state) =>
       withInputChange(
         state,
         state.shops.filter((shop) => shop.key !== key),
@@ -154,10 +150,10 @@ export function createUniversalController(options: ControllerOptions): Universal
     );
   }
 
-  function setQuantity(key: string, variantId: string, quantity: unknown): void {
+  setQuantity(key: string, variantId: string, quantity: unknown): void {
     const normalizedId = variantId.trim();
     if (!normalizedId) return;
-    store.update((state) => {
+    this.#store.update((state) => {
       const shop = selectShop(state, key);
       if (!shop) return state;
       const nextQuantity = Number(quantity) <= 0 ? 0 : normalizeQuantity(quantity);
@@ -176,15 +172,13 @@ export function createUniversalController(options: ControllerOptions): Universal
     });
   }
 
-  function setRuntimeNotice(notice: string): void {
-    store.update((state) => ({ ...state, runtime: { notice } }));
+  setRuntimeNotice(notice: string): void {
+    this.#store.update((state) => ({ ...state, runtime: { notice } }));
   }
 
-  function dispose(): void {
-    disposed = true;
-    for (const request of requests.values()) request.abort();
-    requests.clear();
+  dispose(): void {
+    this.#disposed = true;
+    for (const request of this.#requests.values()) request.abort();
+    this.#requests.clear();
   }
-
-  return { addShop, clearAddError, retryShop, removeShop, setQuantity, setRuntimeNotice, dispose };
 }

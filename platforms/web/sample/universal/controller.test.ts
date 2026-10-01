@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { ProductVariantOption } from "../cart";
-import { createUniversalController } from "./controller";
+import { UniversalController } from "./controller";
 import {
   createInitialState,
   createUniversalStore,
@@ -34,7 +34,7 @@ function deferred<T>() {
 describe("Universal shop controller", () => {
   it("keeps identical variant IDs independent across two shops and derives separate previews", async () => {
     const store = createUniversalStore(createInitialState());
-    const controller = createUniversalController({
+    const controller = new UniversalController({
       store,
       catalogLoader: vi.fn().mockResolvedValue([variant("123")]),
     });
@@ -75,7 +75,7 @@ describe("Universal shop controller", () => {
       .fn()
       .mockRejectedValueOnce(new Error("private token must not appear"))
       .mockResolvedValueOnce([variant("123")]);
-    const controller = createUniversalController({ store, catalogLoader });
+    const controller = new UniversalController({ store, catalogLoader });
     controller.addShop("shop-one.example.com");
     await vi.waitFor(() => expect(store.getState().shops[0]?.catalogStatus).toBe("error"));
     expect(store.getState().shops[0]?.catalogError).not.toContain("private token");
@@ -95,7 +95,7 @@ describe("Universal shop controller", () => {
       .mockReturnValueOnce(oldLoad.promise)
       .mockReturnValueOnce(newLoad.promise);
     const store = createUniversalStore(createInitialState());
-    const controller = createUniversalController({ store, catalogLoader });
+    const controller = new UniversalController({ store, catalogLoader });
     controller.addShop("shop-one.example.com");
     const oldKey = store.getState().shops[0]!.key;
     const oldSignal = catalogLoader.mock.calls[0]?.[1] as AbortSignal;
@@ -117,7 +117,7 @@ describe("Universal shop controller", () => {
 
   it("clamps quantities, blocks unavailable variants, and invalidates prepared URLs on edits", async () => {
     const store = createUniversalStore(createInitialState());
-    const controller = createUniversalController({
+    const controller = new UniversalController({
       store,
       catalogLoader: vi
         .fn()
@@ -158,7 +158,7 @@ describe("Universal shop controller", () => {
 
   it("keeps stale cart lines visible but blocks preview after a catalog refresh removes a variant", async () => {
     const store = createUniversalStore(createInitialState());
-    const controller = createUniversalController({
+    const controller = new UniversalController({
       store,
       catalogLoader: vi
         .fn()

@@ -1,6 +1,6 @@
 import { normalizeQuantity } from "./cart";
 import { createColumnResizer } from "./column-resizer";
-import { createUniversalController } from "./universal/controller";
+import { UniversalController } from "./universal/controller";
 import {
   createInitialState,
   createUniversalStore,
@@ -19,7 +19,7 @@ import "./styles.css";
 
 const refs = queryUniversalRefs();
 const store = createUniversalStore(createInitialState(loadUniversalDisplay()));
-const controller = createUniversalController({ store });
+const controller = new UniversalController({ store });
 const resizer = createColumnResizer({
   layout: refs.layout,
   leftPanel: refs.settingsPanel,
