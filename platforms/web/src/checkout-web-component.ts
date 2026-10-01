@@ -1,5 +1,3 @@
-/* eslint ssr-friendly/no-dom-globals-in-module-scope: off */
-
 import { ShopifyCheckout } from "./checkout";
 
 declare global {

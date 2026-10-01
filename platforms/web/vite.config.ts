@@ -1,6 +1,7 @@
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
+import browserslistToEsbuild from 'browserslist-to-esbuild';
 import {defineConfig} from 'vitest/config';
 import dts from 'vite-plugin-dts';
 
@@ -26,7 +27,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    target: 'es2022',
+    target: browserslistToEsbuild(),
     sourcemap: true,
     minify: true,
     emptyOutDir: true,

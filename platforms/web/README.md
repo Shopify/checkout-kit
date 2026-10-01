@@ -45,9 +45,11 @@ Check out our blog to
 
 ## Platform Requirements
 
-- **Browsers** — evergreen Chromium, Firefox, and WebKit (Safari 16.4+). The
-  component relies on `<dialog>`, native `customElements`, and `AbortController`
-  — all stable in every supported browser.
+- **Browsers** — Chrome, Android Chrome, Edge, Firefox, and Android Firefox
+  111+, plus Safari and iOS Safari 16.4+. This policy is enforced for source
+  compatibility and build output. The component relies on `<dialog>`, native
+  `customElements`, and `AbortController` — all stable in every supported
+  browser.
 - **TypeScript** (optional) — `5.0+` for consumers using the bundled type
   definitions.
 - **Bundler** (optional) — works with Vite, Rollup, esbuild, webpack, or
