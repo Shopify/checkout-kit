@@ -464,7 +464,8 @@ val configuration = ShopifyCheckoutKit.getConfiguration()
 The native WebView is a private, app-controlled runtime, so Checkout Kit is **open by default**:
 with an empty `allowedMessageOrigins`, incoming checkout-protocol messages from any origin are
 accepted. Provide one or more origins to restrict which origins are trusted; the loaded checkout
-origin and `shop.app` (including its subdomains) are always trusted as well.
+origin and Shopify-owned `shop.app` and `shop.com` domains (including their subdomains) are
+always trusted as well.
 
 ```kotlin
 ShopifyCheckoutKit.configure {

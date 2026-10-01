@@ -115,7 +115,8 @@ interface CommonConfiguration {
   preloading?: boolean;
   /**
    * Origins trusted to send incoming checkout messages, in addition to the
-   * loaded checkout origin and `shop.app` (including its subdomains).
+   * loaded checkout origin and Shopify-owned `shop.app` and `shop.com` domains
+   * (including their subdomains).
    *
    * The native surface is open by default: when this is empty (the default),
    * messages from any origin are accepted. Provide one or more origins to

@@ -323,6 +323,12 @@ class CheckoutWebViewTest {
     }
 
     @Test
+    fun `web message from a shop com subdomain is accepted when an allowlist is configured`() {
+        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        assertWebMessageReceivedFrom("https://checkout.shop.com")
+    }
+
+    @Test
     fun `web message from a configured origin is accepted`() {
         ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         assertWebMessageReceivedFrom("https://allowed.example.com")

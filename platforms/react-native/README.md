@@ -481,7 +481,7 @@ function AppWithContext() {
 
 Native checkout accepts messages from every origin by default. To restrict
 messages, configure one or more exact origins or wildcard subdomains. The
-checkout URL's origin and `shop.app` remain trusted automatically.
+checkout URL's origin and Shopify-owned `shop.app` and `shop.com` domains (including their subdomains) remain trusted automatically.
 
 ```tsx
 const config: Configuration = {

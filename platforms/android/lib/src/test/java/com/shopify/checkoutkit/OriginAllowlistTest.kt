@@ -24,12 +24,14 @@ class OriginAllowlistTest {
     }
 
     @Test
-    fun `configured allowlist trusts the cart origin and shop app by default`() {
+    fun `configured allowlist trusts the cart origin and Shopify domains by default`() {
         val patterns = OriginAllowlist.effectivePatterns(cartOrigin, setOf("https://allowed.example.com"))
 
         assertThat(OriginAllowlist.isAllowed(cartOrigin, patterns)).isTrue()
         assertThat(OriginAllowlist.isAllowed("https://shop.app", patterns)).isTrue()
         assertThat(OriginAllowlist.isAllowed("https://checkout.shop.app", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://shop.com", patterns)).isTrue()
+        assertThat(OriginAllowlist.isAllowed("https://checkout.shop.com", patterns)).isTrue()
         assertThat(OriginAllowlist.isAllowed("https://allowed.example.com", patterns)).isTrue()
     }
 
