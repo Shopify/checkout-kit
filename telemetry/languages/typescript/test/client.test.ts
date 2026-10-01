@@ -112,6 +112,9 @@ describe('CheckoutKitTelemetry', () => {
     await expect(telemetry.flush()).resolves.toBe(false);
     const body = JSON.parse(fetch.mock.calls[0]![1].body as string);
     expect(body.resourceMetrics[0].scopeMetrics[0].metrics).toHaveLength(1);
+
+    await expect(telemetry.shutdown()).resolves.toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it('clamps pending measurement capacity to one', async () => {

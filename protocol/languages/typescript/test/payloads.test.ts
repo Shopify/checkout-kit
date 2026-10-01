@@ -4,6 +4,7 @@ import {describe, expect, test} from 'vitest';
 import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {Convert} from '../src/generated/Models';
 import {decodeCheckout, decodeErrorResponse} from '../src/generated/ProtocolCodecs';
+import {CheckoutModel} from '../src/generated/ProtocolRenameMap';
 import {encodeProtocolObject} from '../src/protocol_codec_runtime';
 
 function fixture(name: string) {
@@ -52,7 +53,7 @@ describe('pinned protocol payloads', () => {
       expect(location.address!.postalCode).toBe('10002');
     }
     expect(checkout.fulfillment!.methods![0].destinations![0].type).toBe('shipping_address');
-    expect(encodeProtocolObject(checkout, 'Checkout')).toEqual(wire);
+    expect(encodeProtocolObject(checkout, CheckoutModel)).toEqual(wire);
     expect(JSON.parse(Convert.checkoutToJson(converted))).toEqual(wire);
     expect(checkout.ucp.mapOrder).toEqual(
       customFulfillment ? {payment_handlers: ['com.example.wallet']} : undefined,

@@ -134,7 +134,6 @@ function modelImports(notifications, requests) {
 
 function renderModule(notifications, requests) {
   const typeNames = modelImports(notifications, requests);
-  const allMethods = EC_METHODS.map(entry => entry.method);
   const codecNames = new Set();
   for (const notification of notifications) {
     codecNames.add(`decode${notification.typeName}`);
@@ -283,7 +282,8 @@ ${requests
 };
 
 export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
-${allMethods.map(method => `  '${method}',`).join('\n')}
+  ...Object.values(checkoutProtocolCatalog),
+  ...Object.values(checkoutProtocolRequestCatalog),
 ]);
 `;
 }

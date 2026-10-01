@@ -4,6 +4,7 @@ import {describe, test, expect} from 'vitest';
 import {
   SPEC_VERSION,
   Delegations,
+  checkoutProtocolCatalog,
   checkoutProtocolRequestCatalog,
   embeddedCheckoutMethods,
 } from '../src/generated/ProtocolNotifications';
@@ -55,12 +56,10 @@ describe('spec metadata', () => {
     });
   });
 
-  test('embedded methods cover notifications and requests', () => {
-    expect(embeddedCheckoutMethods.has('ec.start')).toBe(true);
-    expect(embeddedCheckoutMethods.has('ec.ready')).toBe(true);
-    expect(
-      embeddedCheckoutMethods.has('ec.payment.instruments_change_request'),
-    ).toBe(true);
-    expect(embeddedCheckoutMethods.size).toBe(15);
+  test('embedded methods exactly cover notifications and requests', () => {
+    expect([...embeddedCheckoutMethods]).toEqual([
+      ...Object.values(checkoutProtocolCatalog),
+      ...Object.values(checkoutProtocolRequestCatalog),
+    ]);
   });
 });

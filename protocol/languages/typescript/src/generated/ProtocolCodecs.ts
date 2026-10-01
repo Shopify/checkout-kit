@@ -5,6 +5,7 @@ import {
   decodeProtocolObject,
   encodeProtocolObject,
 } from '../protocol_codec_runtime';
+import {AddressChangeResultModel, AuthRequestModel, AuthResultModel, CheckoutModel, CredentialResultModel, ErrorResponseModel, InstrumentsChangeResultModel, ReadyRequestModel, ReadyResultModel, WindowOpenRequestModel, WindowOpenResultModel} from './ProtocolRenameMap';
 
 type AddressChangeResult = import('./Models').AddressChangeResult;
 type AuthRequest = import('./Models').AuthRequest;
@@ -19,45 +20,45 @@ type WindowOpenRequest = import('./Models').WindowOpenRequest;
 type WindowOpenResult = import('./Models').WindowOpenResult;
 
 export function decodeAuthRequest(value: unknown): AuthRequest {
-  return decodeProtocolObject(value, 'AuthRequest') as unknown as AuthRequest;
+  return decodeProtocolObject(value, AuthRequestModel, 'AuthRequest') as unknown as AuthRequest;
 }
 
 export function decodeCheckout(value: unknown): Checkout {
-  return decodeProtocolObject(value, 'Checkout') as unknown as Checkout;
+  return decodeProtocolObject(value, CheckoutModel, 'Checkout') as unknown as Checkout;
 }
 
 export function decodeErrorResponse(value: unknown): ErrorResponse {
-  return decodeProtocolObject(value, 'ErrorResponse') as unknown as ErrorResponse;
+  return decodeProtocolObject(value, ErrorResponseModel, 'ErrorResponse') as unknown as ErrorResponse;
 }
 
 export function decodeReadyRequest(value: unknown): ReadyRequest {
-  return decodeProtocolObject(value, 'ReadyRequest') as unknown as ReadyRequest;
+  return decodeProtocolObject(value, ReadyRequestModel, 'ReadyRequest') as unknown as ReadyRequest;
 }
 
 export function decodeWindowOpenRequest(value: unknown): WindowOpenRequest {
-  return decodeProtocolObject(value, 'WindowOpenRequest') as unknown as WindowOpenRequest;
+  return decodeProtocolObject(value, WindowOpenRequestModel, 'WindowOpenRequest') as unknown as WindowOpenRequest;
 }
 
 export function encodeAddressChangeResult(value: AddressChangeResult): unknown {
-  return encodeProtocolObject(value, 'AddressChangeResult');
+  return encodeProtocolObject(value, AddressChangeResultModel);
 }
 
 export function encodeAuthResult(value: AuthResult): unknown {
-  return encodeProtocolObject(value, 'AuthResult');
+  return encodeProtocolObject(value, AuthResultModel);
 }
 
 export function encodeCredentialResult(value: CredentialResult): unknown {
-  return encodeProtocolObject(value, 'CredentialResult');
+  return encodeProtocolObject(value, CredentialResultModel);
 }
 
 export function encodeInstrumentsChangeResult(value: InstrumentsChangeResult): unknown {
-  return encodeProtocolObject(value, 'InstrumentsChangeResult');
+  return encodeProtocolObject(value, InstrumentsChangeResultModel);
 }
 
 export function encodeReadyResult(value: ReadyResult): unknown {
-  return encodeProtocolObject(value, 'ReadyResult');
+  return encodeProtocolObject(value, ReadyResultModel);
 }
 
 export function encodeWindowOpenResult(value: WindowOpenResult): unknown {
-  return encodeProtocolObject(value, 'WindowOpenResult');
+  return encodeProtocolObject(value, WindowOpenResultModel);
 }
