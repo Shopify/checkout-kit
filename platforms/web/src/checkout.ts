@@ -17,7 +17,7 @@ import {
 } from "./checkout-events";
 
 import {
-  applyCheckoutTargetClass,
+  applyCheckoutAppearance,
   attachCheckoutShadow,
   checkoutAllowedOrigins,
   checkoutSourceURL,
@@ -25,8 +25,9 @@ import {
   isCheckoutMessageFromPresentation,
   openCheckoutPresentation,
   rejectCheckoutMessage,
-  removeCheckoutTargetClass,
   setCheckoutAttribute,
+  setCheckoutTelemetry,
+  updateCheckoutTargetClass,
   validateCheckoutMessageOrigin,
   WINDOW_OPEN_INVALID_URL_WARNING,
   type CheckoutPresentation,
@@ -56,12 +57,6 @@ export {
 export { CK_VERSION } from "./version";
 
 const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as const;
-const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
-  ["app:light", { colorScheme: "light", branding: "app" }],
-  ["app:dark", { colorScheme: "dark", branding: "app" }],
-  ["app:automatic", { colorScheme: "automatic", branding: "app" }],
-  ["storefront", { colorScheme: "web_default", branding: "shop" }],
-]);
 
 /**
  * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
@@ -137,22 +132,11 @@ export class ShopifyCheckout
     const url = checkoutSourceURL(this.src);
     if (!url) return undefined;
 
-    url.searchParams.delete("ck_branding");
-
-    const appearance = this.appearance;
-    const queryParams = CHECKOUT_APPEARANCES.get(appearance);
-    if (!queryParams && appearance !== "" && warnInvalidAppearance) {
-      this.#logger.warn(`appearance="${appearance}" is not supported and will be ignored`);
-    }
-
     const negotiatedUrl = EmbeddedCheckoutProtocol.url(url.toString(), {
       delegations: EMBED_DELEGATIONS,
-      colorScheme: queryParams?.colorScheme,
     });
     const finalUrl = new URL(negotiatedUrl);
-    if (queryParams) {
-      finalUrl.searchParams.set("ck_branding", queryParams.branding);
-    }
+    applyCheckoutAppearance(finalUrl, this.appearance, this.#logger, warnInvalidAppearance);
     finalUrl.searchParams.set("ck_version", CK_VERSION);
     return finalUrl;
   }
@@ -176,16 +160,7 @@ export class ShopifyCheckout
   }
 
   set telemetry(value: boolean | undefined) {
-    // `#setAttribute` removes boolean `false`, which would restore the enabled default.
-    if (value === undefined || value === null) {
-      this.removeAttribute("telemetry");
-      return;
-    }
-    // JavaScript and React can assign values outside the public boolean type.
-    // Strings follow the attribute contract; other values coerce as booleans.
-    const input: unknown = value;
-    const enabled = typeof input === "string" ? input.toLowerCase() !== "false" : Boolean(input);
-    this.setAttribute("telemetry", String(enabled));
+    setCheckoutTelemetry(this, value);
   }
 
   get #recorder() {
@@ -367,14 +342,6 @@ export class ShopifyCheckout
 
   override focus(): void {
     this.#presentation?.focus();
-  }
-
-  #applyTargetClass(): void {
-    applyCheckoutTargetClass(this, this.target);
-  }
-
-  #removeTargetClass(value: string | null): void {
-    removeCheckoutTargetClass(this, value);
   }
 
   /* ------------------------------------------------------------
@@ -578,7 +545,7 @@ export class ShopifyCheckout
 
   connectedCallback(): void {
     this.#recorder?.start();
-    this.#applyTargetClass();
+    updateCheckoutTargetClass(this, this.target);
 
     this.#initCheckoutProtocol();
   }
@@ -609,8 +576,7 @@ export class ShopifyCheckout
           this.close();
         }
 
-        this.#removeTargetClass(oldValue);
-        this.#applyTargetClass();
+        updateCheckoutTargetClass(this, this.target, oldValue);
 
         break;
       }

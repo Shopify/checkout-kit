@@ -21,6 +21,13 @@ export const WINDOW_OPEN_INVALID_URL_WARNING =
 const SHOP_APP_ORIGIN_PATTERNS = [SHOP_APP_ORIGIN, "https://*.shop.app"];
 const WILDCARD_ORIGIN_PATTERN = /^(https?):\/\/\*\.([^/:]+)(?::(\d+))?\/?$/i;
 
+const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
+  ["app:light", { colorScheme: "light", branding: "app" }],
+  ["app:dark", { colorScheme: "dark", branding: "app" }],
+  ["app:automatic", { colorScheme: "automatic", branding: "app" }],
+  ["storefront", { colorScheme: "web_default", branding: "shop" }],
+]);
+
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
     <style>
@@ -95,6 +102,37 @@ export function setCheckoutAttribute(
   } else {
     element.removeAttribute(name);
   }
+}
+
+export function applyCheckoutAppearance(
+  url: URL,
+  appearance: string,
+  logger: Logger,
+  warnInvalidAppearance: boolean,
+): void {
+  url.searchParams.delete("ec_color_scheme");
+  url.searchParams.delete("ck_branding");
+  const params = CHECKOUT_APPEARANCES.get(appearance);
+  if (!params && appearance !== "" && warnInvalidAppearance) {
+    logger.warn(`appearance="${appearance}" is not supported and will be ignored`);
+  }
+  if (params) {
+    url.searchParams.set("ec_color_scheme", params.colorScheme);
+    url.searchParams.set("ck_branding", params.branding);
+  }
+}
+
+export function setCheckoutTelemetry(element: HTMLElement, value: boolean | undefined): void {
+  // The general attribute helper removes false, which would restore the enabled default.
+  if (value == null) {
+    element.removeAttribute("telemetry");
+    return;
+  }
+  // JavaScript and React can assign values outside the public boolean type.
+  // Strings follow the attribute contract; other values coerce as booleans.
+  const input: unknown = value;
+  const enabled = typeof input === "string" ? input.toLowerCase() !== "false" : Boolean(input);
+  element.setAttribute("telemetry", String(enabled));
 }
 
 export function checkoutAllowedOrigins(element: HTMLElement): string[] {
@@ -192,18 +230,18 @@ export function openCheckoutPresentation({
   };
 }
 
-export function applyCheckoutTargetClass(element: HTMLElement, target: string): void {
-  if (!target || /\s/.test(target)) return;
-  element.shadowRoot
-    ?.querySelector<HTMLDivElement>(".Shopify-target")
-    ?.classList.add(`Shopify-target--${target}`);
-}
-
-export function removeCheckoutTargetClass(element: HTMLElement, target: string | null): void {
-  if (!target || /\s/.test(target)) return;
-  element.shadowRoot
-    ?.querySelector<HTMLDivElement>(".Shopify-target")
-    ?.classList.remove(`Shopify-target--${target}`);
+export function updateCheckoutTargetClass(
+  element: HTMLElement,
+  target: string,
+  previousTarget: string | null = null,
+): void {
+  const wrapper = element.shadowRoot?.querySelector<HTMLDivElement>(".Shopify-target");
+  if (previousTarget && !/\s/.test(previousTarget)) {
+    wrapper?.classList.remove(`Shopify-target--${previousTarget}`);
+  }
+  if (target && !/\s/.test(target)) {
+    wrapper?.classList.add(`Shopify-target--${target}`);
+  }
 }
 
 /** A blocked popup has no sender and must never authenticate a null source. */

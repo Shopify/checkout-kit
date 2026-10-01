@@ -40,8 +40,12 @@ export default defineConfig({
       fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      // Zero runtime deps — bundle everything reachable from src/index.ts.
+      // Zero runtime deps — bundle everything reachable from the library entries.
       external: [],
+      output: {
+        // Keep packed file names stable when only shared chunk contents change.
+        chunkFileNames: '[name].js',
+      },
     },
   },
   test: {

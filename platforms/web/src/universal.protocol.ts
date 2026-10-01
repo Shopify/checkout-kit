@@ -6,6 +6,7 @@ import {
   METHOD_NOT_FOUND_MESSAGE,
   ProtocolValidationError,
   type ErrorResponse,
+  type JSONRPCID,
   type WindowOpenRequest,
 } from "@shopify/checkout-kit-protocol";
 
@@ -16,22 +17,23 @@ import type {
   UniversalCheckoutSnapshot,
 } from "./universal.types";
 
-export const UNIVERSAL_CHECKOUT_PROTOCOL_VERSION = "2026-08-25";
+export const UNIVERSAL_CHECKOUT_PROTOCOL_VERSION: typeof EmbeddedCheckoutProtocol.specVersion =
+  EmbeddedCheckoutProtocol.specVersion;
 
-export type JsonRpcId = string | number | null;
-
-export type JsonRpcResponse =
-  | { readonly jsonrpc: "2.0"; readonly id: JsonRpcId; readonly result: unknown }
+// The shared JSON-RPC response encoders return strings. Web batches use structured-clone objects
+// so responses keep their wire shape until the complete batch is posted.
+export type JSONRPCResponse =
+  | { readonly jsonrpc: "2.0"; readonly id: JSONRPCID; readonly result: unknown }
   | {
       readonly jsonrpc: "2.0";
-      readonly id: JsonRpcId;
+      readonly id: JSONRPCID;
       readonly error: { readonly code: number; readonly message: string };
     };
 
 export type UniversalCheckoutRequest =
-  | { readonly kind: "ready"; readonly id: JsonRpcId }
-  | { readonly kind: "windowOpen"; readonly id: JsonRpcId; readonly request: WindowOpenRequest }
-  | { readonly kind: "reject"; readonly response: JsonRpcResponse };
+  | { readonly kind: "ready"; readonly id: JSONRPCID }
+  | { readonly kind: "windowOpen"; readonly id: JSONRPCID; readonly request: WindowOpenRequest }
+  | { readonly kind: "reject"; readonly response: JSONRPCResponse };
 
 export interface UniversalCheckoutResourceNotification {
   readonly kind: "resource";
@@ -77,7 +79,7 @@ export interface UniversalCheckoutProtocolBatch {
   readonly invalidEntries: readonly UniversalCheckoutInvalidEntry[];
 }
 
-interface JsonRpcEntry {
+interface JSONRPCEntry {
   readonly jsonrpc: "2.0";
   readonly method: string;
   readonly id?: unknown;
@@ -86,14 +88,23 @@ interface JsonRpcEntry {
 
 const { Event } = EmbeddedCheckoutProtocol;
 
-const RESOURCE_EVENT_TYPES: Readonly<Record<string, UniversalCheckoutEventType>> = {
-  "ec.start": "start",
-  "ec.update": "update",
-  "ec.complete": "complete",
+const RESOURCE_EVENTS: Readonly<
+  Record<
+    string,
+    {
+      readonly eventType: UniversalCheckoutEventType;
+      readonly descriptor: typeof Event.start | typeof Event.complete;
+    }
+  >
+> = {
+  [Event.start.method]: { eventType: "start", descriptor: Event.start },
+  // Universal updates carry the same full Checkout snapshot as ec.start.
+  "ec.update": { eventType: "update", descriptor: Event.start },
+  [Event.complete.method]: { eventType: "complete", descriptor: Event.complete },
 };
 
 const KNOWN_METHODS = new Set([
-  ...Object.keys(RESOURCE_EVENT_TYPES),
+  ...Object.keys(RESOURCE_EVENTS),
   Event.error.method,
   Event.ready.method,
   Event.windowOpen.method,
@@ -117,6 +128,8 @@ export function isUniversalCheckoutUrl(url: URL): boolean {
 /**
  * Parse a structured-clone JSON-RPC batch one member at a time. A bad member
  * never discards its valid siblings, and unsupported notifications are ignored.
+ * Shared ECP descriptors own payload decoding; this wrapper adds batch isolation
+ * and Universal Checkout context. Client.process handles JSON strings individually.
  */
 export function parseUniversalCheckoutProtocolBatch(
   data: unknown,
@@ -128,7 +141,7 @@ export function parseUniversalCheckoutProtocolBatch(
   const invalidEntries: UniversalCheckoutInvalidEntry[] = [];
 
   data.forEach((value: unknown, index) => {
-    if (!isJsonRpcEntry(value)) {
+    if (!isJSONRPCEntry(value)) {
       invalidEntries.push({ index, method: "unknown", field: "message", reason: "invalid_type" });
       return;
     }
@@ -139,7 +152,7 @@ export function parseUniversalCheckoutProtocolBatch(
     // treats that the same as an omitted id, while an actual invalid id still
     // invalidates the member.
     const hasId = Object.hasOwn(value, "id") && value.id !== undefined;
-    const id = hasId && isJsonRpcId(value.id) ? value.id : undefined;
+    const id = hasId && isJSONRPCID(value.id) ? value.id : undefined;
     if (hasId && id === undefined) {
       invalidEntries.push({ index, method: safeMethod, field: "id", reason: "invalid_type" });
       return;
@@ -179,13 +192,14 @@ export function parseUniversalCheckoutProtocolBatch(
       return;
     }
 
-    const eventType = Object.hasOwn(RESOURCE_EVENT_TYPES, method)
-      ? RESOURCE_EVENT_TYPES[method]
+    const resourceEvent = Object.hasOwn(RESOURCE_EVENTS, method)
+      ? RESOURCE_EVENTS[method]
       : undefined;
-    if (eventType) {
+    if (resourceEvent) {
+      const { eventType, descriptor } = resourceEvent;
       try {
         const context = parseContext(params, "resource");
-        const checkout = Event.start.decode(params).checkout;
+        const checkout = descriptor.decode(params).checkout;
         // The shared codec verifies these fields exist, but does not verify
         // their container types. Keep an invalid resource out of public state.
         if (!Array.isArray(checkout.lineItems)) {
@@ -354,7 +368,7 @@ function safeRevision(params: unknown): { revision?: number } {
     : {};
 }
 
-function invalidParamsResponse(id: JsonRpcId): JsonRpcResponse {
+function invalidParamsResponse(id: JSONRPCID): JSONRPCResponse {
   return {
     jsonrpc: "2.0",
     id,
@@ -362,7 +376,7 @@ function invalidParamsResponse(id: JsonRpcId): JsonRpcResponse {
   };
 }
 
-function methodNotFoundResponse(id: JsonRpcId): JsonRpcResponse {
+function methodNotFoundResponse(id: JSONRPCID): JSONRPCResponse {
   return {
     jsonrpc: "2.0",
     id,
@@ -370,7 +384,7 @@ function methodNotFoundResponse(id: JsonRpcId): JsonRpcResponse {
   };
 }
 
-function isJsonRpcEntry(value: unknown): value is JsonRpcEntry {
+function isJSONRPCEntry(value: unknown): value is JSONRPCEntry {
   return (
     isRecord(value) &&
     value.jsonrpc === "2.0" &&
@@ -379,7 +393,7 @@ function isJsonRpcEntry(value: unknown): value is JsonRpcEntry {
   );
 }
 
-function isJsonRpcId(value: unknown): value is JsonRpcId {
+function isJSONRPCID(value: unknown): value is JSONRPCID {
   return (
     value === null ||
     typeof value === "string" ||

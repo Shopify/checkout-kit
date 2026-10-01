@@ -123,6 +123,33 @@ describe("@shopify/checkout-kit/universal", () => {
     expect(openedUrl.searchParams.get("ck_version")).toBe(version);
   });
 
+  it.each([
+    ["app:light", "light", "app"],
+    ["app:dark", "dark", "app"],
+    ["app:automatic", "automatic", "app"],
+    ["storefront", "web_default", "shop"],
+    ["unsupported", null, null],
+    ["", null, null],
+  ] as const)(
+    "replaces stale URL options for appearance=%s",
+    (appearance, colorScheme, branding) => {
+      const { windowOpenSpy } = openPopupUniversalCheckout({
+        src: `${UC_SRC}&ec_version=old&ec_delegate=old&ec_auth=old&ec_color_scheme=old&ck_branding=old&ck_version=old`,
+        appearance,
+        "log-level": "none",
+      });
+
+      const openedUrl = new URL(windowOpenSpy.mock.calls[0]![0] as string);
+      expect(openedUrl.searchParams.getAll("ec_version")).toEqual(["2026-08-25"]);
+      expect(openedUrl.searchParams.getAll("ec_delegate")).toEqual(["window.open"]);
+      expect(openedUrl.searchParams.has("ec_auth")).toBe(false);
+      expect(openedUrl.searchParams.get("ec_color_scheme")).toBe(colorScheme);
+      expect(openedUrl.searchParams.get("ck_branding")).toBe(branding);
+      expect(openedUrl.searchParams.getAll("ck_version")).toEqual([version]);
+      expect(openedUrl.searchParams.get("key")).toBe("k");
+    },
+  );
+
   it("answers a ready request batch with one matching response batch", () => {
     const { checkout, mockCheckoutWindow, send } = openPopupUniversalCheckout();
 

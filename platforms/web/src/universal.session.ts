@@ -11,7 +11,7 @@ import {
   isMalformedUniversalCheckoutProtocolEnvelope,
   parseUniversalCheckoutProtocolBatch,
   UNIVERSAL_CHECKOUT_PROTOCOL_VERSION,
-  type JsonRpcResponse,
+  type JSONRPCResponse,
   type UniversalCheckoutRequest,
 } from "./universal.protocol";
 import { UniversalCheckoutReducer } from "./universal.reducer";
@@ -115,7 +115,7 @@ export class UniversalCheckoutSession {
       recordDecodeError(entry.method, "params");
     }
 
-    const responses: JsonRpcResponse[] = [];
+    const responses: JSONRPCResponse[] = [];
     for (const request of batch.requests) {
       if (!isActive()) return;
       responses.push(this.#responseFor(request));
@@ -168,7 +168,7 @@ export class UniversalCheckoutSession {
     }
   }
 
-  #responseFor(request: UniversalCheckoutRequest): JsonRpcResponse {
+  #responseFor(request: UniversalCheckoutRequest): JSONRPCResponse {
     switch (request.kind) {
       case "reject":
         return request.response;
@@ -176,7 +176,9 @@ export class UniversalCheckoutSession {
         return {
           jsonrpc: "2.0",
           id: request.id,
-          result: { ucp: { version: UNIVERSAL_CHECKOUT_PROTOCOL_VERSION, status: "success" } },
+          result: EmbeddedCheckoutProtocol.Event.ready.encode({
+            ucp: { version: UNIVERSAL_CHECKOUT_PROTOCOL_VERSION, status: "success" },
+          }),
         };
       case "windowOpen":
         try {

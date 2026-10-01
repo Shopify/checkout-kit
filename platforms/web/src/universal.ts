@@ -1,5 +1,7 @@
 /* eslint ssr-friendly/no-dom-globals-in-module-scope: off */
 
+import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+
 import type {
   CheckoutAppearance,
   CheckoutMethods,
@@ -9,13 +11,17 @@ import type {
   TypedEventListener,
 } from "./checkout.types";
 import {
-  applyCheckoutTargetClass,
+  applyCheckoutAppearance,
   attachCheckoutShadow,
+  checkoutAllowedOrigins,
   checkoutSourceURL,
   handleWindowOpenRequest,
   isCheckoutMessageFromPresentation,
   openCheckoutPresentation,
-  removeCheckoutTargetClass,
+  rejectCheckoutMessage,
+  setCheckoutAttribute,
+  setCheckoutTelemetry,
+  updateCheckoutTargetClass,
   validateCheckoutMessageOrigin,
   type CheckoutPresentation,
 } from "./internal/checkout-element";
@@ -35,14 +41,7 @@ import type {
   UniversalCheckoutFailure,
 } from "./universal.types";
 
-declare const CHECKOUT_KIT_PACKAGE_VERSION: string;
-
-const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: string }>([
-  ["app:light", { colorScheme: "light", branding: "app" }],
-  ["app:dark", { colorScheme: "dark", branding: "app" }],
-  ["app:automatic", { colorScheme: "automatic", branding: "app" }],
-  ["storefront", { colorScheme: "web_default", branding: "shop" }],
-]);
+import { CK_VERSION } from "./version";
 
 /**
  * A Universal Checkout element. Checkout Kit answers the batched `ec.ready`
@@ -88,7 +87,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
   }
 
   set src(value: string | undefined) {
-    this.#setAttribute("src", value);
+    setCheckoutAttribute(this, "src", value);
   }
 
   get target(): CheckoutTarget | string {
@@ -96,7 +95,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
   }
 
   set target(value: CheckoutTarget | string | undefined) {
-    this.#setAttribute("target", value);
+    setCheckoutAttribute(this, "target", value);
   }
 
   get logLevel(): LogLevel {
@@ -104,7 +103,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
   }
 
   set logLevel(value: LogLevel | undefined) {
-    this.#setAttribute("log-level", value);
+    setCheckoutAttribute(this, "log-level", value);
   }
 
   get telemetry(): boolean {
@@ -112,13 +111,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
   }
 
   set telemetry(value: boolean | undefined) {
-    if (value === undefined || value === null) {
-      this.removeAttribute("telemetry");
-      return;
-    }
-    const input: unknown = value;
-    const enabled = typeof input === "string" ? input.toLowerCase() !== "false" : Boolean(input);
-    this.setAttribute("telemetry", String(enabled));
+    setCheckoutTelemetry(this, value);
   }
 
   get appearance(): CheckoutAppearance | string {
@@ -126,13 +119,11 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
   }
 
   set appearance(value: CheckoutAppearance | string | undefined) {
-    this.#setAttribute("appearance", value);
+    setCheckoutAttribute(this, "appearance", value);
   }
 
   get allowedOrigins(): string[] {
-    const attr = this.getAttribute("allowed-origins");
-    if (!attr) return [];
-    return attr.split(/[\s,]+/).filter(Boolean);
+    return checkoutAllowedOrigins(this);
   }
 
   set allowedOrigins(value: string[] | string | undefined) {
@@ -140,7 +131,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
       this.removeAttribute("allowed-origins");
       return;
     }
-    this.#setAttribute("allowed-origins", Array.isArray(value) ? value.join(" ") : value);
+    setCheckoutAttribute(this, "allowed-origins", Array.isArray(value) ? value.join(" ") : value);
   }
 
   onMessageRejected?: (detail: MessageRejectedDetail) => void;
@@ -256,7 +247,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
 
   connectedCallback(): void {
     this.#recorder?.start();
-    applyCheckoutTargetClass(this, this.target);
+    updateCheckoutTargetClass(this, this.target);
     this.#initCheckoutProtocol();
   }
 
@@ -278,8 +269,7 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
 
     if (name === "target") {
       if (this.#presentation) this.close();
-      removeCheckoutTargetClass(this, oldValue);
-      applyCheckoutTargetClass(this, this.target);
+      updateCheckoutTargetClass(this, this.target, oldValue);
     } else if (name === "src") {
       if (this.#presentation) this.close();
     } else if (name === "telemetry") {
@@ -349,22 +339,13 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
     const url = checkoutSourceURL(this.src);
     if (!url) return;
 
-    url.searchParams.delete("ec_auth");
-    url.searchParams.delete("ec_color_scheme");
-    url.searchParams.delete("ck_branding");
-    url.searchParams.set("ec_version", UNIVERSAL_CHECKOUT_PROTOCOL_VERSION);
-    url.searchParams.set("ec_delegate", "window.open");
-    const appearance = this.appearance;
-    const appearanceParams = CHECKOUT_APPEARANCES.get(appearance);
-    if (!appearanceParams && appearance !== "" && warnInvalidAppearance) {
-      this.#logger.warn(`appearance="${appearance}" is not supported and will be ignored`);
-    }
-    if (appearanceParams) {
-      url.searchParams.set("ec_color_scheme", appearanceParams.colorScheme);
-      url.searchParams.set("ck_branding", appearanceParams.branding);
-    }
-    url.searchParams.set("ck_version", CHECKOUT_KIT_PACKAGE_VERSION);
-    return url;
+    const negotiatedUrl = EmbeddedCheckoutProtocol.url(url.toString(), {
+      delegations: [EmbeddedCheckoutProtocol.Delegations.windowOpen],
+    });
+    const finalUrl = new URL(negotiatedUrl);
+    applyCheckoutAppearance(finalUrl, this.appearance, this.#logger, warnInvalidAppearance);
+    finalUrl.searchParams.set("ck_version", CK_VERSION);
+    return finalUrl;
   }
 
   #recordNavigationDuration(result: "success" | "failure"): void {
@@ -383,16 +364,6 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
     const detail = Object.freeze([entry]);
     this.#localError = Object.freeze({ errors: detail });
     this.dispatchEvent(new ShopifyUniversalCheckoutErrorEvent(detail));
-  }
-
-  #setAttribute(name: string, value: string | boolean | undefined): void {
-    if (value === true) {
-      this.setAttribute(name, "");
-    } else if (value != null && value !== false) {
-      this.setAttribute(name, value);
-    } else {
-      this.removeAttribute(name);
-    }
   }
 
   #initCheckoutProtocol(): void {
@@ -416,28 +387,12 @@ export class ShopifyUniversalCheckout extends HTMLElement implements CheckoutMet
         this.#logger.warn(message);
       });
     } catch (error) {
-      this.#rejectMessage(event, error);
+      rejectCheckoutMessage(this, event, error, this.#logger);
       return;
     }
 
     this.#session?.handleMessage(event);
   };
-
-  #rejectMessage(event: MessageEvent, error: unknown): void {
-    const reason = error instanceof Error ? error.message : String(error);
-    if (this.onMessageRejected) {
-      try {
-        this.onMessageRejected({ origin: event.origin, data: event.data, reason });
-      } catch (callbackError) {
-        this.#logger.error(
-          "onMessageRejected callback threw",
-          callbackError instanceof Error ? callbackError.message : String(callbackError),
-        );
-      }
-      return;
-    }
-    this.#logger.warn(reason);
-  }
 
   #warnOnNonUniversalSource(): void {
     let url: URL;
