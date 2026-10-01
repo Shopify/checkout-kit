@@ -204,17 +204,6 @@ for the `cart` command. A test that does not care about buyer identity omits
 Future shared flows should add identifiers here before they are used across
 React Native, Swift, and Android sample apps.
 
-### Checkout presentation readiness
-
-Checkout can show a shipping-options notice and extra delivery options before the
-payment section. That content can move the `Card number` field below the viewport,
-so the presentation flow also accepts the visible `Contact` section as its ready
-marker.
-
-| Card number below the viewport | Card number visible |
-| --- | --- |
-| ![Shipping notice and options push the card field below the viewport](documentation/media/checkout-present-card-number-below-fold.png) | ![Card number visible when checkout has less shipping content](documentation/media/checkout-present-card-number-visible.png) |
-
 ## Scope
 
 These flows catch regressions in the sample app integration surface on all four
