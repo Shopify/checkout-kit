@@ -53,7 +53,7 @@
   "scripts": {
     "clean": "rm -rf dist sample/dist coverage",
     "build": "vite build && pnpm run build:manifest",
-    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
+    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' 'src/internal/**' --outdir dist",
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

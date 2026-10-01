@@ -5,7 +5,7 @@
 // Docs: https://custom-elements-manifest.open-wc.org/analyzer/getting-started/
 export default {
   globs: ['src/**/*.ts'],
-  exclude: ['src/**/*.test.ts'],
+  exclude: ['src/**/*.test.ts', 'src/internal/**'],
   outdir: 'dist',
   packagejson: true,
 };
