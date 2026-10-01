@@ -19,9 +19,6 @@ import java.net.URI
  *   query, or fragment. A trailing slash is accepted.
  */
 internal object OriginAllowlist {
-    const val SHOP_APP_ORIGIN: String = "https://shop.app"
-    const val SHOP_COM_ORIGIN: String = "https://shop.com"
-
     private const val WILDCARD_ALL = "*"
     private const val HTTP_DEFAULT_PORT = 80
     private const val HTTPS_DEFAULT_PORT = 443
@@ -35,9 +32,9 @@ internal object OriginAllowlist {
 
     private val WILDCARD_PATTERN = Regex("""^(https?)://\*\.([^/:]+)(?::(\d+))?/?$""", RegexOption.IGNORE_CASE)
     private val SHOP_ORIGIN_PATTERNS = listOf(
-        OriginPattern.Exact(requireNotNull(parseOrigin(SHOP_APP_ORIGIN, exact = true))),
+        OriginPattern.Exact(requireNotNull(parseOrigin("https://shop.app", exact = true))),
         requireNotNull(parsePattern("https://*.shop.app")),
-        OriginPattern.Exact(requireNotNull(parseOrigin(SHOP_COM_ORIGIN, exact = true))),
+        OriginPattern.Exact(requireNotNull(parseOrigin("https://shop.com", exact = true))),
         requireNotNull(parsePattern("https://*.shop.com")),
     )
 

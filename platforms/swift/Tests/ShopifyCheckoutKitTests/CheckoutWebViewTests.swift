@@ -1470,6 +1470,23 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     @MainActor
+    func testOriginValidationAllowsShopAppSubdomainWhenAllowlistSet() async {
+        defer { resetOriginValidationConfig() }
+        view.client = nil
+        view.loadedCheckoutURL = url
+        stubMessageOrigin("https://checkout.shop.app")
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        let responseSent = expectation(description: "response sent")
+        MockCheckoutBridge.sendResponseExpectation = responseSent
+        let message = MockScriptMessage(body: Self.readyBody)
+
+        view.userContentController(WKUserContentController(), didReceive: message)
+
+        await fulfillment(of: [responseSent], timeout: 5.0)
+        XCTAssertTrue(MockCheckoutBridge.sendResponseCalled)
+    }
+
+    @MainActor
     func testOriginValidationAllowsShopComSubdomainWhenAllowlistSet() async {
         defer { resetOriginValidationConfig() }
         view.client = nil

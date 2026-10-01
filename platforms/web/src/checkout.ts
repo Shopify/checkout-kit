@@ -42,21 +42,14 @@ export const DEFAULT_POPUP_HEIGHT = 600;
 export { CK_VERSION } from "./version";
 
 /**
- * Trusted origin always allowed to post messages, alongside the cart URL
- * origin derived from `src`. Both are included whether or not the integrator
- * configures an explicit `allowedOrigins` list.
- */
-export const SHOP_APP_ORIGIN = "https://shop.app";
-const SHOP_COM_ORIGIN = "https://shop.com";
-
-/**
- * Default trusted origin patterns for Shopify-owned domains: their apex origins
- * plus wildcards covering regional or checkout subdomains.
+ * Shopify-owned origins always allowed to post messages, alongside the cart
+ * URL origin derived from `src`. Both are included whether or not the
+ * integrator configures an explicit `allowedOrigins` list.
  */
 const SHOP_ORIGIN_PATTERNS = [
-  SHOP_APP_ORIGIN,
+  "https://shop.app",
   "https://*.shop.app",
-  SHOP_COM_ORIGIN,
+  "https://shop.com",
   "https://*.shop.com",
 ];
 

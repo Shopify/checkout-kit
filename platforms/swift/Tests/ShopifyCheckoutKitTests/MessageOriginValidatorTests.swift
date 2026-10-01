@@ -23,7 +23,7 @@ final class MessageOriginValidatorTests: XCTestCase {
         XCTAssertNil(patterns)
     }
 
-    func testAllowlistAppendsCheckoutOriginAndShopApp() {
+    func testAllowlistAppendsCheckoutOriginAndShopifyDomains() {
         let patterns = MessageOriginValidator.effectiveAllowlist(
             configuredOrigins: ["https://merchant.example.com"],
             checkoutURL: checkoutURL
@@ -38,7 +38,7 @@ final class MessageOriginValidatorTests: XCTestCase {
         ])
     }
 
-    func testAllowlistWithoutCheckoutURLStillIncludesShopApp() {
+    func testAllowlistWithoutCheckoutURLStillIncludesShopifyDomains() {
         let patterns = MessageOriginValidator.effectiveAllowlist(
             configuredOrigins: ["https://merchant.example.com"],
             checkoutURL: nil
