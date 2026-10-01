@@ -585,3 +585,4 @@ conventions, and one-time setup notes.
 ## License
 
 Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
+
