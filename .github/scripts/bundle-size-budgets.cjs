@@ -6,8 +6,8 @@ const platforms = {
   web: {
     label: "Web",
     measurements: {
-      shippedJavaScript: "JavaScript",
-      shippedJavaScriptGzip: "JavaScript (gzip)",
+      bundle: "JavaScript",
+      bundleGzip: "JavaScript (gzip)",
       package: "npm tarball",
     },
   },
@@ -216,8 +216,8 @@ function render(rows, state, packageComment, notes = []) {
     const scope = row.file
       ? `${escape(row.file)} (uncompressed)`
       : {
-          shippedJavaScript: "All shipped JavaScript (raw)",
-          shippedJavaScriptGzip: "All shipped JavaScript (gzip)",
+          bundle: "Bundle (raw)",
+          bundleGzip: "Bundle (gzip)",
           package: "Whole package (compressed)",
         }[row.measurement];
     lines.push(

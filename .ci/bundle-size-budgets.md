@@ -2,11 +2,13 @@
 
 `.ci/bundle-size-budgets.json` defines named budgets for each platform. Each budget
 explicitly selects a `measurement` and may select a `file` within a package.
+The platform adapter defines what its `bundle` contains; for web, that is all
+shipped JavaScript under `dist`.
 Limits are KiB (1,024 bytes), including fractions. Comparisons use exact
 bytes, not the rounded numbers displayed in PR reports.
 
 Web starts with a 35 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
-using `"measurement": "shippedJavaScript"`. This currently measures `dist/index.js`
+using `"measurement": "bundle"`. This currently measures `dist/index.js`
 and will include any additional JavaScript chunks shipped in `dist`. Declarations,
 source maps, and other package contents are excluded from this measurement.
 The report also includes deterministic gzip size and package sizes. These remain
@@ -56,8 +58,8 @@ for the updated report. Expired measurement artifacts also require a rerun.
 
 | Platform key | `measurement` | Scope |
 | --- | --- | --- |
-| `web` | `shippedJavaScript` | Sum of raw shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
-| `web` | `shippedJavaScriptGzip` | Sum of those files compressed individually with `gzip -n -9` |
+| `web` | `bundle` | Sum of raw shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
+| `web` | `bundleGzip` | Sum of those files compressed individually with `gzip -n -9` |
 | `web` | `package` | Whole compressed npm tarball |
 | `react-native` | `package` | Whole compressed wrapper npm tarball |
 | `android` | `package` | Whole compressed release AAR |

@@ -4,7 +4,7 @@ const policy = require("./bundle-size-budgets.cjs");
 
 const KiB = 1024;
 const report = (size, base = 34 * KiB) => ({
-  budgets: { web: { javascript: { measurement: "shippedJavaScript", softKiB: 35, hardKiB: 50 } } },
+  budgets: { web: { javascript: { measurement: "bundle", softKiB: 35, hardKiB: 50 } } },
   base: base === null ? {} : { "Web\tJavaScript": base },
   head: { "Web\tJavaScript": size },
   measuredPlatforms: ["web"],
@@ -37,7 +37,7 @@ test("enforces exact limits, exempts no growth, and handles missing measurements
 test("platform acceptance covers each current breach, with independent caps", () => {
   const input = report(40 * KiB);
   input.budgets.web.javascriptGzip = {
-    measurement: "shippedJavaScriptGzip",
+    measurement: "bundleGzip",
     softKiB: 10,
     hardKiB: 15,
   };
@@ -90,7 +90,7 @@ test("comments and existing acceptances cannot override a hard budget", () => {
   assert.deepEqual(result.accepted, {});
   assert.equal(
     policy.evaluate(input, {
-      "web.javascript": { bytes: 60 * KiB, measurement: "shippedJavaScript" },
+      "web.javascript": { bytes: 60 * KiB, measurement: "bundle" },
     })[0].status,
     "hard",
   );
@@ -123,7 +123,7 @@ test("selects whole packages or individual files without reusing acceptance for 
   input.head["Web\tnpm tarball\tdist/missing.js"] = 0;
   assert.equal(policy.evaluate(input, accepted)[0].status, "within");
   delete budget.file;
-  budget.measurement = "shippedJavaScript";
+  budget.measurement = "bundle";
   assert.equal(policy.evaluate(input, accepted)[0].status, "soft");
 });
 
@@ -132,17 +132,17 @@ test("rejects unknown configuration keys and invalid limits", () => {
     { ios: {} },
     { web: { javascript: { softKiB: 35, hardKiB: 50 } } },
     { web: { typo: { measurement: "unknown", softKiB: 1, hardKiB: 2 } } },
-    { web: { javascript: { measurement: "shippedJavaScript", soft: 35, hard: 50 } } },
-    { web: { javascript: { measurement: "shippedJavaScript", softKiB: "35", hardKiB: 50 } } },
-    { web: { javascript: { measurement: "shippedJavaScript", softKiB: 51, hardKiB: 50 } } },
-    { web: { javascript: { measurement: "shippedJavaScript", softKiB: 0, hardKiB: 50 } } },
+    { web: { javascript: { measurement: "bundle", soft: 35, hard: 50 } } },
+    { web: { javascript: { measurement: "bundle", softKiB: "35", hardKiB: 50 } } },
+    { web: { javascript: { measurement: "bundle", softKiB: 51, hardKiB: 50 } } },
+    { web: { javascript: { measurement: "bundle", softKiB: 0, hardKiB: 50 } } },
     ...["", "/index.js", "../index.js", "dist/*.js", "dist\\index.js", 42].map((file) => ({
       web: { entry: { measurement: "package", file, softKiB: 35, hardKiB: 50 } },
     })),
     {
       web: {
         entry: {
-          measurement: "shippedJavaScript",
+          measurement: "bundle",
           file: "dist/index.js",
           softKiB: 35,
           hardKiB: 50,

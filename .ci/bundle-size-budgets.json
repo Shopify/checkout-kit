@@ -1,7 +1,7 @@
 {
   "web": {
     "javascript": {
-      "measurement": "shippedJavaScript",
+      "measurement": "bundle",
       "softKiB": 35,
       "hardKiB": 50
     }

@@ -10,7 +10,7 @@ function fixture(permission = "write") {
     headSha: "head",
     baseSha: "base",
     budgets: {
-      web: { javascript: { measurement: "shippedJavaScript", softKiB: 35, hardKiB: 50 } },
+      web: { javascript: { measurement: "bundle", softKiB: 35, hardKiB: 50 } },
     },
     base: { "Web\tJavaScript": 34000 },
     head: { "Web\tJavaScript": 40000 },
@@ -54,7 +54,7 @@ test("writer acceptance records the actor, reason and size, and is processed onl
   const result = await f.process();
   assert.deepEqual(result.acceptances["web.javascript"], {
     bytes: 40000,
-    measurement: "shippedJavaScript",
+    measurement: "bundle",
     actor: "writer",
     reason: "New checkout capability",
     commentId: 42,
