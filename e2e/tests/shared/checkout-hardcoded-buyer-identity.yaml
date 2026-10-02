@@ -17,8 +17,8 @@ env:
   CARD_SECURITY_CODE: "123"
   CARD_HOLDER_NAME: "Evelyn Hartley"
 
-  # Accepted successful checkout states for this smoke test.
-  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+  # Require a complete confirmation heading so payment-page copy cannot satisfy this wait.
+  POST_SUBMIT_RESULT_PATTERN: "^(Thank you(, .+)?!?|Your order is confirmed|Order confirmed|Order confirmation)$"
 ---
 - runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
 - runFlow: ../../flows/checkout/present.yaml
