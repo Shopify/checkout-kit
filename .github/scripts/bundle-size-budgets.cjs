@@ -206,7 +206,7 @@ function render(rows, state, packageComment, notes = []) {
   };
   const lines = [
     marker,
-    "## Size budgets",
+    "## Bundle Size Budgets",
     "",
     "| Platform / budget | Measurement | Base | Head | Delta | Soft | Hard | Result |",
     "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
