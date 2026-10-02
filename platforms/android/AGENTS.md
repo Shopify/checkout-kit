@@ -10,9 +10,11 @@ The main modules are:
 
 - **`lib/`** — the Checkout Kit library, published as `com.shopify:checkout-kit`. It presents Shopify checkouts as a native bottom-sheet-hosted WebView in consumer apps.
 - **`../../protocol/languages/kotlin/embedded-checkout-protocol/`** — the Embedded Checkout Protocol Kotlin artifact, published as `com.shopify:embedded-checkout-protocol`. The Android Gradle project path is `:embedded-checkout-protocol`, and the Kotlin package is `com.shopify.ucp.embedded.checkout`.
-- **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes Checkout Kit and the Kotlin protocol artifact as source dependencies. Changes here never reach consumers; this module is for internal testing and developer onboarding.
+- **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes Checkout Kit from source and the published Kotlin protocol artifact transitively. Changes here never reach consumers; this module is for internal testing and developer onboarding.
 
-The sample is a separate Gradle composite (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:lib` and the Kotlin protocol `:embedded-checkout-protocol` as source dependencies. The sample's `gradle.properties` and Gradle wrapper are independent of the Android root's. The standalone Kotlin protocol Gradle root also has its own wrapper at `../../protocol/languages/kotlin/gradlew`; keep its Gradle version aligned with the Android root wrapper.
+The sample is a separate Gradle build (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:lib` from source. The sample's `gradle.properties` and Gradle wrapper are independent of the Android root's. The standalone Kotlin protocol Gradle root also has its own wrapper at `../../protocol/languages/kotlin/gradlew`; keep its Gradle version aligned with the Android root wrapper.
+
+The library and sample resolve the pinned protocol artifact from Maven Central by default, including in CI. To develop against unreleased protocol source, pass `--local` to an Android build, test, lint, format, check, or API command (for example `dev android test --local`) or pass `-PuseLocalProtocol=true` to Gradle. Only this explicit mode includes `:embedded-checkout-protocol` in the Android builds. Remote Kit publication rejects local mode; `publishToMavenLocal` remains available for React Native's explicit `--local` workflow. Test protocol source independently with `dev protocol test kotlin`.
 
 ## Where to make changes
 
@@ -73,6 +75,7 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 ## Common commands
 
+- Published protocol resolution: `./gradlew :lib:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
 - Tests: `./gradlew test` (or `dev android test`)
 - API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` for Checkout Kit, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
@@ -96,7 +99,7 @@ Raising any of these is a consumer-facing breaking change and needs visible rele
 
 Published Android artifact versions are bumped via:
 
-1. `gradle/libs.versions.toml` (`checkoutKitAndroid` and `embeddedCheckoutProtocolAndroid`).
+1. `gradle/libs.versions.toml`: `checkoutKitAndroid` is the Kit release version; `embeddedCheckoutProtocolAndroidRelease` is the protocol release version; `embeddedCheckoutProtocolAndroid` is the already-published protocol version Kit consumes. Bump the dependency only after publishing the protocol release.
 2. The install snippets in `README.md` (Gradle and Maven).
 
 After the Android artifact is published, update `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) in the React Native release flow if RN should consume that published `com.shopify:checkout-kit` SemVer. RN CI resolves this value from Maven, so do not point it at an unpublished Android version.

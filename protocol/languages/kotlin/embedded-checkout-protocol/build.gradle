@@ -15,7 +15,7 @@ plugins {
 apply from: file('../../../../platforms/android/gradle/android-library-versions.gradle')
 
 def kotlinCompatibility = kotlinVersionCompatibility
-def versionName = libs.versions.embeddedCheckoutProtocolAndroid.get()
+def versionName = libs.versions.embeddedCheckoutProtocolAndroidRelease.get()
 
 java {
     sourceCompatibility = JavaVersion.toVersion(kotlinCompatibility.javaVersion)

@@ -11,6 +11,7 @@ ANDROID_SDK_PATH="$SCRIPT_DIR/../../android"
 
 cd "$ANDROID_SDK_PATH"
 ./gradlew \
+  -PuseLocalProtocol=true \
   :embedded-checkout-protocol:publishToMavenLocal \
   :lib:publishToMavenLocal \
   -q

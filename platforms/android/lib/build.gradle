@@ -1,5 +1,9 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.FileCollection
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Classpath
 import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -19,6 +23,7 @@ apply from: file('../gradle/android-library-versions.gradle')
 
 def kotlinCompatibility = kotlinVersionCompatibility
 def versionName = libs.versions.checkoutKitAndroid.get()
+def useLocalProtocol = providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()
 
 class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
     @Classpath
@@ -120,7 +125,11 @@ dependencies {
     detektPlugins libs.detekt.formatting
     mockitoAgent libs.mockito.core
 
-    api project(':embedded-checkout-protocol')
+    if (useLocalProtocol) {
+        api project(':embedded-checkout-protocol')
+    } else {
+        api libs.embedded.checkout.protocol
+    }
     testImplementation libs.junit
     testImplementation libs.robolectric
     testImplementation libs.mockito.core
@@ -140,6 +149,46 @@ dependencies {
     implementation libs.kotlinx.serialization.json
     implementation libs.androidx.appcompat
     implementation libs.androidx.webkit
+}
+
+def protocolDependency = libs.embedded.checkout.protocol.get()
+def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
+    group = 'verification'
+    description = 'Verify release and unit-test classpaths use the declared published protocol.'
+    onlyIf { !useLocalProtocol }
+    doLast {
+        def classpaths = ['releaseCompileClasspath', 'releaseRuntimeClasspath'] + configurations.names.findAll {
+            it.endsWith('UnitTestCompileClasspath') || it.endsWith('UnitTestRuntimeClasspath')
+        }
+        classpaths.each { classpath ->
+            // Follow the requested module so substitutions cannot hide the selected component.
+            def dependency = configurations.getByName(classpath).incoming.resolutionResult.rootComponent.get().dependencies.find {
+                it.requested instanceof ModuleComponentSelector &&
+                    it.requested.group == protocolDependency.group && it.requested.module == protocolDependency.name
+            }
+            def resolved = dependency instanceof ResolvedDependencyResult ? dependency.selected.id : null
+            if (!(resolved instanceof ModuleComponentIdentifier) ||
+                resolved.group != protocolDependency.group || resolved.module != protocolDependency.name ||
+                resolved.version != protocolDependency.version) {
+                throw new GradleException("$classpath must resolve the published $protocolDependency; found ${resolved ?: dependency}")
+            }
+        }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    dependsOn verifyPublishedProtocol
+}
+
+// Local protocol sources are for joint development only. Maven Local remains
+// available for React Native's explicit --local builds.
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn verifyPublishedProtocol
+    doFirst {
+        if (useLocalProtocol) {
+            throw new GradleException('Cannot publish Checkout Kit with useLocalProtocol=true. Build against the published protocol first.')
+        }
+    }
 }
 
 signing {

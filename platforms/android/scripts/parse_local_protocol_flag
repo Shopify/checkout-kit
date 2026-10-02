@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Source from dev.yml commands that support the optional --local flag.
+# It is intentionally limited to this one flag so it cannot leak to Gradle,
+# test selectors, or other wrapped commands.
+parse_local_protocol_flag() {
+  case "$#" in
+    0) ;;
+    1)
+      if [ "$1" = "--local" ]; then
+        export ORG_GRADLE_PROJECT_useLocalProtocol=true
+      else
+        echo "Only the optional --local flag is supported." >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Only the optional --local flag is supported." >&2
+      exit 1
+      ;;
+  esac
+}

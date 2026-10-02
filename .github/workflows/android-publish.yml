@@ -67,6 +67,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Test and check API against the published protocol
+        run: ./gradlew :lib:testDebugUnitTest :lib:apiCheck --console=plain
+
       - name: Publish Package
         run: |
           ./gradlew :lib:publishReleasePublicationToOssrh-staging-apiRepository

@@ -26,7 +26,9 @@ dependencyResolutionManagement {
 }
 rootProject.name = "CheckoutKitAndroidDemo"
 include ':app'
-include ':embedded-checkout-protocol'
 include ':lib'
-project(':embedded-checkout-protocol').projectDir = new File(settingsDir, '../../../../protocol/languages/kotlin/embedded-checkout-protocol')
+if (providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()) {
+    include ':embedded-checkout-protocol'
+    project(':embedded-checkout-protocol').projectDir = new File(settingsDir, '../../../../protocol/languages/kotlin/embedded-checkout-protocol')
+}
 project(':lib').projectDir = new File(settingsDir, '../../lib')

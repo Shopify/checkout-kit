@@ -116,7 +116,7 @@ case "$PLATFORM_INPUT" in
 
     ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
 
-    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
+    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroidRelease")
     ;;
 
   "React Native"|react-native|ReactNative|rn|RN)
