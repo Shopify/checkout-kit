@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const platforms = {
   web: {
     label: "Web",
-    packageLabel: "Whole npm package (gzip)",
+    packageLabel: "npm package (gzip)",
     measurements: {
       bundle: "JavaScript",
       bundleGzip: "JavaScript (gzip)",
@@ -14,12 +14,12 @@ const platforms = {
   },
   "react-native": {
     label: "React Native",
-    packageLabel: "Whole npm package (gzip)",
+    packageLabel: "npm package (gzip)",
     measurements: { package: "npm tarball" },
   },
   android: {
     label: "Android",
-    packageLabel: "Whole AAR package (ZIP)",
+    packageLabel: "AAR package (ZIP)",
     measurements: { package: "release AAR" },
   },
 };
@@ -198,59 +198,72 @@ function kib(bytes) {
 
 function render(rows, state, packageComment, notes = []) {
   const labels = {
-    within: "Within budget",
-    "no-growth": "Above budget; no increase",
-    soft: "Acceptance required",
-    hard: "Budget change required",
-    missing: "Measurement missing",
+    within: "✅ Within budget",
+    "no-growth": "➖ Above budget; no increase",
+    soft: "⚠️ Acceptance required",
+    hard: "❌ Budget change required",
+    missing: "⚠️ Measurement missing",
   };
   const lines = [
     marker,
-    "## Size budgets",
+    "## Bundle Size Budgets",
     "",
-    `Measured head: \`${state.headSha}\`; base: \`${state.baseSha}\`.`,
-    "",
-    "| Platform / budget | Measurement | Base | Head | Delta | Soft | Hard | Result |",
-    "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    "| Budget | Size | Limits | Result |",
+    "| --- | ---: | --- | --- |",
   ];
   for (const row of rows) {
     const status =
       row.status === "accepted"
-        ? `Accepted by @${escape(row.acceptance.actor)}: ${escape(row.acceptance.reason)} ([comment](${row.acceptance.url}))`
+        ? `✅ Accepted by @${escape(row.acceptance.actor)}: ${escape(row.acceptance.reason)} ([comment](${row.acceptance.url}))`
         : labels[row.status];
+    const change = row.after - row.before;
     const delta =
       row.before === undefined || row.after === undefined
         ? "unavailable"
-        : `${row.after > row.before ? "+" : ""}${kib(row.after - row.before)}`;
+        : `${change > 0 ? "+" : ""}${Math.abs(change) < 1024 ? `${change} B` : kib(change)}`;
+    const size =
+      row.after === undefined
+        ? "unavailable"
+        : `${kib(row.after)} (${delta === "unavailable" ? "change unavailable" : delta})`;
     const scope = row.file
       ? `${escape(row.file)} (uncompressed)`
       : {
-          bundle: "Bundle (uncompressed)",
-          bundleGzip: "Bundle (gzip)",
+          bundle: "JavaScript (uncompressed)",
+          bundleGzip: "JavaScript (gzip)",
           package: platforms[row.platform].packageLabel,
         }[row.measurement];
+    const named = rows.some(
+      (other) =>
+        other.platform === row.platform &&
+        other.measurement === row.measurement &&
+        other.file === row.file &&
+        other.metric !== row.metric,
+    );
+    const budget = `${platforms[row.platform].label} ${scope}${named ? ` / ${escape(row.metric)}` : ""}`;
     lines.push(
-      `| ${row.platform} / ${row.metric} | ${scope} | ${kib(row.before)} | ${kib(row.after)} | ${delta} | ${row.softKiB} KiB | ${row.hardKiB} KiB | ${status} |`,
+      `| ${budget} | ${size} | ${row.softKiB} KiB soft / ${row.hardKiB} KiB hard | ${status} |`,
     );
   }
-  if (!rows.length) lines.push("| — | — | — | — | — | — | — | No configured budgets affected |");
-  lines.push(
-    "",
-    "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
-    "",
-    "```text",
-    "/accept-size web Explain why this increase is necessary.",
-    "```",
-    "",
-    "Use one command per platform; several lines can share a comment. Post after this report is ready for the current head. Commands in edited comments are not accepted.",
-    "",
-    "Acceptance applies to each currently exceeded metric up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance. Hard-budget increases require a reviewed change to `.ci/bundle-size-budgets.json`.",
-    "",
-  );
+  if (!rows.length) lines.push("| — | — | — | ➖ No configured budgets affected |");
+  if (rows.some(({ status }) => status === "soft" || status === "hard")) {
+    lines.push(
+      "",
+      "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
+      "",
+      "```text",
+      "/accept-size web Explain why this increase is necessary.",
+      "```",
+      "",
+      "Use one command per platform; several lines can share a comment. Post after this report is ready for the current head. Commands in edited comments are not accepted.",
+      "",
+      "Acceptance applies to each currently exceeded metric up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance. Hard-budget increases require a reviewed change to `.ci/bundle-size-budgets.json`.",
+    );
+  }
+  if (notes.length) lines.push("");
   for (const note of notes) lines.push(`- ${escape(note)}`);
   lines.push(
     "",
-    packageComment.replace(/<!--[\s\S]*?-->/g, ""),
+    packageComment.replace(/<!--[\s\S]*?-->/g, "").trim(),
     "",
     `<!-- bundle-size-state:${Buffer.from(JSON.stringify(state)).toString("base64")} -->`,
   );

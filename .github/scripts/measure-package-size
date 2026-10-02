@@ -380,7 +380,11 @@ render_comment() {
       }
 
       print "";
+      print "<details><summary>How sizes are measured</summary>";
+      print "";
       print "_Measured from the PR base SHA and PR head SHA. Web bundle rows sum shipped `.js`, `.mjs`, and `.cjs` files under `dist/`, excluding source maps and declarations. The gzip bundle size sums files compressed individually with `gzip -n -9`. npm package sizes are gzip-compressed `.tgz` archives; Android AAR sizes are ZIP archives. Package sizes are not final app binary sizes._";
+      print "";
+      print "</details>";
     }
   ' "$base_file" "$head_file" > "$comment_file"
 }
