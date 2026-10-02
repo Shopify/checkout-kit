@@ -38,6 +38,33 @@ test.describe("src reflection and popup URL", () => {
 });
 
 test.describe("open()", () => {
+  test("dispatches unsupported_browser without opening a popup when native dialogs are unavailable", async ({
+    host,
+    page,
+    context,
+  }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+        configurable: true,
+        value: undefined,
+      });
+    });
+
+    await host.goto();
+    await host.clickBuy();
+
+    await host.expectEvent("error");
+    await expect
+      .poll(() => host.error())
+      .toEqual({
+        code: "unsupported_browser",
+        message: "This browser does not support: native_dialog.",
+      });
+    await expect.poll(() => host.eventTypes()).toEqual(["error"]);
+    expect(context.pages()).toHaveLength(1);
+    await expect(host.overlay).not.toBeVisible();
+  });
+
   for (const { name, src } of [
     { name: "empty", src: "" },
     { name: "non-HTTPS", src: "http://checkout.example.test/checkout" },
