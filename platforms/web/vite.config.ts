@@ -39,6 +39,13 @@ export default defineConfig({
     rollupOptions: {
       // Zero runtime deps — bundle everything reachable from src/index.ts.
       external: [],
+      output: {
+        minify: {
+          compress: true,
+          mangle: true,
+          codegen: true,
+        },
+      },
     },
   },
   test: {
