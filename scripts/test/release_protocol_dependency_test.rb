@@ -15,8 +15,8 @@ class ReleaseProtocolDependencyTest < Minitest::Test
       File.write(File.join(catalog_dir, "libs.versions.toml"), <<~TOML)
         [versions]
         checkoutKitAndroid = "4.0.0"
-        embeddedCheckoutProtocolAndroid = "2026.09.28.1"
-        embeddedCheckoutProtocolAndroidDependency = "2026.08.25.1"
+        embeddedCheckoutProtocolAndroidRelease = "2026.09.28.1"
+        embeddedCheckoutProtocolAndroid = "2026.08.25.1"
       TOML
 
       android, error, status = Open3.capture3(VALIDATOR, "Android", chdir: root)

@@ -99,7 +99,7 @@ Raising any of these is a consumer-facing breaking change and needs visible rele
 
 Published Android artifact versions are bumped via:
 
-1. `gradle/libs.versions.toml`: `checkoutKitAndroid` is the Kit release version; `embeddedCheckoutProtocolAndroid` is the protocol release version; `embeddedCheckoutProtocolAndroidDependency` is the already-published protocol version Kit consumes. Bump the dependency only after publishing the protocol release.
+1. `gradle/libs.versions.toml`: `checkoutKitAndroid` is the Kit release version; `embeddedCheckoutProtocolAndroidRelease` is the protocol release version; `embeddedCheckoutProtocolAndroid` is the already-published protocol version Kit consumes. Bump the dependency only after publishing the protocol release.
 2. The install snippets in `README.md` (Gradle and Maven).
 
 After the Android artifact is published, update `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) in the React Native release flow if RN should consume that published `com.shopify:checkout-kit` SemVer. RN CI resolves this value from Maven, so do not point it at an unpublished Android version.

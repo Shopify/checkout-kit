@@ -102,7 +102,7 @@ case "$PLATFORM_INPUT" in
     ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
 
     VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "checkoutKitAndroid")
-    ANDROID_PROTOCOL_VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroidDependency")
+    ANDROID_PROTOCOL_VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
     ;;
 
   "Embedded Checkout Protocol"|embedded-checkout-protocol|EmbeddedCheckoutProtocol|ecp|ECP)
@@ -116,7 +116,7 @@ case "$PLATFORM_INPUT" in
 
     ANDROID_VERSION_FILE="platforms/android/gradle/libs.versions.toml"
 
-    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroid")
+    VERSION=$(version_catalog_value "$ANDROID_VERSION_FILE" "embeddedCheckoutProtocolAndroidRelease")
     ;;
 
   "React Native"|react-native|ReactNative|rn|RN)

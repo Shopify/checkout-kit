@@ -31,9 +31,9 @@
 <details>
 <summary>Releasing a new Embedded Checkout Protocol version?</summary>
 
-- [ ] I have bumped `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`
+- [ ] I have bumped `embeddedCheckoutProtocolAndroidRelease` in `platforms/android/gradle/libs.versions.toml`
 - [ ] I have updated `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public API changed
-- [ ] Kit's `embeddedCheckoutProtocolAndroidDependency` still references an available Maven Central release
+- [ ] Kit's `embeddedCheckoutProtocolAndroid` still references an available Maven Central release
 
 </details>
 
@@ -42,7 +42,7 @@
 
 - [ ] I have bumped `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`
 - [ ] I have updated the Gradle/Maven version snippets in `platforms/android/README.md`
-- [ ] The ECP version in `embeddedCheckoutProtocolAndroidDependency` is published, and normal Android CI passes against it
+- [ ] The ECP version in `embeddedCheckoutProtocolAndroid` is published, and normal Android CI passes against it
 
 </details>
 

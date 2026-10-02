@@ -179,17 +179,17 @@ The version declarations have different jobs. The Android catalog is
 
 | Package | Its release version | Dependency it consumes |
 | --- | --- | --- |
-| Kotlin ECP | Catalog: `embeddedCheckoutProtocolAndroid` | — |
-| Android Kit | Catalog: `checkoutKitAndroid` | Catalog: `embeddedCheckoutProtocolAndroidDependency` |
+| Kotlin ECP | Catalog: `embeddedCheckoutProtocolAndroidRelease` | — |
+| Android Kit | Catalog: `checkoutKitAndroid` | Catalog: `embeddedCheckoutProtocolAndroid` |
 | React Native | RN manifest: `version` | RN manifest: `checkoutKit.nativeSdkVersions.android` |
 
 1. **Release ECP.** Merge the protocol changes, any API baseline changes, and
-   `embeddedCheckoutProtocolAndroid` bump after protocol tests/API checks pass.
+   `embeddedCheckoutProtocolAndroidRelease` bump after protocol tests/API checks pass.
    Leave Kit's dependency pin and RN's native SDK pins at their existing published
    versions. Follow [the ECP release steps](#releasing-a-new-embedded-checkout-protocol-version)
    and wait for the new protocol JAR and metadata to be available on Maven Central.
 2. **Adopt ECP and release Android.** In the Kit PR, update
-   `embeddedCheckoutProtocolAndroidDependency`, make the SDK changes, and bump
+   `embeddedCheckoutProtocolAndroid`, make the SDK changes, and bump
    `checkoutKitAndroid` and the installation snippets. Run normal SDK and sample
    tests/builds and API checks against the published ECP dependency. Merge with
    passing CI, follow [the Android release steps](#releasing-a-new-android-version),
@@ -337,10 +337,10 @@ If you did _not_ intend to change public API and `apiCheck` is failing, the diff
 
 Open a pull request with the following changes:
 
-1. Bump `embeddedCheckoutProtocolAndroid` in `platforms/android/gradle/libs.versions.toml`.
+1. Bump `embeddedCheckoutProtocolAndroidRelease` in `platforms/android/gradle/libs.versions.toml`.
 2. Update `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
 
-Keep `embeddedCheckoutProtocolAndroidDependency` at the existing published version
+Keep `embeddedCheckoutProtocolAndroid` at the existing published version
 until the new protocol artifact is available. This lets the protocol release PR
 merge while Kit continues building against its current dependency.
 
@@ -360,7 +360,7 @@ Open a pull request with the following changes:
 
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. If Kit needs a new protocol version, publish that protocol release first, then
-   update `embeddedCheckoutProtocolAndroidDependency` to it in the same catalog.
+   update `embeddedCheckoutProtocolAndroid` to it in the same catalog.
 
 The Android library and sample compile against the protocol artifact pinned in
 `platforms/android/gradle/libs.versions.toml` from Maven Central. CI uses the same
