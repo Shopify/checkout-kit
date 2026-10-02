@@ -497,7 +497,7 @@ are available in `event.detail`.
 | `start`    | `{checkout}`   | Checkout has loaded and is interactive. |
 | `update`   | `{checkout}`   | A change to line items, fulfillment, totals, or checkout messages produces a different checkout snapshot. |
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
-| `error`    | `{error}`      | Checkout reported a terminal error, exposed as `{code, message}`. The component closes automatically after this event. |
+| `error`    | `{error}`      | Checkout could not open or reported a terminal error, exposed as `{code, message}`. An open session closes automatically after this event. |
 | `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
@@ -538,6 +538,20 @@ checkout.addEventListener('close', () => {
 
 Protocol errors are terminal for the checkout session regardless of message
 severity. The component emits `error` before closing and emitting `close`.
+
+Before opening checkout, the component verifies that the browser supports Shadow
+DOM, native dialogs, and abortable event listeners. If a required capability is
+missing, it dispatches an `error` event with `event.detail.error.code ===
+"unsupported_browser"` without opening a checkout window. Use this to offer a
+normal checkout link or another fallback:
+
+```ts
+checkout.addEventListener('error', (event) => {
+  if (event.detail.error.code === 'unsupported_browser') {
+    window.location.assign(checkout.src);
+  }
+});
+```
 
 Because these events carry the full snapshot, one handler can combine fields.
 For example, rendering an inline cart summary on `start` requires line items,
