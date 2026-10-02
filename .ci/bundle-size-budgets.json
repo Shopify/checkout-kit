@@ -1,6 +1,7 @@
 {
   "web": {
     "javascript": {
+      "measurement": "shippedJavaScript",
       "softKiB": 35,
       "hardKiB": 50
     }

@@ -9,7 +9,9 @@ function fixture(permission = "write") {
     pr: 1,
     headSha: "head",
     baseSha: "base",
-    budgets: { web: { javascript: { softKiB: 35, hardKiB: 50 } } },
+    budgets: {
+      web: { javascript: { measurement: "shippedJavaScript", softKiB: 35, hardKiB: 50 } },
+    },
     base: { "Web\tJavaScript": 34000 },
     head: { "Web\tJavaScript": 40000 },
     measuredPlatforms: ["web"],
@@ -52,6 +54,7 @@ test("writer acceptance records the actor, reason and size, and is processed onl
   const result = await f.process();
   assert.deepEqual(result.acceptances["web.javascript"], {
     bytes: 40000,
+    measurement: "shippedJavaScript",
     actor: "writer",
     reason: "New checkout capability",
     commentId: 42,
@@ -80,7 +83,7 @@ test("unauthorized, malformed, edited and premature commands cannot accept sizes
 
 test("all pending platform commands are processed when comment events are coalesced", async () => {
   const f = fixture();
-  f.report.budgets.android = { aar: { softKiB: 100, hardKiB: 200 } };
+  f.report.budgets.android = { aar: { measurement: "package", softKiB: 100, hardKiB: 200 } };
   f.report.head["Android\trelease AAR"] = 150 * 1024;
   f.report.measuredPlatforms.push("android");
   const android = { ...f.comment, id: 43, body: "/accept-size android Native support" };

@@ -1,10 +1,14 @@
 # Bundle size budgets
 
-`.ci/bundle-size-budgets.json` assigns soft and hard limits to individual platform
-metrics. Values are KiB (1,024 bytes), including fractions. Comparisons use exact
+`.ci/bundle-size-budgets.json` defines named budgets for each platform. Each budget
+explicitly selects a `measurement` and may select a `file` within a package.
+Limits are KiB (1,024 bytes), including fractions. Comparisons use exact
 bytes, not the rounded numbers displayed in PR reports.
 
-Web starts with a 35 KiB soft limit and 50 KiB hard limit on shipped JavaScript.
+Web starts with a 35 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
+using `"measurement": "shippedJavaScript"`. This currently measures `dist/index.js`
+and will include any additional JavaScript chunks shipped in `dist`. Declarations,
+source maps, and other package contents are excluded from this measurement.
 The report also includes deterministic gzip size and package sizes. These remain
 informational until a budget is configured for their metric.
 
@@ -36,9 +40,10 @@ actor, and a link to the reason. Multiple commands may share one comment:
 ```
 
 Every breached metric must be satisfied before the aggregate check passes.
-Acceptance survives subsequent commits when the accepted metric stays the same
+Acceptance survives subsequent commits when the accepted measurement stays the same
 size or gets smaller. Further growth or a newly breached metric requires a new
-comment. A comment cannot override a hard limit, failed build, or missing data.
+comment. Changing a budget's measurement or file also requires fresh acceptance.
+A comment cannot override a hard limit, failed build, or missing data.
 It does not modify the configured budget. Edited comments are not processed; post
 a new command instead. Editing or deleting an already accepted reason does not
 erase the recorded decision in the bot report.
@@ -49,16 +54,37 @@ for the updated report. Expired measurement artifacts also require a rerun.
 
 ## Metrics and additional platforms
 
-| Platform key | Metric key | Measurement |
+| Platform key | `measurement` | Scope |
 | --- | --- | --- |
-| `web` | `javascript` | Sum of shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
-| `web` | `javascriptGzip` | Sum of those files compressed individually with `gzip -n -9` |
-| `web` | `npmTarball` | Compressed published package |
-| `react-native` | `npmTarball` | Compressed published wrapper package |
-| `android` | `aar` | Release AAR |
+| `web` | `shippedJavaScript` | Sum of raw shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
+| `web` | `shippedJavaScriptGzip` | Sum of those files compressed individually with `gzip -n -9` |
+| `web` | `package` | Whole compressed npm tarball |
+| `react-native` | `package` | Whole compressed wrapper npm tarball |
+| `android` | `package` | Whole compressed release AAR |
 
-Add budgets for existing metrics with the same `{ "softKiB": 35, "hardKiB": 50 }`
-shape. Unknown platforms, metric names, units, and invalid limits fail configuration
+With `measurement: "package"`, an optional `file` selects that exact file's
+**uncompressed** size inside the package. Paths are relative to the published
+package root (or AAR root); globs are not supported. A missing file fails the check.
+For example, this budgets only the entry file, rather than every JavaScript chunk:
+
+```json
+{
+  "web": {
+    "entryPoint": {
+      "measurement": "package",
+      "file": "dist/index.js",
+      "softKiB": 35,
+      "hardKiB": 50
+    }
+  }
+}
+```
+
+Omit `file` from a `package` budget to measure the complete compressed artifact.
+Budget names such as `entryPoint` are labels; the selector fields determine what
+is measured, and the PR report displays that scope explicitly.
+
+Unknown platforms, measurements, units, and invalid limits fail configuration
 validation. Adding a new measurement (for example a Swift framework) requires a
 reproducible collector in `measure-package-size`, its changed-path detection and
 build setup in `package-size.yml`, and an adapter in `bundle-size-budgets.cjs`.

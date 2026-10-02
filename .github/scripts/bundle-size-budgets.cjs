@@ -1,18 +1,18 @@
 const fs = require("node:fs");
 
-// Measurement adapters map the existing artifact report to stable config keys.
+// Measurement adapters map the existing artifact report to explicit selectors.
 // Policy and acceptance handling below do not depend on a particular platform.
 const platforms = {
   web: {
     label: "Web",
-    metrics: {
-      javascript: "JavaScript",
-      javascriptGzip: "JavaScript (gzip)",
-      npmTarball: "npm tarball",
+    measurements: {
+      shippedJavaScript: "JavaScript",
+      shippedJavaScriptGzip: "JavaScript (gzip)",
+      package: "npm tarball",
     },
   },
-  "react-native": { label: "React Native", metrics: { npmTarball: "npm tarball" } },
-  android: { label: "Android", metrics: { aar: "release AAR" } },
+  "react-native": { label: "React Native", measurements: { package: "npm tarball" } },
+  android: { label: "Android", measurements: { package: "release AAR" } },
 };
 const marker = "<!-- checkout-kit-package-size -->";
 const statePattern = /<!-- bundle-size-state:([A-Za-z0-9+/=]+) -->/;
@@ -27,11 +27,27 @@ function validateBudgets(budgets) {
     if (!Object.hasOwn(platforms, platform) || !object(metrics))
       throw new Error(`Unknown platform: ${platform}`);
     for (const [metric, budget] of Object.entries(metrics)) {
-      if (!Object.hasOwn(platforms[platform].metrics, metric))
-        throw new Error(`Unknown metric: ${platform}.${metric}`);
+      if (!/^[a-zA-Z][a-zA-Z0-9-]*$/.test(metric))
+        throw new Error(`Invalid budget name: ${platform}.${metric}`);
       if (
         !object(budget) ||
-        Object.keys(budget).sort().join(",") !== "hardKiB,softKiB" ||
+        typeof budget.measurement !== "string" ||
+        !Object.hasOwn(platforms[platform].measurements, budget.measurement)
+      )
+        throw new Error(`Unknown measurement for ${platform}.${metric}`);
+      if (
+        Object.hasOwn(budget, "file") &&
+        (budget.measurement !== "package" ||
+          typeof budget.file !== "string" ||
+          !budget.file ||
+          /[\\\t\r\n*?[\]{}]/.test(budget.file) ||
+          budget.file.split("/").some((part) => !part || part === "." || part === ".."))
+      )
+        throw new Error(`File must be an exact package-relative path for ${platform}.${metric}`);
+      if (
+        Object.keys(budget).some(
+          (key) => !["measurement", "file", "softKiB", "hardKiB"].includes(key),
+        ) ||
         !Number.isFinite(budget.softKiB) ||
         !Number.isFinite(budget.hardKiB) ||
         budget.softKiB <= 0 ||
@@ -49,12 +65,16 @@ function measurements(tsv) {
   const values = {};
   for (const line of tsv.split("\n").filter(Boolean)) {
     const columns = line.split("\t");
-    if (columns.length >= 4) continue; // Per-file details are informational.
-    const [platform, metric, bytes] = columns;
-    if (columns.length !== 3 || !/^\d+$/.test(bytes) || !Number.isSafeInteger(Number(bytes))) {
+    const [platform, metric, bytes, file] = columns;
+    if (
+      ![3, 4].includes(columns.length) ||
+      (columns.length === 4 && !file) ||
+      !/^\d+$/.test(bytes) ||
+      !Number.isSafeInteger(Number(bytes))
+    ) {
       throw new Error("Invalid measurement row");
     }
-    const key = `${platform}\t${metric}`;
+    const key = `${platform}\t${metric}${file ? `\t${file}` : ""}`;
     if (Object.hasOwn(values, key)) throw new Error(`Duplicate measurement: ${key}`);
     values[key] = Number(bytes);
   }
@@ -74,16 +94,23 @@ function evaluate({ budgets, base, head, measuredPlatforms }, acceptances = {}) 
     if (!measuredPlatforms.includes(platform)) continue;
     for (const [metric, budget] of Object.entries(metrics)) {
       const key = `${platform}.${metric}`;
-      const measurementKey = `${platforms[platform].label}\t${platforms[platform].metrics[metric]}`;
+      const measurementKey = `${platforms[platform].label}\t${platforms[platform].measurements[budget.measurement]}${budget.file ? `\t${budget.file}` : ""}`;
       const before = base[measurementKey];
       const after = head[measurementKey];
       const acceptance = acceptances[key];
       let status;
-      if (!Number.isSafeInteger(after) || after <= 0) status = "missing";
+      if (!Number.isSafeInteger(after) || after < 0 || (after === 0 && !budget.file))
+        status = "missing";
       else if (after <= budget.softKiB * 1024) status = "within";
       else if (before !== undefined && after <= before) status = "no-growth";
       else if (after > budget.hardKiB * 1024) status = "hard";
-      else if (acceptance && after <= acceptance.bytes) status = "accepted";
+      else if (
+        acceptance &&
+        acceptance.measurement === budget.measurement &&
+        acceptance.file === budget.file &&
+        after <= acceptance.bytes
+      )
+        status = "accepted";
       else status = "soft";
       rows.push({ key, platform, metric, before, after, ...budget, status, acceptance });
     }
@@ -112,6 +139,8 @@ function accept(rows, commands, actor, comment, previous = {}) {
     for (const row of eligible) {
       accepted[row.key] = {
         bytes: row.after,
+        measurement: row.measurement,
+        ...(row.file ? { file: row.file } : {}),
         actor,
         reason,
         commentId: comment.id,
@@ -172,8 +201,8 @@ function render(rows, state, packageComment, notes = []) {
     "",
     `Measured head: \`${state.headSha}\`; base: \`${state.baseSha}\`.`,
     "",
-    "| Platform / metric | Base | Head | Delta | Soft | Hard | Result |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    "| Platform / budget | Measurement | Base | Head | Delta | Soft | Hard | Result |",
+    "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
   ];
   for (const row of rows) {
     const status =
@@ -184,11 +213,18 @@ function render(rows, state, packageComment, notes = []) {
       row.before === undefined || row.after === undefined
         ? "unavailable"
         : `${row.after > row.before ? "+" : ""}${kib(row.after - row.before)}`;
+    const scope = row.file
+      ? `${escape(row.file)} (uncompressed)`
+      : {
+          shippedJavaScript: "All shipped JavaScript (raw)",
+          shippedJavaScriptGzip: "All shipped JavaScript (gzip)",
+          package: "Whole package (compressed)",
+        }[row.measurement];
     lines.push(
-      `| ${row.platform} / ${row.metric} | ${kib(row.before)} | ${kib(row.after)} | ${delta} | ${row.softKiB} KiB | ${row.hardKiB} KiB | ${status} |`,
+      `| ${row.platform} / ${row.metric} | ${scope} | ${kib(row.before)} | ${kib(row.after)} | ${delta} | ${row.softKiB} KiB | ${row.hardKiB} KiB | ${status} |`,
     );
   }
-  if (!rows.length) lines.push("| — | — | — | — | — | — | No configured budgets affected |");
+  if (!rows.length) lines.push("| — | — | — | — | — | — | — | No configured budgets affected |");
   lines.push(
     "",
     "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
