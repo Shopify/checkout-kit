@@ -5,14 +5,23 @@ const fs = require("node:fs");
 const platforms = {
   web: {
     label: "Web",
+    packageLabel: "Whole npm package (gzip)",
     measurements: {
       bundle: "JavaScript",
       bundleGzip: "JavaScript (gzip)",
       package: "npm tarball",
     },
   },
-  "react-native": { label: "React Native", measurements: { package: "npm tarball" } },
-  android: { label: "Android", measurements: { package: "release AAR" } },
+  "react-native": {
+    label: "React Native",
+    packageLabel: "Whole npm package (gzip)",
+    measurements: { package: "npm tarball" },
+  },
+  android: {
+    label: "Android",
+    packageLabel: "Whole AAR package (ZIP)",
+    measurements: { package: "release AAR" },
+  },
 };
 const marker = "<!-- checkout-kit-package-size -->";
 const statePattern = /<!-- bundle-size-state:([A-Za-z0-9+/=]+) -->/;
@@ -216,9 +225,9 @@ function render(rows, state, packageComment, notes = []) {
     const scope = row.file
       ? `${escape(row.file)} (uncompressed)`
       : {
-          bundle: "Bundle (raw)",
+          bundle: "Bundle (uncompressed)",
           bundleGzip: "Bundle (gzip)",
-          package: "Whole package (compressed)",
+          package: platforms[row.platform].packageLabel,
         }[row.measurement];
     lines.push(
       `| ${row.platform} / ${row.metric} | ${scope} | ${kib(row.before)} | ${kib(row.after)} | ${delta} | ${row.softKiB} KiB | ${row.hardKiB} KiB | ${status} |`,
