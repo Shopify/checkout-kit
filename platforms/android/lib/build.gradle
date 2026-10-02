@@ -16,6 +16,7 @@ plugins {
 }
 
 apply from: file('../gradle/android-library-versions.gradle')
+apply from: file('../gradle/protocol-dependency.gradle')
 
 def kotlinCompatibility = kotlinVersionCompatibility
 def versionName = libs.versions.checkoutKitAndroid.get()
@@ -120,7 +121,6 @@ dependencies {
     detektPlugins libs.detekt.formatting
     mockitoAgent libs.mockito.core
 
-    api project(':embedded-checkout-protocol')
     testImplementation libs.junit
     testImplementation libs.robolectric
     testImplementation libs.mockito.core

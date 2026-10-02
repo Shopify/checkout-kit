@@ -12,10 +12,19 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        if (providers.gradleProperty('usePublishedProtocol').getOrElse('false').toBoolean()) {
+            exclusiveContent {
+                forRepository { mavenCentral() }
+                filter { includeModule('com.shopify', 'embedded-checkout-protocol') }
+            }
+        }
     }
 }
 rootProject.name = "checkout-kit"
 
-include ':embedded-checkout-protocol'
-project(':embedded-checkout-protocol').projectDir = file('../../protocol/languages/kotlin/embedded-checkout-protocol')
+// Release builds must not compile the in-repo protocol instead of its Maven artifact.
+if (!providers.gradleProperty('usePublishedProtocol').getOrElse('false').toBoolean()) {
+    include ':embedded-checkout-protocol'
+    project(':embedded-checkout-protocol').projectDir = file('../../protocol/languages/kotlin/embedded-checkout-protocol')
+}
 include ':lib'

@@ -1,0 +1,46 @@
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+
+// Source dependencies support joint protocol/SDK development. Remote releases
+// must use the published dependency consumers resolve, even outside GitHub CI.
+def usePublishedProtocol = providers.gradleProperty('usePublishedProtocol').getOrElse('false').toBoolean()
+def protocolVersion = libs.versions.embeddedCheckoutProtocolAndroid.get()
+def protocolCoordinate = "com.shopify:embedded-checkout-protocol:$protocolVersion"
+
+dependencies {
+    if (usePublishedProtocol) {
+        api protocolCoordinate
+    } else {
+        api project(':embedded-checkout-protocol')
+    }
+}
+
+def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
+    group = 'verification'
+    description = 'Verify release classpaths use the exact published protocol version.'
+    doLast {
+        if (!usePublishedProtocol) {
+            throw new GradleException('Remote Android publication requires -PusePublishedProtocol=true. Use publishToMavenLocal for source-based development.')
+        }
+        [
+            'releaseCompileClasspath', 'releaseRuntimeClasspath',
+            'debugUnitTestCompileClasspath', 'debugUnitTestRuntimeClasspath',
+        ].each { name ->
+            def artifacts = configurations.getByName(name).resolvedConfiguration.resolvedArtifacts.findAll {
+                it.moduleVersion.id.group == 'com.shopify' && it.moduleVersion.id.name == 'embedded-checkout-protocol'
+            }
+            if (artifacts.size() != 1 ||
+                !(artifacts.first().id.componentIdentifier instanceof ModuleComponentIdentifier) ||
+                artifacts.first().moduleVersion.id.version != protocolVersion) {
+                throw new GradleException("$name must resolve the published $protocolCoordinate; found ${artifacts.collect { it.id }}")
+            }
+        }
+        logger.lifecycle("Verified published protocol dependency: $protocolCoordinate")
+    }
+}
+
+// PublishToMavenLocal is a different task type and intentionally stays available
+// with the source dependency for React Native's explicit --local workflow.
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn verifyPublishedProtocol, 'testDebugUnitTest'
+}

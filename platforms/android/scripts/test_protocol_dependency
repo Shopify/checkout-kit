@@ -1,0 +1,201 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "minitest/autorun"
+require "fileutils"
+require "open3"
+require "tmpdir"
+require "rexml/document"
+
+# Exercise the real dependency/publication configuration with small Java
+# projects and isolated file-based Maven repositories. No artifacts leave the temporary fixture.
+class ProtocolDependencyTest < Minitest::Test
+  ANDROID_ROOT = File.expand_path("..", __dir__)
+  WRAPPER = File.join(ANDROID_ROOT, "gradlew")
+  DEPENDENCY_SCRIPT = File.join(ANDROID_ROOT, "gradle/protocol-dependency.gradle")
+
+  def setup
+    @repo = Dir.mktmpdir("protocol-publication")
+    write("settings.gradle", <<~GROOVY)
+      rootProject.name = 'protocol-publication-fixture'
+      include ':lib', ':embedded-checkout-protocol'
+      dependencyResolutionManagement {
+          repositories { maven { url = uri('repository') } }
+          versionCatalogs {
+              libs { version('embeddedCheckoutProtocolAndroid', '1.0') }
+          }
+      }
+    GROOVY
+    write("embedded-checkout-protocol/build.gradle", <<~GROOVY)
+      plugins { id 'java-library'; id 'maven-publish' }
+      group = 'com.shopify'
+      version = providers.gradleProperty('fixtureProtocolVersion').getOrElse('1.0')
+      publishing {
+          publications { release(MavenPublication) { from components.java } }
+          repositories { maven { name = 'Fixture'; url = rootProject.file('repository') } }
+      }
+    GROOVY
+    write("embedded-checkout-protocol/src/main/java/protocol/Checkout.java", "package protocol; public class Checkout {}\n")
+    write("lib/build.gradle", <<~GROOVY)
+      plugins { id 'java-library'; id 'maven-publish' }
+      group = 'com.shopify'
+      version = '1.0'
+      configurations {
+          releaseCompileClasspath { canBeResolved = true; extendsFrom compileClasspath }
+          releaseRuntimeClasspath { canBeResolved = true; extendsFrom runtimeClasspath }
+          debugUnitTestCompileClasspath { canBeResolved = true; extendsFrom testCompileClasspath }
+          debugUnitTestRuntimeClasspath { canBeResolved = true; extendsFrom testRuntimeClasspath }
+      }
+      apply from: '#{DEPENDENCY_SCRIPT}'
+      tasks.register('testDebugUnitTest') {
+          dependsOn 'test'
+          doLast {
+              if (project.hasProperty('failUnitTests')) {
+                  throw new GradleException('Fixture unit test failed')
+              }
+              file('build/unit-tests-passed').text = 'passed'
+          }
+      }
+      publishing {
+          publications {
+              release(MavenPublication) { from components.java; artifactId = 'checkout-kit' }
+          }
+          repositories { maven { name = 'Fixture'; url = rootProject.file('published') } }
+      }
+    GROOVY
+    write("lib/src/main/java/kit/Kit.java", "package kit; public class Kit { public protocol.Checkout checkout; }\n")
+  end
+
+  def teardown
+    FileUtils.remove_entry(@repo)
+  end
+
+  def test_remote_publication_rejects_source_mode
+    output, status = gradle(':lib:publishReleasePublicationToFixtureRepository')
+
+    refute status.success?, output
+    assert_includes output, 'requires -PusePublishedProtocol=true'
+    refute File.exist?(published_jar)
+  end
+
+  def test_missing_published_protocol_prevents_publication
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+
+    refute status.success?, output
+    assert_includes output, 'Could not find com.shopify:embedded-checkout-protocol:1.0'
+    refute File.exist?(published_jar)
+  end
+
+  def test_published_mode_tests_and_publishes_the_pinned_dependency
+    publish_protocol
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+
+    assert status.success?, output
+    assert File.exist?(published_jar)
+    assert File.exist?(File.join(@repo, 'lib/build/unit-tests-passed'))
+    pom = REXML::Document.new(File.read(published_jar.sub('.jar', '.pom')))
+    dependency = REXML::XPath.first(pom, "//dependency[artifactId='embedded-checkout-protocol']")
+    refute_nil dependency
+    assert_equal 'com.shopify', dependency.elements['groupId'].text
+    assert_equal '1.0', dependency.elements['version'].text
+  end
+
+  def test_old_published_protocol_fails_even_when_local_sources_compile
+    publish_protocol
+    write("embedded-checkout-protocol/src/main/java/protocol/Policy.java", "package protocol; public class Policy {}\n")
+    write("lib/src/main/java/kit/Kit.java", "package kit; public class Kit { public protocol.Policy policy; }\n")
+    output, status = gradle(':lib:testDebugUnitTest')
+    assert status.success?, output
+
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+    refute status.success?, output
+    assert_includes output, 'cannot find symbol'
+    assert_includes output, 'Policy'
+    refute File.exist?(published_jar)
+  end
+
+  def test_failed_unit_tests_prevent_publication
+    publish_protocol
+    output, status = gradle('-PusePublishedProtocol=true', '-PfailUnitTests=true', ':lib:publishReleasePublicationToFixtureRepository')
+
+    refute status.success?, output
+    assert_includes output, 'Fixture unit test failed'
+    refute File.exist?(published_jar)
+  end
+
+  def test_rejects_a_different_resolved_protocol_version
+    output, status = gradle('-PfixtureProtocolVersion=2.0', ':embedded-checkout-protocol:publishReleasePublicationToFixtureRepository')
+    assert status.success?, output
+    File.open(File.join(@repo, 'lib/build.gradle'), 'a') do |file|
+      file.puts "configurations.configureEach { resolutionStrategy.force('com.shopify:embedded-checkout-protocol:2.0') }"
+    end
+
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+    refute status.success?, output
+    assert_includes output, 'must resolve the published com.shopify:embedded-checkout-protocol:1.0'
+    refute File.exist?(published_jar)
+  end
+
+  def test_rejects_a_different_protocol_version_on_the_test_classpath
+    publish_protocol
+    output, status = gradle('-PfixtureProtocolVersion=2.0', ':embedded-checkout-protocol:publishReleasePublicationToFixtureRepository')
+    assert status.success?, output
+    File.open(File.join(@repo, 'lib/build.gradle'), 'a') do |file|
+      file.puts "configurations.debugUnitTestRuntimeClasspath.resolutionStrategy.force('com.shopify:embedded-checkout-protocol:2.0')"
+    end
+
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+    refute status.success?, output
+    assert_includes output, 'debugUnitTestRuntimeClasspath must resolve the published com.shopify:embedded-checkout-protocol:1.0'
+    refute File.exist?(published_jar)
+  end
+
+  def test_rejects_project_substitution_even_in_published_mode
+    File.open(File.join(@repo, 'lib/build.gradle'), 'a') do |file|
+      file.puts <<~GROOVY
+        configurations.configureEach {
+            resolutionStrategy.dependencySubstitution {
+                substitute module('com.shopify:embedded-checkout-protocol') using project(':embedded-checkout-protocol')
+            }
+        }
+      GROOVY
+    end
+
+    output, status = gradle('-PusePublishedProtocol=true', ':lib:publishReleasePublicationToFixtureRepository')
+    refute status.success?, output
+    assert_includes output, 'must resolve the published com.shopify:embedded-checkout-protocol:1.0'
+    refute File.exist?(published_jar)
+  end
+
+  def test_maven_local_remains_available_for_source_development
+    output, status = gradle("-Dmaven.repo.local=#{@repo}/maven-local", ':lib:publishToMavenLocal')
+
+    assert status.success?, output
+    assert File.exist?(File.join(@repo, 'maven-local/com/shopify/checkout-kit/1.0/checkout-kit-1.0.jar'))
+  end
+
+  private
+
+  def published_jar
+    File.join(@repo, 'published/com/shopify/checkout-kit/1.0/checkout-kit-1.0.jar')
+  end
+
+  def write(path, content)
+    path = File.join(@repo, path)
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, content)
+  end
+
+  def gradle(*args)
+    Open3.capture2e(
+      {"ORG_GRADLE_PROJECT_usePublishedProtocol" => nil},
+      WRAPPER, '-p', @repo, '--console=plain', *args,
+      chdir: @repo,
+    )
+  end
+
+  def publish_protocol
+    output, status = gradle(':embedded-checkout-protocol:publishReleasePublicationToFixtureRepository')
+    assert status.success?, output
+  end
+end

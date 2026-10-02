@@ -272,6 +272,16 @@ Open a pull request with the following changes:
 1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
 2. If the Android Kit release depends on a new protocol version, release `embeddedCheckoutProtocolAndroid` first.
 
+Android publication sets `ORG_GRADLE_PROJECT_usePublishedProtocol=true` to build
+and test against the pinned Maven Central protocol artifact. Remote Gradle
+publish tasks require this mode, verify the resolved version, and require unit
+tests to pass. Normal development and `publishToMavenLocal` use protocol sources.
+To reproduce the release checks from `platforms/android`, run:
+
+```bash
+shadowenv exec -- ./gradlew -PusePublishedProtocol=true :lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck
+```
+
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):

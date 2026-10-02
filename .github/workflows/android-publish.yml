@@ -21,6 +21,7 @@ jobs:
 
     env:
       OSSRH_API_BASE_URL: https://ossrh-staging-api.central.sonatype.com
+      ORG_GRADLE_PROJECT_usePublishedProtocol: "true"
 
     defaults:
       run:
@@ -66,6 +67,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Test against the published protocol
+        run: ./gradlew :lib:verifyPublishedProtocol :lib:testDebugUnitTest :lib:apiCheck --console=plain
 
       - name: Publish Package
         run: |
