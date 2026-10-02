@@ -77,6 +77,27 @@ importers:
         specifier: ^4.1.0
         version: 4.1.11(@types/node@22.19.18)(@vitest/coverage-v8@4.1.11)(happy-dom@20.8.9)(vite@8.2.2(@types/node@22.19.18)(esbuild@0.28.1))
 
+  test/e2e:
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.61.1
+        version: 1.63.0
+      '@shopify/checkout-kit':
+        specifier: workspace:*
+        version: link:../..
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.18
+      oxfmt:
+        specifier: ^0.47.0
+        version: 0.47.0
+      oxlint:
+        specifier: ^1.62.0
+        version: 1.63.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':
@@ -569,6 +590,11 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
+
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==, tarball: https://registry.npmjs.org/@playwright/test/-/test-1.63.0.tgz}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@publint/pack@0.1.7':
     resolution: {integrity: sha512-4EDEmvxWtgsCnnVeBvtFIFZtUhPPt1+bA9JrSwU4Sa//6oKtzCSlGGXYJr44OD9aGISymbieJ4mCKHUygUDU+g==}
@@ -1737,6 +1763,16 @@ packages:
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
 
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==, tarball: https://registry.npmjs.org/playwright-core/-/playwright-core-1.63.0.tgz}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==, tarball: https://registry.npmjs.org/playwright/-/playwright-1.63.0.tgz}
+    engines: {node: '>=20'}
+    hasBin: true
+
   postcss@8.5.15:
     resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
     engines: {node: ^10 || ^12 || >=14}
@@ -2410,6 +2446,10 @@ snapshots:
 
   '@oxlint/binding-win32-x64-msvc@1.63.0':
     optional: true
+
+  '@playwright/test@1.63.0':
+    dependencies:
+      playwright: 1.63.0
 
   '@publint/pack@0.1.7':
     dependencies:
@@ -3393,6 +3433,12 @@ snapshots:
       confbox: 0.2.4
       exsolve: 1.0.8
       pathe: 2.0.3
+
+  playwright-core@1.63.0: {}
+
+  playwright@1.63.0:
+    dependencies:
+      playwright-core: 1.63.0
 
   postcss@8.5.15:
     dependencies:

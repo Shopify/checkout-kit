@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout Kit browser test</title>
+  </head>
+  <body>
+    <shopify-checkout id="checkout" target="popup" telemetry="false"></shopify-checkout>
+    <button id="buy" type="button">Buy</button>
+    <script type="module">
+      import "/dist/index.js";
+
+      const checkout = document.getElementById("checkout");
+      window.checkoutEvents = [];
+      for (const type of ["start", "update", "complete", "error", "close"]) {
+        checkout.addEventListener(type, (event) => {
+          window.checkoutEvents.push({ type, detail: event.detail ?? null });
+        });
+      }
+      document.getElementById("buy").addEventListener("click", () => checkout.open());
+    </script>
+  </body>
+</html>

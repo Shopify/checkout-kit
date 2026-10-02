@@ -66,6 +66,14 @@ class ChangedFileFiltersTest < Minitest::Test
     refute @filters.match?("protocolTypescript", ["protocol/package.json"])
   end
 
+  def test_web_browser_tests_trigger_web_without_triggering_native_e2e
+    paths = ["platforms/web/test/e2e/tests/checkout.spec.ts"]
+    assert @filters.match?("web", paths)
+    refute @filters.match?("e2e", paths)
+    refute @filters.match?("web", ["platforms/web/test/e2e/README.md"])
+    assert @filters.match?("e2e", ["e2e/tests/shared/checkout-guest.yaml"])
+  end
+
   def test_excludes_markdown_at_top_level_and_nested
     refute @filters.match?("android", ["platforms/android/README.md"])
     refute @filters.match?("web", ["platforms/web/guides/nested/CHANGELOG.md"])

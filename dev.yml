@@ -27,6 +27,12 @@ up:
         - protocol
         - platforms/react-native
         - platforms/web
+  - custom:
+      name: Install Playwright Chromium for web E2E
+      # Playwright checks its own browser revisions; current installs are a no-op.
+      met?: pnpm --dir platforms/web/test/e2e exec playwright install chromium
+      # Do not hide installation failures behind a successful meet command.
+      meet: "false"
   - jdk:
       version: "17"
       distribution: openjdk
@@ -968,12 +974,12 @@ commands:
           pnpm run format
 
       check:
-        desc: Run Web lint, unit tests, build, package verification, and sample build checks
+        desc: Run Web lint, unit tests, browser tests, package verification, and sample build checks
         run: |
           set -e
           /opt/dev/bin/dev web lint
           /opt/dev/bin/dev web test
-          /opt/dev/bin/dev web build
+          /opt/dev/bin/dev web e2e
           /opt/dev/bin/dev web verify
           /opt/dev/bin/dev web sample build
 
@@ -1000,6 +1006,31 @@ commands:
       verify:
         desc: Run Web package verification
         run: cd platforms/web && pnpm verify
+
+      e2e:
+        desc: Build the web package and run Playwright in Chromium
+        long_desc: |
+          `dev up` installs Chromium for the current Playwright version.
+          Use `dev web e2e install` for targeted setup or recovery.
+          Tests use synthetic checkout fixtures and require no storefront config.
+          Extra arguments are forwarded to Playwright, for example:
+
+            dev web e2e --headed
+            dev web e2e --ui
+        syntax:
+          optional: "[playwright test args]"
+        run: |
+          set -e
+          /opt/dev/bin/dev web build
+          pnpm --dir platforms/web/test/e2e typecheck
+          pnpm --dir platforms/web/test/e2e test "$@"
+        subcommands:
+          install:
+            desc: Install or repair Playwright Chromium and its system dependencies
+            run: pnpm --dir platforms/web/test/e2e exec playwright install --with-deps chromium
+          report:
+            desc: Open the last Playwright HTML report
+            run: pnpm --dir platforms/web/test/e2e report
 
       snapshot:
         desc: Manage snapshots for packaged contents

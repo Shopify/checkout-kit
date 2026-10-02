@@ -1,3 +1,4 @@
 packages:
+  - 'test/e2e'
   - '../../protocol/languages/typescript'
   - '../../telemetry/languages/typescript'

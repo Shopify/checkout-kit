@@ -1,0 +1,23 @@
+{
+  "name": "@shopify/checkout-kit-web-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json --report-unused-disable-directives --max-warnings 0 support tests playwright.config.ts server.mjs",
+    "lint:fix": "pnpm lint --fix",
+    "format": "oxfmt support tests fixtures playwright.config.ts server.mjs package.json tsconfig.json",
+    "format:check": "pnpm format --check",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@shopify/checkout-kit": "workspace:*",
+    "@types/node": "^22.10.0",
+    "oxfmt": "^0.47.0",
+    "oxlint": "^1.62.0",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Synthetic checkout</title>
+  </head>
+  <body>
+    <p id="status">Waiting for handshake</p>
+    <button id="start" type="button" disabled>Start checkout</button>
+    <button id="complete" type="button" disabled>Complete checkout</button>
+    <script>
+      const hostOrigin = new URL(location.href).searchParams.get("host_origin");
+      const readyId = "ready-1";
+      let protocolVersion;
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== window.opener || event.origin !== hostOrigin) return;
+        const response = event.data;
+        if (response?.jsonrpc !== "2.0" || response.id !== readyId) return;
+        if (response.result?.ucp?.status !== "success") return;
+        protocolVersion = response.result.ucp.version;
+        document.getElementById("status").textContent = "Ready";
+        document.getElementById("start").disabled = false;
+      });
+
+      // Use the negotiated version rather than coupling the harness to a
+      // particular SDK release. The payload remains a synthetic wire fixture.
+      function checkout(status) {
+        return {
+          ucp: { version: protocolVersion, payment_handlers: {} },
+          id: "checkout_test_1",
+          currency: "USD",
+          status,
+          line_items: [
+            {
+              id: "li_1",
+              item: { id: "variant_1", title: "Test Product", price: 2000 },
+              quantity: 1,
+              totals: [{ type: "total", amount: 2000 }],
+            },
+          ],
+          totals: [{ type: "total", amount: 2000 }],
+          links: [],
+        };
+      }
+
+      function notify(method, resource) {
+        window.opener.postMessage(
+          { jsonrpc: "2.0", method, params: { checkout: resource } },
+          hostOrigin,
+        );
+      }
+
+      document.getElementById("start").addEventListener("click", () => {
+        notify("ec.start", checkout("incomplete"));
+        document.getElementById("start").disabled = true;
+        document.getElementById("complete").disabled = false;
+      });
+
+      document.getElementById("complete").addEventListener("click", () => {
+        notify("ec.complete", {
+          ...checkout("completed"),
+          order: {
+            id: "order_test_1",
+            permalink_url: "https://checkout.example.test/orders/order_test_1",
+          },
+        });
+        document.getElementById("complete").disabled = true;
+      });
+
+      window.opener.postMessage(
+        { jsonrpc: "2.0", id: readyId, method: "ec.ready", params: { delegate: ["window.open"] } },
+        hostOrigin,
+      );
+    </script>
+  </body>
+</html>
