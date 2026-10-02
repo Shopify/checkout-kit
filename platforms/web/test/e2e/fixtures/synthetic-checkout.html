@@ -5,73 +5,119 @@
     <title>Synthetic checkout</title>
   </head>
   <body>
-    <p id="status">Waiting for handshake</p>
-    <button id="start" type="button" disabled>Start checkout</button>
-    <button id="complete" type="button" disabled>Complete checkout</button>
     <script>
-      const hostOrigin = new URL(location.href).searchParams.get("host_origin");
-      const readyId = "ready-1";
-      let protocolVersion;
+      class SyntheticCheckout {
+        constructor() {
+          this.hostOrigin = new URL(location.href).searchParams.get("host_origin");
+          this.readyResponse = new Promise((resolve) => {
+            window.addEventListener("message", (event) => {
+              if (event.source !== window.opener || event.origin !== this.hostOrigin) return;
+              const response = event.data;
+              if (response?.jsonrpc !== "2.0" || response.id !== "ready-1") return;
+              if (response.result?.ucp?.status !== "success") return;
+              this.protocolVersion = response.result.ucp.version;
+              resolve();
+            });
+          });
+          this.request("ec.ready", { delegate: ["window.open"] }, "ready-1");
+        }
 
-      window.addEventListener("message", (event) => {
-        if (event.source !== window.opener || event.origin !== hostOrigin) return;
-        const response = event.data;
-        if (response?.jsonrpc !== "2.0" || response.id !== readyId) return;
-        if (response.result?.ucp?.status !== "success") return;
-        protocolVersion = response.result.ucp.version;
-        document.getElementById("status").textContent = "Ready";
-        document.getElementById("start").disabled = false;
-      });
+        notify(method, params) {
+          window.opener.postMessage({ jsonrpc: "2.0", method, params }, this.hostOrigin);
+        }
 
-      // Use the negotiated version rather than coupling the harness to a
-      // particular SDK release. The payload remains a synthetic wire fixture.
-      function checkout(status) {
-        return {
-          ucp: { version: protocolVersion, payment_handlers: {} },
-          id: "checkout_test_1",
-          currency: "USD",
-          status,
-          line_items: [
-            {
-              id: "li_1",
-              item: { id: "variant_1", title: "Test Product", price: 2000 },
-              quantity: 1,
-              totals: [{ type: "total", amount: 2000 }],
+        request(method, params, id) {
+          window.opener.postMessage({ jsonrpc: "2.0", id, method, params }, this.hostOrigin);
+        }
+
+        // Use the negotiated version so the wire fixture survives SDK releases.
+        checkoutResource(status = "incomplete") {
+          return {
+            ucp: { version: this.protocolVersion, payment_handlers: {} },
+            id: "checkout_test_1",
+            currency: "USD",
+            status,
+            line_items: [
+              {
+                id: "li_1",
+                item: { id: "variant_1", title: "Test Product", price: 2000 },
+                quantity: 1,
+                totals: [{ type: "total", amount: 2000 }],
+              },
+            ],
+            totals: [{ type: "total", amount: 2000 }],
+            links: [],
+          };
+        }
+
+        start() {
+          this.notify("ec.start", { checkout: this.checkoutResource() });
+        }
+
+        complete() {
+          this.notify("ec.complete", {
+            checkout: {
+              ...this.checkoutResource("completed"),
+              order: {
+                id: "order_test_1",
+                permalink_url: "https://checkout.example.test/orders/order_test_1",
+              },
             },
-          ],
-          totals: [{ type: "total", amount: 2000 }],
-          links: [],
-        };
+          });
+        }
+
+        lineItemsChange() {
+          const checkout = this.checkoutResource();
+          checkout.line_items[0].quantity = 2;
+          checkout.line_items[0].totals[0].amount = 4000;
+          checkout.totals[0].amount = 4000;
+          this.notify("ec.line_items.change", { checkout });
+        }
+
+        totalsChange() {
+          const checkout = this.checkoutResource();
+          checkout.totals[0].amount = 2500;
+          this.notify("ec.totals.change", { checkout });
+        }
+
+        messagesChange() {
+          this.notify("ec.messages.change", {
+            checkout: {
+              ...this.checkoutResource(),
+              messages: [
+                {
+                  type: "notice",
+                  code: "inventory_updated",
+                  content: "Inventory changed.",
+                  severity: "informational",
+                },
+              ],
+            },
+          });
+        }
+
+        openRequest(url) {
+          this.request("ec.window.open_request", { url }, "open-request-1");
+        }
+
+        error() {
+          this.notify("ec.error", {
+            error: {
+              ucp: { version: this.protocolVersion, status: "error" },
+              messages: [
+                {
+                  type: "error",
+                  code: "invalid_cart",
+                  content: "The cart is no longer valid.",
+                  severity: "unrecoverable",
+                },
+              ],
+            },
+          });
+        }
       }
 
-      function notify(method, resource) {
-        window.opener.postMessage(
-          { jsonrpc: "2.0", method, params: { checkout: resource } },
-          hostOrigin,
-        );
-      }
-
-      document.getElementById("start").addEventListener("click", () => {
-        notify("ec.start", checkout("incomplete"));
-        document.getElementById("start").disabled = true;
-        document.getElementById("complete").disabled = false;
-      });
-
-      document.getElementById("complete").addEventListener("click", () => {
-        notify("ec.complete", {
-          ...checkout("completed"),
-          order: {
-            id: "order_test_1",
-            permalink_url: "https://checkout.example.test/orders/order_test_1",
-          },
-        });
-        document.getElementById("complete").disabled = true;
-      });
-
-      window.opener.postMessage(
-        { jsonrpc: "2.0", id: readyId, method: "ec.ready", params: { delegate: ["window.open"] } },
-        hostOrigin,
-      );
+      window.syntheticCheckout = new SyntheticCheckout();
     </script>
   </body>
 </html>

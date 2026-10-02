@@ -35,11 +35,19 @@ Failures retain traces and screenshots in `test-results/`; the HTML report is in
 
 ## Scope and layout
 
-The first test covers opening checkout, the `ec.ready` handshake, public `start`
-and `complete` events and snapshots, and host-driven closing. It tests the built
-SDK's browser integration; it does not place a real order or exercise checkout-web.
+The presentation specs cover component registration, checkout URL negotiation,
+invalid URLs, popup presentation, and host/overlay closing. The protocol specs
+cover the `ec.ready` handshake, public `start`/`update`/`complete` events and
+snapshots, window delegation, and terminal errors. They test the built SDK's
+browser integration; they do not place a real order or exercise checkout-web.
 
 - `server.mjs` serves the host page and built bundle.
 - `fixtures/` contains the host page and synthetic checkout.
-- `support/fixtures.ts` installs checkout routing and the network guard.
-- `tests/checkout.spec.ts` drives the happy path through browser interactions.
+- `support/fixtures.ts` provides a host page object and installs the network guard.
+- `support/checkout-host-page.ts` owns host controls and typed public event/state reads.
+- `support/shopify-checkout-popup.ts` drives the synthetic checkout's protocol actions.
+- `support/embedded-checkout-stub.ts` routes checkout requests to a blank popup or
+  the synthetic protocol fixture, selected with `test.use({ checkoutStub: "blank" })`.
+- `support/checkout-fixture.ts` contains synthetic URLs and expected public checkout data.
+- `tests/synthetic/presentation.spec.ts` uses blank popups to isolate presentation behavior.
+- `tests/synthetic/protocol.spec.ts` exercises cross-origin protocol exchanges and public events.
