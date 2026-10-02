@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: e2e/scripts/check_apple_pay_config <xcconfig-path>" >&2
+  exit 1
+fi
+
+config_path="$1"
+key="APPLE_PAY_MERCHANT_IDENTIFIER"
+
+if [ ! -f "$config_path" ]; then
+  echo "Apple Pay E2E requires ${key} in ${config_path}, but that file does not exist." >&2
+  exit 1
+fi
+
+if ! awk -v key="$key" '
+  /^[[:space:]]*\/\// || /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+  $0 !~ /=/ { next }
+  {
+    line = $0
+    candidate = line
+    sub(/^[[:space:]]*/, "", candidate)
+    sub(/[[:space:]]*=.*/, "", candidate)
+
+    if (candidate == key) {
+      sub(/^[^=]*=/, "", line)
+      sub(/^[[:space:]]*/, "", line)
+      sub(/[[:space:]]*$/, "", line)
+      found = 1
+      exit(line == "" ? 1 : 0)
+    }
+  }
+  END { if (!found) exit 1 }
+' "$config_path"; then
+  echo "Apple Pay E2E requires a nonblank ${key} assignment in ${config_path}." >&2
+  exit 1
+fi
