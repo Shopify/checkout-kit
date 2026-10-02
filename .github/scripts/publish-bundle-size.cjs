@@ -160,15 +160,20 @@ async function processCommands({ github, repo, comments, state, report, mayAccep
     const actor = comment.user.login;
     if (comment.user.type !== "User") continue;
     if (!permissions.has(actor)) {
-      const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
-        ...repo,
-        username: actor,
-      });
-      permissions.set(
-        actor,
-        ["admin", "maintain", "write"].includes(data.permission) ||
-          data.user?.permissions?.push === true,
-      );
+      try {
+        const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+          ...repo,
+          username: actor,
+        });
+        permissions.set(
+          actor,
+          ["admin", "maintain", "write"].includes(data.permission) ||
+            data.user?.permissions?.push === true,
+        );
+      } catch (error) {
+        if (error.status !== 404) throw error;
+        permissions.set(actor, false);
+      }
     }
     if (!permissions.get(actor)) {
       notes.push(`Comment ${comment.id}: repository write access is required.`);

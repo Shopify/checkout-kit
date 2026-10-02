@@ -275,3 +275,17 @@ test("fork PR resolution works when workflow_run has no pull_requests", async ()
   f.run.event = "push";
   assert.equal(await publisher.resolvePR(f.args), null);
 });
+
+test("a non-collaborator lookup cannot turn a passing budget check into a failure", async () => {
+  const f = fixture();
+  f.report.head["Web\tJavaScript"] = 34000;
+  await publisher.publish(f.args);
+  f.github.rest.repos.getCollaboratorPermissionLevel = async () => {
+    throw Object.assign(new Error("Not found"), { status: 404 });
+  };
+  f.command("/accept-size web Please accept", "outsider");
+  await publisher.publish(f.args);
+  assert.equal(f.checks.at(-1).conclusion, "success");
+  assert.match(f.comments[0].body, /write access is required/);
+  assert.deepEqual(f.errors, []);
+});
