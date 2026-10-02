@@ -173,4 +173,4 @@ jobs:
           name: bundle-size-report
           path: /tmp/bundle-size-report/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
