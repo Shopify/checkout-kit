@@ -13,5 +13,10 @@ object AccessibilityIdentifiers {
 
     object Tabs {
         const val CART = "cart-tab"
+        const val SETTINGS = "settings-tab"
+    }
+
+    object Settings {
+        const val CHECKOUT_PRELOADING_TOGGLE = "checkout-preloading-toggle"
     }
 }
