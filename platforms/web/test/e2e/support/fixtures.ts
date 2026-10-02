@@ -1,38 +1,29 @@
-import { fileURLToPath } from "node:url";
 import { test as base, expect } from "@playwright/test";
-import type { ShopifyCheckoutEventMap } from "@shopify/checkout-kit";
+import { CheckoutHostPage } from "./checkout-host-page";
+import { stubEmbeddedCheckout, type CheckoutStubMode } from "./embedded-checkout-stub";
 
-type CheckoutEventRecord = {
-  [K in keyof ShopifyCheckoutEventMap]: {
-    type: K;
-    detail: ShopifyCheckoutEventMap[K]["detail"] | null;
-  };
-}[keyof ShopifyCheckoutEventMap];
-
-declare global {
-  interface Window {
-    checkoutEvents: CheckoutEventRecord[];
-  }
-}
-
-export const checkoutOrigin = "https://checkout.example.test";
-const syntheticCheckout = fileURLToPath(
-  new URL("../fixtures/synthetic-checkout.html", import.meta.url),
-);
-
-export const test = base.extend<{ networkGuard: void }>({
+export const test = base.extend<{
+  checkoutStub: CheckoutStubMode;
+  host: CheckoutHostPage;
+  networkGuard: void;
+}>({
+  checkoutStub: ["handshake", { option: true }],
+  host: async ({ page }, use) => {
+    await use(new CheckoutHostPage(page));
+  },
   networkGuard: [
-    async ({ context, baseURL }, use) => {
+    async ({ context, baseURL, checkoutStub }, use) => {
       const unexpectedRequests: string[] = [];
       await context.route("**/*", async (route) => {
         const url = new URL(route.request().url());
         if (url.origin === baseURL) return route.continue();
-        if (url.origin === checkoutOrigin) {
-          return route.fulfill({ path: syntheticCheckout, contentType: "text/html" });
-        }
         unexpectedRequests.push(url.origin);
         await route.abort();
       });
+
+      // Playwright tries the most recently registered route first. Checkout
+      // requests use the stub; everything else still passes through the guard.
+      await stubEmbeddedCheckout(context, checkoutStub);
 
       await use();
       expect(unexpectedRequests, "All requests should stay within the local fixtures").toEqual([]);
