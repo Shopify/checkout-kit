@@ -1,21 +1,18 @@
 # frozen_string_literal: true
 
-require "json"
 require "uri"
 require_relative "browserstack_client"
-require_relative "../../scripts/lib/json_http_client"
+require_relative "github_sticky_comment"
 
-# Publishes normalized E2E run results back to GitHub as a check run and a
-# sticky pull request comment carrying the Tophat install link and run summary.
 class E2EGitHubReporter
+  REPORT_NAME = "Checkout Kit E2E"
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
   EXECUTE_STAGE_NAME = "e2e-execute-browserstack-run"
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
+  def initialize(results, repository:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
     @results = results
     @repository = repository
-    @sha = sha
     @pr_number = pr_number
     @branch = branch
     @token = token
@@ -28,8 +25,16 @@ class E2EGitHubReporter
   end
 
   def publish!
-    client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
-    sync_comment
+    GitHubStickyComment.new(
+      repository: @repository,
+      pr_number: @pr_number,
+      token: @token,
+      marker: COMMENT_MARKER
+    ).publish!(comment_body)
+  end
+
+  def conclusion
+    failed_results.empty? && complete? ? "success" : "failure"
   end
 
   def tophat_install_url(target)
@@ -52,7 +57,7 @@ class E2EGitHubReporter
 
   def markdown_summary
     lines = []
-    lines << "## Checkout Kit E2E results"
+    lines << "## #{REPORT_NAME} results"
     lines << ""
     lines.concat(results_table) unless @results.empty?
     unless complete?
@@ -70,20 +75,8 @@ class E2EGitHubReporter
       lines << "> BrowserStack artifacts require BrowserStack access. Sign in to [BrowserStack App Automate](#{BrowserStackClient::DASHBOARD_BASE}) before opening artifact links."
       lines.concat(failure_lines)
     end
+    lines.concat(pipeline_link_lines)
     lines.join("\n")
-  end
-
-  def check_run_payload
-    {
-      name: "Checkout Kit E2E",
-      head_sha: @sha,
-      status: "completed",
-      conclusion: conclusion,
-      output: {
-        title: check_run_title,
-        summary: markdown_summary
-      }
-    }
   end
 
   private
@@ -115,7 +108,6 @@ class E2EGitHubReporter
     lines << ">"
     lines << "> #{skipped_runs_heading}"
     lines.concat(missing_run_lines)
-    lines.concat(pipeline_link_lines)
     lines
   end
 
@@ -129,7 +121,6 @@ class E2EGitHubReporter
       lines << "> #{blocking_stage_heading}"
       lines.concat(blocking_stage_lines)
     end
-    lines.concat(pipeline_link_lines)
     lines
   end
 
@@ -185,17 +176,7 @@ class E2EGitHubReporter
   def pipeline_link_lines
     return [] if blank?(@pipeline_url)
 
-    [">", "> [Pipeline build](#{@pipeline_url})"]
-  end
-
-  def conclusion
-    failed_results.empty? && complete? ? "success" : "failure"
-  end
-
-  def check_run_title
-    return "Blocked by #{blocking_stages.first.name}" if blocked?
-
-    "Checkout Kit E2E #{conclusion}"
+    ["", "[Pipeline build](#{@pipeline_url})"]
   end
 
   def tophat_install_markdown
@@ -236,22 +217,6 @@ class E2EGitHubReporter
     return 0 if @expected.nil?
 
     [@expected - @results.length, 0].max
-  end
-
-  def sync_comment
-    body = comment_body
-    existing = existing_comment
-    if existing
-      client.patch_json("/repos/#{@repository}/issues/comments/#{existing.fetch("id")}", {body: body})
-    else
-      client.post_json("/repos/#{@repository}/issues/#{@pr_number}/comments", {body: body})
-    end
-  end
-
-  def existing_comment
-    issue_comments.find do |comment|
-      comment.fetch("body", "").include?(COMMENT_MARKER)
-    end
   end
 
   def failed_results
@@ -343,26 +308,4 @@ class E2EGitHubReporter
     BrowserStackClient.build_url(result["build_id"])
   end
 
-  def issue_comments
-    comments = []
-    page = 1
-    loop do
-      batch = client.get("/repos/#{@repository}/issues/#{@pr_number}/comments?per_page=100&page=#{page}")
-      break unless batch.is_a?(Array) && !batch.empty?
-
-      comments.concat(batch)
-      break if batch.length < 100
-
-      page += 1
-    end
-    comments
-  end
-
-  def client
-    @client ||= JsonHttpClient.new(host: "api.github.com", error_label: "GitHub", default_headers: {"Accept" => "application/vnd.github+json"}) do |request|
-      raise "GitHub token is required" unless @token
-
-      request["Authorization"] = "Bearer #{@token}"
-    end
-  end
 end
