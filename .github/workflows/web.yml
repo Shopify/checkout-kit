@@ -26,7 +26,7 @@ jobs:
           package-json-file: platforms/web/package.json
           working-directory: platforms/web
 
-      - name: Lint (typecheck + oxlint + oxfmt --check)
+      - name: Lint (typecheck + browser compatibility + oxlint + oxfmt --check)
         run: pnpm lint
 
       - name: Test
