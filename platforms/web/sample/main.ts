@@ -21,7 +21,7 @@ import {
 } from "./storage";
 import "./styles.css";
 
-const EVENT_TYPES = ["start", "update", "complete", "close", "error"] as const;
+const EVENT_TYPES = ["start", "update", "complete", "close", "error", "blocked"] as const;
 
 const refs = queryRefs();
 
