@@ -38,13 +38,13 @@ function codecModels() {
 
 function renderDecodeFunction(modelName) {
   return `export function decode${modelName}(value: unknown): ${modelName} {
-  return decodeProtocolObject(value, '${modelName}') as unknown as ${modelName};
+  return decodeProtocolObject(value, ${modelName}Model, '${modelName}') as unknown as ${modelName};
 }`;
 }
 
 function renderEncodeFunction(modelName) {
   return `export function encode${modelName}(value: ${modelName}): unknown {
-  return encodeProtocolObject(value, '${modelName}');
+  return encodeProtocolObject(value, ${modelName}Model);
 }`;
 }
 
@@ -61,6 +61,7 @@ import {
   decodeProtocolObject,
   encodeProtocolObject,
 } from '../protocol_codec_runtime';
+import {${allModels.map(modelName => `${modelName}Model`).join(', ')}} from './ProtocolRenameMap';
 
 ${typeAliases}
 

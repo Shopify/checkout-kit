@@ -6,6 +6,6 @@ export declare class ProtocolValidationError extends TypeError {
     readonly reason: ProtocolValidationReason;
     constructor(modelPath: string, reason: ProtocolValidationReason);
 }
-export declare function decodeProtocolObject(value: unknown, modelName: string): JSONRecord;
-export declare function encodeProtocolObject(value: unknown, modelName: string): unknown;
+export declare function decodeProtocolObject(value: unknown, modelId: number, modelName: string): JSONRecord;
+export declare function encodeProtocolObject(value: unknown, modelId: number): unknown;
 export {};

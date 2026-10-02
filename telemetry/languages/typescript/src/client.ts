@@ -66,27 +66,27 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
   }
 
   recordError(metric: TelemetryErrorMetric): void {
-    this.#recordCounter('checkout_kit_error', this.#attributes({
+    this.#recordCounter('checkout_kit_error', {
       category: metric.category,
       stage: metric.stage,
       code: metric.code,
       retryable: metric.retryable,
       is_retry: metric.isRetry ?? false,
-    }));
+    });
   }
 
   recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric): void {
-    this.#recordCounter('checkout_kit_protocol_decode_error', this.#attributes({
+    this.#recordCounter('checkout_kit_protocol_decode_error', {
       method: toProtocolMethod(metric.method),
       failure_type: metric.failureType,
-    }));
+    });
   }
 
   recordNavigationRetry(metric: TelemetryNavigationRetryMetric): void {
-    this.#recordCounter('checkout_kit_navigation_retry', this.#attributes({
+    this.#recordCounter('checkout_kit_navigation_retry', {
       reason: metric.reason,
       result: metric.result,
-    }));
+    });
   }
 
   recordNavigationDuration(metric: TelemetryNavigationDurationMetric): void {
@@ -104,8 +104,8 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     });
   }
 
-  flush(options: FlushOptions = {}, ignoreBackoff = false): Promise<boolean> {
-    if (this.#stopped) return Promise.resolve(false);
+  async flush(options: FlushOptions = {}, ignoreBackoff = false): Promise<boolean> {
+    if (this.#stopped) return false;
     const inFlight = this.#flushInProgress;
     if (inFlight) {
       if (this.#measurements.length === 0) return inFlight;
@@ -124,13 +124,13 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
       });
     }
     if (this.#measurements.length === 0) {
-      return Promise.resolve(true);
+      return true;
     }
     // A keepalive flush is a page-terminal moment (pagehide/unload): skipping
     // it because of backoff would silently drop the buffered measurements.
     const bypassBackoff = ignoreBackoff || options.keepalive === true;
     if (!bypassBackoff && Date.now() < this.#nextExportAllowedAtMs) {
-      return Promise.resolve(false);
+      return false;
     }
     const measurements = this.#measurements;
     this.#measurements = [];
@@ -166,7 +166,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     this.#record({
       type: 'counter',
       name,
-      attributes,
+      attributes: this.#attributes(attributes),
       timeUnixNano: this.#now(),
     });
   }
@@ -196,6 +196,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     if (options.keepalive !== true) {
       this.#activeRequest = controller;
     }
+    let succeeded = false;
     try {
       const response = await this.#fetch(this.#endpoint, {
         method: 'POST',
@@ -210,21 +211,14 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
         referrerPolicy: 'no-referrer',
         signal: controller.signal,
       });
-      const succeeded = response.ok;
-      if (!this.#stopped) {
-        if (!succeeded) this.#restoreMeasurements(measurements);
-        this.#updateExportBackoff(succeeded);
-      }
-      return succeeded;
-    } catch {
-      if (!this.#stopped) {
-        this.#restoreMeasurements(measurements);
-        this.#updateExportBackoff(false);
-      }
-      return false;
-    } finally {
-      if (this.#activeRequest === controller) this.#activeRequest = undefined;
+      succeeded = response.ok;
+    } catch {}
+    if (!this.#stopped) {
+      if (!succeeded) this.#restoreMeasurements(measurements);
+      this.#updateExportBackoff(succeeded);
     }
+    if (this.#activeRequest === controller) this.#activeRequest = undefined;
+    return succeeded;
   }
 
   #updateExportBackoff(succeeded: boolean): void {

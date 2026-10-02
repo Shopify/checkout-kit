@@ -1,8 +1,15 @@
-import {renameMap} from './generated/ProtocolRenameMap';
-import type {RenameChild, RenameEntry} from './generated/ProtocolRenameMap';
+import {
+  CheckoutModel,
+  ErrorResponseModel,
+  FulfillmentOptionModel,
+  ReadyRequestModel,
+  WindowOpenRequestModel,
+  encodedRenameMap,
+  renameFields,
+} from './generated/ProtocolRenameMap';
+import {decodeRenameMap, type RenameChild} from './protocol_rename_map';
 
 type JSONRecord = Record<string, unknown>;
-type Direction = 'decode' | 'encode';
 
 export type ProtocolValidationReason = 'missing_required' | 'invalid_type';
 
@@ -26,16 +33,32 @@ export class ProtocolValidationError extends TypeError {
   }
 }
 
-const REQUIRED_FIELDS: Record<string, readonly string[]> = {
-  Checkout: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
-  ErrorResponse: ['messages', 'ucp'],
-  ReadyRequest: ['delegate'],
-  WindowOpenRequest: ['url'],
+type RenameLookup = Map<string, [string, RenameChild?]>;
+
+const renameMap = decodeRenameMap(encodedRenameMap).map(entries => {
+  const decode: RenameLookup = new Map();
+  const encode: RenameLookup = new Map();
+  for (const [fieldIndex, child] of entries) {
+    const protocolName = renameFields[fieldIndex]!;
+    const javascriptName = protocolName.replace(/_([a-z])/g, (_, letter: string) =>
+      letter.toUpperCase(),
+    );
+    decode.set(protocolName, [javascriptName, child]);
+    encode.set(javascriptName, [protocolName, child]);
+  }
+  return [decode, encode];
+});
+
+const REQUIRED_FIELDS: Record<number, readonly string[]> = {
+  [CheckoutModel]: ['currency', 'id', 'line_items', 'links', 'status', 'totals', 'ucp'],
+  [ErrorResponseModel]: ['messages', 'ucp'],
+  [ReadyRequestModel]: ['delegate'],
+  [WindowOpenRequestModel]: ['url'],
 };
 
-const REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
-  Checkout: ['currency', 'id'],
-  WindowOpenRequest: ['url'],
+const REQUIRED_STRING_FIELDS: Record<number, readonly string[]> = {
+  [CheckoutModel]: ['currency', 'id'],
+  [WindowOpenRequestModel]: ['url'],
 };
 
 const NESTED_REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
@@ -45,55 +68,47 @@ const NESTED_REQUIRED_STRING_FIELDS: Record<string, readonly string[]> = {
 
 export function decodeProtocolObject(
   value: unknown,
+  modelId: number,
   modelName: string,
 ): JSONRecord {
   const input = requireObject(value, modelName);
-  requireFields(input, REQUIRED_FIELDS[modelName] ?? [], modelName);
-  requireStringFields(input, REQUIRED_STRING_FIELDS[modelName] ?? [], modelName);
+  requireFields(input, REQUIRED_FIELDS[modelId] ?? [], modelName);
+  requireStringFields(input, REQUIRED_STRING_FIELDS[modelId] ?? [], modelName);
   requireNestedFields(input, modelName);
-  return walkObject(input, renameMap[modelName], 'decode', modelName) as JSONRecord;
+  return walkObject(input, renameMap[modelId], true, modelId) as JSONRecord;
 }
 
-export function encodeProtocolObject(
-  value: unknown,
-  modelName: string,
-): unknown {
-  return walkObject(value, renameMap[modelName], 'encode', modelName);
+export function encodeProtocolObject(value: unknown, modelId: number): unknown {
+  return walkObject(value, renameMap[modelId], false, modelId);
 }
 
 function walkObject(
   value: unknown,
-  entries: RenameEntry[] | undefined,
-  direction: Direction,
-  modelName?: string,
+  entries: RenameLookup[] | undefined,
+  decode: boolean,
+  modelId?: number,
 ): unknown {
   const input =
-    direction === 'decode' && modelName === 'FulfillmentOption'
+    decode && modelId === FulfillmentOptionModel
       ? normalizeLegacyFulfillmentOptionDescription(value)
       : value;
-  if (!isObjectRecord(input) || (!entries && direction === 'encode')) {
+  if (!isObjectRecord(input) || (!entries && !decode)) {
     return input;
   }
 
-  const sourceIndex = direction === 'decode' ? 0 : 1;
-  const targetIndex = direction === 'decode' ? 1 : 0;
-
-  const entryBySource = new Map<string, RenameEntry>();
-  for (const entry of entries ?? []) {
-    entryBySource.set(entry[sourceIndex], entry);
-  }
+  const entryBySource = entries?.[decode ? 0 : 1];
 
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(input)) {
     // Structured clone preserves undefined-valued own properties whereas JSON
     // omits them. Only normalize objects being walked as protocol models; an
     // unknown extension value is passed through without changing its contents.
-    if (direction === 'decode' && item === undefined) {
+    if (decode && item === undefined) {
       continue;
     }
-    const entry = entryBySource.get(key);
+    const entry = entryBySource?.get(key);
     if (entry) {
-      output[entry[targetIndex]] = walkChild(item, entry[2], direction);
+      output[entry[0]] = walkChild(item, entry[1], decode);
     } else {
       output[key] = item;
     }
@@ -104,36 +119,36 @@ function walkObject(
 function walkChild(
   value: unknown,
   child: RenameChild | undefined,
-  direction: Direction,
+  decode: boolean,
 ): unknown {
   if (!child) {
     return value;
   }
 
   switch (child[0]) {
-    case 'r':
-      return walkObject(value, renameMap[child[1]], direction, child[1]);
-    case 'a':
+    case 0:
+      return walkObject(value, renameMap[child[1]], decode, child[1]);
+    case 1:
       return Array.isArray(value)
-        ? value.map(item => walkChild(item, child[1], direction))
+        ? value.map(item => walkChild(item, child[1], decode))
         : value;
-    case 'm':
+    case 2:
       return isObjectRecord(value)
-        ? mapValues(value, child[1], direction)
+        ? mapValues(value, child[1], decode)
         : value;
-    case 'u':
-      return walkUnion(value, child.slice(1) as RenameChild[], direction);
+    case 3:
+      return walkUnion(value, child.slice(1) as RenameChild[], decode);
   }
 }
 
 function mapValues(
   value: JSONRecord,
   child: RenameChild,
-  direction: Direction,
+  decode: boolean,
 ): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    output[key] = walkChild(item, child, direction);
+    output[key] = walkChild(item, child, decode);
   }
   return output;
 }
@@ -141,17 +156,17 @@ function mapValues(
 function walkUnion(
   value: unknown,
   members: RenameChild[],
-  direction: Direction,
+  decode: boolean,
 ): unknown {
   if (Array.isArray(value)) {
-    const arrayMember = members.find(member => member[0] === 'a');
-    return arrayMember ? walkChild(value, arrayMember, direction) : value;
+    const arrayMember = members.find(member => member[0] === 1);
+    return arrayMember ? walkChild(value, arrayMember, decode) : value;
   }
   if (isObjectRecord(value)) {
     const objectMember = members.find(
-      member => member[0] === 'r' || member[0] === 'm',
+      member => member[0] === 0 || member[0] === 2,
     );
-    return objectMember ? walkChild(value, objectMember, direction) : value;
+    return objectMember ? walkChild(value, objectMember, decode) : value;
   }
   return value;
 }

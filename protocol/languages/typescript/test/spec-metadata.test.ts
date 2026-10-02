@@ -55,11 +55,27 @@ describe('spec metadata', () => {
     });
   });
 
-  test('embedded methods cover notifications and requests', () => {
-    expect(embeddedCheckoutMethods.has('ec.start')).toBe(true);
+  test('embedded methods exactly cover notifications and requests', () => {
     expect(embeddedCheckoutMethods.has('ec.ready')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.auth')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.error')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.start')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.complete')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.messages.change')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.line_items.change')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.buyer.change')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.totals.change')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.payment.change')).toBe(true);
     expect(
       embeddedCheckoutMethods.has('ec.payment.instruments_change_request'),
+    ).toBe(true);
+    expect(
+      embeddedCheckoutMethods.has('ec.payment.credential_request'),
+    ).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.window.open_request')).toBe(true);
+    expect(embeddedCheckoutMethods.has('ec.fulfillment.change')).toBe(true);
+    expect(
+      embeddedCheckoutMethods.has('ec.fulfillment.address_change_request'),
     ).toBe(true);
     expect(embeddedCheckoutMethods.size).toBe(15);
   });

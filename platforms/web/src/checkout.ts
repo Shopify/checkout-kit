@@ -586,14 +586,6 @@ export class ShopifyCheckout
     }
   }
 
-  #recordNavigationSuccess(): void {
-    this.#recordNavigationDuration("success");
-  }
-
-  #recordNavigationFailure(): void {
-    this.#recordNavigationDuration("failure");
-  }
-
   #recordNavigationDuration(result: "success" | "failure"): void {
     const startedAt = this.#navigationStartedAt;
     if (startedAt === undefined) return;
@@ -822,7 +814,7 @@ export class ShopifyCheckout
       .on(Event.start, ({ params: { checkout } }) => {
         // Web cannot reliably observe cross-origin popup page-finish, so the
         // success duration ends at `ec.start`: checkout is loaded and interactive.
-        this.#recordNavigationSuccess();
+        this.#recordNavigationDuration("success");
         const snapshot = this.#recordCheckout(checkout);
         /** @ignore - Events are documented by the class @event tags. */
         this.dispatchEvent(new ShopifyCheckoutStartEvent({ checkout: snapshot }));
@@ -845,7 +837,7 @@ export class ShopifyCheckout
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error: this.#error }));
         // `ec.error` is terminal for the embedded session. Message severity is
         // payload detail for the checkout error, not a host-side recovery signal.
-        this.#recordNavigationFailure();
+        this.#recordNavigationDuration("failure");
         this.close();
       })
       .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
