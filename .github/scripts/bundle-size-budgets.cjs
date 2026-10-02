@@ -198,17 +198,15 @@ function kib(bytes) {
 
 function render(rows, state, packageComment, notes = []) {
   const labels = {
-    within: "Within budget",
-    "no-growth": "Above budget; no increase",
-    soft: "Acceptance required",
-    hard: "Budget change required",
-    missing: "Measurement missing",
+    within: "✅ Within budget",
+    "no-growth": "➖ Above budget; no increase",
+    soft: "⚠️ Acceptance required",
+    hard: "❌ Budget change required",
+    missing: "⚠️ Measurement missing",
   };
   const lines = [
     marker,
     "## Size budgets",
-    "",
-    `Measured head: \`${state.headSha}\`; base: \`${state.baseSha}\`.`,
     "",
     "| Platform / budget | Measurement | Base | Head | Delta | Soft | Hard | Result |",
     "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
@@ -216,7 +214,7 @@ function render(rows, state, packageComment, notes = []) {
   for (const row of rows) {
     const status =
       row.status === "accepted"
-        ? `Accepted by @${escape(row.acceptance.actor)}: ${escape(row.acceptance.reason)} ([comment](${row.acceptance.url}))`
+        ? `✅ Accepted by @${escape(row.acceptance.actor)}: ${escape(row.acceptance.reason)} ([comment](${row.acceptance.url}))`
         : labels[row.status];
     const delta =
       row.before === undefined || row.after === undefined
@@ -233,24 +231,26 @@ function render(rows, state, packageComment, notes = []) {
       `| ${row.platform} / ${row.metric} | ${scope} | ${kib(row.before)} | ${kib(row.after)} | ${delta} | ${row.softKiB} KiB | ${row.hardKiB} KiB | ${status} |`,
     );
   }
-  if (!rows.length) lines.push("| — | — | — | — | — | — | — | No configured budgets affected |");
-  lines.push(
-    "",
-    "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
-    "",
-    "```text",
-    "/accept-size web Explain why this increase is necessary.",
-    "```",
-    "",
-    "Use one command per platform; several lines can share a comment. Post after this report is ready for the current head. Commands in edited comments are not accepted.",
-    "",
-    "Acceptance applies to each currently exceeded metric up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance. Hard-budget increases require a reviewed change to `.ci/bundle-size-budgets.json`.",
-    "",
-  );
+  if (!rows.length) lines.push("| — | — | — | — | — | — | — | ➖ No configured budgets affected |");
+  if (rows.some(({ status }) => status === "soft" || status === "hard")) {
+    lines.push(
+      "",
+      "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
+      "",
+      "```text",
+      "/accept-size web Explain why this increase is necessary.",
+      "```",
+      "",
+      "Use one command per platform; several lines can share a comment. Post after this report is ready for the current head. Commands in edited comments are not accepted.",
+      "",
+      "Acceptance applies to each currently exceeded metric up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance. Hard-budget increases require a reviewed change to `.ci/bundle-size-budgets.json`.",
+    );
+  }
+  if (notes.length) lines.push("");
   for (const note of notes) lines.push(`- ${escape(note)}`);
   lines.push(
     "",
-    packageComment.replace(/<!--[\s\S]*?-->/g, ""),
+    packageComment.replace(/<!--[\s\S]*?-->/g, "").trim(),
     "",
     `<!-- bundle-size-state:${Buffer.from(JSON.stringify(state)).toString("base64")} -->`,
   );
