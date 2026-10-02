@@ -28,6 +28,7 @@ function expectWindowOpenArgs(spy: {
 describe("<shopify-checkout>", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     installTestTelemetryFactory();
     // Disconnect elements so their global message listeners do not leak
     // into tests in this file or another concurrently running suite.
@@ -171,6 +172,28 @@ describe("<shopify-checkout>", () => {
         expect(checkout.getAttribute("telemetry")).toBe("false");
         expect(checkout.telemetry).toBe(false);
       });
+    });
+  });
+
+  describe("browser capabilities", () => {
+    it("dispatches an unsupported_browser error without opening checkout", () => {
+      const checkout = renderCheckout();
+      const onError = vi.fn();
+      const openWindow = vi.spyOn(window, "open");
+      vi.stubGlobal("HTMLDialogElement", undefined);
+      checkout.addEventListener("error", onError);
+
+      checkout.open();
+
+      expect(checkout.error).toEqual({
+        code: "unsupported_browser",
+        message: "This browser does not support: native_dialog.",
+      });
+      expect(onError).toHaveBeenCalledOnce();
+      expect((onError.mock.calls[0]![0] as CustomEvent).detail).toEqual({
+        error: checkout.error,
+      });
+      expect(openWindow).not.toHaveBeenCalled();
     });
   });
 
