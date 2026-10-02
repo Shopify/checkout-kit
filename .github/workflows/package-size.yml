@@ -2,11 +2,11 @@ name: Package Size
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
 
 permissions:
   contents: read
-  pull-requests: write
+  pull-requests: read
 
 concurrency:
   group: package-size-${{ github.ref }}
@@ -15,7 +15,6 @@ concurrency:
 jobs:
   changes:
     name: Detect Changed Packages
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -37,39 +36,60 @@ jobs:
           filters: |
             android:
               - '.github/scripts/measure-package-size'
+              - '.github/scripts/*bundle-size*'
+              - '.ci/bundle-size-budgets.json'
+              - '.github/workflows/bundle-size-budgets.yml'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
             reactNative:
               - '.github/actions/setup/**'
               - '.github/scripts/measure-package-size'
+              - '.github/scripts/*bundle-size*'
+              - '.ci/bundle-size-budgets.json'
+              - '.github/workflows/bundle-size-budgets.yml'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
             web:
               - '.github/actions/setup/**'
               - '.github/scripts/measure-package-size'
+              - '.github/scripts/*bundle-size*'
+              - '.ci/bundle-size-budgets.json'
+              - '.github/workflows/bundle-size-budgets.yml'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
 
   measure:
     name: Measure Package Size
     needs: changes
-    if: |
-      needs.changes.outputs.android == 'true' ||
-      needs.changes.outputs.reactNative == 'true' ||
-      needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           submodules: true
+          persist-credentials: false
+
+      - name: Check budget policy
+        run: node --test .github/scripts/*bundle-size*.test.cjs
+
+      - name: Resolve current PR base
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: base
+        with:
+          script: |
+            const {data: pr} = await github.rest.pulls.get({
+              ...context.repo, pull_number: context.issue.number,
+            });
+            core.setOutput('sha', pr.base.sha);
 
       - name: Checkout PR base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ steps.base.outputs.sha }}
           path: .package-size-base
           submodules: true
+          persist-credentials: false
 
       - name: Setup base Web dependencies
         if: needs.changes.outputs.web == 'true'
@@ -136,41 +156,21 @@ jobs:
           touch /tmp/package-size-base.tsv
           .github/scripts/measure-package-size render /tmp/package-size-base.tsv /tmp/package-size-head.tsv /tmp/package-size-comment.md
 
-      - name: Comment on PR
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      - name: Prepare budget report
         env:
-          COMMENT_FILE: /tmp/package-size-comment.md
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+          MEASURE_ANDROID: ${{ needs.changes.outputs.android }}
+          MEASURE_REACT_NATIVE: ${{ needs.changes.outputs.reactNative }}
+          MEASURE_WEB: ${{ needs.changes.outputs.web }}
+        run: |
+          mkdir -p /tmp/bundle-size-report
+          node .github/scripts/bundle-size-budgets.cjs /tmp/package-size-base.tsv /tmp/package-size-head.tsv .ci/bundle-size-budgets.json /tmp/bundle-size-report/report.json
+          cp /tmp/package-size-comment.md /tmp/bundle-size-report/comment.md
+
+      - name: Upload measurements
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          script: |
-            const fs = require('fs');
-
-            const marker = '<!-- checkout-kit-package-size -->';
-            const body = fs.readFileSync(process.env.COMMENT_FILE, 'utf8');
-            const issue_number = Number(process.env.PR_NUMBER);
-            const {owner, repo} = context.repo;
-
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100,
-            });
-
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
+          name: bundle-size-report
+          path: /tmp/bundle-size-report/
+          if-no-files-found: error
+          retention-days: 90

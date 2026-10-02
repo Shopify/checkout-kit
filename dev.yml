@@ -75,6 +75,7 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
+  bundle-size-budget-tests: node --test .github/scripts/*bundle-size*.test.cjs
   ejson-plaintext: ./scripts/ejson_lint
   generate-env-tests: ./scripts/test_generate_env_files
   storefront-env-tests: ./scripts/test_setup_storefront_env

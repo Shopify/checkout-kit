@@ -113,6 +113,11 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             scripts:
+              - '.github/scripts/measure-package-size'
+              - '.github/scripts/*bundle-size*'
+              - '.github/workflows/package-size.yml'
+              - '.github/workflows/bundle-size-budgets.yml'
+              - '.ci/bundle-size-budgets.json'
               - 'platforms/swift/Scripts/api'
               - 'platforms/swift/Scripts/normalize-api.jq'
               - 'scripts/lib/**'
@@ -245,6 +250,7 @@ jobs:
       - uses: ruby/setup-ruby@e8944e80fb94b20106697132f8c20c665fab29e9 # v1.325.0
         with:
           ruby-version: .ruby-version
+      - run: node --test .github/scripts/*bundle-size*.test.cjs
       - run: ./scripts/test_ruby
       - run: ./e2e/scripts/check_hide_keyboard_usage
 

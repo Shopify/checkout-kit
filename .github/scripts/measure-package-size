@@ -99,6 +99,28 @@ measure_web_package() {
   )
 
   tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
+  # Measure every shipped JS chunk, excluding declarations and source maps.
+  # Sum gzip sizes per file, matching separately compressed HTTP responses.
+  local js_dir
+  local js_file
+  local javascript_bytes=0
+  local gzip_bytes=0
+  local js_count=0
+  js_dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-web-js.XXXXXX")
+  tar -xzf "$tarball" -C "$js_dir"
+  while IFS= read -r js_file; do
+    javascript_bytes=$((javascript_bytes + $(size_bytes "$js_file")))
+    gzip_bytes=$((gzip_bytes + $(gzip -n -9 -c "$js_file" | wc -c)))
+    js_count=$((js_count + 1))
+  done < <(find "$js_dir/package/dist" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) | sort)
+  if [[ "$js_count" -eq 0 ]]; then
+    echo "No shipped web JavaScript found" >&2
+    rm -rf "$js_dir"
+    return 1
+  fi
+  printf "Web\tJavaScript\t%s\n" "$javascript_bytes" >> "$output_file"
+  printf "Web\tJavaScript (gzip)\t%s\n" "$gzip_bytes" >> "$output_file"
+  rm -rf "$js_dir"
   record_artifact "Web" "npm tarball" "$tarball"
   record_tarball_breakdown "Web" "npm tarball" "$tarball"
 }
@@ -178,6 +200,26 @@ render_comment() {
 
     function cell(bytes) {
       return (bytes == "") ? "—" : human(bytes);
+    }
+
+    function measurement(artifact) {
+      if (artifact == "JavaScript" || artifact == "JavaScript (gzip)") {
+        return "JavaScript bundle";
+      }
+      if (artifact == "npm tarball") {
+        return "npm package (`.tgz`)";
+      }
+      if (artifact == "release AAR") {
+        return "Library package (`.aar`)";
+      }
+      return artifact;
+    }
+
+    function compression(artifact) {
+      if (artifact == "JavaScript") return "Uncompressed";
+      if (artifact == "JavaScript (gzip)" || artifact == "npm tarball") return "gzip";
+      if (artifact == "release AAR") return "ZIP";
+      return "Unspecified";
     }
 
     function delta(head, base,   diff) {
@@ -263,19 +305,22 @@ render_comment() {
       cap = 20;
 
       print "<!-- checkout-kit-package-size -->";
-      print "## Package Size";
+      print "## Bundle and package size";
       print "";
-      print "| Platform | Artifact | Base | Head | Delta |";
-      print "| --- | --- | ---: | ---: | ---: |";
+      print "Web bundle sizes cover shipped runtime JavaScript. Package sizes cover the full published archive, including any source maps, declarations, and documentation it contains.";
+      print "";
+      print "| Platform | Measurement | Compression | Base | Head | Delta |";
+      print "| --- | --- | --- | ---: | ---: | ---: |";
 
       if (order_count == 0) {
-        print "| - | - | - | - | - |";
+        print "| - | - | - | - | - | - |";
       } else {
         for (i = 1; i <= order_count; i++) {
           key = order[i];
-          printf "| %s | %s | %s | %s | %s |\n",
+          printf "| %s | %s | %s | %s | %s | %s |\n",
             platforms[key],
-            artifacts[key],
+            measurement(artifacts[key]),
+            compression(artifacts[key]),
             human(base_bytes[key]),
             human(head_bytes[key]),
             delta(head_bytes[key], base_bytes[key]);
@@ -310,7 +355,9 @@ render_comment() {
         }
 
         print "";
-        print "<details><summary>" platform " file breakdown</summary>";
+        print "<details><summary>" platform " package files (uncompressed)</summary>";
+        print "";
+        print "These are uncompressed file sizes; they do not sum to the compressed package size above.";
         print "";
         print "| File | Base | Head | Delta |";
         print "| --- | ---: | ---: | ---: |";
@@ -333,7 +380,7 @@ render_comment() {
       }
 
       print "";
-      print "_Measured from the PR base SHA and PR head SHA. The file breakdown shows uncompressed sizes within each package artifact, so individual files do not sum to the compressed artifact total. This comment reports package artifact sizes only; it is not a final app binary-size report._";
+      print "_Measured from the PR base SHA and PR head SHA. Web bundle rows sum shipped `.js`, `.mjs`, and `.cjs` files under `dist/`, excluding source maps and declarations. The gzip bundle size sums files compressed individually with `gzip -n -9`. npm package sizes are gzip-compressed `.tgz` archives; Android AAR sizes are ZIP archives. Package sizes are not final app binary sizes._";
     }
   ' "$base_file" "$head_file" > "$comment_file"
 }

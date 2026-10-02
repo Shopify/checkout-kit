@@ -1,0 +1,66 @@
+name: Bundle Size Budgets
+
+on:
+  workflow_run:
+    workflows: [Package Size]
+    types: [requested, completed]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    if: >-
+      github.event_name == 'workflow_run' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '/accept-size'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr: ${{ steps.resolve.outputs.pr }}
+    steps:
+      # These events run trusted default-branch code. Never check out the PR here.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: resolve
+        with:
+          script: |
+            const {resolvePR} = require('./.github/scripts/publish-bundle-size.cjs');
+            const pr = await resolvePR({github, context});
+            if (pr) core.setOutput('pr', pr);
+
+  report:
+    name: Publish size budgets
+    needs: resolve
+    if: needs.resolve.outputs.pr != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    # Serialize report writes and acceptance comments for this PR. Each run
+    # processes all pending commands, including events coalesced by concurrency.
+    concurrency:
+      group: bundle-size-report-${{ needs.resolve.outputs.pr }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ needs.resolve.outputs.pr }}
+        with:
+          script: |
+            const {publish} = require('./.github/scripts/publish-bundle-size.cjs');
+            await publish({github, context, core, prNumber: Number(process.env.PR_NUMBER)});
