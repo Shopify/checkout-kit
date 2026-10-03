@@ -5,18 +5,11 @@ require "yaml"
 require_relative "../../scripts/lib/changed_file_filters"
 
 # Transforms the compact E2E matrix in config/matrix.yml into the BrowserStack
-# run plan consumed by the parallel Bitrise execution workflow.
-#
-# Unlike GitHub Actions, Bitrise has no built-in matrix/strategy support, so we
-# do the fan-out ourselves: `expand` produces the JSON list of runs, and Bitrise
-# parallelizes over it via `run_at`/`count`.
-#
-# Today the numbers make the config and the expansion look equivalent -
-# 4 applications + 1 os_version_tag, and 4 * 1 = 4 runs - so it can look
-# like a plain YAML-to-JSON copy. The point is the multiplication, not the copy:
-# adding a single os_version_tag (e.g. a minimum-supported OS) transparently duplicates
-# every application across that OS, turning an additive config change into
-# a multiplicative set of runs without hand-writing each one.
+# run plan consumed by each application's Bitrise pipeline. Application scoping
+# intersects with changed-file selection: it must never force an unrelated app to
+# build, or allow a shared protocol change to pull other apps into this pipeline.
+# OS variants remain rows in the plan and run sequentially within that app's test
+# workflow. Avoiding a runtime Bitrise `parallel` count preserves partial rebuilds.
 #
 # Every run executes the whole tests folder. Tags decide what runs inside it, so a new
 # test file adds no rows here - it only needs a tag the matrix already includes.
@@ -31,14 +24,15 @@ class E2EMatrixToBrowserStackRunPlan
 
   attr_reader :config_path, :changed_files
 
-  def self.load(config_path, changed_files: nil)
-    new(config_path, YAML.safe_load_file(config_path, aliases: true), changed_files: changed_files)
+  def self.load(config_path, changed_files: nil, application_id: nil)
+    new(config_path, YAML.safe_load_file(config_path, aliases: true), changed_files: changed_files, application_id: application_id)
   end
 
-  def initialize(config_path, config, changed_files: nil)
+  def initialize(config_path, config, changed_files: nil, application_id: nil)
     @config_path = config_path
     @config = config || {}
     @changed_files = changed_files&.map(&:to_s)
+    @application_id = application_id
   end
 
   def expand
@@ -64,9 +58,14 @@ class E2EMatrixToBrowserStackRunPlan
   end
 
   def selected_applications
-    return applications if changed_files.nil?
+    scoped = applications
+    if @application_id
+      scoped = applications.select { |application| application.fetch("id") == @application_id }
+      raise KeyError, "unknown E2E application #{@application_id}" if scoped.empty?
+    end
+    return scoped if changed_files.nil?
 
-    applications.select { |application| application_matches_changed_files?(application) }
+    scoped.select { |application| application_matches_changed_files?(application) }
   end
 
   def application_config(application_id)
@@ -82,17 +81,11 @@ class E2EMatrixToBrowserStackRunPlan
   end
 
   def bitrise_env
-    ensure_valid!
-    selected_ids = selected_applications.map { |application| application.fetch("id") }
-    env = {
-      "E2E_BROWSERSTACK_RUN_PLAN_COUNT" => count.to_s,
-      "E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT" => [count, 1].max.to_s,
-      "E2E_HAS_E2E_RUNS" => count.positive?.to_s
+    run_count = count
+    {
+      "E2E_BROWSERSTACK_RUN_PLAN_COUNT" => run_count.to_s,
+      "E2E_HAS_E2E_RUNS" => run_count.positive?.to_s
     }
-    applications.each do |application|
-      env[build_env_key(application.fetch("id"))] = selected_ids.include?(application.fetch("id")).to_s
-    end
-    env
   end
 
   def missing_build_workflows(available_workflow_names)
@@ -175,10 +168,6 @@ class E2EMatrixToBrowserStackRunPlan
 
     filter = application.fetch("changed_files_filter", "")
     filter.empty? ? [] : [filter]
-  end
-
-  def build_env_key(application_id)
-    "E2E_BUILD_#{application_id.upcase.gsub(/[^A-Z0-9]+/, "_")}"
   end
 
   def device_selector(platform, os_version_tag)

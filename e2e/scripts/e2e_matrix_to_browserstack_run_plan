@@ -33,7 +33,7 @@ changed_files.concat(File.readlines(options.fetch(:changed_files_file), chomp: t
 changed_files.concat(options.fetch(:changed_files, []))
 changed_files = nil unless options.key?(:changed_files_file) || options.key?(:changed_files)
 
-run_plan = E2EMatrixToBrowserStackRunPlan.load(options.fetch(:config), changed_files: changed_files)
+run_plan = E2EMatrixToBrowserStackRunPlan.load(options.fetch(:config), changed_files: changed_files, application_id: options[:application])
 
 case command
 when "validate"
@@ -76,9 +76,13 @@ when "bitrise-env"
     puts "#{key}=#{value}"
   end
 when "assert-pipeline-coverage"
+  application_id = options.fetch(:application) { CliOutput.die("--application ID is required") }
   pipeline_config_path = options.fetch(:pipeline_config) { CliOutput.die("--pipeline-config PATH is required") }
   pipeline_config = YAML.safe_load_file(pipeline_config_path, aliases: true) || {}
-  available_workflows = (pipeline_config.dig("pipelines", "e2e", "workflows") || {}).keys
+  pipeline_id = "e2e-#{application_id}"
+  workflows = pipeline_config.dig("pipelines", pipeline_id, "workflows")
+  CliOutput.die("No '#{pipeline_id}' pipeline. Rebase on main or restore its configuration.") unless workflows
+  available_workflows = workflows.keys
   errors = run_plan.missing_build_workflow_errors(available_workflows)
   unless errors.empty?
     CliOutput.die(errors.join("\n"), hint: E2EMatrixToBrowserStackRunPlan::MISSING_BUILD_WORKFLOW_HINT)

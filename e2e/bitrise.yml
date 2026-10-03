@@ -36,39 +36,29 @@ tools:
   nodejs: 22.14.0
 
 pipelines:
-  e2e:
-    # The required ci/bitrise/e2e/pr check must report for every ready PR.
-    # Select applications in the run plan so unrelated changes still finish
-    # the pipeline successfully without starting builds or BrowserStack runs.
+  # Each app owns a pipeline so it can finish and be retried while other apps
+  # are still running. Keep its build and tests together: partial rebuilds reuse
+  # pipeline intermediate artifacts without rebuilding the IPA/APK.
+  #
+  # Start every ready PR, including unrelated changes, so required statuses always
+  # report. The shared planner scopes changed-file selection by the pipeline name;
+  # an unrelated app finishes after that cheap Linux workflow.
+  #
+  # Do not reintroduce a runtime `parallel` count. Once its producer has finished,
+  # Bitrise can require a full pipeline rebuild instead of a test-only retry:
+  # https://docs.bitrise.io/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build#rebuilding-pipelines-using-different-workflow-variants
+  e2e-react-native-ios:
     triggers:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
-    # which is identical for every pipeline on this app. A second triggered
-    # pipeline would then overwrite this one's commit status. <target_id>
-    # expands to the pipeline id, so each pipeline owns its own check.
+    # <target_id> prevents concurrent pipelines overwriting each other's status.
     status_report_name: "ci/bitrise/<target_id>/<event_type>"
     workflows:
       e2e-produce-browserstack-run-plan: {}
       e2e-build-react-native-ios:
         run_if:
-          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_IOS" "true" }}'
-        depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-react-native-android:
-        run_if:
-          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_ANDROID" "true" }}'
-        depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-kotlin-android:
-        run_if:
-          expression: '{{ enveq "E2E_BUILD_KOTLIN_ANDROID" "true" }}'
-        depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-swift-ios:
-        run_if:
-          expression: '{{ enveq "E2E_BUILD_SWIFT_IOS" "true" }}'
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
           - e2e-produce-browserstack-run-plan
       e2e-execute-browserstack-run:
@@ -77,10 +67,87 @@ pipelines:
         depends_on:
           - e2e-produce-browserstack-run-plan
           - e2e-build-react-native-ios
+      e2e-report:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-execute-browserstack-run
+        should_always_run: workflow
+
+  e2e-react-native-android:
+    triggers:
+      pull_request:
+        - source_branch: "*"
+          draft_enabled: false
+    # <target_id> prevents concurrent pipelines overwriting each other's status.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    workflows:
+      e2e-produce-browserstack-run-plan: {}
+      e2e-build-react-native-android:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+      e2e-execute-browserstack-run:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
           - e2e-build-react-native-android
+      e2e-report:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-execute-browserstack-run
+        should_always_run: workflow
+
+  e2e-kotlin-android:
+    triggers:
+      pull_request:
+        - source_branch: "*"
+          draft_enabled: false
+    # <target_id> prevents concurrent pipelines overwriting each other's status.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    workflows:
+      e2e-produce-browserstack-run-plan: {}
+      e2e-build-kotlin-android:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+      e2e-execute-browserstack-run:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
           - e2e-build-kotlin-android
+      e2e-report:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-execute-browserstack-run
+        should_always_run: workflow
+
+  e2e-swift-ios:
+    triggers:
+      pull_request:
+        - source_branch: "*"
+          draft_enabled: false
+    # <target_id> prevents concurrent pipelines overwriting each other's status.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    workflows:
+      e2e-produce-browserstack-run-plan: {}
+      e2e-build-swift-ios:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
+      e2e-execute-browserstack-run:
+        run_if:
+          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
+        depends_on:
+          - e2e-produce-browserstack-run-plan
           - e2e-build-swift-ios
-        parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
       e2e-report:
         run_if:
           expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
@@ -510,16 +577,17 @@ workflows:
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
                 e2e_log "Selecting files for the E2E run plan"
+                application="$(e2e_pipeline_application)"
                 changed_files="$(e2e_changed_files_file)"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --application "$application" --changed-files-file "$changed_files"
                 e2e_log "Asserting the pipeline can build every selected target"
                 branch_config="$(e2e_branch_bitrise_config)"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan assert-pipeline-coverage --pipeline-config "$branch_config" --changed-files-file "$changed_files"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan assert-pipeline-coverage --pipeline-config "$branch_config" --application "$application" --changed-files-file "$changed_files"
                 e2e_log "Producing BrowserStack run plan"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --application "$application" --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
                 e2e_log "Publishing BrowserStack run plan environment"
                 bitrise_env_file="$(e2e_deploy_dir)/bitrise-env.txt"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan bitrise-env --changed-files-file "$changed_files" > "$bitrise_env_file"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan bitrise-env --application "$application" --changed-files-file "$changed_files" > "$bitrise_env_file"
                 while IFS='=' read -r key value; do
                   envman add --key "$key" --value "$value"
                 done < "$bitrise_env_file"
@@ -532,12 +600,7 @@ workflows:
           inputs:
             - variables: |-
                 E2E_BROWSERSTACK_RUN_PLAN_COUNT
-                E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
                 E2E_HAS_E2E_RUNS
-                E2E_BUILD_REACT_NATIVE_IOS
-                E2E_BUILD_REACT_NATIVE_ANDROID
-                E2E_BUILD_KOTLIN_ANDROID
-                E2E_BUILD_SWIFT_IOS
       - deploy-to-bitrise-io@2:
           is_always_run: false
           inputs:
@@ -672,24 +735,27 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                : "${BITRISE_IO_PARALLEL_INDEX:?BITRISE_IO_PARALLEL_INDEX is required for the parallel e2e-execute-browserstack-run workflow.}"
-                run_index="$BITRISE_IO_PARALLEL_INDEX"
+                : "${E2E_BROWSERSTACK_RUN_PLAN_COUNT:?The planner must publish the run count}"
+                : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required. Check pipeline intermediate files.}"
+                : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check pipeline intermediate files.}"
                 results_root="$BITRISE_DEPLOY_DIR/e2e/results"
-                results_dir="$results_root/run-${run_index}"
-                mkdir -p "$results_dir"
-                envman add --key E2E_BROWSERSTACK_RESULTS_DIR --value "$results_dir"
-                : "${BROWSERSTACK_USERNAME:?BROWSERSTACK_USERNAME is required}"
-                : "${BROWSERSTACK_ACCESS_KEY:?BROWSERSTACK_ACCESS_KEY is required}"
-                : "${E2E_TESTS_ZIP:?E2E_TESTS_ZIP is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                : "${E2E_BROWSERSTACK_RUN_PLAN_JSON:?E2E_BROWSERSTACK_RUN_PLAN_JSON is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                run_artifact_env="$(ruby -rjson -e 'run_plan = JSON.parse(File.read(ARGV.fetch(0))); puts run_plan.fetch(Integer(ARGV.fetch(1))).fetch("artifact_env")' "$E2E_BROWSERSTACK_RUN_PLAN_JSON" "$run_index")"
-                : "${!run_artifact_env:?${run_artifact_env} is required. Check e2e-execute-browserstack-run pull-intermediate-files artifact_sources.}"
-                e2e_log "Executing BrowserStack run plan row ${run_index}"
-                e2e/scripts/execute_browserstack_run \
-                  --index "$run_index" \
-                  --run-plan "$E2E_BROWSERSTACK_RUN_PLAN_JSON" \
-                  --tests-zip "$E2E_TESTS_ZIP" \
-                  --output-dir "$results_dir"
+                mkdir -p "$results_root"
+                envman add --key E2E_BROWSERSTACK_RESULTS_DIR --value "$results_root"
+                # Currently one OS per app. Future OS rows run sequentially here,
+                # retaining a static graph and artifact reuse for partial retries.
+                # Finish every row and preserve its results even if an earlier row
+                # fails; return failure so Bitrise can identify the retry target.
+                exit_code=0
+                for ((run_index=0; run_index<E2E_BROWSERSTACK_RUN_PLAN_COUNT; run_index++)); do
+                  e2e_log "Executing BrowserStack run plan row ${run_index}"
+                  e2e/scripts/execute_browserstack_run \
+                    --index "$run_index" \
+                    --run-plan "$E2E_BROWSERSTACK_RUN_PLAN_JSON" \
+                    --tests-zip "$E2E_TESTS_ZIP" \
+                    --output-dir "$results_root/run-${run_index}" || exit_code=1
+                done
+                exit "$exit_code"
+      # Failed test workflows still upload diagnostics for the always-run report.
       - deploy-to-bitrise-io@2:
           is_always_run: true
           inputs:
@@ -718,7 +784,7 @@ workflows:
                 e2e_log "Pipeline stage roster"
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
                 e2e_log "Reporting E2E results to GitHub"
-                e2e/scripts/report_e2e_results --results-root "$results_root"
+                e2e/scripts/report_e2e_results --application "$(e2e_pipeline_application)" --results-root "$results_root"
 
   # Shared by every nightly pipeline. Runs on the cheap default Linux stack so a
   # night with no new commits never boots a macOS machine at all.
