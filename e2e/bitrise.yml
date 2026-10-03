@@ -44,11 +44,12 @@ pipelines:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
-    # which is identical for every pipeline on this app. A second triggered
-    # pipeline would then overwrite this one's commit status. <target_id>
-    # expands to the pipeline id, so each pipeline owns its own check.
-    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+      push:
+        - branch: "gh-readonly-queue/main/*"
+    # Keep the existing required check name on both PR and merge queue builds.
+    # Using <event_type> would report /push for queue commits, leaving the
+    # required /pr check pending. <target_id> keeps each pipeline's status distinct.
+    status_report_name: "ci/bitrise/<target_id>/pr"
     workflows:
       e2e-produce-browserstack-run-plan: {}
       e2e-build-react-native-ios:
@@ -99,7 +100,10 @@ pipelines:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+      push:
+        - branch: "gh-readonly-queue/main/*"
+    # Match the required check name on queue commits as well as PR heads.
+    status_report_name: "ci/bitrise/<target_id>/pr"
     workflows:
       ci-ios-plan: {}
       ci-ios-swift-package-tests:
