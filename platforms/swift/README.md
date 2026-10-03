@@ -43,7 +43,7 @@
 - Swift Package Manager with Swift tools 6.0+
 - iOS 15.0+ for `ShopifyCheckoutKit`
 - iOS 16.0+ for `ShopifyAcceleratedCheckouts`
-- A checkout URL from `cart.checkoutUrl` or a cart permalink
+- An HTTPS checkout URL from `cart.checkoutUrl` or a cart permalink
 
 ## Install
 
@@ -71,8 +71,9 @@ Then add the products you need to your app target:
 .target(
   name: "YourApp",
   dependencies: [
-    "ShopifyCheckoutKit",
-    "ShopifyAcceleratedCheckouts" // Only needed for accelerated checkout buttons.
+    .product(name: "ShopifyCheckoutKit", package: "checkout-kit"),
+    // Only needed for accelerated checkout buttons.
+    .product(name: "ShopifyAcceleratedCheckouts", package: "checkout-kit")
   ]
 )
 ```
@@ -180,7 +181,7 @@ preload?.onStateChange = { state in
     showPreloadProgress()
   case .ready:
     enableCheckoutAffordance()
-  case .failed(let reason):
+  case .failed(let reason, _):
     recordPreloadFailure(reason)
   case .expired, .idle:
     break
@@ -195,7 +196,7 @@ if preload == nil {
 
 `onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `.loading`.
 
-A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading or a checkout URL mismatch. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
 
 | State | Meaning |
 | --- | --- |
@@ -203,9 +204,9 @@ A successful background preload normally transitions from `.loading` to `.ready`
 | `.ready` | The preload finished and can be used for the matching checkout URL. |
 | `.idle` | The preload was invalidated or otherwise cleared. |
 | `.expired` | The cached preload exceeded its lifetime before it could be used. |
-| `.failed(reason:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
+| `.failed(reason:message:)` | An HTTP, navigation, web-content, or terminal protocol failure occurred while preloading. |
 
-`preload` returns `nil` when preloading is disabled.
+`preload` returns `nil` when preloading is disabled. Use the failure `reason` for recovery decisions; `message` is diagnostic text.
 
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
@@ -217,7 +218,11 @@ ShopifyCheckoutKit.present(
 )
 ```
 
-Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart represented by the URL passed to `preload`, so call `preload` again after cart changes produce a new checkout URL.
+Preloading is a best-effort performance hint, not a guarantee. A matching preload can be reused while it is still loading. If the preload is unavailable, expired, or for a different checkout URL, checkout loads normally during presentation. Call `preload` again after cart changes, even when the checkout URL remains the same.
+
+An eligible preloaded checkout is retained after dismissal for the remainder of its original five-minute lifetime, so presenting it again can reuse the loaded page. Invalidate it when the cart changes or the page should no longer be reused.
+
+Checkout events received during preload are not replayed when presentation callbacks are attached. `checkoutDidStart(_:)` and `.onStart` observe start events received during presentation; they are not guaranteed on every presentation or when reusing a loaded checkout. Use the preload handle to observe background loading progress.
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
