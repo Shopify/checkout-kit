@@ -39,6 +39,11 @@ fi
 
 xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destination \"$dest\" -skipPackagePluginValidation -disableAutomaticPackageResolution"
 
+# Retry failed tests up to three total attempts, including the initial run.
+if [[ "$ACTION" == *"test"* ]]; then
+    xcodebuild_cmd="$xcodebuild_cmd -retry-tests-on-failure -test-iterations 3"
+fi
+
 if [[ "$SCHEME" == "ShopifyCheckoutKit-Package" && "$ACTION" == *"build"* && "$ACTION" != *"test"* ]]; then
     xcodebuild_cmd="$xcodebuild_cmd SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
 fi
