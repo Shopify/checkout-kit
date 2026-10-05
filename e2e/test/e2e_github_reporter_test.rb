@@ -12,9 +12,10 @@ class E2EGitHubReporterTest < Minitest::Test
     @manifest ||= JSON.parse(File.read(TARGETS_PATH))
   end
 
-  def reporter(results: [], run_plan: [], stages: nil, pipeline_url: nil, expected: nil)
+  def reporter(application_id: "swift-ios", results: [], run_plan: [], stages: nil, pipeline_url: nil, expected: nil)
     E2EGitHubReporter.new(
       results,
+      application_id: application_id,
       repository: "Shopify/checkout-kit",
       sha: "abc123",
       pr_number: 1,
@@ -98,10 +99,70 @@ class E2EGitHubReporterTest < Minitest::Test
   end
 
   def test_kotlin_install_url_targets_android_apk
-    url = reporter.tophat_install_url(target("kotlin"))
+    url = reporter(application_id: "kotlin-android").tophat_install_url(target("kotlin"))
 
     assert_includes url, "workflow=e2e-build-kotlin-android"
     assert_includes url, "app-debug.apk"
+  end
+
+  def test_react_native_install_links_only_offer_the_built_platform
+    url = reporter(application_id: "react-native-ios").tophat_install_url(target("react-native"))
+
+    assert_includes url, "workflow=e2e-build-react-native-ios"
+    refute_includes url, "workflow=e2e-build-react-native-android"
+    refute_includes url, "platform=android"
+  end
+
+  def test_each_application_owns_a_distinct_check_and_comment
+    swift = reporter(application_id: "swift-ios")
+    kotlin = reporter(application_id: "kotlin-android")
+
+    assert_equal "Checkout Kit E2E / swift-ios", swift.check_run_payload.fetch(:name)
+    assert_equal "Checkout Kit E2E / kotlin-android", kotlin.check_run_payload.fetch(:name)
+    assert_includes swift.comment_body, "<!-- checkout-kit-e2e-report:swift-ios -->"
+    refute_includes kotlin.comment_body, "<!-- checkout-kit-e2e-report:swift-ios -->"
+  end
+
+  def test_a_report_only_updates_its_own_comment
+    report = reporter
+    report.define_singleton_method(:issue_comments) do
+      [
+        {"id" => 1, "body" => "<!-- checkout-kit-e2e-report:kotlin-android -->"},
+        {"id" => 2, "body" => "<!-- checkout-kit-e2e-report -->"},
+        {"id" => 3, "body" => "<!-- checkout-kit-e2e-report:swift-ios -->"}
+      ]
+    end
+
+    assert_equal 3, report.send(:existing_comment).fetch("id")
+  end
+
+  def test_a_failed_test_fails_the_report
+    report = reporter(results: [swift_ios_run.merge("passed" => false)], run_plan: [swift_ios_run], expected: 1)
+
+    refute report.success?
+    assert_equal "failure", report.check_run_payload.fetch(:conclusion)
+  end
+
+  def test_a_failed_artifact_upload_cannot_be_hidden_by_a_passing_result
+    report = reporter(results: [swift_ios_run.merge("passed" => true)], run_plan: [swift_ios_run], expected: 1,
+      stages: stage_roster(workflow("e2e-execute-browserstack-run", status: "failed")))
+
+    refute report.success?
+  end
+
+  def test_duplicate_results_cannot_hide_a_missing_os_run
+    result = swift_ios_run.merge("passed" => true)
+    other_os = swift_ios_run.merge("id" => "swift-ios-previous", "os_version_tag" => "previous")
+    report = reporter(results: [result, result], run_plan: [swift_ios_run, other_os], expected: 2)
+
+    refute report.success?
+    assert_includes report.markdown_summary, "did not report"
+  end
+
+  def test_a_complete_passing_result_succeeds
+    report = reporter(results: [swift_ios_run.merge("passed" => true)], run_plan: [swift_ios_run], expected: 1)
+
+    assert report.success?
   end
 
   def blocked_reporter
