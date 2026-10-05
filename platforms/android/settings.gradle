@@ -21,3 +21,8 @@ if (providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean())
     project(':embedded-checkout-protocol').projectDir = file('../../protocol/languages/kotlin/embedded-checkout-protocol')
 }
 include ':lib'
+
+if (providers.gradleProperty('appSizeBenchmark').getOrElse('false').toBoolean()) {
+    include ':app-size-benchmark'
+    project(':app-size-benchmark').projectDir = file('benchmarks/app-size')
+}

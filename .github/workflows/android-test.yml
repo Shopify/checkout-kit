@@ -31,6 +31,19 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Validate R8 app-size benchmark
+        run: |
+          python3 -B -m unittest discover -s benchmarks/app-size -p 'test_*.py'
+          python3 -B benchmarks/app-size/measure.py
+          ./gradlew -PappSizeBenchmark=true :app-size-benchmark:lintBaselineRelease :app-size-benchmark:lintCheckoutRelease --console=plain
+
+      - name: Upload app-size measurement
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: android-app-size
+          path: platforms/android/benchmarks/app-size/build/report.json
+          if-no-files-found: error
+
       - name: Run Protocol Unit Tests
         working-directory: protocol/languages/kotlin
         run: ./gradlew test --console=plain
