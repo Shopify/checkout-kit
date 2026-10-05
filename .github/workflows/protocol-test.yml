@@ -26,6 +26,9 @@ jobs:
           package-json-file: protocol/package.json
           working-directory: protocol
 
+      - name: Check lockfile is deduplicated
+        run: pnpm dedupe --check
+
       - name: Test with coverage
         run: pnpm test --coverage
 

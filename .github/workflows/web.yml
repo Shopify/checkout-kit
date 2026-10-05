@@ -26,6 +26,9 @@ jobs:
           package-json-file: platforms/web/package.json
           working-directory: platforms/web
 
+      - name: Check lockfile is deduplicated
+        run: pnpm dedupe --check
+
       - name: Lint (typecheck + browser compatibility + oxlint + oxfmt --check)
         run: pnpm lint
 
