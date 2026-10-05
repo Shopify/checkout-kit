@@ -56,9 +56,9 @@ describe('CheckoutProtocol', () => {
         },
       };
 
-      expect(decodeProtocolPayload('ec.buyer.change', checkoutEnvelope)?.id).toBe(
-        'checkout-123',
-      );
+      expect(
+        decodeProtocolPayload('ec.buyer.change', checkoutEnvelope)?.id,
+      ).toBe('checkout-123');
       expect(
         decodeProtocolPayload('ec.payment.change', checkoutEnvelope)?.id,
       ).toBe('checkout-123');
@@ -77,7 +77,10 @@ describe('CheckoutProtocol', () => {
         fulfillment: undefined,
       };
 
-      const decoded = decodeProtocolPayload(CheckoutProtocol.start, checkoutEnvelope);
+      const decoded = decodeProtocolPayload(
+        CheckoutProtocol.start,
+        checkoutEnvelope,
+      );
       expect(decoded).not.toHaveProperty('order');
       expect(decoded).not.toHaveProperty('fulfillment');
       expect(() =>
@@ -124,7 +127,9 @@ describe('CheckoutProtocol', () => {
         });
 
         expect(decoded?.lineItems).toEqual([]);
-        expect(decoded?.ucp.mapOrder?.payment_handlers).toEqual(['loyalty_gold']);
+        expect(decoded?.ucp.mapOrder?.payment_handlers).toEqual([
+          'loyalty_gold',
+        ]);
         expect(decoded?.ucp.paymentHandlers).toHaveProperty('loyalty_gold');
         expect(
           Object.prototype.hasOwnProperty.call(

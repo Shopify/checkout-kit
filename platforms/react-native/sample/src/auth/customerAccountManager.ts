@@ -294,9 +294,8 @@ export class CustomerAccountManager {
         try {
           const refreshed = await this.refreshAccessToken();
           const refreshedEmail =
-            CustomerAccountManager.extractEmailFromIdToken(
-              refreshed.idToken,
-            ) ?? email;
+            CustomerAccountManager.extractEmailFromIdToken(refreshed.idToken) ??
+            email;
           this.store.set(this.sessionAtom, {
             isAuthenticated: true,
             email: refreshedEmail,

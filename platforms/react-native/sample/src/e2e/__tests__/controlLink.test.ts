@@ -14,7 +14,9 @@ const REJECTED_NUMBERS = [
 ];
 
 function parse(path: string) {
-  return parseControlLink(`com.shopify.checkoutkit.reactnativedemo://e2e${path}`);
+  return parseControlLink(
+    `com.shopify.checkoutkit.reactnativedemo://e2e${path}`,
+  );
 }
 
 function expectRejection(path: string, message: string) {
@@ -38,7 +40,7 @@ describe('parseControlLink', () => {
       'com.shopify.checkoutkit.androiddemo',
     ];
 
-    schemes.forEach((scheme) => {
+    schemes.forEach(scheme => {
       expect(parseControlLink(`${scheme}://e2e/cart?productIndex=0`)).toEqual(
         expected,
       );

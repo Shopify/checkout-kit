@@ -70,10 +70,7 @@ export class E2EController {
     }
   }
 
-  private async seedCart(
-    command: E2ECartCommand,
-    target: E2ECommandTarget,
-  ) {
+  private async seedCart(command: E2ECartCommand, target: E2ECommandTarget) {
     if (command.buyerIdentityMode) {
       await target.selectBuyerIdentityMode(command.buyerIdentityMode);
     }

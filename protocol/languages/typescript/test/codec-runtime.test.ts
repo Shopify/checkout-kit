@@ -138,7 +138,9 @@ test('preserves schema-valid null instead of treating it as absent', () => {
   );
 
   expect(decoded.fulfillment).toStrictEqual({
-    availableMethods: [{lineItemIds: [], type: 'shipping', fulfillableOn: null}],
+    availableMethods: [
+      {lineItemIds: [], type: 'shipping', fulfillableOn: null},
+    ],
   });
 });
 
@@ -157,18 +159,20 @@ test('rejects undefined and malformed required fields inside a present order', (
   const permalink_url = 'https://example.test/orders/order-1';
 
   expectValidationError(
-    () => decodeProtocolObject(
-      {...wire, order: {id: undefined, permalink_url}},
-      'Checkout',
-    ),
+    () =>
+      decodeProtocolObject(
+        {...wire, order: {id: undefined, permalink_url}},
+        'Checkout',
+      ),
     'Checkout.order.id',
     'missing_required',
   );
   expectValidationError(
-    () => decodeProtocolObject(
-      {...wire, order: {id: 'order-1', permalink_url: undefined}},
-      'Checkout',
-    ),
+    () =>
+      decodeProtocolObject(
+        {...wire, order: {id: 'order-1', permalink_url: undefined}},
+        'Checkout',
+      ),
     'Checkout.order.permalink_url',
     'missing_required',
   );
@@ -181,7 +185,8 @@ test('rejects undefined and malformed required fields inside a present order', (
 
 test('requires the version of a present ucp object', () => {
   expectValidationError(
-    () => decodeProtocolObject({...wire, ucp: {version: undefined}}, 'Checkout'),
+    () =>
+      decodeProtocolObject({...wire, ucp: {version: undefined}}, 'Checkout'),
     'Checkout.ucp.version',
     'missing_required',
   );
@@ -223,13 +228,17 @@ test('does not accept inherited required fields', () => {
 });
 
 test('does not include a value in its validation error', () => {
-  const malformedValue = {private_url: 'https://example.test/private/order-123'};
+  const malformedValue = {
+    private_url: 'https://example.test/private/order-123',
+  };
   expectValidationError(
     () => decodeProtocolObject({...wire, currency: malformedValue}, 'Checkout'),
     'Checkout.currency',
     'invalid_type',
   );
-  expect(new ProtocolValidationError('Checkout.raw\nsecret', 'invalid_type')).toMatchObject({
+  expect(
+    new ProtocolValidationError('Checkout.raw\nsecret', 'invalid_type'),
+  ).toMatchObject({
     modelPath: 'ProtocolObject',
     message: 'Invalid ProtocolObject',
   });

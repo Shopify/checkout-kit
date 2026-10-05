@@ -12,11 +12,15 @@ describe('url handshake', () => {
   });
 
   test('replaces an existing protocol version and preserves other query params', () => {
-    const result = url('https://shop.example/c?ec_version=caller-supplied&ec_version=stale&foo=bar');
+    const result = url(
+      'https://shop.example/c?ec_version=caller-supplied&ec_version=stale&foo=bar',
+    );
 
     expect(result).toContain('foo=bar');
     expect(result.match(/ec_version=/g)).toHaveLength(1);
-    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
+    expect(result).toContain(
+      `ec_version=${EmbeddedCheckoutProtocol.specVersion}`,
+    );
   });
 
   test('encodes delegations, auth, and color scheme', () => {
@@ -35,13 +39,17 @@ describe('url handshake', () => {
     const result = url('https://shop.example/c#section');
 
     expect(result.endsWith('#section')).toBe(true);
-    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
+    expect(result).toContain(
+      `ec_version=${EmbeddedCheckoutProtocol.specVersion}`,
+    );
   });
 
   test('keeps a query param with a malformed percent-encoded name', () => {
     const result = url('https://shop.example/c?%=1');
 
     expect(result).toContain('%=1');
-    expect(result).toContain(`ec_version=${EmbeddedCheckoutProtocol.specVersion}`);
+    expect(result).toContain(
+      `ec_version=${EmbeddedCheckoutProtocol.specVersion}`,
+    );
   });
 });

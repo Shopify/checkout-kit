@@ -109,12 +109,15 @@ function buildMetric(group: Measurement[]): Record<string, unknown> {
     };
   }
 
-  const values = group.map((measurement) =>
+  const values = group.map(measurement =>
     measurement.type === 'histogram' ? measurement.value : 0,
   );
-  const bucketCounts = Array.from({length: HISTOGRAM_BOUNDS.length + 1}, () => 0);
+  const bucketCounts = Array.from(
+    {length: HISTOGRAM_BOUNDS.length + 1},
+    () => 0,
+  );
   for (const value of values) {
-    const index = HISTOGRAM_BOUNDS.findIndex((bound) => value <= bound);
+    const index = HISTOGRAM_BOUNDS.findIndex(bound => value <= bound);
     bucketCounts[index === -1 ? bucketCounts.length - 1 : index]! += 1;
   }
 
@@ -144,9 +147,7 @@ function encodeAttributes(attributes: Attributes) {
   return sortedAttributeEntries(attributes).map(([key, value]) => ({
     key,
     value:
-      typeof value === 'boolean'
-        ? {boolValue: value}
-        : {stringValue: value},
+      typeof value === 'boolean' ? {boolValue: value} : {stringValue: value},
   }));
 }
 

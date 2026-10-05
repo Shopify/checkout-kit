@@ -62,7 +62,9 @@ describe('request descriptors', () => {
 
   test('encode round-trips a result back to the wire shape', () => {
     const readyResult = Convert.toReadyResult(JSON.stringify(RESULT_FIXTURE));
-    expect(requestDescriptors.ready.encode(readyResult)).toEqual(RESULT_FIXTURE);
+    expect(requestDescriptors.ready.encode(readyResult)).toEqual(
+      RESULT_FIXTURE,
+    );
 
     const instrumentsResult = Convert.toInstrumentsChangeResult(
       JSON.stringify(RESULT_FIXTURE),
@@ -97,7 +99,11 @@ describe('notification descriptors', () => {
     const decoded = notificationDescriptors.error.decode({
       error: {
         messages: [],
-        ucp: {version: EmbeddedCheckoutProtocol.specVersion, status: 'error', payment_handlers: {}},
+        ucp: {
+          version: EmbeddedCheckoutProtocol.specVersion,
+          status: 'error',
+          payment_handlers: {},
+        },
       },
     });
 

@@ -1,10 +1,6 @@
 import type {CheckoutException} from './errors';
 import type {ProtocolHandlers} from './protocol';
-import type {
-  ApplePayContactField,
-  ColorScheme,
-  LogLevel,
-} from './enums';
+import type {ApplePayContactField, ColorScheme, LogLevel} from './enums';
 export {
   AcceleratedCheckoutWallet,
   ApplePayContactField,

@@ -525,9 +525,7 @@ describe('ShopifyCheckoutKit', () => {
         const onClose = jest.fn();
         instance.present(checkoutUrl, {onClose});
         expect(() =>
-          lastDispatch()(
-            JSON.stringify({type: 'fail', payload: sdkError}),
-          ),
+          lastDispatch()(JSON.stringify({type: 'fail', payload: sdkError})),
         ).not.toThrow();
       });
     });

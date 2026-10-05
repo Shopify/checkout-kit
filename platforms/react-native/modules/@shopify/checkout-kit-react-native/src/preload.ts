@@ -27,9 +27,7 @@ let requestSequence = 0;
 
 function isTerminal(state: PreloadState): boolean {
   return (
-    state.type === 'idle' ||
-    state.type === 'expired' ||
-    state.type === 'failed'
+    state.type === 'idle' || state.type === 'expired' || state.type === 'failed'
   );
 }
 

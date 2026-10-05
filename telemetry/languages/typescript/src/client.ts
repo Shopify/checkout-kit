@@ -54,8 +54,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
       options.maxPendingMeasurements ?? DEFAULT_MAX_PENDING_MEASUREMENTS,
     );
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis);
-    this.#now =
-      options.now ?? (() => BigInt(Date.now()) * BigInt(1_000_000));
+    this.#now = options.now ?? (() => BigInt(Date.now()) * BigInt(1_000_000));
   }
 
   start(): void {
@@ -66,31 +65,41 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
   }
 
   recordError(metric: TelemetryErrorMetric): void {
-    this.#recordCounter('checkout_kit_error', this.#attributes({
-      category: metric.category,
-      stage: metric.stage,
-      code: metric.code,
-      retryable: metric.retryable,
-      is_retry: metric.isRetry ?? false,
-    }));
+    this.#recordCounter(
+      'checkout_kit_error',
+      this.#attributes({
+        category: metric.category,
+        stage: metric.stage,
+        code: metric.code,
+        retryable: metric.retryable,
+        is_retry: metric.isRetry ?? false,
+      }),
+    );
   }
 
   recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric): void {
-    this.#recordCounter('checkout_kit_protocol_decode_error', this.#attributes({
-      method: toProtocolMethod(metric.method),
-      failure_type: metric.failureType,
-    }));
+    this.#recordCounter(
+      'checkout_kit_protocol_decode_error',
+      this.#attributes({
+        method: toProtocolMethod(metric.method),
+        failure_type: metric.failureType,
+      }),
+    );
   }
 
   recordNavigationRetry(metric: TelemetryNavigationRetryMetric): void {
-    this.#recordCounter('checkout_kit_navigation_retry', this.#attributes({
-      reason: metric.reason,
-      result: metric.result,
-    }));
+    this.#recordCounter(
+      'checkout_kit_navigation_retry',
+      this.#attributes({
+        reason: metric.reason,
+        result: metric.result,
+      }),
+    );
   }
 
   recordNavigationDuration(metric: TelemetryNavigationDurationMetric): void {
-    if (!Number.isFinite(metric.milliseconds) || metric.milliseconds < 0) return;
+    if (!Number.isFinite(metric.milliseconds) || metric.milliseconds < 0)
+      return;
     this.#record({
       type: 'histogram',
       name: 'checkout_kit_navigation_duration_ms',
@@ -117,7 +126,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
         this.#measurements = [];
         return this.#send(measurements, options);
       }
-      return inFlight.then(async (inFlightSucceeded) => {
+      return inFlight.then(async inFlightSucceeded => {
         if (this.#stopped) return false;
         const queuedSucceeded = await this.flush(options, ignoreBackoff);
         return inFlightSucceeded && queuedSucceeded;
