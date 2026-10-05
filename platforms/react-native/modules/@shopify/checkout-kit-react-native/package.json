@@ -26,7 +26,9 @@
   "scripts": {
     "clean": "rm -rf lib",
     "build": "bob build",
-    "lint": "pnpm run typecheck && eslint src",
+    "lint": "pnpm run typecheck && oxlint --config ../../../.oxlintrc.json src && pnpm run format:check",
+    "format": "oxfmt src tests",
+    "format:check": "oxfmt --check src tests",
     "typecheck": "tsc --noEmit",
     "api:check": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --verbose",
     "api:dump": "pnpm build && node ./scripts/prepare-api-extract.mjs && api-extractor run --local --verbose"

@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["./oxlint-plugin.mjs"],
+  "plugins": ["typescript"],
+  "rules": {
+    "protocol/no-optional-chaining-in-tests": "error"
+  }
+}

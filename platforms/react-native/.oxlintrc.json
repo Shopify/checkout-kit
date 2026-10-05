@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react"],
+  "categories": {
+    "correctness": "off"
+  },
+  "rules": {
+    "eslint/no-console": "error",
+    "eslint/no-const-assign": "error",
+    "eslint/no-dupe-class-members": "error",
+    "eslint/no-dupe-keys": "error",
+    "eslint/no-eval": "error",
+    "eslint/no-global-assign": "error",
+    "eslint/no-new-func": "error",
+    "eslint/no-unreachable": "error",
+    "eslint/require-await": "error",
+    "react/exhaustive-deps": "error",
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-undef": "error",
+    "react/no-string-refs": "error",
+    "react/rules-of-hooks": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-unused-vars": [
+      "error",
+      {"argsIgnorePattern": "^_", "destructuredArrayIgnorePattern": "^_"}
+    ]
+  },
+  "env": {
+    "builtin": true,
+    "es2024": true,
+    "node": true,
+    "jest": true
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "modules/@shopify/checkout-kit-react-native/lib/**",
+    "sample/android/**",
+    "sample/ios/**"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.js", "**/*.cjs", "**/*.mjs"],
+      "rules": {
+        "eslint/no-undef": "error"
+      }
+    },
+    {
+      "files": ["sample/**"],
+      "rules": {
+        "eslint/no-console": "off",
+        "eslint/require-await": "off"
+      }
+    }
+  ]
+}

@@ -145,6 +145,7 @@ commands:
       /opt/dev/bin/dev react-native format
       /opt/dev/bin/dev web format
       /opt/dev/bin/dev protocol format
+      /opt/dev/bin/dev telemetry format
 
   lint:
     desc: Run lint checks across supported workspaces
@@ -246,9 +247,13 @@ commands:
           pnpm lint
 
       format:
-        desc: Auto-format and apply safe lint autocorrections to Kotlin protocol source
+        desc: Auto-format and apply safe lint autocorrections to Kotlin protocol source and TypeScript test files
         aliases: [fix]
-        run: protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:detekt --auto-correct
+        run: |
+          set -e
+          protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:detekt --auto-correct
+          cd protocol
+          pnpm format
 
       check:
         desc: Build and test the protocol package
@@ -297,6 +302,10 @@ commands:
       typecheck:
         desc: "Type-check the TypeScript telemetry package"
         run: cd telemetry/languages/typescript && pnpm typecheck
+      format:
+        desc: "Auto-format the TypeScript telemetry package"
+        aliases: [fix]
+        run: cd telemetry/languages/typescript && pnpm format
       lint:
         desc: "Lint the TypeScript and Swift telemetry sources (Kotlin lives in the Android lib and is covered by dev android lint)"
         run: |
@@ -855,9 +864,14 @@ commands:
             run: cd platforms/react-native && pnpm sample lint
 
       format:
-        desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
+        desc: Auto-format and apply safe lint autocorrections (Swift bridge, module, sample)
         aliases: [fix]
-        run: cd platforms/react-native && ./scripts/lint_swift fix
+        run: |
+          set -e
+          cd platforms/react-native
+          ./scripts/lint_swift fix
+          pnpm module format
+          pnpm sample format
 
       api:
         desc: Validate or update the public React Native API baseline (api/checkout-kit-react-native.api.md)

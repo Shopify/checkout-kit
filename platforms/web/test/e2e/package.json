@@ -16,8 +16,8 @@
     "@playwright/test": "^1.61.1",
     "@shopify/checkout-kit": "workspace:*",
     "@types/node": "^22.10.0",
-    "oxfmt": "^0.47.0",
-    "oxlint": "^1.62.0",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
     "typescript": "6.0.3"
   }
 }
