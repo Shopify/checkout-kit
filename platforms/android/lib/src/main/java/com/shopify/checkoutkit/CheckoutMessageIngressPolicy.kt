@@ -3,7 +3,7 @@ package com.shopify.checkoutkit
 import java.net.URI
 
 /** Transport metadata captured before an incoming message enters protocol dispatch. */
-internal data class IncomingCheckoutMessage(
+internal class IncomingCheckoutMessage(
     val origin: String,
     val isMainFrame: Boolean,
 )
