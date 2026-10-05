@@ -83,3 +83,4 @@ reporter = E2EGitHubReporter.new(
 )
 reporter.publish!
 puts reporter.markdown_summary
+exit 1 unless reporter.successful?
