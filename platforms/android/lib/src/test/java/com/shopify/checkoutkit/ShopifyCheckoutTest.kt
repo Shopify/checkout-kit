@@ -108,6 +108,22 @@ class ShopifyCheckoutTest {
     }
 
     @Test
+    fun `concurrent checkout hosts keep their callbacks isolated`() {
+        val dismissals = mutableListOf<String>()
+        val first = shopifyCheckout(onDismiss = { dismissals += "first" })
+        val second = shopifyCheckout(onDismiss = { dismissals += "second" })
+
+        second.findViewById<Toolbar>(R.id.checkoutKitHeader)
+            .menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
+        first.findViewById<Toolbar>(R.id.checkoutKitHeader)
+            .menu.performIdentifierAction(R.id.shopify_checkout_kit_close_button, 0)
+
+        assertThat(dismissals).containsExactly("second", "first")
+        second.destroy()
+        first.destroy()
+    }
+
+    @Test
     fun `failure callback leaves presentation and checkout session ownership with host`() {
         var receivedError: CheckoutException? = null
         var dismissed = false
