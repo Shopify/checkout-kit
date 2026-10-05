@@ -1,8 +1,6 @@
 import {install} from 'react-native-quick-crypto';
 install();
 
-import 'setimmediate';
-
 import SampleApp from './src/App';
 import {name} from './app.json';
 import {AppRegistry, LogBox} from 'react-native';
