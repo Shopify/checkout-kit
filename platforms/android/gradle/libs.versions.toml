@@ -5,8 +5,8 @@ embeddedCheckoutProtocolAndroidRelease = "2026.08.25.1-alpha.1"
 # Published protocol version consumed by Checkout Kit.
 embeddedCheckoutProtocolAndroid = "2026.08.25.1-alpha.1"
 
-androidApplicationGradlePlugin = "9.3.1"
-androidLibraryGradlePlugin = "9.3.1"
+# com.android.application and com.android.library must share one AGP version per build.
+androidGradlePlugin = "9.3.1"
 apollo = "5.1.0"
 apolloCache = "1.0.7"
 assertj = "3.27.7"
@@ -77,8 +77,8 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 
 [plugins]
-android-application = { id = "com.android.application", version.ref = "androidApplicationGradlePlugin" }
-android-library = { id = "com.android.library", version.ref = "androidLibraryGradlePlugin" }
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
 apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinxBinaryCompatibilityValidator" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
