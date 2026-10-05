@@ -331,6 +331,8 @@ The other lifecycle methods have default implementations. When migrating from `c
 
 Add the optional lifecycle methods to the UIKit delegate shown in [Present checkout](#uikit):
 
+Web pixel events are not relayed to the app — Checkout Sheet Kit's `checkoutDidEmitWebPixelEvent` has no equivalent here. Merchant [web pixels](https://shopify.dev/docs/api/web-pixels-api) run inside checkout automatically.
+
 ```swift
 extension CartViewController {
   func checkoutDidStart(_ event: CheckoutStartEvent) {
