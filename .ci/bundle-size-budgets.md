@@ -11,8 +11,21 @@ Web starts with a 35 KiB soft limit and 50 KiB hard limit on all shipped JavaScr
 using `"measurement": "bundle"`. This currently measures `dist/index.js`
 and will include any additional JavaScript chunks shipped in `dist`. Declarations,
 source maps, and other package contents are excluded from this measurement.
-The report also includes deterministic gzip size and package sizes. These remain
-informational until a budget is configured for their metric.
+Web's deterministic gzip bundle size and npm package size remain informational.
+
+Android and React Native use `"measurement": "package"` to budget the complete
+compressed artifact:
+
+| Platform | Artifact | Soft limit | Hard limit |
+| --- | --- | --- | --- |
+| Android | Release AAR (ZIP) | 450 KiB | 500 KiB |
+| React Native | Published npm package (gzip) | 130 KiB | 150 KiB |
+
+The Android budget covers the library's compiled code and resources, excluding
+separately resolved dependencies such as the protocol artifact. The React Native
+budget includes the wrapper's JavaScript outputs, sources, declarations, source
+maps, native bridge sources, and bundled protocol; separately resolved native SDKs
+are excluded. These budgets measure package size, not the final consumer app size.
 
 ## Accepting an increase
 

@@ -5,5 +5,19 @@
       "softKiB": 35,
       "hardKiB": 50
     }
+  },
+  "react-native": {
+    "package": {
+      "measurement": "package",
+      "softKiB": 130,
+      "hardKiB": 150
+    }
+  },
+  "android": {
+    "package": {
+      "measurement": "package",
+      "softKiB": 450,
+      "hardKiB": 500
+    }
   }
 }
