@@ -99,7 +99,7 @@ internal data class TelemetryNavigationDurationMetric(
     val preloaded: Boolean,
 )
 
-internal data class CheckoutKitTelemetryConfiguration(
+internal class CheckoutKitTelemetryConfiguration(
     val sdkVersion: String,
     val product: TelemetryProduct = TelemetryProduct.CheckoutKit,
     val platform: TelemetryPlatform = TelemetryPlatform.Android,
