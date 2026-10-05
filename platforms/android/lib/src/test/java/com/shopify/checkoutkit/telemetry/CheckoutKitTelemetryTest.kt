@@ -103,7 +103,7 @@ class CheckoutKitTelemetryTest {
     }
 
     @Test
-    fun `records finite non-negative durations only`() {
+    fun `records repeated finite durations without deduplicating measurements`() {
         val request = RecordedRequest()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val telemetry = OtlpExporter(
@@ -119,12 +119,14 @@ class CheckoutKitTelemetryTest {
         telemetry.recordNavigationDuration(
             TelemetryNavigationDurationMetric(Double.NaN, TelemetryNavigationDurationResult.Failure, false),
         )
-        telemetry.recordNavigationDuration(
-            TelemetryNavigationDurationMetric(450.0, TelemetryNavigationDurationResult.Success, false),
-        )
+        repeat(2) {
+            telemetry.recordNavigationDuration(
+                TelemetryNavigationDurationMetric(450.0, TelemetryNavigationDurationResult.Success, false),
+            )
+        }
 
         assertThat(flush(telemetry)).isTrue()
-        assertThat(request.body).contains("\"count\":\"1\"", "\"sum\":450.0")
+        assertThat(request.body).contains("\"count\":\"2\"", "\"sum\":900.0")
         executor.shutdownNow()
     }
 
