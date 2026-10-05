@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -117,6 +118,12 @@ class AppSizeTest(unittest.TestCase):
         self.assertIn('--no-build-cache', command)
         self.assertNotIn('-PuseLocalProtocol=true', command)
         self.assertTrue(run.call_args.kwargs['check'])
+
+    def test_build_overrides_inherited_local_protocol_setting(self):
+        with patch.dict(os.environ, {'ORG_GRADLE_PROJECT_useLocalProtocol': 'true'}):
+            with patch('measure.subprocess.run') as run:
+                measure.build(self.root)
+        self.assertIn('-PuseLocalProtocol=false', run.call_args.args[0])
 
     def test_failed_build_does_not_leave_stale_report(self):
         output = self.root / 'report.json'

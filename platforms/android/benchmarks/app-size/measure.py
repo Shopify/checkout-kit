@@ -65,7 +65,7 @@ def create_report(baseline_apk, checkout_apk, baseline_mapping, checkout_mapping
 def build(android):
     subprocess.run([
         str(android / 'gradlew'), '-p', str(android),
-        '-PappSizeBenchmark=true',
+        '-PappSizeBenchmark=true', '-PuseLocalProtocol=false',
         ':lib:verifyPublishedProtocol',
         ':app-size-benchmark:assembleBaselineRelease',
         ':app-size-benchmark:assembleCheckoutRelease',
