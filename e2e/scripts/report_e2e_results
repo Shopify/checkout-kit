@@ -10,7 +10,6 @@ require_relative "../lib/github_token"
 options = {
   results_root: ENV["E2E_BROWSERSTACK_RESULTS_DIR"] || File.join(Dir.pwd, "e2e-results"),
   repository: ENV["GITHUB_REPOSITORY"] || "Shopify/checkout-kit",
-  sha: ENV["BITRISE_GIT_COMMIT"],
   pr_number: ENV["BITRISE_PULL_REQUEST"],
   token: GitHubToken.resolve,
   branch: ENV["BITRISE_GIT_BRANCH"],
@@ -23,7 +22,6 @@ options = {
 OptionParser.new do |opts|
   opts.on("--results-root PATH") { |path| options[:results_root] = path }
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
-  opts.on("--sha SHA") { |sha| options[:sha] = sha }
   opts.on("--pr NUMBER") { |number| options[:pr_number] = number }
   opts.on("--branch BRANCH") { |branch| options[:branch] = branch }
   opts.on("--expected COUNT", Integer) { |count| options[:expected] = count }
@@ -34,16 +32,12 @@ end.parse!
 
 pr_number = options[:pr_number].to_s.strip
 if pr_number.empty? || pr_number == "false" || pr_number == "0"
-  warn "No pull request associated with this build; skipping GitHub E2E report"
-  exit 0
-end
+  pr_number = nil
+else
+  abort "token is required" if options[:token].to_s.strip.empty?
 
-%i[sha token].each do |key|
-  next unless options[key].nil? || options[key].to_s.strip.empty?
-
-  abort "#{key} is required"
+  pr_number = Integer(pr_number)
 end
-options[:pr_number] = Integer(options[:pr_number])
 
 expected_raw = options[:expected]
 expected = expected_raw.nil? || expected_raw.to_s.strip.empty? ? nil : Integer(expected_raw)
@@ -70,8 +64,7 @@ stages = BitrisePipelineStages.from_json(
 reporter = E2EGitHubReporter.new(
   results,
   repository: options.fetch(:repository),
-  sha: options.fetch(:sha),
-  pr_number: options.fetch(:pr_number),
+  pr_number: pr_number,
   token: options.fetch(:token),
   branch: options.fetch(:branch),
   app_slug: tophat_manifest.fetch("app_slug"),
@@ -81,5 +74,10 @@ reporter = E2EGitHubReporter.new(
   stages: stages,
   pipeline_url: options[:pipeline_url]
 )
-reporter.publish!
 puts reporter.markdown_summary
+if pr_number
+  reporter.publish!
+else
+  warn "No pull request associated with this build; skipping GitHub E2E report"
+end
+exit(reporter.conclusion == "success" ? 0 : 1)
