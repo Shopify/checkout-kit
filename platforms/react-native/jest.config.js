@@ -6,11 +6,4 @@ module.exports = {
   transform: {
     '\\.[jt]sx?$': 'babel-jest',
   },
-  globals: {
-    'ts-jest': {
-      tsConfig: {
-        importHelpers: true,
-      },
-    },
-  },
 };
