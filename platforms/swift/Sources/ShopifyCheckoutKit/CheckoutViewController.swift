@@ -13,8 +13,8 @@ public class CheckoutViewController: UINavigationController {
         presentationController?.delegate = rootViewController
     }
 
-    package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
-        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint)
+    package init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil, configuration: Configuration = ShopifyCheckoutKit.configuration) {
+        let rootViewController = CheckoutWebViewController(checkoutURL: url, delegate: delegate, client: client, entryPoint: entryPoint, configuration: configuration)
         super.init(rootViewController: rootViewController)
         configureNavigationBar()
         presentationController?.delegate = rootViewController
@@ -40,6 +40,12 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     public typealias UIViewControllerType = CheckoutViewController
 
     var checkoutURL: URL
+    private var presentationOverrides = CheckoutPresentationOverrides()
+
+    var resolvedConfiguration: Configuration {
+        presentationOverrides.applying(to: ShopifyCheckoutKit.configuration)
+    }
+
     var onStartAction: ((CheckoutStartEvent) -> Void)?
     var onUpdateAction: ((CheckoutUpdateEvent) -> Void)?
     var onCompleteAction: ((CheckoutCompleteEvent) -> Void)?
@@ -52,11 +58,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
     }
 
     var decoratedCheckoutURL: URL {
-        CheckoutURLDecorator.decorate(checkoutURL)
+        CheckoutURLDecorator.decorate(checkoutURL, configuration: resolvedConfiguration)
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
-        let viewController = CheckoutViewController(checkout: decoratedCheckoutURL)
+        makeCheckoutViewController()
+    }
+
+    func makeCheckoutViewController() -> CheckoutViewController {
+        let configuration = resolvedConfiguration
+        let viewController = CheckoutViewController(
+            checkout: CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration),
+            configuration: configuration
+        )
         configureWebViewController(viewController)
         return viewController
     }
@@ -75,6 +89,7 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
             return
         }
 
+        webViewController.applyConfiguration(resolvedConfiguration)
         webViewController.onStart = onStartAction
         webViewController.onUpdate = onUpdateAction
         webViewController.onComplete = onCompleteAction
@@ -127,6 +142,57 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         var copy = self
         copy.onFailAction = action
         return copy
+    }
+}
+
+extension ShopifyCheckout {
+    @discardableResult public func backgroundColor(_ color: UIColor) -> Self {
+        var copy = self
+        copy.presentationOverrides.backgroundColor = color
+        return copy
+    }
+
+    @discardableResult public func appearance(_ appearance: Configuration.Appearance) -> Self {
+        var copy = self
+        copy.presentationOverrides.appearance = appearance
+        return copy
+    }
+
+    @discardableResult public func tintColor(_ color: UIColor) -> Self {
+        var copy = self
+        copy.presentationOverrides.tintColor = color
+        return copy
+    }
+
+    @discardableResult public func title(_ title: String) -> Self {
+        var copy = self
+        copy.presentationOverrides.title = title
+        return copy
+    }
+
+    @discardableResult public func closeButtonTintColor(_ color: UIColor?) -> Self {
+        var copy = self
+        copy.presentationOverrides.closeButtonTintColor = .some(color)
+        return copy
+    }
+}
+
+private struct CheckoutPresentationOverrides {
+    var backgroundColor: UIColor?
+    var appearance: Configuration.Appearance?
+    var tintColor: UIColor?
+    var title: String?
+    /// The outer optional distinguishes no override from explicitly resetting the color.
+    var closeButtonTintColor: UIColor??
+
+    func applying(to defaults: Configuration) -> Configuration {
+        var configuration = defaults
+        if let backgroundColor { configuration.backgroundColor = backgroundColor }
+        if let appearance { configuration.appearance = appearance }
+        if let tintColor { configuration.tintColor = tintColor }
+        if let title { configuration.title = title }
+        if let closeButtonTintColor { configuration.closeButtonTintColor = closeButtonTintColor }
+        return configuration
     }
 }
 

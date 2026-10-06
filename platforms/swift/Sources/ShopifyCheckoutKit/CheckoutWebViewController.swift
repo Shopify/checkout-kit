@@ -26,9 +26,10 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var initialNavigation: Bool = true
 
     private let checkoutURL: URL
+    private var checkoutConfiguration: Configuration
 
-    private lazy var closeBarButtonItem: UIBarButtonItem = {
-        if let closeButtonTintColor = ShopifyCheckoutKit.configuration.closeButtonTintColor {
+    private func makeCloseBarButtonItem() -> UIBarButtonItem {
+        if let closeButtonTintColor = checkoutConfiguration.closeButtonTintColor {
             var item: UIBarButtonItem
 
             if #available(iOS 26.0, *) {
@@ -59,13 +60,14 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         )
         item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
         return item
-    }()
+    }
 
     var progressObserver: NSKeyValueObservation?
 
     // MARK: Initializers
 
-    public init(checkoutURL url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+    public init(checkoutURL url: URL, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil, configuration: Configuration = ShopifyCheckoutKit.configuration) {
+        checkoutConfiguration = configuration
         checkoutURL = url
         self.delegate = delegate
 
@@ -84,13 +86,18 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
-        title = ShopifyCheckoutKit.configuration.title
-
-        navigationItem.rightBarButtonItem = closeBarButtonItem
-
         checkoutView.viewDelegate = self
+        applyConfiguration(configuration)
+    }
 
-        view.backgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
+    func applyConfiguration(_ configuration: Configuration) {
+        checkoutConfiguration = configuration
+        title = configuration.title
+        navigationItem.rightBarButtonItem = makeCloseBarButtonItem()
+        view.backgroundColor = configuration.backgroundColor
+        checkoutView?.backgroundColor = configuration.backgroundColor
+        checkoutView?.underPageBackgroundColor = configuration.backgroundColor
+        progressBar.progressBar.tintColor = configuration.tintColor
     }
 
     @available(*, unavailable)
@@ -103,7 +110,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        view.backgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
+        view.backgroundColor = checkoutConfiguration.backgroundColor
     }
 
     override public func viewDidLoad() {

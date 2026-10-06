@@ -158,6 +158,8 @@ struct CartView: View {
 }
 ```
 
+SwiftUI presentation modifiers apply to that `ShopifyCheckout` value. They leave global defaults unchanged, so separate checkout views can use different titles, colors, and appearances. Unspecified values use the global configuration when the controller is created or updated. Appearance determines the checkout URL when presentation starts.
+
 Checkout Kit adds the required UCP query parameters automatically when it loads checkout.
 
 ## Preload checkout
