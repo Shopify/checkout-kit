@@ -226,7 +226,7 @@ class CheckoutWebViewTests: XCTestCase {
 
     func testCloudflareManagedChallengeRendersWithoutReportingCheckoutFailure() throws {
         try view.load(checkout: XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123")))
-        view.checkoutIsVisible = true
+        view.isPresented = true
         let link = try XCTUnwrap(view.url)
         let didFail = expectation(description: "checkout failure was not reported")
         didFail.isInverted = true

@@ -203,7 +203,14 @@ class PreloadObservabilityTests: XCTestCase {
             )
         )
 
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
         XCTAssertEqual(view.handleResponse(response), .cancel)
+        // WebKit reports policy cancellation after the response handler returns.
+        view.webView(
+            view,
+            didFailProvisionalNavigation: navigation,
+            withError: NSError(domain: WKError.errorDomain, code: 102)
+        )
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(
@@ -217,19 +224,22 @@ class PreloadObservabilityTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(view))
         XCTAssertNil(delegate.errorReceived)
         XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
     }
 
-    func testCloudflareManagedChallengeRendersForPresentedPreload() throws {
+    func testCloudflareManagedChallengeRendersBeforeAppearanceAndWhilePresentationIsCovered() throws {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         let view = CheckoutWebView(entryPoint: nil)
         _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
         view.load(checkout: url, isPreload: true)
-        let presentedView = try XCTUnwrap(
-            CheckoutWebView.preloadCache.view(for: PreloadKey(url: url, entryPoint: nil))
-        )
-        presentedView.checkoutIsVisible = true
-        let delegate = MockCheckoutWebViewDelegate()
-        presentedView.viewDelegate = delegate
+        let controller = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        defer {
+            controller.cleanUpCheckoutView()
+            view.cleanUpForDismissal()
+        }
+        XCTAssertTrue(controller.checkoutView === view)
+        var failures = 0
+        controller.onFail = { _ in failures += 1 }
         let response = try XCTUnwrap(
             HTTPURLResponse(
                 url: url,
@@ -239,14 +249,24 @@ class PreloadObservabilityTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(presentedView.handleResponse(response), .allow)
+        XCTAssertTrue(view.isPresented)
+        XCTAssertEqual(view.handleResponse(response), .allow)
+
+        controller.viewWillAppear(false)
+        controller.viewDidDisappear(false)
+        XCTAssertFalse(controller.isBeingDismissed)
+        XCTAssertTrue(view.isPresented)
+        XCTAssertEqual(view.handleResponse(response), .allow)
+
+        controller.viewWillAppear(false)
+        XCTAssertEqual(view.handleResponse(response), .allow)
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(preload?.state, .loading)
         }
-        XCTAssertTrue(CheckoutWebView.preloadCache.contains(presentedView))
-        XCTAssertNil(delegate.errorReceived)
-        XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(view))
+        XCTAssertEqual(failures, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
     }
 
     func testCloudflareSubframeChallengeDoesNotDiscardBackgroundedPreload() throws {
@@ -280,11 +300,15 @@ class PreloadObservabilityTests: XCTestCase {
         let view = CheckoutWebView(entryPoint: nil)
         _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
         view.load(checkout: url, isPreload: true)
-        let presentedView = try XCTUnwrap(
-            CheckoutWebView.preloadCache.view(for: PreloadKey(url: url, entryPoint: nil))
-        )
-        presentedView.checkoutIsVisible = true
-        presentedView.checkoutIsVisible = false
+        let controller = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        let presentedView = try XCTUnwrap(controller.checkoutView)
+        defer { presentedView.cleanUpForDismissal() }
+        controller.viewWillAppear(false)
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(false)
+        XCTAssertNil(controller.checkoutView)
+        XCTAssertFalse(presentedView.isPresented)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(presentedView))
         let delegate = MockCheckoutWebViewDelegate()
         presentedView.viewDelegate = delegate
         let response = try XCTUnwrap(
@@ -296,7 +320,13 @@ class PreloadObservabilityTests: XCTestCase {
             )
         )
 
+        let navigation = try XCTUnwrap(presentedView.checkoutNavigation)
         XCTAssertEqual(presentedView.handleResponse(response), .cancel)
+        presentedView.webView(
+            presentedView,
+            didFail: navigation,
+            withError: NSError(domain: WKError.errorDomain, code: 102)
+        )
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(preload?.state, .idle)
@@ -304,6 +334,7 @@ class PreloadObservabilityTests: XCTestCase {
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(presentedView))
         XCTAssertNil(delegate.errorReceived)
         XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
     }
 
     func testNavigationFailureTransitionsToFailed() {

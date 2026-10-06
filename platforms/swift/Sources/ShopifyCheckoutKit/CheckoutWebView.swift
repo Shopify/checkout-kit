@@ -482,11 +482,6 @@ class CheckoutWebView: WKWebView {
     /// Background preload requests must not replace or reload a live session.
     var isPresented = false
 
-    /// Tracks whether checkout is currently visible. Unlike `hasBeenPresented`,
-    /// this resets when the presentation disappears so retained cached views
-    /// can discard challenges that cannot be completed in the background.
-    var checkoutIsVisible = false
-
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
     private var hasHandledTerminalFailure = false
@@ -926,13 +921,14 @@ extension CheckoutWebView: WKNavigationDelegate {
         if isCloudflareManagedChallenge(response) {
             guard isForMainFrame,
                   CheckoutWebView.preloadCache.contains(self),
-                  !checkoutIsVisible
+                  !isPresented
             else {
                 OSLogger.shared.debug("Allowing Cloudflare managed challenge response to render")
                 return .allow
             }
 
             OSLogger.shared.debug("Discarding cached Cloudflare managed challenge response")
+            didCancelNavigationForHTTPError = true
             stopLoading()
             handleCachedViewFailure(
                 .httpError(statusCode: statusCode),
