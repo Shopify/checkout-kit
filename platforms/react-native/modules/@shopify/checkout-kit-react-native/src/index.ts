@@ -39,15 +39,9 @@ import type {
   AcceleratedCheckoutButtonsProps,
   RenderStateChangeEvent,
 } from './components/AcceleratedCheckoutButtons';
-import {CheckoutProtocol} from './protocol';
-import type {
-  Checkout,
-  CheckoutProtocolMethod,
-  CheckoutProtocolPayloads,
-  ErrorResponse,
-  ProtocolHandlers,
-} from './protocol';
 import {preload as preloadCheckout} from './preload';
+
+let presentationSequence = 0;
 
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
@@ -101,7 +95,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Dismisses the currently displayed checkout sheet
    */
   public dismiss(): void {
-    this.releaseDispatchSubscription();
     RNShopifyCheckoutKit.dismiss();
   }
 
@@ -125,50 +118,36 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return subscription;
   }
 
-  /**
-   * Presents the checkout sheet for a given checkout URL.
-   *
-   * Exactly one of `callbacks.onClose` or `callbacks.onFail` fires per
-   * call, after which the per-presentation dispatch subscription is released.
-   *
-   * @param checkoutUrl The URL of the checkout to display
-   * @param callbacks Optional per-call SDK callbacks
-   */
-  public present(
-    checkoutUrl: string,
-    callbacks?: PresentCallbacks,
-    protocol?: ProtocolHandlers,
-  ): void {
+  /** Presents checkout with lifecycle callbacks. */
+  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
     this.releaseDispatchSubscription();
-
     let subscription: {remove: () => void} | undefined;
-    const {dispatcher, subscribedMethods} = createPresentDispatcher({
+    const requestId = `present-${++presentationSequence}`;
+    const {dispatcher} = createPresentDispatcher({
       callbacks,
-      protocol,
+      requestId,
       handleDefaultGeolocationRequests: this.featureEnabled(
         'handleGeolocationRequests',
       ),
-      handleDefaultGeolocationRequest: () =>
-        this.handleDefaultGeolocationRequest(),
+      handleDefaultGeolocationRequest: async () => {
+        const allowed = await this.requestGeolocation();
+        this.respondToGeolocationRequest(allowed, requestId);
+      },
       respondToGeolocationRequest: allow =>
-        this.respondToGeolocationRequest(allow),
+        this.respondToGeolocationRequest(allow, requestId),
       onTerminal: () => {
         if (subscription) this.releaseDispatchSubscription(subscription);
       },
     });
-
-    if (dispatcher) {
-      subscription = RNShopifyCheckoutKit.onDispatch(json => {
-        if (subscription && this.dispatchSubscription === subscription)
-          dispatcher(json);
-      });
-      this.dispatchSubscription = subscription;
-    }
-
+    subscription = RNShopifyCheckoutKit.onDispatch(json => {
+      if (subscription && this.dispatchSubscription === subscription)
+        dispatcher(json);
+    });
+    this.dispatchSubscription = subscription;
     try {
-      RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
+      RNShopifyCheckoutKit.present(checkoutUrl, requestId);
     } catch (error) {
-      if (subscription) this.releaseDispatchSubscription(subscription);
+      this.releaseDispatchSubscription(subscription);
       throw error;
     }
   }
@@ -360,19 +339,10 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * This does not request OS location permissions; callers should check
    * or request Android permissions before responding.
    */
-  private respondToGeolocationRequest(allow: boolean): void {
+  private respondToGeolocationRequest(allow: boolean, requestId: string): void {
     if (Platform.OS === 'android') {
-      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow);
+      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow, requestId);
     }
-  }
-
-  /**
-   * Default Android geolocation handler — requests platform permissions
-   * and forwards the resolved grant state back to the native SDK.
-   */
-  private async handleDefaultGeolocationRequest() {
-    const allowed = await this.requestGeolocation();
-    this.respondToGeolocationRequest(allowed);
   }
 
   /**
@@ -395,7 +365,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private permissionGranted(status: PermissionStatus): boolean {
     return status === 'granted';
   }
-
 }
 
 // API
@@ -404,7 +373,6 @@ export {
   ApplePayContactField,
   ApplePayLabel,
   ApplePayStyle,
-  CheckoutProtocol,
   ColorScheme,
   DispatchEventParityError,
   LifecycleEventParseError,
@@ -425,11 +393,7 @@ export type {
   AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
-  Checkout,
-  CheckoutProtocolMethod,
-  CheckoutProtocolPayloads,
   Configuration,
-  ErrorResponse,
   Features,
   GeolocationRequestEvent,
   IosColors,
@@ -438,7 +402,6 @@ export type {
   PreloadOptions,
   PreloadState,
   CheckoutPreloadSubscription,
-  ProtocolHandlers,
   RenderStateChangeEvent,
 };
 
@@ -447,3 +410,12 @@ export {
   AcceleratedCheckoutButtons,
   RenderState,
 } from './components/AcceleratedCheckoutButtons';
+
+export type {
+  Checkout,
+  CheckoutStartEvent,
+  CheckoutUpdateEvent,
+  CheckoutCompleteEvent,
+  CheckoutFailureEvent,
+  CheckoutEventHandlers,
+} from './checkout';

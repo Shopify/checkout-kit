@@ -11,7 +11,10 @@
  * `dispatchEventTypes` array reported by `RNShopifyCheckoutKit.getConstants()`.
  */
 export const SDK_LIFECYCLE_EVENT_TYPES = [
-  'close',
+  'start',
+  'update',
+  'complete',
+  'dismiss',
   'fail',
   'geolocationRequest',
 ] as const;
@@ -99,7 +102,7 @@ export function verifyDispatchEventParity(
 function buildMessage(detail: string): string {
   return (
     '[ShopifyCheckoutKit] SDK lifecycle event list out of sync between JS ' +
-    "and native. Rebuild your host app so the bundled native module matches " +
+    'and native. Rebuild your host app so the bundled native module matches ' +
     "this version of '@shopify/checkout-kit-react-native'.\n  " +
     detail
   );
@@ -113,7 +116,9 @@ function buildMessage(detail: string): string {
 export function __resetDispatchEventParityForTests(): void {
   if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
     // eslint-disable-next-line no-console
-    console.warn('[ShopifyCheckoutKit] Test-only function called in production');
+    console.warn(
+      '[ShopifyCheckoutKit] Test-only function called in production',
+    );
     return;
   }
   parityVerified = false;

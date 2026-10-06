@@ -4,6 +4,7 @@ import android.app.Activity;
 import androidx.activity.ComponentActivity;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -11,6 +12,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.NativeShopifyCheckoutKitSpec;
 import com.shopify.checkoutkit.*;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +33,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public static Configuration checkoutConfig = new Configuration();
 
   private CheckoutHandle checkoutSheet;
+
+  private WeakReference<CheckoutHandle> closingCheckoutSheet;
 
   private CustomCheckoutListener checkoutListener;
 
@@ -73,42 +77,61 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, ReadableArray subscribedMethods) {
-    releaseCheckoutListener();
-
+  public void present(String checkoutURL, String requestId) {
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
-      CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
-      checkoutListener = listener;
-
-      List<String> methods = new ArrayList<>();
-      for (int i = 0; i < subscribedMethods.size(); i++) {
-        String method = subscribedMethods.getString(i);
-        if (method != null) {
-          methods.add(method);
-        }
-      }
-      CheckoutProtocol.Client client = ProtocolRelay.makeClient(methods, dispatch);
-
       currentActivity.runOnUiThread(() -> {
-        if (checkoutListener != listener) {
-          return;
+        CustomCheckoutListener listener = checkoutListener;
+        if (checkoutSheet == null || listener == null || listener.isReleased()) {
+          releaseCheckoutListener();
+          listener = new CustomCheckoutListener(this::emitDispatchEvent);
+          checkoutListener = listener;
         }
-        checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            listener, client);
+        listener.configure(requestId, this::finishCheckoutPresentation);
+        presentCheckout(checkoutURL, (ComponentActivity) currentActivity, listener);
       });
+    } else {
+      CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
+      listener.configure(requestId, () -> {});
+      listener.onCheckoutDismissed();
     }
+  }
+
+  private void presentCheckout(String checkoutURL, ComponentActivity activity, CustomCheckoutListener listener) {
+    if (checkoutListener != listener) return;
+    CheckoutHandle sheet = ShopifyCheckoutKit.present(checkoutURL, activity, listener);
+    if (checkoutListener != listener) return;
+    if (sheet != null && closingCheckoutSheet != null && sheet == closingCheckoutSheet.get()) {
+      // During the close animation the SDK returns the old handle without adopting
+      // this listener. Retry on the UI queue until a new presentation can start.
+      UiThreadUtil.runOnUiThread(() -> presentCheckout(checkoutURL, activity, listener), 16);
+      return;
+    }
+    closingCheckoutSheet = null;
+    checkoutSheet = sheet;
+    if (sheet == null) listener.onCheckoutDismissed();
+  }
+
+  private void finishCheckoutPresentation() {
+    if (checkoutSheet != null) closingCheckoutSheet = new WeakReference<>(checkoutSheet);
+    checkoutSheet = null;
+    checkoutListener = null;
+  }
+
+  protected void emitDispatchEvent(String event) {
+    emitOnDispatch(event);
   }
 
   @ReactMethod
   public void dismiss() {
-    releaseCheckoutListener();
-
-    if (checkoutSheet != null) {
-      checkoutSheet.dismiss();
-      checkoutSheet = null;
-    }
+    UiThreadUtil.runOnUiThread(() -> {
+      CheckoutHandle sheet = checkoutSheet;
+      CustomCheckoutListener listener = checkoutListener;
+      if (sheet != null) sheet.dismiss();
+      // Native dismiss() does not notify the listener for programmatic dismissal.
+      if (listener != null) listener.onCheckoutDismissed();
+      else checkoutSheet = null;
+    });
   }
 
   @ReactMethod
@@ -297,10 +320,12 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void respondToGeolocationRequest(boolean allow) {
-    if (checkoutListener != null) {
-      checkoutListener.invokeGeolocationCallback(allow);
-    }
+  public void respondToGeolocationRequest(boolean allow, String requestId) {
+    UiThreadUtil.runOnUiThread(() -> {
+      if (checkoutListener != null && checkoutListener.matchesRequest(requestId)) {
+        checkoutListener.invokeGeolocationCallback(allow);
+      }
+    });
   }
 
   // Private

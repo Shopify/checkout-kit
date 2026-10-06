@@ -14,12 +14,15 @@ import java.util.List;
  * two sides agree at construction time.
  */
 public final class DispatchEventTypes {
-  public static final String CLOSE = "close";
+  public static final String START = "start";
+  public static final String UPDATE = "update";
+  public static final String COMPLETE = "complete";
+  public static final String DISMISS = "dismiss";
   public static final String FAIL = "fail";
   public static final String GEOLOCATION_REQUEST = "geolocationRequest";
 
   public static final List<String> ALL = Collections.unmodifiableList(
-      Arrays.asList(CLOSE, FAIL, GEOLOCATION_REQUEST));
+      Arrays.asList(START, UPDATE, COMPLETE, DISMISS, FAIL, GEOLOCATION_REQUEST));
 
   private DispatchEventTypes() {}
 }
