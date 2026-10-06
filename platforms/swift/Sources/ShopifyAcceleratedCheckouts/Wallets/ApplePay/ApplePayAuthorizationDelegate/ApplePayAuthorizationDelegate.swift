@@ -114,8 +114,8 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         case .reset:
             try await onReset()
 
-        case let .presentingCheckoutKit(url):
-            try await onPresentingCheckoutKit(to: url, previousState: previousState)
+        case let .presentingCheckoutKit(url, reason):
+            try await onPresentingCheckoutKit(to: url, reason: reason)
 
         // As a "terminal" state, acts as a decision point to either:
         // - present TYP (redirectUrl)
@@ -137,7 +137,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         try await transition(to: .idle)
     }
 
-    private func onPresentingCheckoutKit(to url: URL?, previousState: ApplePayState) async throws {
+    private func onPresentingCheckoutKit(to url: URL?, reason: ApplePayState.CheckoutPresentationReason) async throws {
         guard let url else {
             try await transition(
                 to: .terminalError(
@@ -147,10 +147,10 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             return
         }
 
-        switch previousState {
-        case .cartSubmittedForCompletion:
+        switch reason {
+        case .submitted:
             break
-        default:
+        case .recovery:
             let cartID = try pkEncoder.cartID.get()
             try? await _Concurrency.Task.retrying(clock: clock) { @MainActor in
                 try await self.controller.storefront.cartRemovePersonalData(id: cartID)
@@ -196,7 +196,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             try await transition(to: .presentingCheckoutKit(url: createCheckoutKitURL(for: previousState)))
 
         case let .cartSubmittedForCompletion(redirectURL):
-            try await transition(to: .presentingCheckoutKit(url: redirectURL))
+            try await transition(to: .presentingCheckoutKit(url: redirectURL, reason: .submitted))
 
         default:
             try await transition(to: .reset)
