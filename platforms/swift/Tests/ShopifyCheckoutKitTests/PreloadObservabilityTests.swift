@@ -187,6 +187,156 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
+    func testCloudflareManagedChallengeDiscardsBackgroundedPreloadWithoutCheckoutFailure() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        view.load(checkout: url, isPreload: true)
+        let delegate = MockCheckoutWebViewDelegate()
+        view.viewDelegate = delegate
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: url,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["CF-MITIGATED": "  ChAlLeNgE\t"]
+            )
+        )
+
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        XCTAssertEqual(view.handleResponse(response), .cancel)
+        // WebKit reports policy cancellation after the response handler returns.
+        view.webView(
+            view,
+            didFailProvisionalNavigation: navigation,
+            withError: NSError(domain: WKError.errorDomain, code: 102)
+        )
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(
+                preload?.state,
+                .failed(
+                    reason: .httpError(statusCode: 403),
+                    message: "HTTP response returned status code 403."
+                )
+            )
+        }
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(view))
+        XCTAssertNil(delegate.errorReceived)
+        XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
+    }
+
+    func testCloudflareManagedChallengeRendersBeforeAppearanceAndWhilePresentationIsCovered() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        view.load(checkout: url, isPreload: true)
+        let controller = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        defer {
+            controller.cleanUpCheckoutView()
+            view.cleanUpForDismissal()
+        }
+        XCTAssertTrue(controller.checkoutView === view)
+        var failures = 0
+        controller.onFail = { _ in failures += 1 }
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: url,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["cf-mitigated": "challenge"]
+            )
+        )
+
+        XCTAssertTrue(view.isPresented)
+        XCTAssertEqual(view.handleResponse(response), .allow)
+
+        controller.viewWillAppear(false)
+        controller.viewDidDisappear(false)
+        XCTAssertFalse(controller.isBeingDismissed)
+        XCTAssertTrue(view.isPresented)
+        XCTAssertEqual(view.handleResponse(response), .allow)
+
+        controller.viewWillAppear(false)
+        XCTAssertEqual(view.handleResponse(response), .allow)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .loading)
+        }
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(view))
+        XCTAssertEqual(failures, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
+    }
+
+    func testCloudflareSubframeChallengeDoesNotDiscardBackgroundedPreload() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        view.load(checkout: url, isPreload: true)
+        let delegate = MockCheckoutWebViewDelegate()
+        view.viewDelegate = delegate
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: url,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["cf-mitigated": "challenge"]
+            )
+        )
+
+        XCTAssertEqual(view.handleResponse(response, isForMainFrame: false), .allow)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .loading)
+        }
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(view))
+        XCTAssertNil(delegate.errorReceived)
+        XCTAssertEqual(delegate.failureCount, 0)
+    }
+
+    func testCloudflareManagedChallengeDiscardsDismissedCachedViewWithoutCheckoutFailure() throws {
+        let preload = ShopifyCheckoutKit.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        view.load(checkout: url, isPreload: true)
+        let controller = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        let presentedView = try XCTUnwrap(controller.checkoutView)
+        defer { presentedView.cleanUpForDismissal() }
+        controller.viewWillAppear(false)
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(false)
+        XCTAssertNil(controller.checkoutView)
+        XCTAssertFalse(presentedView.isPresented)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(presentedView))
+        let delegate = MockCheckoutWebViewDelegate()
+        presentedView.viewDelegate = delegate
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: url,
+                statusCode: 403,
+                httpVersion: nil,
+                headerFields: ["cf-mitigated": "challenge"]
+            )
+        )
+
+        let navigation = try XCTUnwrap(presentedView.checkoutNavigation)
+        XCTAssertEqual(presentedView.handleResponse(response), .cancel)
+        presentedView.webView(
+            presentedView,
+            didFail: navigation,
+            withError: NSError(domain: WKError.errorDomain, code: 102)
+        )
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .idle)
+        }
+        XCTAssertFalse(CheckoutWebView.preloadCache.contains(presentedView))
+        XCTAssertNil(delegate.errorReceived)
+        XCTAssertEqual(delegate.failureCount, 0)
+        XCTAssertTrue(telemetryRecorder.errors.isEmpty)
+    }
+
     func testNavigationFailureTransitionsToFailed() {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
         let view = CheckoutWebView(entryPoint: nil)
