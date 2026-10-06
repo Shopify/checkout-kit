@@ -58,7 +58,12 @@ enum ApplePayState: Equatable, @unchecked Sendable {
     /// Presenting CheckoutKit (Checkout Kit)
     /// Entering this state after `cartSubmittedForCompletion` will show the Thank You Page if payment is succesful
     /// Otherwise this will present checkout as a fallback
-    case presentingCheckoutKit(url: URL?)
+    case presentingCheckoutKit(url: URL?, reason: CheckoutPresentationReason = .recovery)
+
+    enum CheckoutPresentationReason {
+        case submitted
+        case recovery
+    }
 
     /// Transition to completed at terminal points in the flow
     /// If all work processing is done, transition to completed, to activate final side effects

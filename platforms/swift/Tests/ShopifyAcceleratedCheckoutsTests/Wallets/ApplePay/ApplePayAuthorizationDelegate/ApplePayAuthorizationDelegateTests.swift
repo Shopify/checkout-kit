@@ -95,7 +95,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     {
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
-        guard case let .presentingCheckoutKit(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = delegate.state else {
             XCTFail(
                 "Should transition to presentingCheckoutKit for error states, but got \(delegate.state)"
             )
@@ -404,7 +404,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await delegate.transition(to: .completed)
 
         // Should transition to presentingCheckoutKit with the redirect URL
-        guard case let .presentingCheckoutKit(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = delegate.state else {
             XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
@@ -430,7 +430,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await delegate.transition(to: .completed)
 
         // Should transition to presentingCheckoutKit with computed URL from getURLFromState
-        guard case let .presentingCheckoutKit(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = delegate.state else {
             XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
@@ -468,7 +468,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
         try await delegate.transition(to: .completed)
 
-        guard case let .presentingCheckoutKit(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = delegate.state else {
             XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
@@ -502,7 +502,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await spyDelegate.transition(to: .completed)
 
         // Should be in presentingCheckoutKit state
-        guard case let .presentingCheckoutKit(url) = spyDelegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = spyDelegate.state else {
             XCTFail("Expected presentingCheckoutKit state but got \(spyDelegate.state)")
             return
         }
@@ -514,9 +514,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
 
         let mutations = await spyController.recordingStorefront.mutations
-        XCTExpectFailure("Successful submission loses its origin while transitioning through completed") {
-            XCTAssertEqual(mutations, [], "Successful submission must not mutate the completed cart")
-        }
+        XCTAssertEqual(mutations, [], "Successful submission must not mutate the completed cart")
     }
 
     func test_onPresentingCheckoutKit_withNonCartSubmittedState_shouldCallPresentSuccessfully() async throws {
@@ -526,7 +524,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         try await delegate.transition(to: .completed)
 
         // Should be in presentingCheckoutKit state with query parameter
-        guard case let .presentingCheckoutKit(url) = delegate.state else {
+        guard case let .presentingCheckoutKit(url, _) = delegate.state else {
             XCTFail("Expected presentingCheckoutKit state but got \(delegate.state)")
             return
         }
