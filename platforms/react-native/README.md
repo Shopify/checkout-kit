@@ -804,6 +804,7 @@ shopify.present(checkoutUrl, {
     if (completed) clearCart();
   },
   onFail: ({error}) => {
+    if (completed) clearCart();
     // Inspect error.code, error.message, and optional error.statusCode.
   },
 });
@@ -820,11 +821,12 @@ shopify.present(checkoutUrl, {
 
 Completion keeps callbacks active until dismissal or failure. Delay changes that
 unmount checkout UI, such as clearing the cart that owns accelerated buttons,
-until dismissal. Calling `dismiss()` also delivers `onDismiss`.
+until dismissal or failure. Calling `dismiss()` also delivers `onDismiss`.
 
 Repeated `present()` calls while a sheet is visible replace its callbacks; the
-existing checkout stays open. `teardown()` stops observations without dismissing
-the sheet.
+existing checkout stays open. This also applies across `ShopifyCheckout` instances:
+the latest presenter owns the callbacks. `teardown()` stops observations owned by
+that instance without dismissing the sheet.
 
 ### Migrating from protocol callbacks
 
@@ -1177,7 +1179,10 @@ const completed = useRef(false);
     }
   }}
   onFail={({error}) => {
-    completed.current = false;
+    if (completed.current) {
+      completed.current = false;
+      clearCart();
+    }
     console.error('Accelerated checkout failed:', error.code);
   }}
   onRenderStateChange={(event) => setRenderState(event.state)}

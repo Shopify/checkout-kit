@@ -528,6 +528,29 @@ describe('ShopifyCheckoutKit', () => {
       expect(second).toHaveBeenCalledTimes(1);
     });
 
+    it('releases the previous instance without letting its teardown affect the new owner', () => {
+      const first = new ShopifyCheckout();
+      const second = new ShopifyCheckout();
+      const firstRemove = jest.fn();
+      const secondRemove = jest.fn();
+      const firstDismiss = jest.fn();
+      const secondDismiss = jest.fn();
+      NativeModule.onDispatch
+        .mockReturnValueOnce({remove: firstRemove})
+        .mockReturnValueOnce({remove: secondRemove});
+      first.present(checkoutUrl, {onDismiss: firstDismiss});
+      const oldDispatch = lastDispatch();
+      second.present(checkoutUrl, {onDismiss: secondDismiss});
+      expect(firstRemove).toHaveBeenCalledTimes(1);
+      first.teardown();
+      oldDispatch(JSON.stringify({type: 'dismiss'}));
+      expect(firstDismiss).not.toHaveBeenCalled();
+      expect(secondRemove).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(secondDismiss).toHaveBeenCalledTimes(1);
+      expect(secondRemove).toHaveBeenCalledTimes(1);
+    });
+
     it.each(['dismiss', 'fail'])(
       'allows presenting again inside the %s callback',
       type => {
@@ -700,7 +723,7 @@ describe('ShopifyCheckoutKit', () => {
         expect(NativeModule.present).toHaveBeenCalledWith(
           checkoutUrl,
           expect.any(String),
-          );
+        );
         expect(NativeModule.onDispatch).toHaveBeenCalledWith(
           expect.any(Function),
         );
@@ -714,7 +737,7 @@ describe('ShopifyCheckoutKit', () => {
         expect(NativeModule.present).toHaveBeenCalledWith(
           checkoutUrl,
           expect.any(String),
-          );
+        );
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -831,7 +854,7 @@ describe('ShopifyCheckoutKit', () => {
         expect(NativeModule.present).toHaveBeenCalledWith(
           checkoutUrl,
           expect.any(String),
-          );
+        );
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

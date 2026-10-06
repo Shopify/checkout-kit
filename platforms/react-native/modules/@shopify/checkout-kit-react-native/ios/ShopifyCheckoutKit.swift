@@ -28,6 +28,7 @@ class RCTShopifyCheckoutKit: NSObject {
 
     internal var checkoutSheet: UIViewController?
     private var checkoutEvents: CheckoutEventBridge?
+    private weak var closingCheckoutSheet: UIViewController?
     private var checkoutPreload: CheckoutPreload?
     private var acceleratedCheckoutsConfiguration: Any?
     private var acceleratedCheckoutsApplePayConfiguration: Any?
@@ -91,8 +92,16 @@ class RCTShopifyCheckoutKit: NSObject {
         DispatchQueue.main.async {
             let sheet = self.checkoutSheet
             let events = self.checkoutEvents
-            sheet?.dismiss(animated: true) { [weak self] in
-                if self?.checkoutSheet === sheet { self?.checkoutSheet = nil }
+            // Detach the closing session before a queued present can replace its ID.
+            self.checkoutSheet = nil
+            self.checkoutEvents = nil
+            guard let sheet else {
+                events?.checkoutDidDismiss()
+                return
+            }
+            self.closingCheckoutSheet = sheet
+            sheet.dismiss(animated: true) { [weak self] in
+                if self?.closingCheckoutSheet === sheet { self?.closingCheckoutSheet = nil }
                 events?.checkoutDidDismiss()
             }
         }
@@ -107,25 +116,59 @@ class RCTShopifyCheckoutKit: NSObject {
 
     @objc func present(_ checkoutURL: String, requestId: String) {
         DispatchQueue.main.async {
-            // Native SDKs only support one visible checkout. Keep its delegate alive
-            // when JS replaces the callbacks for that presentation.
-            if let events = self.checkoutEvents {
-                events.requestId = requestId
-                return
+            if let sheet = self.checkoutSheet {
+                // Only replace callbacks while the same sheet remains active.
+                if !sheet.isBeingDismissed, let events = self.checkoutEvents {
+                    events.requestId = requestId
+                    return
+                }
+                self.closingCheckoutSheet = sheet
+                self.checkoutSheet = nil
             }
             let events = CheckoutEventBridge(requestId: requestId, dispatch: { [weak self] json in
                 self?.emitDispatchEvent(json)
-            }, onTerminal: { [weak self] in
-                self?.checkoutEvents = nil
-                self?.checkoutSheet = nil
+            }, onTerminal: { [weak self] ended in
+                guard let self, self.checkoutEvents === ended else { return }
+                // Native dismissal/failure can arrive before UIKit starts animating.
+                if let sheet = self.checkoutSheet { self.closingCheckoutSheet = sheet }
+                self.checkoutEvents = nil
+                self.checkoutSheet = nil
             })
             self.checkoutEvents = events
-            guard let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() else {
-                events.checkoutDidDismiss()
+            self.presentWhenReady(checkoutURL, events: events, deadline: ProcessInfo.processInfo.systemUptime + 5)
+        }
+    }
+
+    @MainActor
+    private func presentWhenReady(_ checkoutURL: String, events: CheckoutEventBridge, deadline: TimeInterval) {
+        guard checkoutEvents === events else { return }
+        if let closing = closingCheckoutSheet,
+           closing.presentingViewController != nil || closing.isBeingDismissed || closing.isBeingPresented
+        {
+            guard ProcessInfo.processInfo.systemUptime < deadline else {
+                events.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Timed out waiting for the previous checkout to close")))
                 return
             }
-            self.checkoutSheet = ShopifyCheckoutKit.present(checkout: url, from: viewController, delegate: events)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.016) { [weak self] in
+                self?.presentWhenReady(checkoutURL, events: events, deadline: deadline)
+            }
+            return
         }
+        closingCheckoutSheet = nil
+        guard let url = URL(string: checkoutURL), let viewController = getCurrentViewController() else {
+            events.checkoutDidDismiss()
+            return
+        }
+        checkoutSheet = presentCheckout(url, from: viewController, delegate: events)
+    }
+
+    @MainActor
+    func presentCheckout(_ url: URL, from viewController: UIViewController, delegate: CheckoutEventBridge) -> UIViewController {
+        ShopifyCheckoutKit.present(checkout: url, from: viewController, delegate: delegate)
+    }
+
+    func emitDispatchEvent(_ json: String) {
+        perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
     }
 
     @objc func preload(_ checkoutURL: String, requestId: String) {
@@ -327,10 +370,6 @@ class RCTShopifyCheckoutKit: NSObject {
 // MARK: - Dispatch envelope helpers
 
 extension RCTShopifyCheckoutKit {
-    private func emitDispatchEvent(_ json: String) {
-        perform(NSSelectorFromString("emitOnDispatchFromSwift:"), with: json)
-    }
-
     private func emitPreloadStateChange(requestId: String, state: PreloadState) {
         var event: [String: Any] = ["requestId": requestId]
 

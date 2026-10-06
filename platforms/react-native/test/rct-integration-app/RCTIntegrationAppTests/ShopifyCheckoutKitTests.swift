@@ -525,3 +525,149 @@ private final class DismissTrackingViewController: UIViewController {
         completion?()
     }
 }
+
+extension ShopifyCheckoutKitTests {
+    @MainActor
+    func testPresentDuringProgrammaticDismissWaitsForTheOldSheet() async {
+        let module = PresentationTrackingModule()
+        module.present("https://example.test/first", requestId: "first")
+        await flushPresentationQueue()
+        let oldSheet = module.sheets[0]
+        let oldEvents = module.delegates[0]
+        module.dismiss()
+        module.present("https://example.test/second", requestId: "second")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(oldEvents.requestId, "first")
+
+        let reopened = expectation(description: "new checkout presented after dismissal")
+        module.onPresent = { reopened.fulfill() }
+        oldSheet.finishDismissal()
+        await fulfillment(of: [reopened], timeout: 1)
+        XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/second")
+        XCTAssertTrue(module.events[0].contains("\"requestId\":\"first\""))
+        oldEvents.checkoutDidDismiss()
+        XCTAssertEqual(module.events.count, 1)
+        XCTAssertEqual(module.delegates.last?.requestId, "second")
+    }
+
+    @MainActor
+    func testPresentFromNativeDismissWaitsForTheOldSheet() async {
+        await assertPresentFromTerminalWaits(fail: false)
+    }
+
+    @MainActor
+    func testPresentFromNativeFailureWaitsForTheOldSheet() async {
+        await assertPresentFromTerminalWaits(fail: true)
+    }
+
+    @MainActor
+    private func assertPresentFromTerminalWaits(fail: Bool) async {
+        let module = PresentationTrackingModule()
+        module.present("https://example.test/first", requestId: "first")
+        await flushPresentationQueue()
+        let oldSheet = module.sheets[0]
+        module.onEvent = {
+            module.onEvent = nil
+            module.present("https://example.test/second", requestId: "second")
+        }
+        if fail {
+            module.delegates[0].checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
+        } else {
+            module.delegates[0].checkoutDidDismiss()
+        }
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        let reopened = expectation(description: "terminal callback reopens checkout")
+        module.onPresent = { reopened.fulfill() }
+        oldSheet.finishDismissal()
+        await fulfillment(of: [reopened], timeout: 1)
+        XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/second")
+        XCTAssertEqual(module.delegates.last?.requestId, "second")
+    }
+
+    @MainActor
+    func testDismissCancelsAnIOSPresentationWaitingForTheOldSheet() async {
+        let module = PresentationTrackingModule()
+        module.present("https://example.test/first", requestId: "first")
+        await flushPresentationQueue()
+        module.dismiss()
+        module.present("https://example.test/second", requestId: "second")
+        await flushPresentationQueue()
+        module.dismiss()
+        await flushPresentationQueue()
+        let reopened = expectation(description: "cancelled checkout never opens")
+        reopened.isInverted = true
+        module.onPresent = { reopened.fulfill() }
+        module.sheets[0].finishDismissal()
+        await fulfillment(of: [reopened], timeout: 0.05)
+        XCTAssertEqual(module.events.count, 2)
+        XCTAssertTrue(module.events.contains { $0.contains("\"requestId\":\"second\"") })
+    }
+
+    @MainActor
+    func testPresentWhileActiveOnlyReplacesCallbacks() async {
+        let module = PresentationTrackingModule()
+        module.present("https://example.test/first", requestId: "first")
+        await flushPresentationQueue()
+        module.present("https://example.test/second", requestId: "second")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.delegates[0].requestId, "second")
+    }
+
+    @MainActor
+    private func flushPresentationQueue() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+}
+
+private final class PresentationTrackingModule: RCTShopifyCheckoutKit {
+    var urls: [URL] = []
+    var delegates: [CheckoutEventBridge] = []
+    var sheets: [DeferredDismissViewController] = []
+    var events: [String] = []
+    var onPresent: (() -> Void)?
+    var onEvent: (() -> Void)?
+
+    override func getCurrentViewController(_: UIViewController? = nil) -> UIViewController? {
+        UIViewController()
+    }
+
+    override func presentCheckout(_ url: URL, from _: UIViewController, delegate: CheckoutEventBridge) -> UIViewController {
+        let sheet = DeferredDismissViewController()
+        urls.append(url)
+        delegates.append(delegate)
+        sheets.append(sheet)
+        onPresent?()
+        return sheet
+    }
+
+    override func emitDispatchEvent(_ json: String) {
+        events.append(json)
+        onEvent?()
+    }
+}
+
+private final class DeferredDismissViewController: UIViewController {
+    private let presenter = UIViewController()
+    private var attached = true
+    private var completion: (() -> Void)?
+
+    override var presentingViewController: UIViewController? {
+        attached ? presenter : nil
+    }
+
+    override func dismiss(animated _: Bool, completion: (() -> Void)? = nil) {
+        self.completion = completion
+    }
+
+    func finishDismissal() {
+        attached = false
+        let callback = completion
+        completion = nil
+        callback?()
+    }
+}

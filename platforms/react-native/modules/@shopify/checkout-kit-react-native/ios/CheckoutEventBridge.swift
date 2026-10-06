@@ -33,9 +33,9 @@ func checkoutEventJSON(type: DispatchEventType, checkout: Checkout, requestId: S
 final class CheckoutEventBridge: CheckoutDelegate {
     var requestId: String
     private var dispatch: ((String) -> Void)?
-    private let onTerminal: () -> Void
+    private let onTerminal: (CheckoutEventBridge) -> Void
 
-    init(requestId: String, dispatch: @escaping (String) -> Void, onTerminal: @escaping () -> Void) {
+    init(requestId: String, dispatch: @escaping (String) -> Void, onTerminal: @escaping (CheckoutEventBridge) -> Void) {
         self.requestId = requestId
         self.dispatch = dispatch
         self.onTerminal = onTerminal
@@ -74,7 +74,7 @@ final class CheckoutEventBridge: CheckoutDelegate {
 
     private func finish(_ type: DispatchEventType, payload: [String: Any] = [:]) {
         guard dispatch != nil else { return }
-        onTerminal()
+        onTerminal(self)
         emit(type, payload: payload)
         dispatch = nil
     }

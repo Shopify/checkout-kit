@@ -42,6 +42,8 @@ import type {
 import {preload as preloadCheckout} from './preload';
 
 let presentationSequence = 0;
+// The native SDK owns one sheet across all ShopifyCheckout instances.
+let activePresentation: ShopifyCheckout | undefined;
 
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
@@ -120,7 +122,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
 
   /** Presents checkout with lifecycle callbacks. */
   public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
-    this.releaseDispatchSubscription();
+    activePresentation?.releaseDispatchSubscription();
     let subscription: {remove: () => void} | undefined;
     const requestId = `present-${++presentationSequence}`;
     const {dispatcher} = createPresentDispatcher({
@@ -144,6 +146,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         dispatcher(json);
     });
     this.dispatchSubscription = subscription;
+    activePresentation = this;
     try {
       RNShopifyCheckoutKit.present(checkoutUrl, requestId);
     } catch (error) {
@@ -331,6 +334,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     if (only && this.dispatchSubscription !== only) return;
     const subscription = this.dispatchSubscription;
     this.dispatchSubscription = undefined;
+    if (activePresentation === this) activePresentation = undefined;
     subscription?.remove();
   }
 

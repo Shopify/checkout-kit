@@ -11,10 +11,16 @@ type EventHandlers = CheckoutEventHandlers & {
 
 export function useShopifyEventHandlers(
   name?: string,
-  onCompletedDismiss?: () => void,
+  onCompletedCheckout?: () => void,
 ): EventHandlers {
   const log = createDebugLogger(name ?? '');
   const completed = useRef(false);
+  const finishCheckout = () => {
+    if (completed.current) {
+      completed.current = false;
+      onCompletedCheckout?.();
+    }
+  };
   return {
     onStart: () => {
       completed.current = false;
@@ -26,15 +32,12 @@ export function useShopifyEventHandlers(
       log('onComplete');
     },
     onFail: ({error}) => {
-      completed.current = false;
       log('onFail', error);
+      finishCheckout();
     },
     onDismiss: () => {
       log('onDismiss');
-      if (completed.current) {
-        completed.current = false;
-        onCompletedDismiss?.();
-      }
+      finishCheckout();
     },
     onRenderStateChange: event => log('onRenderStateChange', event),
   };

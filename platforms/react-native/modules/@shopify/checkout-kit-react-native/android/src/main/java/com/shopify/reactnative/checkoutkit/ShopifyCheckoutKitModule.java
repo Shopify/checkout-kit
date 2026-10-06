@@ -1,6 +1,7 @@
 package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
+import android.os.SystemClock;
 import androidx.activity.ComponentActivity;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
@@ -32,6 +33,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   public static Configuration checkoutConfig = new Configuration();
 
+  private static final long PRESENTATION_TIMEOUT_MS = 5000;
+
+  private volatile boolean invalidated;
+
   private CheckoutHandle checkoutSheet;
 
   private WeakReference<CheckoutHandle> closingCheckoutSheet;
@@ -51,8 +56,9 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @Override
   public void invalidate() {
-    releaseCheckoutListener();
+    invalidated = true;
     releaseCheckoutPreload();
+    UiThreadUtil.runOnUiThread(this::releaseCheckoutListener);
     super.invalidate();
   }
 
@@ -78,9 +84,11 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod
   public void present(String checkoutURL, String requestId) {
+    if (invalidated) return;
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       currentActivity.runOnUiThread(() -> {
+        if (invalidated) return;
         CustomCheckoutListener listener = checkoutListener;
         if (checkoutSheet == null || listener == null || listener.isReleased()) {
           releaseCheckoutListener();
@@ -88,7 +96,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           checkoutListener = listener;
         }
         listener.configure(requestId, this::finishCheckoutPresentation);
-        presentCheckout(checkoutURL, (ComponentActivity) currentActivity, listener);
+        presentCheckout(checkoutURL, (ComponentActivity) currentActivity, listener, SystemClock.uptimeMillis() + PRESENTATION_TIMEOUT_MS);
       });
     } else {
       CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
@@ -97,14 +105,19 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     }
   }
 
-  private void presentCheckout(String checkoutURL, ComponentActivity activity, CustomCheckoutListener listener) {
-    if (checkoutListener != listener) return;
+  private void presentCheckout(String checkoutURL, ComponentActivity activity, CustomCheckoutListener listener, long deadline) {
+    if (invalidated || checkoutListener != listener) return;
     CheckoutHandle sheet = ShopifyCheckoutKit.present(checkoutURL, activity, listener);
-    if (checkoutListener != listener) return;
+    if (invalidated || checkoutListener != listener) return;
     if (sheet != null && closingCheckoutSheet != null && sheet == closingCheckoutSheet.get()) {
       // During the close animation the SDK returns the old handle without adopting
-      // this listener. Retry on the UI queue until a new presentation can start.
-      UiThreadUtil.runOnUiThread(() -> presentCheckout(checkoutURL, activity, listener), 16);
+      // this listener. Bound the wait so a stuck native handle cannot retain callbacks forever.
+      if (SystemClock.uptimeMillis() >= deadline) {
+        listener.onCheckoutFailed(new CheckoutFailureEvent(new CheckoutException(
+            CheckoutErrorCode.SDK_ERROR, "Timed out waiting for the previous checkout to close")));
+        return;
+      }
+      UiThreadUtil.runOnUiThread(() -> presentCheckout(checkoutURL, activity, listener, deadline), 16);
       return;
     }
     closingCheckoutSheet = null;

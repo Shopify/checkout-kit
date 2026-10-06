@@ -33,7 +33,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
     func testCompletionDoesNotReleaseCallbacks() throws {
         var events: [String] = []
         var terminalCount = 0
-        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: { terminalCount += 1 })
+        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         let checkout = try checkout()
         bridge.checkoutDidStart(CheckoutStartEvent(checkout: checkout))
         bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout))
@@ -48,7 +48,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
 
     func testFailureUsesErrorEventAndReleasesCallbacks() throws {
         var events: [String] = []
-        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: {})
+        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: { _ in })
         bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
         bridge.checkoutDidDismiss()
         let envelope = try parse(XCTUnwrap(events.first))
@@ -60,7 +60,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
 
     func testReplacingCallbacksRetainsTheNativeSession() throws {
         var events: [String] = []
-        let bridge = CheckoutEventBridge(requestId: "old", dispatch: { events.append($0) }, onTerminal: {})
+        let bridge = CheckoutEventBridge(requestId: "old", dispatch: { events.append($0) }, onTerminal: { _ in })
         bridge.requestId = "new"
         try bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout()))
         XCTAssertEqual(try parse(XCTUnwrap(events.first))["requestId"] as? String, "new")

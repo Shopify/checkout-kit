@@ -280,6 +280,64 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
+  public void testInvalidationCancelsQueuedPresentation() {
+    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+      shopifyCheckoutKitModule.present("https://example.com/checkout", "queued");
+      verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
+      shopifyCheckoutKitModule.invalidate();
+      runnableCaptor.getValue().run();
+      shadowOf(Looper.getMainLooper()).idle();
+      shopifyCheckoutKitModule.present("https://example.com/checkout", "after-invalidation");
+      nativeKit.verifyNoInteractions();
+      assertThat(shopifyCheckoutKitModule.dispatchEvents).isEmpty();
+    }
+  }
+
+  @Test
+  public void testStuckClosingHandleFailsOnceAndStopsRetrying() {
+    assertStopsWaitingForClosingHandle(false);
+  }
+
+  @Test
+  public void testInvalidationCancelsPendingPresentationRetry() {
+    assertStopsWaitingForClosingHandle(true);
+  }
+
+  private void assertStopsWaitingForClosingHandle(boolean invalidate) {
+    doAnswer(invocation -> {
+      ((Runnable) invocation.getArgument(0)).run();
+      return null;
+    }).when(mockComponentActivity).runOnUiThread(any());
+    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+      CheckoutHandle closing = mock(CheckoutHandle.class);
+      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+          .thenReturn(closing);
+      shopifyCheckoutKitModule.present("https://example.com/first", "first");
+      shopifyCheckoutKitModule.dismiss();
+      shadowOf(Looper.getMainLooper()).idle();
+      shopifyCheckoutKitModule.present("https://example.com/second", "second");
+      if (invalidate) shopifyCheckoutKitModule.invalidate();
+      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
+      if (invalidate) {
+        assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
+      } else {
+        assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
+        assertThat(shopifyCheckoutKitModule.dispatchEvents.get(1))
+            .contains("\"type\":\"fail\"", "\"requestId\":\"second\"", "sdk_error");
+      }
+      nativeKit.clearInvocations();
+      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
+      nativeKit.verifyNoInteractions();
+      if (!invalidate) {
+        nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+            .thenReturn(mock(CheckoutHandle.class));
+        shopifyCheckoutKitModule.present("https://example.com/third", "third");
+        nativeKit.verify(() -> ShopifyCheckoutKit.present(eq("https://example.com/third"), eq(mockComponentActivity), any()));
+      }
+    }
+  }
+
+  @Test
   public void testCanPreloadCheckout() {
     try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
         .mockStatic(ShopifyCheckoutKit.class)) {
