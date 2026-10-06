@@ -17,6 +17,8 @@ export type {
   ShopifyCheckoutUpdateEventDetail,
   ShopifyCheckoutCompleteEventDetail,
   ShopifyCheckoutErrorEventDetail,
+  ShopifyCheckoutBlockedEventDetail,
+  CheckoutBlockedCode,
   ShopifyCheckoutEventMap,
 } from "./checkout-events";
 

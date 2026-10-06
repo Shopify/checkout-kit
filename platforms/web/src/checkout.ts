@@ -516,7 +516,7 @@ export class ShopifyCheckout
       this.#showBlockedOverlay();
       this.#dispatchingBlocked = true;
       /** @ignore - Events are documented by the class @event tags. */
-      this.dispatchEvent(new ShopifyCheckoutBlockedEvent());
+      this.dispatchEvent(new ShopifyCheckoutBlockedEvent({ code: "popup_blocked" }));
       this.#dispatchingBlocked = false;
       return;
     }

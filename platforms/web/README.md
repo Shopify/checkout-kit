@@ -510,7 +510,7 @@ element. Event payloads are available in `event.detail`.
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
 | `error`    | `{error}`      | Checkout could not open or reported a terminal error, exposed as `{code, message}`. An open session closes automatically after this event. |
 | `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
-| `blocked`  | _(none)_       | The browser blocked the checkout window. Fires on every blocked attempt, whether or not the overlay is shown. |
+| `blocked`  | `{code}`       | The browser blocked the checkout window, with `code` set to `"popup_blocked"`. Fires on every blocked attempt, whether or not the overlay is shown. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
 `event.detail.checkout`. It preserves checkout data, including unknown

@@ -403,6 +403,9 @@ describe("<shopify-checkout>", () => {
             checkout.open();
 
             expect(blockedEventSpy).toHaveBeenCalledTimes(1);
+            expect(blockedEventSpy.mock.calls[0]![0].detail).toStrictEqual({
+              code: "popup_blocked",
+            });
           });
         });
 
