@@ -14,23 +14,6 @@ enum CheckoutIdentifier {
         }
     }
 
-    /// Extracts the final portion of the cartID or variantID
-    ///
-    /// Example "gid://shopify/Cart/Z2NwLXVzLWV4YW1wbGU6MDEyMzQ1Njc4OTAxMjM0NTY3ODkw?key=examplekey1234567890"
-    /// Returns "Z2NwLXVzLWV4YW1wbGU6MDEyMzQ1Njc4OTAxMjM0NTY3ODkw?key=examplekey1234567890"
-    ///
-    /// See: https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/cart/manage#cart-id
-    func getTokenComponent() -> String {
-        switch self {
-        case let .cart(cartID):
-            return cartID.components(separatedBy: "/").last ?? ""
-        case let .variant(variantID, _):
-            return variantID.components(separatedBy: "/").last ?? ""
-        case .invariant:
-            return ""
-        }
-    }
-
     /// Checks for valid ID signature,
     /// Returns .invariant if validation fails
     func isValid() -> Bool {

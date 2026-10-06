@@ -9,8 +9,6 @@ class ProgressBarView: UIView {
         return progressBar
     }()
 
-    private var progressAnimation: UIViewPropertyAnimator?
-
     override init(frame: CGRect) {
         super.init(frame: frame)
 

@@ -243,7 +243,6 @@ final class GraphQLClientTests: XCTestCase {
 
         // Query response types
         _ = StorefrontAPI.CartQueryResponse.self
-        _ = StorefrontAPI.ProductsQueryResponse.self
 
         // Mutation response types
         _ = StorefrontAPI.CartCreateResponse.self

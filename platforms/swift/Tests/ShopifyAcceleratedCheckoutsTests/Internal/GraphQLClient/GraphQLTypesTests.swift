@@ -101,7 +101,6 @@ final class GraphQLTypesTests: XCTestCase {
         XCTAssertEqual(response.data?.user.id, "123")
         XCTAssertEqual(response.data?.user.name, "John Doe")
         XCTAssertNil(response.errors)
-        XCTAssertFalse(response.hasErrors)
     }
 
     func testGraphQLResponseDecodingWithErrors() throws {
@@ -129,7 +128,6 @@ final class GraphQLTypesTests: XCTestCase {
 
         XCTAssertNil(response.data)
         XCTAssertNotNil(response.errors)
-        XCTAssertTrue(response.hasErrors)
         XCTAssertEqual(response.errors?.count, 1)
 
         let error = response.errors?.first
