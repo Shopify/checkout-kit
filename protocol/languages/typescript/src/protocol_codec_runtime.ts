@@ -92,8 +92,10 @@ function walkObject(
   const targetIndex = direction === 'decode' ? 1 : 0;
 
   const entryBySource = new Map<string, RenameEntry>();
+  const sourceByTarget = new Map<string, string>();
   for (const entry of entries ?? []) {
     entryBySource.set(entry[sourceIndex], entry);
+    sourceByTarget.set(entry[targetIndex], entry[sourceIndex]);
   }
 
   const output: JSONRecord = {};
@@ -106,9 +108,15 @@ function walkObject(
     }
     const entry = entryBySource.get(key);
     if (entry) {
-      output[entry[targetIndex]] = walkChild(item, entry[2], direction);
+      setOwnProperty(output, entry[targetIndex], walkChild(item, entry[2], direction));
     } else {
-      output[key] = item;
+      // Camel-case aliases are reserved for schema fields, even when the wire
+      // field is absent. Extensions must not overwrite typed checkout values.
+      const source = sourceByTarget.get(key);
+      if (direction === 'decode' && source !== undefined) {
+        throw new ProtocolValidationError(`${modelName}.${source}`, 'invalid_type');
+      }
+      setOwnProperty(output, key, item);
     }
   }
   return output;
@@ -146,9 +154,15 @@ function mapValues(
 ): JSONRecord {
   const output: JSONRecord = {};
   for (const [key, item] of Object.entries(value)) {
-    output[key] = walkChild(item, child, direction);
+    setOwnProperty(output, key, walkChild(item, child, direction));
   }
   return output;
+}
+
+// Assignment invokes Object.prototype.__proto__; define an own data property
+// instead so arbitrary extension and dictionary keys cannot change the prototype.
+function setOwnProperty(output: JSONRecord, key: string, value: unknown): void {
+  Object.defineProperty(output, key, {value, enumerable: true, writable: true, configurable: true});
 }
 
 function walkUnion(

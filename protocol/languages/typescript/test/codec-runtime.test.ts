@@ -252,3 +252,18 @@ function expectValidationError(
     });
   }
 }
+
+
+test('preserves __proto__ dictionary keys through decoding and encoding', () => {
+  const input = {
+    ...wire,
+    ucp: {version: '2026-01-11', payment_handlers: JSON.parse('{"__proto__":[{"available_instruments":[]}]}')},
+  };
+  const decoded = decodeProtocolObject(input, 'Checkout') as typeof input & {
+    ucp: {paymentHandlers: Record<string, unknown>};
+  };
+  expect(Object.getPrototypeOf(decoded.ucp.paymentHandlers)).toBe(Object.prototype);
+  expect(Object.prototype.hasOwnProperty.call(decoded.ucp.paymentHandlers, '__proto__')).toBe(true);
+  expect(decoded.ucp.paymentHandlers.__proto__).toEqual([{availableInstruments: []}]);
+  expect(encodeProtocolObject(decoded, 'Checkout')).toEqual(input);
+});
