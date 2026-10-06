@@ -139,6 +139,8 @@ export const AcceleratedCheckoutButtons: React.FC<
   onUpdate,
   onComplete,
   onRenderStateChange,
+  onLinkClick,
+  linkAction = 'open',
   ...props
 }) => {
   const isCart = isCartProps(props);
@@ -170,9 +172,9 @@ export const AcceleratedCheckoutButtons: React.FC<
   const {dispatcher} = useMemo(
     () =>
       createPresentDispatcher({
-        callbacks: {onStart, onUpdate, onComplete, onFail},
+        callbacks: {onStart, onUpdate, onComplete, onFail, onLinkClick},
       }),
-    [onStart, onUpdate, onComplete, onFail],
+    [onStart, onUpdate, onComplete, onFail, onLinkClick],
   );
 
   const handleDispatch = useCallback(
@@ -239,6 +241,7 @@ export const AcceleratedCheckoutButtons: React.FC<
       cornerRadius={cornerRadius}
       wallets={wallets}
       onDismiss={handleDismiss}
+      linkAction={linkAction}
       onRenderStateChange={handleRenderStateChange}
       onDispatch={handleDispatch}
       onSizeChange={handleSizeChange}

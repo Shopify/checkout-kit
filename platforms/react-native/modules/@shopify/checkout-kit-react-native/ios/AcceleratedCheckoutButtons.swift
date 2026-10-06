@@ -99,6 +99,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         }
     }
 
+    @objc var linkAction: String = "open"
     @objc var onDismiss: RCTDirectEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
     @objc var onDispatch: RCTDirectEventBlock?
@@ -226,6 +227,11 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
             .onStart { [weak self] event in self?.dispatchCheckout(.start, checkout: event.checkout) }
             .onUpdate { [weak self] event in self?.dispatchCheckout(.update, checkout: event.checkout) }
             .onComplete { [weak self] event in self?.dispatchCheckout(.complete, checkout: event.checkout) }
+            .onLinkClick { [weak self] link in
+                guard let self else { return .cancel }
+                self.dispatchEvent(.linkClick, payload: ShopifyEventSerialization.serialize(clickEvent: link.url))
+                return checkoutLinkAction(self.linkAction)
+            }
             .onFail { [weak self] error in
                 self?.handleCheckoutFailed(error)
             }

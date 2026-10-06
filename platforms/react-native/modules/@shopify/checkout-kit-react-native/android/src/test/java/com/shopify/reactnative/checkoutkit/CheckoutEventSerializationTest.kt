@@ -1,5 +1,6 @@
 package com.shopify.reactnative.checkoutkit
 
+import android.net.Uri
 import com.shopify.checkoutkit.*
 import kotlinx.serialization.json.*
 import org.assertj.core.api.Assertions.assertThat
@@ -40,6 +41,22 @@ class CheckoutEventSerializationTest {
         listener.onCheckoutUpdated(CheckoutUpdateEvent(checkout))
         assertThat(events.map { Json.parseToJsonElement(it).jsonObject["type"]?.jsonPrimitive?.content })
             .containsExactly("start", "update", "complete", "dismiss")
+    }
+
+    @Test
+    fun `link policy returns synchronously and also notifies JS`() {
+        val constructor = CheckoutLink::class.java.getDeclaredConstructor(Uri::class.java)
+        constructor.isAccessible = true
+        val link = constructor.newInstance(Uri.parse("https://example.test/policy"))
+        listOf("open" to CheckoutLinkAction.Open, "handled" to CheckoutLinkAction.Handled, "cancel" to CheckoutLinkAction.Cancel).forEach { (action, expected) ->
+            val events = mutableListOf<String>()
+            val listener = CustomCheckoutListener(DispatchCallback { events.add(it) })
+            listener.configure(action) {}
+            assertThat(listener.onCheckoutLinkClicked(link)).isEqualTo(expected)
+            val envelope = Json.parseToJsonElement(events.single()).jsonObject
+            assertThat(envelope["type"]?.jsonPrimitive?.content).isEqualTo("linkClick")
+            assertThat(envelope["payload"]?.jsonObject?.get("url")?.jsonPrimitive?.content).isEqualTo("https://example.test/policy")
+        }
     }
 
 }

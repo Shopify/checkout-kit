@@ -56,7 +56,11 @@ export interface Spec extends TurboModule {
   readonly onDispatch: CodegenTypes.EventEmitter<string>;
   readonly onPreloadStateChange: CodegenTypes.EventEmitter<string>;
 
-  present(checkoutUrl: string, onResult: (accepted: boolean) => void): void;
+  present(
+    checkoutUrl: string,
+    linkAction: string,
+    onResult: (accepted: boolean) => void,
+  ): void;
   preload(checkoutUrl: string, requestId: string): void;
   dismiss(): void;
   invalidateCache(): void;

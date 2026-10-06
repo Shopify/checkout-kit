@@ -4,6 +4,7 @@ import type {
   CheckoutEventHandlers,
   RenderStateChangeEvent,
 } from '@shopify/checkout-kit-react-native';
+import {Linking} from 'react-native';
 
 type EventHandlers = CheckoutEventHandlers & {
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
@@ -40,5 +41,10 @@ export function useShopifyEventHandlers(
       finishCheckout();
     },
     onRenderStateChange: event => log('onRenderStateChange', event),
+    linkAction: 'handled',
+    onLinkClick: async ({url}) => {
+      log('onLinkClick');
+      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
+    },
   };
 }

@@ -18,11 +18,12 @@ public final class DispatchEventTypes {
   public static final String UPDATE = "update";
   public static final String COMPLETE = "complete";
   public static final String DISMISS = "dismiss";
+  public static final String LINK_CLICK = "linkClick";
   public static final String FAIL = "fail";
   public static final String GEOLOCATION_REQUEST = "geolocationRequest";
 
   public static final List<String> ALL = Collections.unmodifiableList(
-      Arrays.asList(START, UPDATE, COMPLETE, DISMISS, FAIL, GEOLOCATION_REQUEST));
+      Arrays.asList(START, UPDATE, COMPLETE, DISMISS, FAIL, LINK_CLICK, GEOLOCATION_REQUEST));
 
   private DispatchEventTypes() {}
 }

@@ -20,9 +20,12 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
+  private CheckoutLinkAction linkAction = CheckoutLinkAction.Open;
   private Runnable onTerminal = () -> {};
 
-  public void setOnTerminal(Runnable onTerminal) {
+  public void configure(String action, Runnable onTerminal) {
+    this.linkAction = "handled".equals(action) ? CheckoutLinkAction.Handled
+        : "cancel".equals(action) ? CheckoutLinkAction.Cancel : CheckoutLinkAction.Open;
     this.onTerminal = onTerminal;
   }
 
@@ -147,6 +150,19 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   @Override
   public void onCheckoutCompleted(CheckoutCompleteEvent event) {
     emitCheckout(DispatchEventTypes.COMPLETE, event.getCheckout());
+  }
+
+  @Override
+  public CheckoutLinkAction onCheckoutLinkClicked(CheckoutLink link) {
+    if (dispatch.isReleased()) return CheckoutLinkAction.Cancel;
+    try {
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("url", link.getUrl().toString());
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.LINK_CLICK, payload));
+    } catch (IOException e) {
+      Log.e(TAG, "Error emitting link click event", e);
+    }
+    return linkAction;
   }
 
   private void emitCheckout(String type, Checkout checkout) {

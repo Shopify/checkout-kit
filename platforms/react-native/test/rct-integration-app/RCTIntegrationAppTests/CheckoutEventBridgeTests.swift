@@ -5,6 +5,18 @@ import XCTest
 
 @MainActor
 final class CheckoutEventBridgeTests: XCTestCase {
+    func testLinkActionNotifiesAndReturnsSynchronousPolicy() throws {
+        for action in ["open", "handled", "cancel"] {
+            var events: [String] = []
+            let bridge = CheckoutEventBridge(linkAction: action, dispatch: { events.append($0) }, onTerminal: { _ in })
+            let link = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.test/policy")))
+            XCTAssertEqual(bridge.checkoutAction(for: link), checkoutLinkAction(action))
+            let envelope = try parse(XCTUnwrap(events.first))
+            XCTAssertEqual(envelope["type"] as? String, "linkClick")
+            XCTAssertEqual((envelope["payload"] as? [String: String])?["url"], "https://example.test/policy")
+        }
+    }
+
     private func checkout() throws -> Checkout {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -32,7 +44,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
     func testCompletionDoesNotReleaseCallbacks() throws {
         var events: [String] = []
         var terminalCount = 0
-        let bridge = CheckoutEventBridge(dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
+        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         let checkout = try checkout()
         bridge.checkoutDidStart(CheckoutStartEvent(checkout: checkout))
         bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout))
@@ -47,7 +59,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
 
     func testFailureUsesErrorEventAndReleasesCallbacks() throws {
         var events: [String] = []
-        let bridge = CheckoutEventBridge(dispatch: { events.append($0) }, onTerminal: { _ in })
+        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in })
         bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
         bridge.checkoutDidDismiss()
         let envelope = try parse(XCTUnwrap(events.first))

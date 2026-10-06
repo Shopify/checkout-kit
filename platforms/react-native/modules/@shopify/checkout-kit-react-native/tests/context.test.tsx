@@ -175,6 +175,7 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      'open',
       expect.any(Function),
     );
   });
@@ -204,6 +205,7 @@ describe('useShopifyCheckout', () => {
     );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      'open',
       expect.any(Function),
     );
   });
@@ -290,6 +292,35 @@ describe('useShopifyCheckout', () => {
     });
 
     expect(NativeModules.ShopifyCheckoutKit.invalidateCache).toHaveBeenCalled();
+  });
+
+  it('forwards the native link policy through the provider present function', () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+
+    act(() => {
+      hookValue.present(checkoutUrl, {
+        linkAction: 'handled',
+        onStart: jest.fn(),
+      });
+    });
+
+    expect(NativeModules.ShopifyCheckoutKit.onDispatch).toHaveBeenCalledWith(
+      expect.any(Function),
+    );
+    expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
+      checkoutUrl,
+      'handled',
+      expect.any(Function),
+    );
   });
 
   it('provides dismiss function', () => {

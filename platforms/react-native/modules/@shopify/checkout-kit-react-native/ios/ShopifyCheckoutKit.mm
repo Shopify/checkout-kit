@@ -18,6 +18,7 @@
 RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
+                  linkAction:(NSString *)linkAction
                   onResult:(RCTResponseSenderBlock)onResult)
 
 RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL
@@ -125,6 +126,8 @@ RCT_EXPORT_VIEW_PROPERTY(applePayLabel, NSString*)
  * Style variant for the Apple Pay button (e.g., "automatic", "black", "white", "whiteOutline").
  */
 RCT_EXPORT_VIEW_PROPERTY(applePayStyle, NSString*)
+
+RCT_EXPORT_VIEW_PROPERTY(linkAction, NSString*)
 
 // React Native reserves topDismiss as a direct event.
 RCT_EXPORT_VIEW_PROPERTY(onDismiss, RCTDirectEventBlock)

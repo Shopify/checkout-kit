@@ -84,6 +84,7 @@ const ShopifyCheckoutKit = {
       'complete',
       'dismiss',
       'fail',
+      'linkClick',
       'geolocationRequest',
     ],
   })),

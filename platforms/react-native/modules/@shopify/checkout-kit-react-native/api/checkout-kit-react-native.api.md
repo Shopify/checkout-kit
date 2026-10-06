@@ -198,11 +198,13 @@ export enum CheckoutErrorCode {
 
 // @public
 export interface CheckoutEventHandlers {
+    linkAction?: CheckoutLinkAction;
     onComplete?: (event: CheckoutCompleteEvent) => void;
     // (undocumented)
     onDismiss?: () => void;
     // (undocumented)
     onFail?: (event: CheckoutFailureEvent) => void;
+    onLinkClick?: (link: CheckoutLink) => void;
     // (undocumented)
     onStart?: (event: CheckoutStartEvent) => void;
     // (undocumented)
@@ -227,6 +229,15 @@ export interface CheckoutFailureEvent {
     // (undocumented)
     error: CheckoutException;
 }
+
+// @public (undocumented)
+export interface CheckoutLink {
+    // (undocumented)
+    url: string;
+}
+
+// @public (undocumented)
+export type CheckoutLinkAction = 'open' | 'handled' | 'cancel';
 
 // @public
 export type CheckoutNativeError = {

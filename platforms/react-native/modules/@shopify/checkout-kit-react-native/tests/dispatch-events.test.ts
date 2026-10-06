@@ -39,7 +39,7 @@ describe('SDK lifecycle event dispatch contract', () => {
       'events missing from js:     nativeOnly',
     );
     expect(() => verifyDispatchEventParity(['dismiss', 'nativeOnly'])).toThrow(
-      'events missing from native: complete, fail, geolocationRequest, start, update',
+      'events missing from native: complete, fail, geolocationRequest, linkClick, start, update',
     );
   });
 });

@@ -125,7 +125,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return subscription;
   }
 
-  /** Presents checkout with lifecycle callbacks. */
+  /** Presents checkout with lifecycle callbacks and a native link policy. */
   public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
     if (ShopifyCheckout.activePresentation) {
       // eslint-disable-next-line no-console
@@ -165,12 +165,16 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     this.dispatchSubscription = subscription;
     ShopifyCheckout.activePresentation = this;
     try {
-      RNShopifyCheckoutKit.present(checkoutUrl, accepted => {
-        // Native can ignore the attempt while the previous sheet is closing.
-        // Release only this attempt, without reporting a checkout dismissal.
-        if (!accepted && subscription)
-          this.releaseDispatchSubscription(subscription);
-      });
+      RNShopifyCheckoutKit.present(
+        checkoutUrl,
+        callbacks?.linkAction ?? 'open',
+        accepted => {
+          // Native can ignore the attempt while the previous sheet is closing.
+          // Release only this attempt, without reporting a checkout dismissal.
+          if (!accepted && subscription)
+            this.releaseDispatchSubscription(subscription);
+        },
+      );
     } catch (error) {
       this.releaseDispatchSubscription(subscription);
       throw error;
@@ -457,5 +461,7 @@ export type {
   CheckoutUpdateEvent,
   CheckoutCompleteEvent,
   CheckoutFailureEvent,
+  CheckoutLink,
+  CheckoutLinkAction,
   CheckoutEventHandlers,
 } from './checkout';

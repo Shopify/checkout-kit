@@ -487,7 +487,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func testFailedPresentDoesNotRetainCheckoutSheet() {
         let presentAttemptCompleted = expectation(description: "present attempt completed")
 
-        shopifyCheckoutKit.present("", onResult: { _ in })
+        shopifyCheckoutKit.present("", linkAction: "open", onResult: { _ in })
 
         DispatchQueue.main.async {
             XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
@@ -594,14 +594,15 @@ extension ShopifyCheckoutKitTests {
     @MainActor
     func testPresentWhileActivePreservesOriginalDelegate() async {
         let module = PresentationTrackingModule()
-        module.attemptPresentation("https://example.test/first")
+        module.attemptPresentation("https://example.test/first", linkAction: "handled")
         await flushPresentationQueue()
         let originalDelegate = module.delegates[0]
-        module.attemptPresentation("https://example.test/second")
+        module.attemptPresentation("https://example.test/second", linkAction: "cancel")
         await flushPresentationQueue()
         XCTAssertEqual(module.urls.count, 1)
         XCTAssertEqual(module.results, [true, false])
         XCTAssertTrue(module.delegates[0] === originalDelegate)
+        XCTAssertEqual(originalDelegate.linkAction, .handled)
         originalDelegate.checkoutDidDismiss()
         XCTAssertEqual(module.events.count, 1)
     }
@@ -622,8 +623,8 @@ private final class PresentationTrackingModule: RCTShopifyCheckoutKit {
     var results: [Bool?] = []
     var onEvent: (() -> Void)?
 
-    func attemptPresentation(_ url: String) {
-        present(url, onResult: { self.results.append($0?.first as? Bool) })
+    func attemptPresentation(_ url: String, linkAction: String = "open") {
+        present(url, linkAction: linkAction, onResult: { self.results.append($0?.first as? Bool) })
     }
 
     override func getCurrentViewController(_: UIViewController? = nil) -> UIViewController? {
