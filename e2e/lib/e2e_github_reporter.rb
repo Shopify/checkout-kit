@@ -11,8 +11,12 @@ class E2EGitHubReporter
   COMMENT_MARKER = "<!-- checkout-kit-e2e-report -->"
   TOPHAT_INSTALL_BASE = "http://localhost:29070/install/bitrise-branch"
   EXECUTE_STAGE_NAME = "e2e-execute-browserstack-run"
+  PIPELINE_CHECKS = {
+    "E2E" => "ci/bitrise/e2e/pr",
+    "iOS CI" => "ci/bitrise/ci-ios/pr"
+  }.freeze
 
-  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil)
+  def initialize(results, repository:, sha:, pr_number:, branch: nil, token: nil, app_slug: nil, targets: [], expected: nil, run_plan: [], stages: nil, pipeline_url: nil, client: nil)
     @results = results
     @repository = repository
     @sha = sha
@@ -25,9 +29,12 @@ class E2EGitHubReporter
     @run_plan = run_plan || []
     @stages = stages
     @pipeline_url = pipeline_url
+    @pipeline_urls = {"E2E" => pipeline_url}
+    @client = client
   end
 
   def publish!
+    load_pipeline_urls
     client.post_json("/repos/#{@repository}/check-runs", check_run_payload)
     sync_comment
   end
@@ -47,7 +54,7 @@ class E2EGitHubReporter
   end
 
   def comment_body
-    [COMMENT_MARKER, tophat_install_markdown, markdown_summary].compact.join("\n\n")
+    [COMMENT_MARKER, pipeline_builds_markdown, tophat_install_markdown, markdown_summary].compact.join("\n\n")
   end
 
   def markdown_summary
@@ -87,6 +94,39 @@ class E2EGitHubReporter
   end
 
   private
+
+  def load_pipeline_urls
+    PIPELINE_CHECKS.each do |label, check_name|
+      next unless blank?(@pipeline_urls[label])
+
+      @pipeline_urls[label] = pipeline_check_url(check_name)
+    end
+  end
+
+  def pipeline_check_url(check_name)
+    # Native Bitrise checks have pipeline URLs as soon as the build is queued.
+    # Use this report's commit, not the PR's current head, which may have moved.
+    query = URI.encode_www_form(check_name: check_name, filter: "latest", per_page: 100)
+    response = client.get("/repos/#{@repository}/commits/#{@sha}/check-runs?#{query}")
+    check = response.fetch("check_runs").select do |candidate|
+      candidate["name"] == check_name && candidate["head_sha"] == @sha && candidate.dig("app", "slug") == "bitrise"
+    end.max_by { |candidate| candidate.fetch("id") }
+    check && check["details_url"]
+  rescue StandardError => error
+    # Extra navigation must not prevent publishing the test results.
+    warn "Unable to look up #{check_name} pipeline URL: #{error.message}"
+    nil
+  end
+
+  def pipeline_builds_markdown
+    links = PIPELINE_CHECKS.keys.filter_map do |label|
+      url = @pipeline_urls[label]
+      "[#{label}](#{url})" unless blank?(url)
+    end
+    return nil if links.empty?
+
+    ["## Bitrise builds", links.join(" · ")].join("\n\n")
+  end
 
   def results_table
     lines = []
