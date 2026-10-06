@@ -513,8 +513,10 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
             spyController.presentCalledWith, redirectURL, "Should present with redirect URL"
         )
 
-        // Note: We can't easily verify that cartRemovePersonalData was NOT called
-        // But we can verify the happy path behavior
+        let mutations = await spyController.recordingStorefront.mutations
+        XCTExpectFailure("Successful submission loses its origin while transitioning through completed") {
+            XCTAssertEqual(mutations, [], "Successful submission must not mutate the completed cart")
+        }
     }
 
     func test_onPresentingCheckoutKit_withNonCartSubmittedState_shouldCallPresentSuccessfully() async throws {
@@ -536,6 +538,15 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
         XCTAssertEqual(mockController.presentCallCount, 1, "Should call present")
         XCTAssertEqual(mockController.presentCalledWith, url, "Should present with correct URL")
+    }
+
+    func test_fallback_removesPersonalDataAndRestoresCustomerBeforePresentation() async throws {
+        try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
+        try await delegate.transition(to: .completed)
+
+        let mutations = await mockController.recordingStorefront.mutations
+        XCTAssertEqual(mutations, ["removePersonalData", "updateBuyerIdentity"])
+        XCTAssertEqual(mockController.presentCallCount, 1)
     }
 
     // MARK: - CheckoutURL Assignment Tests
@@ -666,17 +677,14 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     private class MockPayController: PayController {
         var cart: StorefrontAPI.Types.Cart?
+        let recordingStorefront = RecordingStorefrontAPI()
         var storefront: StorefrontAPIProtocol
 
         var presentCallCount = 0
         var presentCalledWith: URL?
 
         init() {
-            let config = ShopifyAcceleratedCheckouts.Configuration.testConfiguration
-            storefront = StorefrontAPI(
-                storefrontDomain: config.storefrontDomain,
-                storefrontAccessToken: config.storefrontAccessToken
-            )
+            storefront = recordingStorefront
         }
 
         func present(url: URL) async throws {
@@ -687,16 +695,13 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     private class FailingMockPayController: PayController {
         var cart: StorefrontAPI.Types.Cart?
+        let recordingStorefront = RecordingStorefrontAPI()
         var storefront: StorefrontAPIProtocol
 
         var presentCallCount = 0
 
         init() {
-            let config = ShopifyAcceleratedCheckouts.Configuration.testConfiguration
-            storefront = StorefrontAPI(
-                storefrontDomain: config.storefrontDomain,
-                storefrontAccessToken: config.storefrontAccessToken
-            )
+            storefront = recordingStorefront
         }
 
         func present(url _: URL) async throws {
@@ -707,22 +712,47 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
     private class SpyPayController: PayController {
         var cart: StorefrontAPI.Types.Cart?
+        let recordingStorefront = RecordingStorefrontAPI()
         var storefront: StorefrontAPIProtocol
 
         var presentCallCount = 0
         var presentCalledWith: URL?
 
         init() {
-            let config = ShopifyAcceleratedCheckouts.Configuration.testConfiguration
-            storefront = StorefrontAPI(
-                storefrontDomain: config.storefrontDomain,
-                storefrontAccessToken: config.storefrontAccessToken
-            )
+            storefront = recordingStorefront
         }
 
         func present(url: URL) async throws {
             presentCallCount += 1
             presentCalledWith = url
+        }
+    }
+
+    private actor MutationRecorder {
+        var mutations: [String] = []
+
+        func record(_ mutation: String) {
+            mutations.append(mutation)
+        }
+    }
+
+    private final class RecordingStorefrontAPI: MockStorefrontAPI, @unchecked Sendable {
+        private let recorder = MutationRecorder()
+
+        var mutations: [String] {
+            get async { await recorder.mutations }
+        }
+
+        override func cartRemovePersonalData(id _: GraphQLScalars.ID) async throws {
+            await recorder.record("removePersonalData")
+        }
+
+        override func cartBuyerIdentityUpdate(
+            id _: GraphQLScalars.ID,
+            input _: StorefrontAPI.CartBuyerIdentityUpdateInput
+        ) async throws -> StorefrontAPI.Cart {
+            await recorder.record("updateBuyerIdentity")
+            return .testCart
         }
     }
 
