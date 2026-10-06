@@ -1,0 +1,57 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.detekt) apply false
+}
+
+android {
+    namespace = 'com.shopify.test.telemetry'
+    compileSdk = 36
+    defaultConfig {
+        applicationId = 'com.shopify.test.telemetry'
+        minSdk = 23
+        targetSdk = 36
+        testInstrumentationRunner = 'com.shopify.test.telemetry.TelemetryShrinkingTest'
+    }
+    flavorDimensions += 'telemetry'
+    productFlavors {
+        included {
+            dimension = 'telemetry'
+            buildConfigField 'boolean', 'TELEMETRY_INCLUDED', 'true'
+        }
+        excluded {
+            dimension = 'telemetry'
+            buildConfigField 'boolean', 'TELEMETRY_INCLUDED', 'false'
+            proguardFiles 'telemetry-excluded.pro'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            signingConfig = signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    testBuildType = 'release'
+    buildFeatures { buildConfig = true }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 } }
+
+dependencies {
+    implementation project(':lib')
+    implementation libs.androidx.appcompat
+    implementation libs.kotlin.stdlib
+    implementation libs.kotlinx.serialization.json
+}
+
+tasks.matching { it.name.startsWith('pre') && it.name.endsWith('Build') }.configureEach {
+    dependsOn ':lib:verifyPublishedProtocol'
+}

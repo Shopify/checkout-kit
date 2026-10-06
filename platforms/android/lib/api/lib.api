@@ -805,3 +805,8 @@ public final class com/shopify/checkoutkit/Telemetry {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/shopify/checkoutkit/TelemetryBuildConfig {
+	public static final field INSTANCE Lcom/shopify/checkoutkit/TelemetryBuildConfig;
+	public static final fun isIncluded ()Z
+}
+
