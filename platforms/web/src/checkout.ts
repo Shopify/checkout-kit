@@ -127,51 +127,41 @@ const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: st
   ["storefront", { colorScheme: "web_default", branding: "shop" }],
 ]);
 
+// Both slots keep independent fallback content so merchants can replace either state.
+function overlaySlot(blocked: boolean) {
+  const name = blocked ? "overlay-blocked" : "overlay";
+  const actionId = blocked ? "overlay-retry-button" : "overlay-link";
+  return html`<slot name="${safe(name)}">
+    <div class="overlay-content-wrapper">
+      <div class="overlay-content">
+        ${safe(
+          blocked ? "Your browser blocked the checkout window." : "Continue your purchase in the",
+        )}<br />
+        <button class="overlay-focus-button" id="${safe(actionId)}" type="button">
+          ${safe(blocked ? "Open checkout" : "checkout window")}
+        </button>
+      </div>
+      <button class="overlay-close-button" id="${safe(`${name}-close-button`)}">
+        Close
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+          <path
+            d="M15.1 2.3L13.7.9 8 6.6 2.3.9.9 2.3 6.6 8 .9 13.7l1.4 1.4L8 9.4l5.7 5.7 1.4-1.4L9.4 8"
+          />
+        </svg>
+      </button>
+    </div>
+  </slot>`;
+}
+
 const SHADOW_TEMPLATE = createTemplate(html`
   <div id="shopify-element-wrapper">
     <style>
       ${safe(stylesText)}
     </style>
-
     <div class="Shopify-target">
       <dialog class="overlay" id="overlay">
         <div class="overlay-background" part="overlay" id="overlay-background">
-          <slot name="overlay">
-            <div class="overlay-content-wrapper">
-              <div class="overlay-content">
-                Continue your purchase in the <br />
-                <button class="overlay-focus-button" id="overlay-link" type="button">
-                  checkout window
-                </button>
-              </div>
-              <button class="overlay-close-button" id="overlay-close-button">
-                Close
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                  <path
-                    d="M15.1 2.3L13.7.9 8 6.6 2.3.9.9 2.3 6.6 8 .9 13.7l1.4 1.4L8 9.4l5.7 5.7 1.4-1.4L9.4 8"
-                  />
-                </svg>
-              </button>
-            </div>
-          </slot>
-          <slot name="overlay-blocked">
-            <div class="overlay-content-wrapper">
-              <div class="overlay-content">
-                Your browser blocked the checkout window. <br />
-                <button class="overlay-focus-button" id="overlay-retry-button" type="button">
-                  Open checkout
-                </button>
-              </div>
-              <button class="overlay-close-button" id="overlay-blocked-close-button">
-                Close
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                  <path
-                    d="M15.1 2.3L13.7.9 8 6.6 2.3.9.9 2.3 6.6 8 .9 13.7l1.4 1.4L8 9.4l5.7 5.7 1.4-1.4L9.4 8"
-                  />
-                </svg>
-              </button>
-            </div>
-          </slot>
+          ${overlaySlot(false)}${overlaySlot(true)}
         </div>
       </dialog>
     </div>
@@ -423,22 +413,6 @@ export class ShopifyCheckout
     return this.shadowRoot?.querySelector("#overlay-background") ?? undefined;
   }
 
-  get #dialogCloseButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-close-button") ?? undefined;
-  }
-
-  get #dialogButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-link") ?? undefined;
-  }
-
-  get #dialogRetryButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-retry-button") ?? undefined;
-  }
-
-  get #dialogBlockedCloseButtonElement(): HTMLButtonElement | undefined {
-    return this.shadowRoot?.querySelector("#overlay-blocked-close-button") ?? undefined;
-  }
-
   get #targetElement(): HTMLDivElement | undefined {
     return this.shadowRoot?.querySelector(".Shopify-target") ?? undefined;
   }
@@ -517,53 +491,7 @@ export class ShopifyCheckout
 
     const abortController = new AbortController();
 
-    //  Opens a dialog element to act as a scrim over the current window while the popup is open.
-    //  The dialog can be closed by the user, or will close itself when the popup is closed.
-    const dialog = this.#dialogElement;
-    const dialogCloseButton = this.#dialogCloseButtonElement;
-    const dialogButton = this.#dialogButtonElement;
-
-    if (dialog && this.#isDialogVisible()) {
-      delete dialog.dataset.state;
-      dialog.showModal();
-
-      dialogCloseButton?.addEventListener(
-        "click",
-        () => {
-          dialog.close();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      dialog.addEventListener(
-        "close",
-        () => {
-          // `close` fires asynchronously; ignore it if the dialog has since been re-shown
-          if (dialog.open) return;
-          abortController.abort();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      dialogButton?.addEventListener(
-        "click",
-        (event: MouseEvent) => {
-          event.preventDefault();
-          this.#checkoutWindow?.focus();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      abortController.signal.addEventListener("abort", () => {
-        dialog.close();
-      });
-    }
+    this.#showOverlay(abortController);
 
     abortController.signal.addEventListener("abort", () => {
       this.#navigationStartedAt = undefined;
@@ -628,50 +556,42 @@ export class ShopifyCheckout
     return !isElementHidden && !isOverlayHidden;
   }
 
+  #showOverlay(abortController: AbortController, blocked = false): void {
+    const dialog = this.#dialogElement;
+    if (!dialog || !this.#isDialogVisible()) return;
+
+    if (blocked) dialog.dataset.state = "blocked";
+    else delete dialog.dataset.state;
+    dialog.showModal();
+
+    const slot = dialog.querySelector(`slot[name="${blocked ? "overlay-blocked" : "overlay"}"]`);
+    const options = { signal: abortController.signal };
+    slot
+      ?.querySelector(".overlay-close-button")
+      ?.addEventListener("click", () => dialog.close(), options);
+    slot?.querySelector(".overlay-focus-button")?.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        if (blocked) this.open();
+        else this.#checkoutWindow?.focus();
+      },
+      options,
+    );
+    dialog.addEventListener(
+      "close",
+      () => {
+        // `close` fires asynchronously; ignore it if the dialog has since been re-shown.
+        if (!dialog.open) abortController.abort();
+      },
+      options,
+    );
+    abortController.signal.addEventListener("abort", () => dialog.close());
+  }
+
   #showBlockedOverlay(): void {
     const abortController = new AbortController();
-    const dialog = this.#dialogElement;
-
-    if (dialog && this.#isDialogVisible()) {
-      dialog.dataset.state = "blocked";
-      dialog.showModal();
-
-      this.#dialogRetryButtonElement?.addEventListener(
-        "click",
-        () => {
-          this.open();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      this.#dialogBlockedCloseButtonElement?.addEventListener(
-        "click",
-        () => {
-          dialog.close();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      dialog.addEventListener(
-        "close",
-        () => {
-          // `close` fires asynchronously; ignore it if the dialog has since been re-shown
-          if (dialog.open) return;
-          abortController.abort();
-        },
-        {
-          signal: abortController.signal,
-        },
-      );
-
-      abortController.signal.addEventListener("abort", () => {
-        if (dialog.open) dialog.close();
-      });
-    }
+    this.#showOverlay(abortController, true);
 
     abortController.signal.addEventListener("abort", () => {
       this.#blockedOpen = null;
