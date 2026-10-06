@@ -114,6 +114,8 @@ jobs:
               - '.github/workflows/ci.yml'
             scripts:
               - '.github/scripts/measure-package-size'
+              - '.github/scripts/measure-swift-size'
+              - '.github/scripts/swift_bundle_size_test.py'
               - '.github/scripts/*bundle-size*'
               - '.github/workflows/package-size.yml'
               - '.github/workflows/bundle-size-budgets.yml'
@@ -251,6 +253,7 @@ jobs:
         with:
           ruby-version: .ruby-version
       - run: node --test .github/scripts/*bundle-size*.test.cjs
+      - run: python3 .github/scripts/swift_bundle_size_test.py
       - run: ./scripts/test_ruby
       - run: ./e2e/scripts/check_hide_keyboard_usage
 

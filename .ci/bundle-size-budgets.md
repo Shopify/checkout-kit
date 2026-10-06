@@ -27,6 +27,28 @@ budget includes the wrapper's JavaScript outputs, sources, declarations, source
 maps, native bridge sources, and bundled protocol; separately resolved native SDKs
 are excluded. These budgets measure package size, not the final consumer app size.
 
+Swift budgets the **incremental uncompressed app size** of a fixed integration.
+The [size fixture](../platforms/swift/SizeFixture/README.md) builds the same app
+without the SDK, with core Checkout Kit, and with core plus Accelerated Checkouts.
+Both SDK measurements subtract the empty app, including linked dependencies and
+resources. The accelerated measurement includes core; it is not added to the core
+measurement. Full app sizes are also reported for context.
+
+Measurements use unsigned, stripped Release arm64 builds with Xcode 26.2 (17C52)
+and an iOS 16 deployment target. The same fixture and toolchain are used for both
+PR revisions, even when the base predates the fixture. These are regression metrics
+for representative API usage, not App Store download/install estimates or the
+exact increase in every merchant app. Toolchain or fixture changes may require
+recalibrating the limits.
+
+Initial limits leave approximately 9–12% headroom before acceptance is required
+and 24–25% before a budget change is required:
+
+| Swift integration | Initial measured size | Soft limit | Hard limit |
+| --- | --- | --- | --- |
+| Core Checkout Kit | 1283.56 KiB | 1400 KiB | 1600 KiB |
+| Core + Accelerated Checkouts | 2420.25 KiB | 2700 KiB | 3000 KiB |
+
 ## Accepting an increase
 
 The **Size budgets** check combines all configured metrics for affected platforms:
@@ -52,6 +74,7 @@ actor, and a link to the reason. Multiple commands may share one comment:
 ```text
 /accept-size web Includes the new checkout capability.
 /accept-size android Includes its native implementation.
+/accept-size swift Includes the native wallet integration.
 ```
 
 Every breached metric must be satisfied before the aggregate check passes.
@@ -76,6 +99,8 @@ for the updated report. Expired measurement artifacts also require a rerun.
 | `web` | `package` | Whole compressed npm tarball |
 | `react-native` | `package` | Whole compressed wrapper npm tarball |
 | `android` | `package` | Whole compressed release AAR |
+| `swift` | `core` | Core fixture app minus empty app, uncompressed |
+| `swift` | `accelerated` | Core + Accelerated fixture app minus empty app, uncompressed |
 
 With `measurement: "package"`, an optional `file` selects that exact file's
 **uncompressed** size inside the package. Paths are relative to the published
@@ -100,8 +125,8 @@ Budget names such as `entryPoint` are labels; the selector fields determine what
 is measured, and the PR report displays that scope explicitly.
 
 Unknown platforms, measurements, units, and invalid limits fail configuration
-validation. Adding a new measurement (for example a Swift framework) requires a
-reproducible collector in `measure-package-size`, its changed-path detection and
+validation. Adding a new measurement requires a
+reproducible collector, its changed-path detection and
 build setup in `package-size.yml`, and an adapter in `bundle-size-budgets.cjs`.
 The evaluator, comment commands, and aggregate check need no platform-specific policy.
 
@@ -109,6 +134,10 @@ The evaluator, comment commands, and aggregate check need no platform-specific p
 
 **Package Size** builds the explicit PR head and base SHAs with a read-only token,
 including on drafts. It uploads measurements and the informational file breakdown.
+Swift runs in a conditional macOS job; the Linux and Swift measurements are combined
+before publishing a single report. Swift, protocol, telemetry, package pins, fixture,
+and measurement infrastructure changes trigger the Swift job. Base measurement
+failures are reported as unavailable; head failures fail the workflow.
 **Bundle Size Budgets** runs trusted default-branch code to read that data, check
 commenter permissions, and publish the report and **Size budgets** check. It never
 executes code from a PR in the job with write permissions. Saved acceptances are

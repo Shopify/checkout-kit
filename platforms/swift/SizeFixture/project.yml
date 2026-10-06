@@ -1,0 +1,60 @@
+name: SizeFixture
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "26.2"
+  projectFormat: xcode16_0
+packages:
+  CheckoutKit:
+    path: ${CHECKOUT_KIT_PACKAGE_ROOT}
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    PRODUCT_NAME: SizeFixture
+    PRODUCT_MODULE_NAME: SizeFixture
+    PRODUCT_BUNDLE_IDENTIFIER: com.example.checkoutkit.sizefixture
+    SWIFT_VERSION: "6.0"
+    SWIFT_OPTIMIZATION_LEVEL: -O
+    SWIFT_COMPILATION_MODE: wholemodule
+    DEAD_CODE_STRIPPING: YES
+    DEPLOYMENT_POSTPROCESSING: YES
+    STRIP_INSTALLED_PRODUCT: YES
+    COPY_PHASE_STRIP: YES
+    DEBUG_INFORMATION_FORMAT: dwarf
+    CODE_SIGNING_ALLOWED: NO
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+    TARGETED_DEVICE_FAMILY: "1,2"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targetTemplates:
+  Fixture:
+    type: application
+    platform: iOS
+    sources: [App.swift]
+    scheme:
+      management:
+        shared: true
+targets:
+  Baseline:
+    templates: [Fixture]
+  Core:
+    templates: [Fixture]
+    settings:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: CHECKOUT_KIT
+    dependencies:
+      - package: CheckoutKit
+        product: ShopifyCheckoutKit
+  Accelerated:
+    templates: [Fixture]
+    settings:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: CHECKOUT_KIT ACCELERATED_CHECKOUTS
+    dependencies:
+      - package: CheckoutKit
+        product: ShopifyCheckoutKit
+      - package: CheckoutKit
+        product: ShopifyAcceleratedCheckouts

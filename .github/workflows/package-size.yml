@@ -18,11 +18,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
+      baseSha: ${{ steps.base.outputs.sha }}
+      swift: ${{ steps.package.outputs.swift == 'true' || steps.package.outputs.packageSwift == 'true' || steps.package.outputs.protocolSwift == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.swift == 'true' }}
       android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocolKotlin == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
       reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.reactNative == 'true' }}
       web: ${{ steps.package.outputs.web == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve current PR base
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: base
+        with:
+          script: |
+            const {data: pr} = await github.rest.pulls.get({
+              ...context.repo, pull_number: context.issue.number,
+            });
+            core.setOutput('sha', pr.base.sha);
 
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: package
@@ -34,6 +46,17 @@ jobs:
         id: infra
         with:
           filters: |
+            swift:
+              - '.github/scripts/measure-swift-size'
+              - '.github/scripts/measure-package-size'
+              - '.github/scripts/*bundle-size*'
+              - '.github/scripts/swift_bundle_size_test.py'
+              - '.ci/bundle-size-budgets.json'
+              - '.github/workflows/bundle-size-budgets.yml'
+              - '.ci/changed-file-filters.yml'
+              - '.github/workflows/package-size.yml'
+              - '.github/actions/setup-mint/**'
+              - 'scripts/swift_mint'
             android:
               - '.github/scripts/measure-package-size'
               - '.github/scripts/*bundle-size*'
@@ -73,20 +96,10 @@ jobs:
       - name: Check budget policy
         run: node --test .github/scripts/*bundle-size*.test.cjs
 
-      - name: Resolve current PR base
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        id: base
-        with:
-          script: |
-            const {data: pr} = await github.rest.pulls.get({
-              ...context.repo, pull_number: context.issue.number,
-            });
-            core.setOutput('sha', pr.base.sha);
-
       - name: Checkout PR base
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.base.outputs.sha }}
+          ref: ${{ needs.changes.outputs.baseSha }}
           path: .package-size-base
           submodules: true
           persist-credentials: false
@@ -151,6 +164,92 @@ jobs:
           MEASURE_WEB: ${{ needs.changes.outputs.web }}
         run: .github/scripts/measure-package-size collect /tmp/package-size-head.tsv
 
+      - name: Upload package measurements
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-size-linux
+          path: /tmp/package-size-*.tsv
+          if-no-files-found: error
+          retention-days: 1
+
+  measure-swift:
+    name: Measure Swift App Size
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: true
+          persist-credentials: false
+
+      - name: Checkout PR base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.changes.outputs.baseSha }}
+          path: .package-size-base
+          submodules: true
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-mint
+
+      - name: Check Swift collector
+        run: python3 .github/scripts/swift_bundle_size_test.py
+
+      - name: Measure base Swift sizes with the current fixture
+        continue-on-error: true
+        env:
+          PACKAGE_SIZE_REPO_ROOT: ${{ github.workspace }}/.package-size-base
+        run: python3 .github/scripts/measure-swift-size /tmp/swift-size-base.tsv
+
+      - name: Measure head Swift sizes
+        run: python3 .github/scripts/measure-swift-size /tmp/swift-size-head.tsv
+
+      - name: Ensure a base report exists
+        run: touch /tmp/swift-size-base.tsv
+
+      - name: Upload Swift measurements
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-size-swift
+          path: /tmp/swift-size-*.tsv
+          if-no-files-found: error
+          retention-days: 1
+
+  report:
+    name: Assemble Size Report
+    needs: [changes, measure, measure-swift]
+    if: >-
+      !cancelled() && needs.measure.result == 'success' &&
+      (needs.measure-swift.result == 'success' || needs.measure-swift.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: package-size-*
+          path: /tmp/size-inputs
+
+      - name: Combine platform measurements
+        env:
+          MEASURE_SWIFT: ${{ needs.changes.outputs.swift }}
+        run: |
+          cp /tmp/size-inputs/package-size-linux/package-size-base.tsv /tmp/package-size-base.tsv
+          cp /tmp/size-inputs/package-size-linux/package-size-head.tsv /tmp/package-size-head.tsv
+          if [[ "$MEASURE_SWIFT" == "true" ]]; then
+            cat /tmp/size-inputs/package-size-swift/swift-size-base.tsv >> /tmp/package-size-base.tsv
+            cat /tmp/size-inputs/package-size-swift/swift-size-head.tsv >> /tmp/package-size-head.tsv
+          fi
+
       - name: Render package size comment
         run: |
           touch /tmp/package-size-base.tsv
@@ -158,7 +257,8 @@ jobs:
 
       - name: Prepare budget report
         env:
-          BASE_SHA: ${{ steps.base.outputs.sha }}
+          MEASURE_SWIFT: ${{ needs.changes.outputs.swift }}
+          BASE_SHA: ${{ needs.changes.outputs.baseSha }}
           MEASURE_ANDROID: ${{ needs.changes.outputs.android }}
           MEASURE_REACT_NATIVE: ${{ needs.changes.outputs.reactNative }}
           MEASURE_WEB: ${{ needs.changes.outputs.web }}

@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Measure a fixed consumer's unsigned Release arm64 app-size increase."""
+
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+VARIANTS = {"Baseline": "baseline", "Core": "core", "Accelerated": "accelerated"}
+XCODE_VERSION = "Xcode 26.2\nBuild version 17C52"
+
+
+def bundle_bytes(bundle):
+    if not (bundle / "SizeFixture").is_file() or not (bundle / "Info.plist").is_file():
+        raise ValueError(f"Incomplete app bundle: {bundle}")
+    # Logical bytes, independent of filesystem block size. Do not double-count
+    # framework symlinks. Includes compiled SDK resource bundles and frameworks.
+    return sum(file.stat().st_size for file in bundle.rglob("*")
+               if file.is_file() and not file.is_symlink())
+
+
+def measurement_rows(sizes):
+    baseline = sizes["Baseline"]
+    if baseline <= 0:
+        raise ValueError("Empty baseline app")
+    rows = []
+    for variant, metric in VARIANTS.items():
+        size = sizes[variant]
+        rows.append(f"Swift\t{metric} app\t{size}\n")
+        if variant != "Baseline":
+            increment = size - baseline
+            if increment <= 0:
+                raise ValueError(f"{variant} must be larger than the baseline app")
+            rows.append(f"Swift\t{metric} incremental app\t{increment}\n")
+    return "".join(rows)
+
+
+def collect(output):
+    # A failed run must not reuse an older measurement on a persistent runner.
+    output.unlink(missing_ok=True)
+    script_root = Path(__file__).resolve().parents[2]
+    package_root = Path(os.environ.get("PACKAGE_SIZE_REPO_ROOT", script_root)).resolve()
+    version = subprocess.check_output("xcodebuild -version".split(), text=True).strip()
+    if version != XCODE_VERSION:
+        raise ValueError(f"Swift size measurements require {XCODE_VERSION!r}; found {version!r}")
+    # Always use this revision's fixture for both SDK revisions, even when the
+    # base predates the fixture. Copy generated files outside either checkout.
+    with tempfile.TemporaryDirectory(prefix="checkout-kit-swift-size-") as temporary:
+        work = Path(temporary)
+        fixture = work / "fixture"
+        shutil.copytree(script_root / "platforms/swift/SizeFixture", fixture)
+        # SwiftPM derives resource bundle identifiers from the package directory
+        # name. Give both revisions the same identity regardless of checkout path.
+        package_link = work / "checkout-kit"
+        package_link.symlink_to(package_root, target_is_directory=True)
+        env = {**os.environ, "CHECKOUT_KIT_PACKAGE_ROOT": str(package_link)}
+        subprocess.run([
+            str(script_root / "scripts/swift_mint"), "run", "xcodegen", "xcodegen",
+            "generate", "--spec", str(fixture / "project.yml"), "--quiet",
+        ], cwd=script_root / "platforms/swift", env=env, check=True)
+        project = fixture / "SizeFixture.xcodeproj"
+        pins = project / "project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+        pins.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(package_root / "Package.resolved", pins)
+        sizes = {}
+        for variant in VARIANTS:
+            # Separate products directories prevent a prior variant's resources
+            # from leaking into the next bundle (all have the same product name).
+            derived = work / variant
+            subprocess.run([
+                "xcodebuild", "build", "-quiet", "-project", str(project),
+                "-scheme", variant, "-configuration", "Release", "-sdk", "iphoneos",
+                "-destination", "generic/platform=iOS", "-derivedDataPath", str(derived),
+                "-clonedSourcePackagesDirPath", str(work / "SourcePackages"),
+                "-disableAutomaticPackageResolution", "-onlyUsePackageVersionsFromResolvedFile",
+                "ARCHS=arm64", "CODE_SIGNING_ALLOWED=NO",
+            ], check=True)
+            bundle = derived / "Build/Products/Release-iphoneos/SizeFixture.app"
+            archs = subprocess.check_output([
+                "xcrun", "lipo", "-archs", str(bundle / "SizeFixture"),
+            ], text=True).strip()
+            if archs != "arm64":
+                raise ValueError(f"Expected arm64 binary, found {archs}")
+            sizes[variant] = bundle_bytes(bundle)
+            print(f"{variant}: {sizes[variant]} bytes", flush=True)
+        # Publish only after every variant succeeds.
+        output.write_text(measurement_rows(sizes))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit("Usage: measure-swift-size <output.tsv>")
+    collect(Path(sys.argv[1]).resolve())
