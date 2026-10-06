@@ -373,7 +373,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         XCTAssertEqual(delegate.state, .appleSheetPresented)
     }
 
-    func test_startPaymentRequest_withPresentationFailure_shouldTransitionToReset() async throws {
+    func test_startPaymentRequest_withPresentationFailure_shouldResetAndThrow() async throws {
         // Set a valid cart
         mockController.cart = StorefrontAPI.Cart.testCart
 
@@ -381,7 +381,12 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         mockPaymentController.shouldPresentSuccessfully = false
 
         // Transition to startPaymentRequest
-        try await delegate.transition(to: .startPaymentRequest)
+        do {
+            try await delegate.transition(to: .startPaymentRequest)
+            XCTFail("Expected an error when the payment sheet fails to present")
+        } catch let error as ShopifyAcceleratedCheckouts.Error {
+            XCTAssertEqual(error.toString(), "received nil, expected: payment sheet")
+        }
 
         // Should have attempted to present payment sheet but failed
         XCTAssertEqual(mockPaymentController.presentCallCount, 1)
