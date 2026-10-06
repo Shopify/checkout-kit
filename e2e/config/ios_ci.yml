@@ -24,6 +24,30 @@ jobs:
       - packageSwift
       - ciFilters
       - iosCiConfig
+  - id: swift-lint
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
+  - id: swift-podspec-lint
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
+  - id: swift-api-check
+    changed_files_filters:
+      - swift
+      - protocolSwift
+      - protocolShared
+      - packageSwift
+      - ciFilters
+      - iosCiConfig
   # packageSwift mirrors the reactNativeIos infra filter in ci.yml: the sample app
   # resolves the Swift package, so a manifest change rebuilds the React Native apps too.
   - id: react-native-build-ios
@@ -40,5 +64,14 @@ jobs:
       - protocolTypescript
       - protocolShared
       - packageSwift
+      - ciFilters
+      - iosCiConfig
+  # Lints Swift source only, so unlike the two jobs above a Package.swift change
+  # does not select it.
+  - id: react-native-lint-ios
+    changed_files_filters:
+      - reactNative
+      - protocolTypescript
+      - protocolShared
       - ciFilters
       - iosCiConfig

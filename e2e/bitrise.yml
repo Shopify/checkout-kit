@@ -113,6 +113,21 @@ pipelines:
           expression: '{{ enveq "CI_IOS_SWIFT_SAMPLES" "true" }}'
         depends_on:
           - ci-ios-plan
+      ci-ios-swift-lint:
+        run_if:
+          expression: '{{ enveq "CI_IOS_SWIFT_LINT" "true" }}'
+        depends_on:
+          - ci-ios-plan
+      ci-ios-swift-podspec-lint:
+        run_if:
+          expression: '{{ enveq "CI_IOS_SWIFT_PODSPEC_LINT" "true" }}'
+        depends_on:
+          - ci-ios-plan
+      ci-ios-swift-api-check:
+        run_if:
+          expression: '{{ enveq "CI_IOS_SWIFT_API_CHECK" "true" }}'
+        depends_on:
+          - ci-ios-plan
       ci-ios-react-native-build-ios:
         run_if:
           expression: '{{ enveq "CI_IOS_REACT_NATIVE_BUILD_IOS" "true" }}'
@@ -123,14 +138,23 @@ pipelines:
           expression: '{{ enveq "CI_IOS_REACT_NATIVE_TEST_IOS" "true" }}'
         depends_on:
           - ci-ios-plan
+      ci-ios-react-native-lint-ios:
+        run_if:
+          expression: '{{ enveq "CI_IOS_REACT_NATIVE_LINT_IOS" "true" }}'
+        depends_on:
+          - ci-ios-plan
       # No run_if: this workflow is the required check, so it posts on every build,
       # including one where ci-ios-plan selected nothing and every job was skipped.
       ci-ios-report:
         depends_on:
           - ci-ios-swift-package-tests
           - ci-ios-swift-samples
+          - ci-ios-swift-lint
+          - ci-ios-swift-podspec-lint
+          - ci-ios-swift-api-check
           - ci-ios-react-native-build-ios
           - ci-ios-react-native-test-ios
+          - ci-ios-react-native-lint-ios
         should_always_run: workflow
 
   # Deliberately has no target-based triggers. A scheduled build in the Bitrise UI
@@ -207,7 +231,7 @@ step_bundles:
             - paths: platforms/react-native/node_modules
   install-ruby-gems:
     steps:
-      - script@1:
+      - script@1: &ruby_cache_fingerprint_step
           title: Fingerprint Ruby for the gem cache key
           inputs:
             - content: |-
@@ -327,8 +351,12 @@ workflows:
                 CI_IOS_SELECTED_JOBS
                 CI_IOS_SWIFT_PACKAGE_TESTS
                 CI_IOS_SWIFT_SAMPLES
+                CI_IOS_SWIFT_LINT
+                CI_IOS_SWIFT_PODSPEC_LINT
+                CI_IOS_SWIFT_API_CHECK
                 CI_IOS_REACT_NATIVE_BUILD_IOS
                 CI_IOS_REACT_NATIVE_TEST_IOS
+                CI_IOS_REACT_NATIVE_LINT_IOS
 
   ci-ios-swift-package-tests:
     meta:
@@ -390,6 +418,81 @@ workflows:
           inputs:
             - key: *swift_samples_derived_data_cache_key
             - paths: ~/Library/Developer/Xcode/DerivedData
+
+  # The lint and API jobs run no tests, so they boot no simulator.
+  ci-ios-swift-lint:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    steps:
+      - git-clone@8: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Check SwiftLint and SwiftFormat
+          timeout: 1200
+          no_output_timeout: 600
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/swift
+                # pod lib lint is its own job, ci-ios-swift-podspec-lint, so it runs in parallel.
+                ./Scripts/lint check --verbose --skip-pod
+
+  ci-ios-swift-podspec-lint:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    envs:
+      - BUNDLE_GEMFILE: $BITRISE_SOURCE_DIR/platforms/swift/Gemfile
+      - BUNDLE_PATH: $BITRISE_SOURCE_DIR/platforms/swift/vendor/bundle
+    steps:
+      - git-clone@8: {}
+      - script@1: *ruby_cache_fingerprint_step
+      - restore-cache@3:
+          inputs:
+            - key: &swift_ruby_gems_cache_key |-
+                swift-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum ".ruby-cache-fingerprint" }}-{{ checksum "platforms/swift/Gemfile.lock" }}
+      - script@1:
+          title: Install Swift Ruby dependencies
+          inputs:
+            - content: |-
+                set -euo pipefail
+                bundle install
+      - save-cache@1:
+          inputs:
+            - key: *swift_ruby_gems_cache_key
+            - paths: platforms/swift/vendor/bundle
+      - script@1:
+          title: Lint the CocoaPods podspec
+          timeout: 1800
+          no_output_timeout: 900
+          inputs:
+            - content: |-
+                set -euo pipefail
+                # The podspec lives at the repo root so it can glob sources in both
+                # platforms/swift/ and protocol/languages/swift/.
+                bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings
+
+  ci-ios-swift-api-check:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Check the public Swift API baseline
+          timeout: 1800
+          no_output_timeout: 900
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/swift
+                ./Scripts/api check
 
   ci-ios-react-native-build-ios:
     meta:
@@ -478,6 +581,28 @@ workflows:
           inputs:
             - key: *rct_integration_cocoapods_cache_key
             - paths: platforms/react-native/test/rct-integration-app/Pods
+
+  ci-ios-react-native-lint-ios:
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    steps:
+      - git-clone@8: {}
+      # The React Native Swift bridge is linted with the SwiftLint and SwiftFormat pins
+      # in platforms/swift/Mintfile.
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Check Swift bridge SwiftLint and SwiftFormat
+          timeout: 1200
+          no_output_timeout: 600
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cd platforms/react-native
+                ./scripts/lint_swift check
 
   ci-ios-report:
     steps:

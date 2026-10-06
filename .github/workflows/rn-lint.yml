@@ -20,19 +20,6 @@ jobs:
         with:
           args: --strict modules/@shopify/checkout-kit-react-native --config .swiftlint.yml
 
-  swiftformat:
-    name: SwiftFormat & SwiftLint
-    runs-on: ${{ vars.MACOS_RUNNER }}
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: ./.github/actions/setup-mint
-
-      - name: Check Swift bridge lint and formatting
-        working-directory: platforms/react-native
-        run: ./scripts/lint_swift check
-
   lint:
     name: Lint module + sample
     runs-on: ubuntu-latest
