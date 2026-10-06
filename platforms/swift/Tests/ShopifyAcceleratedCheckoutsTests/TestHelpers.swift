@@ -410,3 +410,10 @@ extension PKPaymentRequest {
         return request
     }
 }
+
+/// Mock clock that doesn't actually sleep, for use in tests
+struct MockClock: Clock {
+    func sleep(nanoseconds _: UInt64) async throws {
+        // No actual delay in tests - returns immediately
+    }
+}

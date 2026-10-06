@@ -203,15 +203,14 @@ extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegat
             let totalAmount = try pkEncoder.totalAmount.get()
             let applePayPayment = try pkEncoder.applePayPayment.get()
 
-            // Taxes may become pending again fail to resolve despite updating within the didUpdatePaymentMethod
-            // So we retry one time to see if the error clears on retry
-            _ = try await Task.retrying(priority: nil, maxRetryCount: 1) { @MainActor in
+            // Retry transient cart rejections once without replaying uncertain payment outcomes.
+            _ = try await withRetry(maxRetryCount: 1, clock: clock, shouldRetry: StorefrontRetryPolicy.paymentUpdate) {
                 try await controller.storefront.cartPaymentUpdate(
                     id: cartID,
                     totalAmount: totalAmount,
                     applePayPayment: applePayPayment
                 )
-            }.value
+            }
 
             let response = try await controller.storefront.cartSubmitForCompletion(id: cartID)
             try? await transition(
@@ -220,6 +219,9 @@ extension ApplePayAuthorizationDelegate: PKPaymentAuthorizationControllerDelegat
 
             return pkDecoder.paymentAuthorizationResult()
         } catch {
+            if error is CancellationError || Task<Never, Never>.isCancelled || (error as? URLError)?.code == .cancelled {
+                return pkDecoder.paymentAuthorizationResult(errors: [error])
+            }
             ShopifyAcceleratedCheckouts.logger.error("didAuthorizePayment error: \(error)")
             return await handleError(error: error, cart: controller?.cart) {
                 pkDecoder.paymentAuthorizationResult(errors: $0)
