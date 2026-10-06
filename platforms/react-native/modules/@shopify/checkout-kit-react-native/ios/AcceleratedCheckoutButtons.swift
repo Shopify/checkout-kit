@@ -57,6 +57,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     private var configuration: ShopifyAcceleratedCheckouts.Configuration?
     private weak var parentViewController: UIViewController?
     internal var instance: AcceleratedCheckoutButtons?
+    private var checkoutIsActive = false
 
     @objc var onSizeChange: RCTDirectEventBlock?
 
@@ -224,11 +225,14 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
     private func attachEventListeners(to buttons: AcceleratedCheckoutButtons) -> AcceleratedCheckoutButtons {
         return buttons
-            .onStart { [weak self] event in self?.dispatchCheckout(.start, checkout: event.checkout) }
+            .onStart { [weak self] event in
+                self?.checkoutIsActive = true
+                self?.dispatchCheckout(.start, checkout: event.checkout)
+            }
             .onUpdate { [weak self] event in self?.dispatchCheckout(.update, checkout: event.checkout) }
             .onComplete { [weak self] event in self?.dispatchCheckout(.complete, checkout: event.checkout) }
             .onLinkClick { [weak self] link in
-                guard let self else { return .cancel }
+                guard let self, self.checkoutIsActive else { return .cancel }
                 self.dispatchEvent(.linkClick, payload: ShopifyEventSerialization.serialize(clickEvent: link.url))
                 return checkoutLinkAction(self.linkAction)
             }
@@ -330,10 +334,12 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     // MARK: - Event Handlers
 
     private func handleCheckoutFailed(_ error: CheckoutError) {
+        checkoutIsActive = false
         dispatchEvent(.fail, payload: ["error": ShopifyEventSerialization.serialize(checkoutError: error)])
     }
 
     private func handleCheckoutDismissed() {
+        checkoutIsActive = false
         onDismiss?([:])
     }
 

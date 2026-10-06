@@ -331,6 +331,51 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         XCTAssertTrue(PKPaymentButtonType.from("unknown", fallback: .buy) == .buy)
     }
 
+    @MainActor
+    func testLinkHandlingStopsAfterDismissal() throws {
+        try assertLinkHandlingStops(fail: false)
+    }
+
+    @MainActor
+    func testLinkHandlingStopsAfterFailure() throws {
+        try assertLinkHandlingStops(fail: true)
+    }
+
+    @MainActor
+    private func assertLinkHandlingStops(fail: Bool) throws {
+        configureAcceleratedCheckouts(includeApplePay: false)
+        let checkout = try JSONDecoder().decode(Checkout.self, from: Data(#"{"id":"checkout-1","currency":"USD","status":"incomplete","line_items":[],"links":[],"totals":[]}"#.utf8))
+        let link = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.test/policy")))
+        for action in ["open", "handled", "cancel"] {
+            let view = RCTAcceleratedCheckoutButtonsView()
+            view.checkoutIdentifier = ["cartId": "gid://shopify/Cart/1"]
+            view.linkAction = action
+            let handlers = try XCTUnwrap(view.instance).eventHandlers
+            let handleLink = try XCTUnwrap(handlers.checkoutAction)
+            var links = 0
+            view.onDispatch = { payload in
+                if (payload?["value"] as? String)?.contains("\"type\":\"linkClick\"") == true { links += 1 }
+            }
+            XCTAssertEqual(handleLink(link), .cancel)
+            XCTAssertEqual(links, 0)
+            handlers.checkoutDidStart?(CheckoutStartEvent(checkout: checkout))
+            XCTAssertEqual(handleLink(link), checkoutLinkAction(action))
+            handlers.checkoutDidComplete?(CheckoutCompleteEvent(checkout: checkout))
+            XCTAssertEqual(handleLink(link), checkoutLinkAction(action))
+            XCTAssertEqual(links, 2)
+            if fail {
+                handlers.checkoutDidFail?(CheckoutError(code: .sdkError, message: "Failed"))
+            } else {
+                handlers.checkoutDidDismiss?()
+            }
+            XCTAssertEqual(handleLink(link), .cancel)
+            XCTAssertEqual(links, 2)
+            handlers.checkoutDidStart?(CheckoutStartEvent(checkout: checkout))
+            XCTAssertEqual(handleLink(link), checkoutLinkAction(action))
+            XCTAssertEqual(links, 3)
+        }
+    }
+
     func testConfigureAcceleratedCheckoutsReturnsFalseForInvalidApplePayContactField() {
         let storefrontDomain = "example.myshopify.com"
         let accessToken = "shpat_test_token"
