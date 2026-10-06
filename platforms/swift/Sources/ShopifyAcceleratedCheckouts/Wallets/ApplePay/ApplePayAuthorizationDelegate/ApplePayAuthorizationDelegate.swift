@@ -23,7 +23,7 @@ typealias PKAuthorizationControllerFactory = @MainActor @Sendable (PKPaymentRequ
 class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     let configuration: ApplePayConfigurationWrapper
     let abortError = ShopifyAcceleratedCheckouts.Error.invariant(expected: "cart")
-    var controller: PayController
+    weak var controller: (any PayController)?
 
     /// Factory for creating PaymentAuthorizationController instances - injectable for testing
     var paymentControllerFactory: PKAuthorizationControllerFactory
@@ -72,8 +72,8 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         self.paymentControllerFactory = paymentControllerFactory
         self.clock = clock
 
-        pkEncoder = PKEncoder(configuration: configuration, cart: { controller.cart })
-        pkDecoder = PKDecoder(configuration: configuration, cart: { controller.cart })
+        pkEncoder = PKEncoder(configuration: configuration, cart: { [weak controller] in controller?.cart })
+        pkDecoder = PKDecoder(configuration: configuration, cart: { [weak controller] in controller?.cart })
     }
 
     private(set) var state: ApplePayState = .idle {
@@ -85,7 +85,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     }
 
     private func startPaymentRequest() async throws {
-        guard let cart = controller.cart else { return }
+        guard let cart = controller?.cart else { return }
         try setCart(to: cart)
         let paymentRequest = try pkDecoder.createPaymentRequest()
 
@@ -130,14 +130,15 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     }
 
     private func onReset() async throws {
-        pkEncoder = PKEncoder(configuration: configuration, cart: { self.controller.cart })
-        pkDecoder = PKDecoder(configuration: configuration, cart: { self.controller.cart })
+        pkEncoder = PKEncoder(configuration: configuration, cart: { [weak self] in self?.controller?.cart })
+        pkDecoder = PKDecoder(configuration: configuration, cart: { [weak self] in self?.controller?.cart })
         selectedShippingAddressID = nil
         checkoutURL = nil
         try await transition(to: .idle)
     }
 
     private func onPresentingCheckoutKit(to url: URL?, reason: ApplePayState.CheckoutPresentationReason) async throws {
+        guard let controller else { throw CancellationError() }
         guard let url else {
             try await transition(
                 to: .terminalError(
@@ -153,7 +154,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         case .recovery:
             let cartID = try pkEncoder.cartID.get()
             try? await _Concurrency.Task.retrying(clock: clock) { @MainActor in
-                try await self.controller.storefront.cartRemovePersonalData(id: cartID)
+                try await controller.storefront.cartRemovePersonalData(id: cartID)
             }.value
 
             ShopifyAcceleratedCheckouts.logger.debug("Cleared PII from cart")
@@ -204,7 +205,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     }
 
     func setCart(to cart: StorefrontAPI.Types.Cart?) throws {
-        controller.cart = cart
+        controller?.cart = cart
         checkoutURL = cart?.checkoutUrl.url
 
         try ensureCurrencyNotChanged()
@@ -214,7 +215,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         guard let initialCurrencyCode = pkDecoder.initialCurrencyCode else {
             return
         }
-        let currentCurrencyCode = controller.cart?.cost.totalAmount.currencyCode
+        let currentCurrencyCode = controller?.cart?.cost.totalAmount.currencyCode
 
         guard initialCurrencyCode == currentCurrencyCode else {
             throw StorefrontAPI.Errors.currencyChanged
@@ -226,6 +227,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
     {
         let cartID = try pkEncoder.cartID.get()
 
+        guard let controller else { throw CancellationError() }
         let cart = try await controller.storefront.cartDeliveryAddressesReplace(
             id: cartID,
             address: address,
