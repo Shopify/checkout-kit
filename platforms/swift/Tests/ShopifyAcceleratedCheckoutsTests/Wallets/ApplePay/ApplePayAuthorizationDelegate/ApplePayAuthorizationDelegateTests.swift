@@ -653,11 +653,68 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         )
     }
 
+    func test_sessionReleasesControllerAndDelegateWithoutStarting() {
+        var controller: ApplePayViewController? = LifetimePayController(
+            identifier: .cart(cartID: "gid://shopify/Cart/test"),
+            configuration: configuration
+        )
+        weak var weakController = controller
+        weak var weakDelegate = controller?.authorizationDelegate
+
+        controller = nil
+
+        XCTAssertNil(weakController)
+        XCTAssertNil(weakDelegate)
+    }
+
+    func test_sessionReleasesControllerAndDelegateAfterCancellation() async throws {
+        try await assertSessionReleased(submitted: false)
+    }
+
+    func test_sessionReleasesControllerAndDelegateAfterCompletion() async throws {
+        try await assertSessionReleased(submitted: true)
+    }
+
+    private func assertSessionReleased(submitted: Bool) async throws {
+        var controller: ApplePayViewController? = LifetimePayController(
+            identifier: .cart(cartID: "gid://shopify/Cart/test"),
+            configuration: configuration
+        )
+        controller?.cart = .testCart
+        controller?.storefront = RecordingStorefrontAPI()
+        var authorization: ApplePayAuthorizationDelegate? = controller?.authorizationDelegate
+        let paymentController = MockPaymentAuthorizationController()
+        authorization?.paymentControllerFactory = { _ in paymentController }
+        weak var weakController = controller
+        weak var weakDelegate = authorization
+
+        try await authorization?.transition(to: .startPaymentRequest)
+        if submitted {
+            try await authorization?.transition(to: .paymentAuthorized(payment: PKPayment()))
+            try await authorization?.transition(to: .cartSubmittedForCompletion(
+                redirectURL: XCTUnwrap(URL(string: "https://example.com/thank-you"))
+            ))
+            try await authorization?.transition(to: .completed)
+        }
+        try await authorization?.transition(to: .completed)
+        XCTAssertEqual(authorization?.state, .idle)
+
+        authorization = nil
+        controller = nil
+
+        XCTAssertNil(weakController)
+        XCTAssertNil(weakDelegate)
+    }
+
+    private final class LifetimePayController: ApplePayViewController {
+        override func present(url _: URL) async throws {}
+    }
+
     // MARK: - Mock Classes
 
     /// Mock PaymentAuthorizationController for testing
     private class MockPaymentAuthorizationController: PaymentAuthorizationController {
-        var delegate: PKPaymentAuthorizationControllerDelegate?
+        weak var delegate: PKPaymentAuthorizationControllerDelegate?
         var shouldPresentSuccessfully = true
         var presentCallCount = 0
         var dismissCallCount = 0
