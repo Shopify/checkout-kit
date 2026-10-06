@@ -215,6 +215,13 @@ For pull request builds, the `e2e-report` workflow creates commit statuses, Chec
 
 The Bitrise project has **Project settings > Repository > Extend GitHub App permissions to builds** enabled. Bitrise exposes the build-scoped GitHub App token as `GIT_HTTP_PASSWORD`. GitHub API scripts prefer an explicit `OVERRIDE_GITHUB_TOKEN` for local runs and otherwise use `GIT_HTTP_PASSWORD`; they intentionally ignore the shared `GITHUB_TOKEN` because it is not authenticated as the GitHub App required to create Check Runs.
 
+The sticky PR comment includes a **Bitrise builds** section with links to the
+`e2e` and `ci-ios` pipelines. The E2E link comes from the reporting pipeline's
+`BITRISEIO_PIPELINE_BUILD_URL`; other links are read from native Bitrise GitHub
+checks on the reported commit. Queued and running builds can be linked without
+waiting for them to finish. If a check has not appeared or the lookup fails, the
+comment still publishes with the available links.
+
 Every run maintains a single sticky PR comment (create-or-update via a marker). The comment always includes an "Install with Tophat" link per SDK target and the E2E results table; failing runs add direct BrowserStack evidence links. The install links and Quick Launch entries are driven by `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
 
 ## Caching
