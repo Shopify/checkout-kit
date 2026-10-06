@@ -22,6 +22,17 @@ const platforms = {
     packageLabel: "AAR package (ZIP)",
     measurements: { package: "release AAR" },
   },
+  swift: {
+    label: "Swift",
+    measurements: {
+      core: "core incremental app",
+      accelerated: "accelerated incremental app",
+    },
+    measurementLabels: {
+      core: "Core Checkout Kit incremental app size (uncompressed)",
+      accelerated: "Checkout Kit with Accelerated Checkouts incremental app size (uncompressed)",
+    },
+  },
 };
 const marker = "<!-- checkout-kit-package-size -->";
 const statePattern = /<!-- bundle-size-state:([A-Za-z0-9+/=]+) -->/;
@@ -227,7 +238,7 @@ function render(rows, state, packageComment, notes = []) {
         : `${kib(row.after)} (${delta === "unavailable" ? "change unavailable" : delta})`;
     const scope = row.file
       ? `${escape(row.file)} (uncompressed)`
-      : {
+      : platforms[row.platform].measurementLabels?.[row.measurement] ?? {
           bundle: "JavaScript (uncompressed)",
           bundleGzip: "JavaScript (gzip)",
           package: platforms[row.platform].packageLabel,
@@ -306,6 +317,7 @@ if (require.main === module) {
       web: process.env.MEASURE_WEB,
       "react-native": process.env.MEASURE_REACT_NATIVE,
       android: process.env.MEASURE_ANDROID,
+      swift: process.env.MEASURE_SWIFT,
     })
       .filter(([, enabled]) => enabled === "true")
       .map(([platform]) => platform),
