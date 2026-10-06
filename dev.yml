@@ -320,22 +320,6 @@ commands:
     aliases: ["kotlin"]
     desc: "Android Checkout Kit commands"
     subcommands:
-      size-benchmark:
-        desc: Measure the incremental R8 APK payload of Checkout Kit
-        syntax:
-          optional: "[--output <path>]"
-        run: python3 -B platforms/android/benchmarks/app-size/measure.py "$@"
-        subcommands:
-          test:
-            desc: Test the APK size collector without building Android
-            run: python3 -B -m unittest discover -s platforms/android/benchmarks/app-size -p 'test_*.py'
-          check:
-            desc: Test the size collector and lint both fixture variants
-            run: |
-              set -e
-              /opt/dev/bin/dev android size-benchmark test
-              platforms/android/gradlew -p platforms/android -PappSizeBenchmark=true :app-size-benchmark:lintBaselineRelease :app-size-benchmark:lintCheckoutRelease --console=plain
-
       build:
         desc: Build the library
         long_desc: |
