@@ -2,67 +2,40 @@
 
 <div align="center">
 
-<p align="center">
-  <img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
-</p>
+<img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
+
+**Shopify's one-page checkout for native mobile apps and web storefronts.**
 
 [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](LICENSE)
 
-[Shopify.dev docs](https://shopify.dev/docs/storefronts/mobile/checkout-kit)&nbsp;&nbsp;|&nbsp;&nbsp;[Contributing](.github/CONTRIBUTING.md)&nbsp;&nbsp;|&nbsp;&nbsp;[Code of Conduct](.github/CODE_OF_CONDUCT.md)&nbsp;&nbsp;|&nbsp;&nbsp;[License](LICENSE)
-
-**Shopify Checkout Kit** lets native mobile apps and web storefronts present Shopify's one-page checkout while preserving checkout customizations such as Checkout UI extensions, Shopify Functions, branding, Shop Pay, and supported payment methods.
+[Get started](#get-started) · [Samples](#samples) · [Platform support](#platform-support) · [Contributing](#contributing)
 
 </div>
 
+Checkout Kit preserves your checkout customizations, including Checkout UI extensions, Shopify Functions, branding, Shop Pay, and supported payment methods.
+
 > [!WARNING]
-> **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. Stability is not guaranteed, and breaking changes may
-> occur in any release. See [Packages](#packages).
+> **Alpha — early preview.** This software is **not production-ready**. Stability
+> is not guaranteed, and breaking changes may occur in any release.
+> See [Packages](#packages) for versions and installation channels.
 
-## What is in this repo
+<a id="integration-guides"></a>
 
-This repository contains the Checkout Kit implementations, samples, and protocol bindings. Use it to inspect platform behavior, run samples, report bugs, and contribute fixes. The Shopify.dev mobile storefront docs remain the primary place for end-to-end product guidance and conceptual walkthroughs.
+## Get started
 
-## Packages
+Choose your platform for installation instructions and API details:
 
-| Package | Checkout Kit release | Install channel | Status | Description | README |
-| --- | --- | --- | --- | --- | --- |
-| `ShopifyCheckoutKit` | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods | Alpha | iOS checkout presentation SDK. | [Swift](platforms/swift/README.md) |
-| `ShopifyAcceleratedCheckouts` | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods subspec | Alpha | SwiftUI Shop Pay and Apple Pay accelerated checkout buttons for iOS 16+. | [Swift](platforms/swift/README.md#accelerated-checkouts) |
-| `com.shopify:checkout-kit` | `4.0.0-alpha.8` | Maven Central | Alpha | Android checkout presentation SDK. | [Android](platforms/android/README.md) |
-| `@shopify/checkout-kit-react-native` | `4.0.0-alpha.5` | npm `next` dist-tag | Alpha | React Native wrapper for the iOS and Android native SDKs. | [React Native](platforms/react-native/README.md) |
-| `@shopify/checkout-kit` | `4.0.0-alpha.4` | npm `next` dist-tag | Alpha | Web component for opening Shopify checkout from a web page. | [Web](platforms/web/README.md) |
-| `EmbeddedCheckoutProtocol` | Source package | Swift Package Manager | Internal/supporting | Swift client for Embedded Checkout Protocol messages. | [Protocol Swift](protocol/languages/swift/README.md) |
-| `com.shopify:embedded-checkout-protocol` | `2026.08.25.1-alpha.1` | Maven Central | Internal/supporting | Kotlin client for Embedded Checkout Protocol messages. | [Protocol Android](protocol/languages/kotlin/embedded-checkout-protocol/README.md) |
+- **[Swift](platforms/swift/README.md)** — Present checkout in an iOS app.
+- **[Android](platforms/android/README.md)** — Present checkout in an Android app.
+- **[React Native](platforms/react-native/README.md)** — Use the iOS and Android SDKs from React Native. Requires the New Architecture.
+- **[Web](platforms/web/README.md)** — Open checkout with the `<shopify-checkout>` web component.
 
-These rows show the package versions tracked by this repository. Prereleases are distributed through each platform's listed package channel.
+For SwiftUI Shop Pay and Apple Pay buttons on iOS 16+, see [Accelerated checkouts](platforms/swift/README.md#accelerated-checkouts).
 
-## Platform Support
+### Product guides
 
-| Capability | Swift | Android | React Native | Web |
-| --- | --- | --- | --- | --- |
-| Present checkout from `cart.checkoutUrl` | Yes | Yes | Yes | Yes |
-| Cart permalink support | Yes | Yes | Yes | Yes |
-| Light, dark, and web color schemes | Yes | Yes | Yes | Not applicable |
-| Checkout dismiss/fail callbacks | Yes | Yes | Yes | Close/error events |
-| Typed checkout protocol events | Yes | Yes | Partial/native-dependent | Yes |
-| File chooser and web permissions | iOS system behavior | Host callbacks | Android host callbacks | Browser behavior |
-| Geolocation for pickup points | iOS system prompt | Host callback required | Android default helper or custom handler | Browser behavior |
-| Offsite payment return routing | Universal Links | App Links/deep links | Platform-dependent | New tab/popup routing |
-| Accelerated checkout buttons | iOS 16+ | No | iOS 16+ | No |
+The [Shopify.dev overview](https://shopify.dev/docs/storefronts/mobile/checkout-kit) covers end-to-end integration and product concepts. For specific workflows:
 
-## Integration Guides
-
-Start with the platform README for package installation and API details:
-
-- [Swift](platforms/swift/README.md)
-- [Android](platforms/android/README.md)
-- [React Native](platforms/react-native/README.md)
-- [Web](platforms/web/README.md)
-
-Use the Shopify.dev guides for broader product workflows:
-
-- [Checkout Kit overview](https://shopify.dev/docs/storefronts/mobile/checkout-kit)
 - [Authenticate checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts)
 - [Monitor the checkout lifecycle](https://shopify.dev/docs/storefronts/mobile/checkout-kit/monitor-checkout-lifecycle)
 - [Offsite payments](https://shopify.dev/docs/storefronts/mobile/checkout-kit/offsite-payments)
@@ -71,22 +44,61 @@ Use the Shopify.dev guides for broader product workflows:
 
 ## Samples
 
-| Platform | Sample README | What it demonstrates |
+- **[Swift samples](platforms/swift/Samples/README.md)** — Storefront API cart flow, checkout presentation, Customer Account API, and accelerated checkout buttons.
+- **[Android samples](platforms/android/samples/README.md)** — Storefront API cart flow, checkout presentation, protocol lifecycle events, file chooser, and geolocation callbacks.
+- **[Web sample](platforms/web/sample/README.md)** — Local playground for the `<shopify-checkout>` component and `ec.*` events.
+
+## Platform support
+
+| Capability | Swift | Android | React Native | Web |
+| --- | :---: | :---: | :---: | :---: |
+| Checkout URL | Yes | Yes | Yes | Yes |
+| Cart permalinks | Yes | Yes | Yes | Yes |
+| Color schemes | Yes | Yes | Yes | N/A |
+| Dismiss/fail callbacks | Yes | Yes | Yes | Close/error events |
+| Typed protocol events | Yes | Yes | Partial | Yes |
+| File chooser and permissions | System | Host callbacks | Host callbacks¹ | Browser |
+| Pickup geolocation | System prompt | Host callback | Helper/custom¹ | Browser |
+| Offsite payment return | Universal Links | App Links/deep links | Platform-dependent | Tab/popup |
+| Accelerated buttons | iOS 16+ | No | iOS 16+ | No |
+
+- **Checkout URL** means `cart.checkoutUrl`. **Color schemes** include light, dark, and web.
+- **React Native protocol events** depend on the underlying native SDK.
+- **¹ React Native Android:** File chooser and web permissions use host callbacks. Geolocation uses the default helper or a custom handler. Native Android requires a host callback for geolocation.
+
+## Packages
+
+Package names link to their integration guides. These are the versions tracked by this repository; prereleases use the installation channels listed below.
+
+| Package | Version | Installation |
 | --- | --- | --- |
-| Swift | [Samples](platforms/swift/Samples/README.md) | Storefront API cart flow, checkout presentation, Customer Account API, and accelerated checkout buttons. |
-| Android | [Samples](platforms/android/samples/README.md) | Storefront API cart flow, checkout presentation, protocol lifecycle events, file chooser, and geolocation callbacks. |
-| Web | [Sample](platforms/web/sample/README.md) | Local playground for the `<shopify-checkout>` web component and `ec.*` events. |
+| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods |
+| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods subspec |
+| [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0-alpha.8` | Maven Central |
+| [`@shopify/checkout-kit-react-native`](platforms/react-native/README.md) | `4.0.0-alpha.5` | npm `next` |
+| [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0-alpha.4` | npm `next` |
 
-## Versioning
+<details>
+<summary>Supporting packages: Embedded Checkout Protocol</summary>
 
-Checkout Kit is the current home for the SDKs that were previously published as Checkout Sheet Kit. The renamed packages use a shared `4.0.0-alpha.X` version format while the new package line settles:
+These internal/supporting clients handle Embedded Checkout Protocol messages.
 
-- Platform releases are versioned independently; see the [package table](#packages) for current versions.
-- Web prereleases use the npm `next` dist-tag.
-- React Native requires React Native New Architecture.
+- **[Swift](protocol/languages/swift/README.md):** `EmbeddedCheckoutProtocol` is a source package installed through Swift Package Manager.
+- **[Kotlin](protocol/languages/kotlin/embedded-checkout-protocol/README.md):** `com.shopify:embedded-checkout-protocol` version `2026.08.25.1-alpha.1` is distributed through Maven Central.
+
+</details>
+
+### Versioning
+
+Checkout Kit is the current home for the SDKs previously published as Checkout Sheet Kit.
+
+- Platform releases are versioned independently using the `4.0.0-alpha.X` format during the alpha period.
 - Stable releases will continue on the same `4.x` package line after the alpha period.
 
-The legacy standalone Checkout Sheet Kit repositories remain available for apps that have not migrated.
+<details>
+<summary>Migrating from Checkout Sheet Kit</summary>
+
+The legacy standalone repositories remain available for apps that have not migrated.
 
 | Platform | Legacy package | Final legacy line |
 | --- | --- | --- |
@@ -94,6 +106,12 @@ The legacy standalone Checkout Sheet Kit repositories remain available for apps 
 | Android | `com.shopify:checkout-sheet-kit` | `3.5.x` |
 | React Native | `@shopify/checkout-sheet-kit` | `4.0.x` |
 
+</details>
+
+<a id="what-is-in-this-repo"></a>
+
 ## Contributing
 
-Issues and pull requests are welcome. See [CONTRIBUTING](.github/CONTRIBUTING.md) and our [Code of Conduct](.github/CODE_OF_CONDUCT.md).
+This repository contains the platform implementations, samples, and protocol bindings. Issues and pull requests are welcome; see the [contribution guide](.github/CONTRIBUTING.md).
+
+[Code of Conduct](.github/CODE_OF_CONDUCT.md) · [MIT License](LICENSE)
