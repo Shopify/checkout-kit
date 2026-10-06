@@ -1,3 +1,4 @@
+import type { ShopifyCheckout } from "@shopify/checkout-kit";
 import packageJson from "@shopify/checkout-kit/package.json" with { type: "json" };
 import { checkoutOrigin, checkoutSrc, expect, test } from "../../support";
 
@@ -69,6 +70,83 @@ test.describe("open()", () => {
     expect(popup.isClosed()).toBe(false);
     await expect(host.overlay).toBeVisible();
     await expect(host.overlay).toHaveAttribute("open", "");
+  });
+});
+
+test.describe("blocked overlay", () => {
+  test("switches from repeated blocking to an open popup without stale close listeners", async ({
+    host,
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const open = window.open.bind(window);
+      let attempts = 0;
+      window.open = (...args) => (attempts++ < 2 ? null : open(...args));
+    });
+    await host.goto();
+    await host.configure({ src: checkoutSrc() });
+    await host.clickBuy();
+
+    const retry = host.component.getByRole("button", { name: "Open checkout", exact: true });
+    await expect(host.overlay).toHaveAttribute("data-state", "blocked");
+    await expect(retry).toBeVisible();
+    await expect(host.overlayCloseButton).toBeVisible();
+    await expect(host.overlayFocusButton).not.toBeVisible();
+
+    await retry.click();
+    await expect.poll(() => host.eventTypes()).toEqual(["blocked", "blocked"]);
+    await expect(host.overlay).toHaveAttribute("open", "");
+
+    const [popup] = await Promise.all([page.waitForEvent("popup"), retry.click()]);
+    await expect(host.overlayFocusButton).toBeVisible();
+    await expect(retry).not.toBeVisible();
+    await expect.poll(() => host.eventTypes()).toEqual(["blocked", "blocked"]);
+
+    await host.overlayCloseButton.click();
+    await expect.poll(() => popup.isClosed()).toBe(true);
+    await expect(host.overlay).not.toBeVisible();
+    await expect.poll(() => host.eventTypes()).toEqual(["blocked", "blocked", "close"]);
+  });
+
+  test("preserves custom content in both slots across a retry", async ({ host, page }) => {
+    await page.addInitScript(() => {
+      const open = window.open.bind(window);
+      let blocked = true;
+      window.open = (...args) => {
+        if (!blocked) return open(...args);
+        blocked = false;
+        return null;
+      };
+    });
+    await host.goto();
+    await host.configure({ src: checkoutSrc() });
+    await host.component.evaluate((element) => {
+      const normal = document.createElement("p");
+      normal.slot = "overlay";
+      normal.textContent = "Custom checkout open";
+      const retry = document.createElement("button");
+      retry.slot = "overlay-blocked";
+      retry.textContent = "Try again";
+      retry.addEventListener("click", () => (element as ShopifyCheckout).open());
+      element.append(normal, retry);
+    });
+    await host.clickBuy();
+
+    const retry = host.component.getByRole("button", { name: "Try again", exact: true });
+    const normal = host.component.getByText("Custom checkout open", { exact: true });
+    await expect(retry).toBeVisible();
+    await expect(normal).not.toBeVisible();
+    await expect(host.overlayCloseButton).not.toBeVisible();
+
+    const [popup] = await Promise.all([page.waitForEvent("popup"), retry.click()]);
+    await expect(normal).toBeVisible();
+    await expect(retry).not.toBeVisible();
+    await expect(host.overlayCloseButton).not.toBeVisible();
+    await expect.poll(() => host.eventTypes()).toEqual(["blocked"]);
+
+    await host.close();
+    await expect.poll(() => popup.isClosed()).toBe(true);
+    await expect.poll(() => host.eventTypes()).toEqual(["blocked", "close"]);
   });
 });
 
