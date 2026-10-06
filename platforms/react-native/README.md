@@ -824,14 +824,13 @@ to the buyer within checkout.
 #### Multipass
 
 [Shopify Plus](https://help.shopify.com/en/manual/intro-to-shopify/pricing-plans/plans-features/shopify-plus-plan)
-merchants using
-[Classic Customer Accounts](https://help.shopify.com/en/manual/customers/customer-accounts/classic-customer-accounts)
-can use [Multipass](https://shopify.dev/docs/api/multipass)
-([API documentation](https://shopify.dev/docs/api/multipass)) to integrate an
-external identity system and initialize a buyer-aware checkout session.
+merchants that already use
+[Multipass](https://shopify.dev/docs/api/customer-authentication/multipass)
+can keep using it to integrate an external identity system and initialize a
+buyer-aware checkout session.
 
-> [!WARNING]
-> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is now deprecated, consider using Customer Accounts API for new integrations.
+> [!NOTE]
+> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is still supported for stores that already use it. New integrations should [connect a third-party identity provider](https://shopify.dev/docs/api/customer-authentication#third-party-identity-providers-idps).
 
 ```json
 {
@@ -842,7 +841,7 @@ external identity system and initialize a buyer-aware checkout session.
 }
 ```
 
-1. Follow the [Multipass documentation](https://shopify.dev/docs/api/multipass)
+1. Follow the [Multipass documentation](https://shopify.dev/docs/api/customer-authentication/multipass)
    to create a Multipass URL and set `return_to` to be the obtained
    `checkoutUrl`
 2. Provide the Multipass URL to `present(checkoutUrl)`
