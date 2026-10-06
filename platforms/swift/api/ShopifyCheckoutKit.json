@@ -6319,7 +6319,7 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(checkout:delegate:client:entryPoint:)",
+            "printedName": "init(checkout:delegate:client:entryPoint:configuration:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -6377,11 +6377,18 @@
                 ],
                 "hasDefaultArg": true,
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Configuration",
+                "printedName": "ShopifyCheckoutKit.Configuration",
+                "hasDefaultArg": true,
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPointAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgtcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPointAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgtcfc",
+            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPoint13configurationAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgAA13ConfigurationVtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegate6client10entryPoint13configurationAC10Foundation3URLV_AA0B8Delegate_pSgAA0B21CommunicationProtocol_pSgAA8MetaDataO05EntryJ0OSgAA13ConfigurationVtcfc",
             "moduleName": "ShopifyCheckoutKit",
             "isInternal": true,
             "declAttributes": [
@@ -10978,6 +10985,104 @@
           },
           {
             "kind": "Function",
+            "name": "appearance",
+            "printedName": "appearance(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Appearance",
+                "printedName": "ShopifyCheckoutKit.Configuration.Appearance",
+                "usr": "s:18ShopifyCheckoutKit13ConfigurationV10AppearanceO"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V10appearanceyAcA13ConfigurationV10AppearanceOF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V10appearanceyAcA13ConfigurationV10AppearanceOF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "backgroundColor",
+            "printedName": "backgroundColor(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UIColor",
+                "printedName": "UIKit.UIColor",
+                "usr": "c:objc(cs)UIColor"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V15backgroundColoryACSo7UIColorCF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V15backgroundColoryACSo7UIColorCF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "closeButtonTintColor",
+            "printedName": "closeButtonTintColor(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "UIKit.UIColor?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UIColor",
+                    "printedName": "UIKit.UIColor",
+                    "usr": "c:objc(cs)UIColor"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V20closeButtonTintColoryACSo7UIColorCSgF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V20closeButtonTintColoryACSo7UIColorCSgF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "makeUIViewController",
             "printedName": "makeUIViewController(context:)",
             "children": [
@@ -11298,6 +11403,66 @@
               "DiscardableResult",
               "Custom"
             ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "tintColor",
+            "printedName": "tintColor(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UIColor",
+                "printedName": "UIKit.UIColor",
+                "usr": "c:objc(cs)UIColor"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V9tintColoryACSo7UIColorCF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V9tintColoryACSo7UIColorCF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "title",
+            "printedName": "title(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyCheckout",
+                "printedName": "ShopifyCheckoutKit.ShopifyCheckout",
+                "usr": "s:18ShopifyCheckoutKit0aB0V"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:18ShopifyCheckoutKit0aB0V5titleyACSSF",
+            "mangledName": "$s18ShopifyCheckoutKit0aB0V5titleyACSSF",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Preconcurrency",
+              "DiscardableResult",
+              "Custom"
+            ],
+            "isFromExtension": true,
             "funcSelfKind": "NonMutating"
           },
           {
