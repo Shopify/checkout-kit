@@ -141,6 +141,7 @@ The non-secret E2E defaults live in `e2e/bitrise.yml` under `app.envs`. Change t
 | Variable                           | Value  | Purpose                                           |
 | ---------------------------------- | ------ | ------------------------------------------------- |
 | `E2E_BROWSERSTACK_API_RETRIES`     | `1`    | Retries for transient BrowserStack API responses. |
+| `E2E_BROWSERSTACK_TEST_RETRIES`    | `1`    | Retries per failed Maestro flow (0 disables, maximum 5). |
 | `E2E_BROWSERSTACK_TIMEOUT_SECONDS` | `1800` | BrowserStack build timeout.                       |
 | `E2E_BROWSERSTACK_POLL_SECONDS`    | `30`   | BrowserStack status polling interval.             |
 
@@ -201,6 +202,12 @@ Upload the signing certificate and provisioning profile for the React Native sam
 ## BrowserStack execution
 
 The `e2e-execute-browserstack-run` workflow resolves the Bitrise parallel index into a BrowserStack run plan row, resolves a BrowserStack device dynamically, uploads the app artifact and E2E tests zip, executes the selected flow, and stores raw plus normalized result JSON as artifacts.
+
+Failed flows retry once by default on both Android and iOS using BrowserStack's
+[automatic reruns](https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/auto-rerun-failures).
+Retries run within the same BrowserStack build and share its timeout. BrowserStack
+marks flows that pass on retry as flaky and retains every attempt's logs in its
+dashboard. Set `E2E_BROWSERSTACK_TEST_RETRIES=0` to disable test retries.
 
 The launch smoke suite sends only non-sensitive Maestro environment values to BrowserStack:
 

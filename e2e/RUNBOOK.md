@@ -65,7 +65,24 @@ BrowserStack API calls retry transient infrastructure responses once by default:
 E2E_BROWSERSTACK_API_RETRIES=1
 ```
 
-Retry applies to HTTP 429 and 5xx responses **and to transient network exceptions** (connection timeouts, resets, TLS/socket errors), and only to idempotent read/poll (GET) requests — build-creation and upload requests fail fast to avoid duplicate builds. Connections use a 10s open timeout and a 120s read timeout. Test assertion failures are not auto-retried by default so first-failure evidence is preserved.
+Retry applies to HTTP 429 and 5xx responses **and to transient network exceptions** (connection timeouts, resets, TLS/socket errors), and only to idempotent read/poll (GET) requests — build-creation and upload requests fail fast to avoid duplicate builds. Connections use a 10s open timeout and a 120s read timeout.
+
+Failed Maestro flows retry once by default on both Android and iOS:
+
+```bash
+E2E_BROWSERSTACK_TEST_RETRIES=1
+```
+
+This sets BrowserStack's [automatic reruns](https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/auto-rerun-failures)
+(`retryTestsOnFailure` and `testIterations`). Only failed flows are retried, within
+the same build, and retries stop as soon as a flow passes. A flow that passes on
+retry has a passing final status; BrowserStack flags it as flaky and keeps logs
+for every attempt in its dashboard. Set this value to `0` to disable retries or
+to an integer up to `5` to allow more retries after the initial attempt. Invalid
+values fail before any app upload or build creation.
+
+All attempts share `E2E_BROWSERSTACK_TIMEOUT_SECONDS`; increasing the retry count
+does not extend the build's polling deadline or the Bitrise step timeout.
 
 ## Timeouts
 

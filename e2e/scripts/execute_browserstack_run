@@ -51,6 +51,7 @@ class BrowserStackRunExecutor
       run_plan_path: cli[:run_plan_path] || env["E2E_BROWSERSTACK_RUN_PLAN_JSON"] || "browserstack-run-plan.json",
       run_index: resolve_run_index(cli, env),
       tests_zip: resolve_tests_zip(cli, env),
+      test_retries: resolve_test_retries(env),
       output_dir: cli[:output_dir] || env["E2E_BROWSERSTACK_RESULTS_DIR"] || File.join(Dir.pwd, "e2e-results")
     }
   end
@@ -91,8 +92,18 @@ class BrowserStackRunExecutor
     value
   end
 
+  def self.resolve_test_retries(env = ENV)
+    retries = Integer(env.fetch("E2E_BROWSERSTACK_TEST_RETRIES", "1"), 10)
+    return retries if (0..5).cover?(retries)
+
+    raise ArgumentError
+  rescue ArgumentError, TypeError
+    raise ArgumentError, "E2E_BROWSERSTACK_TEST_RETRIES must be an integer between 0 and 5 (0 disables retries)"
+  end
+
   def initialize(options, client: nil, output: nil)
     @options = options
+    @test_retries = options.fetch(:test_retries) { self.class.resolve_test_retries }
     @client = client || BrowserStackClient.new(
       username: ENV.fetch("BROWSERSTACK_USERNAME"),
       access_key: ENV.fetch("BROWSERSTACK_ACCESS_KEY"),
@@ -162,6 +173,7 @@ class BrowserStackRunExecutor
       testSuite: test_suite_url,
       project: ENV.fetch("E2E_BROWSERSTACK_PROJECT", "checkout-kit-e2e"),
       maestroVersion: self.class.resolve_maestro_version(ENV),
+      retryTestsOnFailure: @test_retries.positive?,
       buildTag: ENV.fetch("BITRISE_GIT_COMMIT", "local"),
       customBuildName: run.fetch("id"),
       devices: [device],
@@ -176,6 +188,10 @@ class BrowserStackRunExecutor
         E2E_CONTROL_LINK: run.fetch("control_link")
       }
     }
+    # BrowserStack retries only failed flows within this build and keeps each
+    # attempt's artifacts. testIterations counts retries after the initial run.
+    # https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/auto-rerun-failures
+    body[:testIterations] = @test_retries if @test_retries.positive?
     response = @client.start_build(run.fetch("platform"), body)
     write_json("build-start.json", response)
     response
@@ -286,6 +302,7 @@ class BrowserStackRunExecutor
       "Include tags:     #{run.fetch("include_tags").join(", ")}",
       "Exclude tags:     #{run.fetch("exclude_tags").join(", ")}",
       "Maestro version:  #{self.class.resolve_maestro_version(ENV)}",
+      "Test retries:     #{@test_retries}",
       "",
       "BrowserStack environment:",
       "  E2E_APP_ID=#{run.fetch("app_id")}",
