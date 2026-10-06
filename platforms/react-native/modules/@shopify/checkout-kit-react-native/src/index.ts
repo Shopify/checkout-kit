@@ -141,6 +141,13 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   ): void {
     this.releaseDispatchSubscription();
 
+    let subscription: {remove: () => void} | undefined;
+    const release = () => {
+      subscription?.remove();
+      if (this.dispatchSubscription === subscription) {
+        this.dispatchSubscription = undefined;
+      }
+    };
     const {dispatcher, subscribedMethods} = createPresentDispatcher({
       callbacks,
       protocol,
@@ -151,20 +158,29 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         this.handleDefaultGeolocationRequest(),
       respondToGeolocationRequest: allow =>
         this.respondToGeolocationRequest(allow),
+      onTerminal: release,
     });
 
     if (dispatcher) {
-      this.dispatchSubscription = RNShopifyCheckoutKit.onDispatch(
-        envelopeJson => {
-          const result = dispatcher(envelopeJson);
-          if (result.terminal) {
-            this.releaseDispatchSubscription();
-          }
+      let active = true;
+      const nativeSubscription = RNShopifyCheckoutKit.onDispatch(json => {
+        if (active) dispatcher(json);
+      });
+      subscription = {
+        remove: () => {
+          active = false;
+          nativeSubscription.remove();
         },
-      );
+      };
+      this.dispatchSubscription = subscription;
     }
 
-    RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
+    try {
+      RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
+    } catch (error) {
+      release();
+      throw error;
+    }
   }
 
   /**

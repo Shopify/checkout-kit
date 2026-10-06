@@ -32,6 +32,8 @@ interface CreatePresentDispatcherOptions {
   handleDefaultGeolocationRequests: boolean;
   handleDefaultGeolocationRequest: () => void | Promise<void>;
   respondToGeolocationRequest: (allow: boolean) => void;
+  /** Release observations before consumer callbacks can present again or throw. */
+  onTerminal?: () => void;
 }
 
 interface PresentDispatcherHandle {
@@ -47,6 +49,7 @@ export function createPresentDispatcher({
   handleDefaultGeolocationRequests,
   handleDefaultGeolocationRequest,
   respondToGeolocationRequest,
+  onTerminal,
 }: CreatePresentDispatcherOptions): PresentDispatcherHandle {
   const subscribedMethods = getSubscribedProtocolMethods(protocol);
   const needsDefaultGeolocation =
@@ -65,6 +68,7 @@ export function createPresentDispatcher({
         needsDefaultGeolocation,
         handleDefaultGeolocationRequest,
         respondToGeolocationRequest,
+        onTerminal,
       }),
   };
 }
@@ -184,15 +188,18 @@ function routeSdkLifecycleEvent(
     needsDefaultGeolocation,
     handleDefaultGeolocationRequest,
     respondToGeolocationRequest,
+    onTerminal,
   }: Omit<CreatePresentDispatcherOptions, 'handleDefaultGeolocationRequests'> & {
     needsDefaultGeolocation: boolean;
   },
 ): PresentDispatchResult {
   switch (type) {
     case 'close':
+      onTerminal?.();
       callbacks?.onClose?.();
       return {terminal: true};
     case 'fail': {
+      onTerminal?.();
       const failPayload = validateFailPayload(payload);
       if (failPayload == null) {
         logParseError('`fail` envelope payload is malformed', envelopeJson);
