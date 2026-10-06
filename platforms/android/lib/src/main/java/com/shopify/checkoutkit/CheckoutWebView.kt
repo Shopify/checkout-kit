@@ -207,7 +207,7 @@ internal class CheckoutWebView private constructor(
         val headers: Map<String, String>,
     )
 
-    private data class NavigationTiming(
+    private class NavigationTiming(
         val startedAtMillis: Long,
         val preloaded: Boolean,
     )
