@@ -135,7 +135,9 @@ function overlaySlot(blocked: boolean) {
     <div class="overlay-content-wrapper">
       <div class="overlay-content">
         ${safe(
-          blocked ? "Your browser blocked the checkout window." : "Continue your purchase in the",
+          blocked
+            ? "Your browser blocked the checkout window from opening."
+            : "Continue your purchase in the",
         )}<br />
         <button class="overlay-focus-button" id="${safe(actionId)}" type="button">
           ${safe(blocked ? "Open checkout" : "checkout window")}

@@ -480,8 +480,8 @@ shopify-checkout {
 While a popup is open the component renders a `<dialog>` scrim over the host
 page, with a "Continue your purchase in the checkout window" link and a close
 button. If the browser blocks the window, the scrim instead says "Your browser
-blocked the checkout window." with an "Open checkout" button that tries again.
-Hide it by either:
+blocked the checkout window from opening." with an "Open checkout" button that
+tries again. Hide it by either:
 
 - Setting `display: none` on the element itself, or
 - Targeting the `overlay` shadow part:
