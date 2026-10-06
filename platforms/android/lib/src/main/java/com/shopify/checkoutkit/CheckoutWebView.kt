@@ -367,41 +367,69 @@ internal class CheckoutWebView private constructor(
             errorResponse: WebResourceResponse?
         ) {
             val isMainFrame = request?.isForMainFrame == true
-            if (isMainFrame) {
-                val statusCode = errorResponse?.statusCode ?: 0
-                CheckoutTelemetry.recorder.recordError(
-                    TelemetryErrorMetric(
-                        category = TelemetryErrorCategory.Http,
-                        stage = TelemetryErrorStage.Load,
-                        code = when (statusCode) {
-                            in 400..499 -> TelemetryErrorCode.Client
-                            in 500..599 -> TelemetryErrorCode.Server
-                            else -> TelemetryErrorCode.Unknown
-                        },
-                        retryable = statusCode >= 500,
-                        isRetry = didRetryCheckoutRequest,
-                    ),
-                )
-                recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
-                preloadCache.evict(
-                    PreloadState.Failed(
-                        PreloadState.FailureReason.HttpError(statusCode),
-                        "HTTP response returned status code $statusCode.",
-                    ),
-                    view = this@CheckoutWebView,
-                )
+            val statusCode = errorResponse?.statusCode ?: 0
+            val failureReason = PreloadState.FailureReason.HttpError(statusCode)
+            val failureMessage = "HTTP response returned status code $statusCode."
+
+            if (errorResponse.isCloudflareManagedChallenge()) {
+                if (isMainFrame && preloadCache.contains(this@CheckoutWebView) && !isPresented) {
+                    log.d(LOG_TAG, "Discarding cached Cloudflare managed challenge response.")
+                    stopLoading()
+                    evictForTerminalFailure(
+                        this@CheckoutWebView,
+                        failureReason,
+                        failureMessage,
+                    )
+                } else {
+                    log.d(LOG_TAG, "Allowing Cloudflare managed challenge response to render.")
+                }
+            } else {
+                if (isMainFrame) {
+                    CheckoutTelemetry.recorder.recordError(
+                        TelemetryErrorMetric(
+                            category = TelemetryErrorCategory.Http,
+                            stage = TelemetryErrorStage.Load,
+                            code = when (statusCode) {
+                                in 400..499 -> TelemetryErrorCode.Client
+                                in 500..599 -> TelemetryErrorCode.Server
+                                else -> TelemetryErrorCode.Unknown
+                            },
+                            retryable = statusCode >= 500,
+                            isRetry = didRetryCheckoutRequest,
+                        ),
+                    )
+                    recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+                    preloadCache.evict(
+                        PreloadState.Failed(
+                            failureReason,
+                            failureMessage,
+                        ),
+                        view = this@CheckoutWebView,
+                    )
+                }
+                errorResponse?.let {
+                    handleHttpError(
+                        request,
+                        it.statusCode,
+                        it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
+                    )
+                }
             }
             super.onReceivedHttpError(view, request, errorResponse)
-            errorResponse?.let {
-                handleHttpError(
-                    request,
-                    it.statusCode,
-                    it.reasonPhrase.ifBlank { "HTTP ${it.statusCode} Error" },
-                )
-            }
             if (isMainFrame) {
                 resetCheckoutRequestRetryState()
             }
+        }
+
+        private fun WebResourceResponse?.isCloudflareManagedChallenge(): Boolean {
+            val mitigation = this
+                ?.responseHeaders
+                ?.entries
+                ?.firstOrNull { (name) -> name.equals("cf-mitigated", ignoreCase = true) }
+                ?.value
+                ?.trim()
+
+            return mitigation.equals("challenge", ignoreCase = true)
         }
 
         override fun shouldOverrideUrlLoading(
