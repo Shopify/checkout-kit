@@ -42,8 +42,12 @@ private func applyConfigurationChange(configuration: Configuration, previousConf
         CheckoutTelemetry.disable()
     }
 
-    Task { @MainActor in
-        invalidate()
+    // Invalidate synchronously on the main thread so a `preload` issued right after a
+    // configuration change is not discarded by a deferred invalidation.
+    if Thread.isMainThread {
+        MainActor.assumeIsolated { invalidate() }
+    } else {
+        Task { @MainActor in invalidate() }
     }
 }
 

@@ -125,12 +125,12 @@ class PreloadCacheTests: XCTestCase {
     }
 
     func test_MessageRejectionDoesNotFailBackgroundedPreload() {
+        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
         let entry = storeCacheEntry()
         entry.loadedCheckoutURL = url
         entry.messageOrigin = { _ in
             MessageOrigin(scheme: "https", host: "evil.example.com", port: nil)
         }
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
         let delegate = MockCheckoutWebViewDelegate()
         entry.viewDelegate = delegate
 

@@ -258,7 +258,7 @@ ShopifyCheckoutKit.configure {
 }
 ```
 
-`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout.
+`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
 
 | Option | Default | Purpose |
 | --- | --- | --- |

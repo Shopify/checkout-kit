@@ -173,8 +173,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
     }
 
-    func testModifiersDoNotInvalidatePreload() async {
-        await Task.yield()
+    func testModifiersDoNotInvalidatePreload() {
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
@@ -184,7 +183,6 @@ class CheckoutConfigurableTests: XCTestCase {
             .tintColor(.blue)
             .title("Instance checkout")
             .closeButtonTintColor(.green)
-        await Task.yield()
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }

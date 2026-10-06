@@ -55,24 +55,19 @@ class ConfigurationTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, ["https://example.com", "*"])
     }
 
-    func testPreloadingCanBeDisabled() async throws {
+    func testPreloadingCanBeDisabled() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         ShopifyCheckoutKit.configuration.preloading.enabled = false
 
-        for _ in 0 ..< 10 where CheckoutWebView.preloadCache.hasEntry() {
-            await Task.yield()
-        }
-
         XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
-    func testChangingConfigurationWithoutChangingPreloadingInvalidatesPreload() async throws {
+    func testConfigureInvalidatesPreload() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
-        await Task.yield()
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
@@ -80,11 +75,34 @@ class ConfigurationTests: XCTestCase {
             $0.title = "Thank you!"
         }
 
-        for _ in 0 ..< 10 where CheckoutWebView.preloadCache.hasEntry() {
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testDirectConfigurationMutationInvalidatesPreload() throws {
+        let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
+
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        ShopifyCheckoutKit.configuration.title = "Thank you!"
+
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPreloadAfterConfigureIsRetained() async throws {
+        let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
+
+        ShopifyCheckoutKit.configure {
+            $0.title = "Thank you!"
+        }
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
+        for _ in 0 ..< 10 {
             await Task.yield()
         }
 
-        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }
 
     func testAppearanceCanBeSetDirectly() {
