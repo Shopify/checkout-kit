@@ -339,6 +339,9 @@ the exporter. This does not require rebuilding the published SDK. Avoid adding
 package-wide `-keep` rules for Checkout Kit, which can prevent R8 from applying
 the opt-out.
 
+The SDK's consumer rules retain the existing keep behavior outside the telemetry
+implementation and its internal WebView/protocol call sites.
+
 The rule applies only to builds that run R8 with optimization enabled. For other
 builds, including ordinary debug builds, use `Telemetry(enabled = false)` to
 disable telemetry at runtime. Runtime opt-out alone does not guarantee a smaller
