@@ -12,7 +12,7 @@
 
       const checkout = document.getElementById("checkout");
       window.checkoutEvents = [];
-      for (const type of ["start", "update", "complete", "error", "close"]) {
+      for (const type of ["start", "update", "complete", "error", "close", "blocked"]) {
         checkout.addEventListener(type, (event) => {
           window.checkoutEvents.push({ type, detail: event.detail ?? null });
         });
