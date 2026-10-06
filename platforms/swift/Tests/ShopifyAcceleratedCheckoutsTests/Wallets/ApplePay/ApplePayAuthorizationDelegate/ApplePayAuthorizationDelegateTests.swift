@@ -547,6 +547,23 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         XCTAssertEqual(mockController.presentCallCount, 1)
     }
 
+    func test_cancelledRecoveryDoesNotMutateCartOrPresent() async throws {
+        try await delegate.transition(to: .unexpectedError(error: NSError(domain: "test", code: 1)))
+        let delegate = try XCTUnwrap(delegate)
+        let task = Task { try await delegate.transition(to: .completed) }
+        task.cancel()
+        do {
+            try await task.value
+            XCTFail("Expected cancellation")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+
+        let mutations = await mockController.recordingStorefront.mutations
+        XCTAssertTrue(mutations.isEmpty)
+        XCTAssertEqual(mockController.presentCallCount, 0)
+    }
+
     // MARK: - CheckoutURL Assignment Tests
 
     func test_handleError_withCurrencyChangedInterrupt_setsCheckoutURLFromCart() async throws {

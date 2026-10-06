@@ -153,11 +153,16 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             break
         case .recovery:
             let cartID = try pkEncoder.cartID.get()
-            try? await _Concurrency.Task.retrying(clock: clock) { @MainActor in
-                try await controller.storefront.cartRemovePersonalData(id: cartID)
-            }.value
-
-            ShopifyAcceleratedCheckouts.logger.debug("Cleared PII from cart")
+            do {
+                try await withRetry(clock: clock, shouldRetry: StorefrontRetryPolicy.personalDataRemoval) {
+                    try await controller.storefront.cartRemovePersonalData(id: cartID)
+                }
+                ShopifyAcceleratedCheckouts.logger.debug("Cleared PII from cart")
+            } catch {
+                try Task<Never, Never>.checkCancellation()
+                if error is CancellationError || (error as? URLError)?.code == .cancelled { throw error }
+                ShopifyAcceleratedCheckouts.logger.error("Failed to clear PII from cart: \(error)")
+            }
 
             do {
                 // `cartRemovePersonalData` is used to clear PII collected via ApplePay
@@ -186,6 +191,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             }
         }
 
+        try Task<Never, Never>.checkCancellation()
         try? await controller.present(url: url)
     }
 

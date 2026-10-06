@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// High-level API for Storefront operations using the custom GraphQL client
