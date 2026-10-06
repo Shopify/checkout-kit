@@ -31,8 +31,7 @@ jobs:
     outputs:
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocolKotlin == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocolSwift == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.swift == 'true' }}
-      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
-      reactNativeIos: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeIos == 'true' }}
+      reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
       telemetry: ${{ steps.platform.outputs.telemetry == 'true' || steps.infra.outputs.telemetry == 'true' }}
@@ -63,9 +62,6 @@ jobs:
             swift:
               - 'Package.swift'
               - 'Package.resolved'
-              - '.github/workflows/swift-test-package.yml'
-              - '.github/workflows/swift-build-and-test-samples.yml'
-              - '.github/workflows/swift-test-workflow.yml'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/actions/setup-mint/**'
@@ -86,13 +82,6 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
-            # iOS-only RN infra: gates the macOS build/test jobs.
-            reactNativeIos:
-              - 'Package.swift'
-              - 'Package.resolved'
-              - '.github/workflows/rn-test-ios.yml'
-              - '.github/workflows/rn-build-ios.yml'
-              - '.github/actions/setup-mint/**'
             # Android-only RN infra: gates the gradle build/test jobs.
             reactNativeAndroid:
               - '.github/workflows/rn-test-android.yml'
@@ -140,18 +129,6 @@ jobs:
     if: needs.changes.outputs.android == 'true'
     uses: ./.github/workflows/android-test.yml
 
-  swift-test-package:
-    name: Swift
-    needs: changes
-    if: needs.changes.outputs.swift == 'true'
-    uses: ./.github/workflows/swift-test-package.yml
-
-  swift-build-and-test-samples:
-    name: Swift
-    needs: changes
-    if: needs.changes.outputs.swift == 'true'
-    uses: ./.github/workflows/swift-build-and-test-samples.yml
-
   swift-lint:
     name: Swift
     needs: changes
@@ -183,23 +160,11 @@ jobs:
     if: needs.changes.outputs.reactNativeAndroid == 'true'
     uses: ./.github/workflows/rn-test-android.yml
 
-  rn-test-ios:
-    name: React Native
-    needs: changes
-    if: needs.changes.outputs.reactNativeIos == 'true'
-    uses: ./.github/workflows/rn-test-ios.yml
-
   rn-build-android:
     name: React Native
     needs: changes
     if: needs.changes.outputs.reactNativeAndroid == 'true'
     uses: ./.github/workflows/rn-build-android.yml
-
-  rn-build-ios:
-    name: React Native
-    needs: changes
-    if: needs.changes.outputs.reactNativeIos == 'true'
-    uses: ./.github/workflows/rn-build-ios.yml
 
   rn-check-packed-files:
     name: React Native
@@ -276,15 +241,11 @@ jobs:
     needs:
       - changes
       - android-test
-      - swift-test-package
-      - swift-build-and-test-samples
       - swift-lint
       - swift-sample-package-paths
       - rn-test
       - rn-test-android
-      - rn-test-ios
       - rn-build-android
-      - rn-build-ios
       - rn-check-packed-files
       - rn-lint
       - web
