@@ -434,12 +434,12 @@ Checkout Kit does not create carts or authenticate buyers. Add buyer context to 
 - Use Storefront API cart buyer identity fields for customer and contact context such as email, phone, country, language, customer access tokens, and wallet preferences.
 - Use cart delivery inputs and the current cart delivery mutations for delivery addresses, selected delivery options, and pickup preferences.
 - Use the Customer Account API to obtain a customer access token and attach it through cart buyer identity.
-- For Shopify Plus stores that use Classic Customer Accounts, generate Multipass tokens server-side and set `return_to` to the checkout URL.
+- For Shopify Plus stores that already use Multipass, generate Multipass tokens server-side and set `return_to` to the checkout URL.
 
 Keep Multipass secrets out of client-side code.
 
-> [!WARNING]
-> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is now deprecated, consider using Customer Accounts API for new integrations.
+> [!NOTE]
+> [Multipass](https://shopify.dev/docs/api/customer-authentication/multipass) is still supported for stores that already use it. New integrations should [connect a third-party identity provider](https://shopify.dev/docs/api/customer-authentication#third-party-identity-providers-idps).
 
 ## Offsite payments and links
 
