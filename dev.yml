@@ -394,7 +394,9 @@ commands:
             run: |
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
+              set -e
               platforms/android/gradlew -p platforms/android :lib:createDebugUnitTestCoverageReport --console=plain
+              ruby scripts/check_coverage android platforms/android/lib/build/reports/coverage/test/debug/report.xml
           samples:
             desc: Run JVM tests for the Checkout Kit Android sample app
             syntax:
