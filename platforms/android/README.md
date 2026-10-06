@@ -322,6 +322,32 @@ data, or checkout, order, customer, or shop identifiers. Disabling telemetry sto
 collection and discards measurements that have not already been handed to the
 operating system for delivery.
 
+### Exclude telemetry at build time
+
+To remove telemetry from an optimized Android app, add this rule to the **app's**
+ProGuard/R8 configuration:
+
+```proguard
+-assumevalues class com.shopify.checkoutkit.TelemetryBuildConfig {
+    public static boolean isIncluded() return false;
+}
+```
+
+Enable `minifyEnabled = true` and use `proguard-android-optimize.txt` for that build
+type. R8 uses this hook to remove telemetry recording, metric construction, and
+the exporter. This does not require rebuilding the published SDK. Avoid adding
+package-wide `-keep` rules for Checkout Kit, which can prevent R8 from applying
+the opt-out.
+
+The SDK's consumer rules retain the existing keep behavior outside the telemetry
+implementation and its internal WebView/protocol call sites.
+
+The rule applies only to builds that run R8 with optimization enabled. For other
+builds, including ordinary debug builds, use `Telemetry(enabled = false)` to
+disable telemetry at runtime. Runtime opt-out alone does not guarantee a smaller
+app. Once removed at build time, telemetry cannot be re-enabled through
+`ShopifyCheckoutKit.configure`; shared dependencies used by checkout remain.
+
 ### Color schemes
 
 ```kotlin

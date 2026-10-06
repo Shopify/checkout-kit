@@ -67,9 +67,14 @@ internal object CheckoutTelemetry {
     @Volatile
     private var recorderOverride: CheckoutTelemetryRecording? = null
 
+    // Inline the build gate at call sites so R8 can also remove metric construction.
+    inline fun record(block: CheckoutTelemetryRecording.() -> Unit) {
+        if (TelemetryBuildConfig.isIncluded()) recorder.block()
+    }
+
     val recorder: CheckoutTelemetryRecording
         get() {
-            if (!ShopifyCheckoutKit.configuration.telemetry.enabled) {
+            if (!TelemetryBuildConfig.isIncluded() || !ShopifyCheckoutKit.configuration.telemetry.enabled) {
                 return NoOpCheckoutTelemetryRecorder
             }
             recorderOverride?.let { return it }
@@ -90,6 +95,7 @@ internal object CheckoutTelemetry {
         }
 
     fun disable() {
+        if (!TelemetryBuildConfig.isIncluded()) return
         val recorder = synchronized(lock) {
             configuredRecorder.also { configuredRecorder = null }
         }

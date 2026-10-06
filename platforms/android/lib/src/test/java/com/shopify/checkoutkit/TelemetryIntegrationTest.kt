@@ -23,6 +23,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
@@ -224,6 +225,39 @@ class TelemetryIntegrationTest {
         bridge.receiveMessage("not-json")
 
         assertThat(recorder.decodeErrors).isEmpty()
+    }
+
+    @Test
+    fun `build opt out skips metric creation even when runtime telemetry is enabled`() {
+        assertThat(TelemetryBuildConfig.isIncluded()).isTrue()
+        mockStatic(TelemetryBuildConfig::class.java).use { buildConfig ->
+            buildConfig.`when`<Boolean> { TelemetryBuildConfig.isIncluded() }.thenReturn(false)
+            ShopifyCheckoutKit.configure { it.telemetry = Telemetry(enabled = true) }
+            var createdMetric = false
+            CheckoutTelemetry.record { createdMetric = true }
+
+            val view = CheckoutWebView(activity, FakeWebMessageTransport())
+            try {
+                view.loadCheckout("https://checkout.example/checkouts/build-opt-out")
+                shadowOf(Looper.getMainLooper()).idle()
+                view.CheckoutWebViewClient().onPageFinished(view, "https://checkout.example/checkouts/build-opt-out")
+                view.recordTerminalProtocolFailureTelemetry()
+                val bridge = EmbeddedCheckoutProtocolBridge(
+                    view = view,
+                    webMessageTransport = FakeWebMessageTransport(),
+                    protocolMessageExecutor = { command -> command.run() },
+                )
+                bridge.receiveMessage("not-json")
+
+                assertThat(createdMetric).isFalse()
+                assertThat(recorder.errors).isEmpty()
+                assertThat(recorder.durations).isEmpty()
+                assertThat(recorder.decodeErrors).isEmpty()
+                assertThat(shadowOf(view).lastLoadedUrl).contains("/checkouts/build-opt-out")
+            } finally {
+                view.destroy()
+            }
+        }
     }
 
     @Test

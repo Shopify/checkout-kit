@@ -31,6 +31,9 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Verify telemetry build-time opt-out
+        run: ./gradlew -p test/telemetry -PuseLocalProtocol=false assembleIncludedRelease assembleExcludedRelease --console=plain
+
       - name: Run Protocol Unit Tests
         working-directory: protocol/languages/kotlin
         run: ./gradlew test --console=plain
