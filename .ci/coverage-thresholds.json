@@ -1,3 +1,9 @@
 {
-  "android": {"Lines": 85}
+  "android": {
+    "Lines": 85
+  },
+  "swift": {
+    "ShopifyCheckoutKit": 85,
+    "ShopifyAcceleratedCheckouts": 85
+  }
 }
