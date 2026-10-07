@@ -2,6 +2,7 @@ import type { ErrorResponse } from "@shopify/checkout-kit-protocol";
 
 /** Stable checkout error reasons applications can use to choose recovery. */
 export type CheckoutErrorCode =
+  | "unsupported_browser"
   | "storefront_password_required"
   | "customer_account_required"
   | "cart_expired"

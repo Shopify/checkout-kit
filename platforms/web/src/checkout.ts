@@ -9,6 +9,7 @@ import {
   type Checkout as ProtocolCheckout,
 } from "@shopify/checkout-kit-protocol";
 
+import { getUnsupportedBrowserCapabilities, supportsShadowDOM } from "./browser-capabilities";
 import { toCheckout, checkoutComparisonKey } from "./models/checkout";
 import { toCheckoutError } from "./models/error";
 import {
@@ -184,7 +185,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event {ShopifyCheckoutStartEvent} start - Checkout has started.
  * @event {ShopifyCheckoutUpdateEvent} update - The checkout snapshot changed.
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
- * @event {ShopifyCheckoutErrorEvent} error - Checkout reported a terminal error; the session closes after this event.
+ * @event {ShopifyCheckoutErrorEvent} error - Checkout could not open or reported a terminal error; an open session closes after this event.
  * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed, including after a blocked window.
  *
  * @example
@@ -206,7 +207,11 @@ export class ShopifyCheckout
   constructor() {
     super();
 
-    this.attachShadow({ mode: "open" }).appendChild(SHADOW_TEMPLATE.content.cloneNode(true));
+    // Keep the element usable enough to dispatch an unsupported-browser error when
+    // Shadow DOM is unavailable, rather than throwing during custom-element construction.
+    if (supportsShadowDOM()) {
+      this.attachShadow({ mode: "open" }).appendChild(SHADOW_TEMPLATE.content.cloneNode(true));
+    }
   }
 
   #checkout?: Checkout;
@@ -428,6 +433,17 @@ export class ShopifyCheckout
    * Reveals checkout in the target.
    */
   open(): void {
+    const unsupportedCapabilities = getUnsupportedBrowserCapabilities();
+    if (unsupportedCapabilities.length > 0) {
+      this.#checkout = undefined;
+      this.#error = {
+        code: "unsupported_browser",
+        message: `This browser does not support: ${unsupportedCapabilities.join(", ")}.`,
+      };
+      this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error: this.#error }));
+      return;
+    }
+
     const { target } = this;
     const src = this.#srcAsURL({ warnInvalidAppearance: true })?.href;
 
