@@ -77,6 +77,28 @@ function readResult(check, platform, expected, pr, repo, run) {
         throw new Error("Invalid coverage counts");
     });
   }
+  // Optional scopes preserve compatibility with results produced before the split.
+  if (result.groups !== undefined) {
+    if (!["protocol-swift", "protocol-kotlin"].includes(platform.id) ||
+        !result.groups || Array.isArray(result.groups) ||
+        Object.keys(result.groups).sort().join(",") !== "Generated,Runtime" || !result.rows.length)
+      throw new Error("Invalid coverage scopes");
+    for (const scope of ["Runtime", "Generated"]) {
+      const rows = result.groups[scope];
+      if (!Array.isArray(rows) || rows.length !== platform.metrics.length)
+        throw new Error("Missing scope metrics");
+      rows.forEach((row, index) => {
+        if (!Array.isArray(row) || row.length !== 3 || row[0] !== platform.metrics[index] ||
+            !Number.isSafeInteger(row[1]) || !Number.isSafeInteger(row[2]) || row[1] < 0 || row[2] < row[1])
+          throw new Error("Invalid scope counts");
+      });
+    }
+    result.rows.forEach((row, index) => {
+      for (const count of [1, 2])
+        if (result.groups.Runtime[index][count] + result.groups.Generated[index][count] !== row[count])
+          throw new Error("Coverage scopes do not match totals");
+    });
+  }
   return {...result, reportUrl: reportURL(result.reportUrl, repo, platform, run)};
 }
 
@@ -150,7 +172,16 @@ function render(results, baselines = {}) {
       for (const target of platform.metrics)
         lines.push(`| ${emoji} | Swift · ${target} | ${value(target)} | — | — | ${report} |`);
     } else {
-      lines.push(`| ${emoji} | ${platform.displayTitle || platform.title} | ${value("Lines")} | ${value("Branches")} | ${value(find("Functions") ? "Functions" : "Methods")} | ${report} |`);
+      const scopes = result.groups
+        ? [["Runtime", result.groups.Runtime], ["Generated", result.groups.Generated], ["Total", rows]]
+        : [[null, rows]];
+      for (const [scope, metrics] of scopes) {
+        const find = (name) => metrics.find((row) => row[0] === name);
+        const baseMetrics = scope && scope !== "Total" ? baseline?.groups?.[scope] : baseline?.rows;
+        const value = (name) => metric(find(name), comparable ? baseMetrics?.find((row) => row[0] === name) : undefined);
+        const title = `${platform.displayTitle || platform.title}${scope ? ` · ${scope}` : ""}`;
+        lines.push(`| ${emoji} | ${title} | ${value("Lines")} | ${value("Branches")} | ${value(find("Functions") ? "Functions" : "Methods")} | ${report} |`);
+      }
     }
   }
   lines.push("", "Changes in parentheses are **percentage points versus the PR’s base commit**. No delta appears when matching base coverage is unavailable.");

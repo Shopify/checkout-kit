@@ -350,3 +350,56 @@ test("native protocol results retain their own state while sharing a runner", as
   assert.ok(row(body, "Embedded Checkout Protocol (Swift)").includes("[Full report]"));
   assert.equal(f.warnings.length, 0);
 });
+
+function scopes(platform) {
+  return {
+    Runtime: platform.metrics.map((name) => [name, 6, 6]),
+    Generated: platform.metrics.map((name) => [name, 1, 4]),
+  };
+}
+
+test("native protocol scopes retain totals and distinguish runtime from generated code", async () => {
+  const f = fixture();
+  for (const id of ["protocol-swift", "protocol-kotlin"]) {
+    const platform = reporter.platforms.find((platform) => platform.id === id);
+    f.add(id, {groups: scopes(platform)});
+  }
+  await f.publish();
+  assert.equal(f.warnings.length, 0);
+  for (const language of ["Swift", "Kotlin"]) {
+    assert.ok(row(f.writes[0].body, `Embedded Checkout Protocol (${language}) · Runtime`).includes("100%"));
+    assert.ok(row(f.writes[0].body, `Embedded Checkout Protocol (${language}) · Generated`).includes("25%"));
+    assert.ok(row(f.writes[0].body, `Embedded Checkout Protocol (${language}) · Total`).includes("70%"));
+  }
+});
+
+test("rejects forged scope names, partial metrics and counts inconsistent with totals", async () => {
+  for (const mutate of [
+    (result) => { result.groups.Injected = result.groups.Runtime; },
+    (result) => { delete result.groups.Generated; },
+    (result) => { result.groups.Runtime[0][1] = 7; },
+    (result) => { result.groups.Runtime[0][1] = 5; },
+    (result) => { result.groups.Runtime[0][0] = "unexpected"; },
+    (result) => { result.groups.Runtime.pop(); },
+    (result) => { result.groups = null; },
+    (result) => { result.state = "skipped"; result.rows = []; },
+  ]) {
+    const f = fixture();
+    const platform = reporter.platforms.find((platform) => platform.id === "protocol-kotlin");
+    const check = f.add(platform.id, {groups: scopes(platform)});
+    const result = JSON.parse(check.output.text);
+    mutate(result);
+    check.output.text = JSON.stringify(result);
+    await f.publish();
+    assert.equal(f.warnings.length, 1);
+    assert.ok(!f.writes[0].body.includes(" · Runtime"));
+  }
+});
+
+test("failed protocol tests keep scope measurements and failure status", async () => {
+  const f = fixture();
+  const platform = reporter.platforms.find((platform) => platform.id === "protocol-swift");
+  f.add(platform.id, {state: "failed", groups: scopes(platform)});
+  await f.publish();
+  assert.match(row(f.writes[0].body, `${platform.title} · Runtime`), /❌.*100%/);
+});

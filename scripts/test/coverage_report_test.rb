@@ -49,6 +49,20 @@ class CoverageReportTest < Minitest::Test
     XML
   end
 
+  def kotlin_xml
+    runtime = {"LINE" => [3, 0], "INSTRUCTION" => [8, 0], "BRANCH" => [0, 0], "METHOD" => [1, 0]}
+    generated = {"LINE" => [1, 1], "INSTRUCTION" => [1, 1], "BRANCH" => [0, 0], "METHOD" => [0, 3]}
+    sources = {"Client.kt" => runtime, "Models.kt" => generated, "EmbeddedCheckoutProtocol.kt" => runtime}.map do |name, counters|
+      xml = counters.reject { |_, counts| counts == [0, 0] }.map { |type, (covered, missed)| %(<counter type="#{type}" covered="#{covered}" missed="#{missed}"/>) }.join
+      %(<sourcefile name="#{name}">#{xml}</sourcefile>)
+    end.join
+    # Include the generated catalog in the total, but not the runtime scope.
+    xml = android_xml.sub(%(<report name="lib">), %(<report name="lib"><package name="com/shopify/ucp/embedded/checkout">#{sources}</package>))
+    xml.sub('type="LINE" covered="4" missed="1"', 'type="LINE" covered="7" missed="1"')
+      .sub('type="INSTRUCTION" covered="9" missed="1"', 'type="INSTRUCTION" covered="17" missed="1"')
+      .sub('type="METHOD" covered="1" missed="3"', 'type="METHOD" covered="2" missed="3"')
+  end
+
   def test_swift_reports_sdk_targets_only_even_below_85_percent
     markdown = CoverageReport.new("swift", swift_json).markdown
 
@@ -80,7 +94,12 @@ class CoverageReportTest < Minitest::Test
     report = CoverageReport.new("protocol-swift", JSON.generate("data" => [{"files" => files}]))
     assert_equal [["Lines", 11, 15], ["Functions", 2, 4]], report.rows
     assert_includes report.markdown, "Embedded Checkout Protocol (Swift)"
-    assert_includes report.markdown, "| Lines | Functions |"
+    assert_equal [["Lines", 8, 10], ["Functions", 1, 2]], report.groups.fetch("Runtime")
+    assert_equal [["Lines", 3, 5], ["Functions", 1, 2]], report.groups.fetch("Generated")
+    assert_includes report.markdown, "| Scope | Lines | Functions |"
+    assert_includes report.markdown, "| Runtime |"
+    assert_includes report.markdown, "| Generated |"
+    assert_includes report.markdown, "| Total |"
   end
 
   def test_swift_protocol_rejects_missing_or_duplicate_files
@@ -90,10 +109,26 @@ class CoverageReportTest < Minitest::Test
   end
 
   def test_kotlin_protocol_has_its_own_title_and_comment_marker
-    report = CoverageReport.new("protocol-kotlin", android_xml)
-    assert_equal CoverageReport.new("android", android_xml).rows, report.rows
+    report = CoverageReport.new("protocol-kotlin", kotlin_xml)
+    assert_equal CoverageReport.new("android", kotlin_xml).rows, report.rows
+    assert_equal ["Lines", 3, 3], report.groups.fetch("Runtime").first
+    assert_equal ["Lines", 4, 5], report.groups.fetch("Generated").first
     assert_includes report.markdown, "Embedded Checkout Protocol (Kotlin)"
     refute_equal CoverageReport.new("android", android_xml).marker, report.marker
+  end
+
+  def test_kotlin_protocol_rejects_missing_duplicate_and_incomplete_source_totals
+    assert_raises(RuntimeError) { CoverageReport.new("protocol-kotlin", android_xml) }
+    assert_raises(RuntimeError) { CoverageReport.new("protocol-kotlin", kotlin_xml.sub('name="Models.kt"', 'name="Client.kt"')) }
+    assert_raises(RuntimeError) { CoverageReport.new("protocol-kotlin", kotlin_xml.sub('covered="7"', 'covered="8"')) }
+  end
+
+  def test_empty_generated_scope_remains_visible_without_diluting_runtime
+    file = {"filename" => "/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Client.swift",
+            "summary" => {"lines" => {"covered" => 8, "count" => 10}, "functions" => {"covered" => 1, "count" => 2}}}
+    report = CoverageReport.new("protocol-swift", JSON.generate("data" => [{"files" => [file]}]))
+    assert_equal [["Lines", 0, 0], ["Functions", 0, 0]], report.groups.fetch("Generated")
+    assert_equal report.rows, report.groups.fetch("Runtime")
   end
 
   def test_missing_targets_and_counters_fail_instead_of_showing_partial_coverage
@@ -208,6 +243,16 @@ class CoverageResultPublisherTest < Minitest::Test
     assert_equal @source, result.fetch("source")
     assert_equal [["ShopifyCheckoutKit", 1, 2], ["ShopifyAcceleratedCheckouts", 1, 2]], result.fetch("rows")
     assert_equal 1, @client.writes.length
+  end
+
+  def test_publishes_protocol_scopes_alongside_backward_compatible_totals
+    @report = CoverageReport.new("protocol-kotlin", CoverageReportTest.new("unused").kotlin_xml)
+    @client = FakeClient.new(@pr, [])
+    CoverageResultPublisher.new(repository: "example/sdk", pr_number: 123, sha: "abc123", token: "test-token", source: @source, client: @client)
+      .publish(platform: "protocol-kotlin", state: "success", report: @report)
+    result = JSON.parse(@client.writes.first[2][:output][:text])
+    assert_equal @report.rows, result.fetch("rows")
+    assert_equal @report.groups, result.fetch("groups")
   end
 
   def test_updates_the_matching_check_without_creating_duplicates
