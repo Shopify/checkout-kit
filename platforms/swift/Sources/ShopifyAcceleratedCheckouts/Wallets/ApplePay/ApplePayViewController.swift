@@ -154,6 +154,8 @@ class ApplePayViewController: WalletController, PayController {
 
     override func checkoutDidDismiss() {
         Task { @MainActor in
+            // Completion may already have finished the Apple Pay flow before the buyer closes checkout.
+            guard case .presentingCheckoutKit = authorizationDelegate.state else { return }
             try? await authorizationDelegate.transition(to: .completed)
         }
         super.checkoutDidDismiss()

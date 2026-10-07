@@ -193,6 +193,20 @@ class ApplePayViewControllerTests: XCTestCase {
         await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
     }
 
+    func test_checkoutDidDismiss_afterCompletionFinishedApplePay_forwardsDismissalWithoutTransitioning() async {
+        var dismissalCount = 0
+        viewController.eventHandlers.checkoutDidDismiss = { dismissalCount += 1 }
+        XCTAssertEqual(mockAuthorizationDelegate.state, .idle)
+
+        viewController.checkoutDidDismiss()
+        for _ in 0 ..< 10 {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(dismissalCount, 1)
+        XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [])
+    }
+
     // MARK: - WalletController Inheritance
 
     func test_configuration_whenInitialized_usesCorrectStorefront() {
