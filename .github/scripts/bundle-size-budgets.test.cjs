@@ -11,6 +11,37 @@ const report = (size, base = 34 * KiB) => ({
 });
 const comment = { id: 42, html_url: "https://github.com/example/repo/pull/1#issuecomment-42" };
 
+test("Swift budgets select incremental app sizes and accept each variant independently", () => {
+  const input = {
+    budgets: { swift: {
+      core: { measurement: "core", softKiB: 100, hardKiB: 200 },
+      accelerated: { measurement: "accelerated", softKiB: 200, hardKiB: 400 },
+    } },
+    base: {},
+    head: policy.measurements(
+      "Swift\tbaseline app\t100000\nSwift\tcore app\t253600\n" +
+      "Swift\tcore incremental app\t153600\nSwift\taccelerated incremental app\t256000\n",
+    ),
+    measuredPlatforms: ["swift"],
+  };
+  const rows = policy.evaluate(input);
+  assert.deepEqual(rows.map((row) => [row.after, row.status]), [
+    [150 * KiB, "soft"], [250 * KiB, "soft"],
+  ]);
+  const { accepted } = policy.accept(
+    rows, policy.parseCommands("/accept-size swift Adds wallet support."), "writer", comment,
+  );
+  assert.equal(policy.conclusion(policy.evaluate(input, accepted)), "success");
+  input.head["Swift\taccelerated incremental app"]++;
+  assert.deepEqual(policy.evaluate(input, accepted).map((row) => row.status), ["accepted", "soft"]);
+  delete input.head["Swift\tcore incremental app"];
+  assert.equal(policy.evaluate(input, accepted)[0].status, "missing");
+  const rendered = policy.render(rows, { version: 1, acceptances: {}, processedComments: [] }, "");
+  assert.match(rendered, /Core Checkout Kit incremental app size \(uncompressed\)/);
+  assert.match(rendered, /Checkout Kit with Accelerated Checkouts incremental app size/);
+  assert.doesNotMatch(rendered, /undefined/);
+});
+
 test("enforces exact limits, exempts no growth, and handles missing measurements", () => {
   for (const [size, base, status] of [
     [35 * KiB, 34 * KiB, "within"],
