@@ -234,19 +234,6 @@ export const requestDescriptors = {
 };
 
 export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
-  'ec.ready',
-  'ec.auth',
-  'ec.error',
-  'ec.start',
-  'ec.complete',
-  'ec.messages.change',
-  'ec.line_items.change',
-  'ec.buyer.change',
-  'ec.totals.change',
-  'ec.payment.change',
-  'ec.payment.instruments_change_request',
-  'ec.payment.credential_request',
-  'ec.window.open_request',
-  'ec.fulfillment.change',
-  'ec.fulfillment.address_change_request',
+  ...Object.values(checkoutProtocolCatalog),
+  ...Object.values(checkoutProtocolRequestCatalog),
 ]);

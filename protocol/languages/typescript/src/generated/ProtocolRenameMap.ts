@@ -6,12 +6,94 @@
 // path needed to reach them. Extension keys (UCP additionalProperties) are
 // preserved by the walker's pass-through and are intentionally absent here.
 
-export type RenameChild =
-  | ['r', string]
-  | ['a', RenameChild]
-  | ['m', RenameChild]
-  | ['u', ...RenameChild[]];
+export type {RenameChild, RenameEntry} from '../protocol_rename_map';
 
-export type RenameEntry = [string, string] | [string, string, RenameChild];
+export const AddressChangeCheckoutModel = 0;
+export const AddressChangeResultModel = 1;
+export const AdjustmentModel = 2;
+export const AdjustmentLineItemModel = 3;
+export const AdjustmentStatusModel = 4;
+export const AppliedDiscountModel = 5;
+export const AuthModel = 6;
+export const AuthRequestModel = 7;
+export const AuthResultModel = 8;
+export const BuyerModel = 9;
+export const CapabilityElementModel = 10;
+export const CapabilityResponseSchemaModel = 11;
+export const CheckoutModel = 12;
+export const CheckoutDiscountsModel = 13;
+export const CheckoutFulfillmentModel = 14;
+export const CheckoutFulfillmentObjectModel = 15;
+export const CheckoutStatusModel = 16;
+export const CheckoutTotalModel = 17;
+export const ConstraintExpressionModel = 18;
+export const ConstraintPropertyModel = 19;
+export const ContentTypeModel = 20;
+export const ContextModel = 21;
+export const CredentialCheckoutModel = 22;
+export const CredentialResultModel = 23;
+export const DescriptionModel = 24;
+export const DiscountAllocationModel = 25;
+export const DiscountMethodModel = 26;
+export const EmbeddedColorSchemeModel = 27;
+export const EmbeddedServiceModel = 28;
+export const EmbeddedTransportConfigModel = 29;
+export const ErrorResponseModel = 30;
+export const ErrorResponseUcpModel = 31;
+export const ErrorStatusModel = 32;
+export const EventLineItemModel = 33;
+export const ExpectationModel = 34;
+export const ExpectationLineItemModel = 35;
+export const FulfillmentModel = 36;
+export const FulfillmentAvailableMethodModel = 37;
+export const FulfillmentDestinationModel = 38;
+export const FulfillmentEventModel = 39;
+export const FulfillmentGroupModel = 40;
+export const FulfillmentMethodModel = 41;
+export const FulfillmentOptionModel = 42;
+export const InstrumentsChangeCheckoutModel = 43;
+export const InstrumentsChangePaymentModel = 44;
+export const InstrumentsChangeResultModel = 45;
+export const InstrumentsChangeResultUcpModel = 46;
+export const ItemModel = 47;
+export const LineModel = 48;
+export const LineItemModel = 49;
+export const LineItemQuantityModel = 50;
+export const LineItemStatusModel = 51;
+export const LineItemTotalModel = 52;
+export const LinkModel = 53;
+export const MeasureModel = 54;
+export const MessageModel = 55;
+export const MessageTypeModel = 56;
+export const OrderModel = 57;
+export const OrderConfirmationModel = 58;
+export const OrderLineItemModel = 59;
+export const PaymentModel = 60;
+export const PaymentCredentialModel = 61;
+export const PaymentHandlerAvailableInstrumentModel = 62;
+export const PaymentHandlerElementModel = 63;
+export const PaymentHandlerResponseSchemaModel = 64;
+export const PaymentHandlerResponseSchemaAvailableInstrumentModel = 65;
+export const PolicyModel = 66;
+export const PostalAddressModel = 67;
+export const PreferredPaymentHandlerModel = 68;
+export const QuantityUnitModel = 69;
+export const ReadyCheckoutModel = 70;
+export const ReadyPaymentModel = 71;
+export const ReadyRequestModel = 72;
+export const ReadyResultModel = 73;
+export const SelectedPaymentInstrumentModel = 74;
+export const ServiceModel = 75;
+export const ServiceResponseSchemaModel = 76;
+export const SeverityModel = 77;
+export const TransportModel = 78;
+export const UcpCheckoutResponseSchemaModel = 79;
+export const UcpCheckoutResponseSchemaStatusModel = 80;
+export const UcpOrderResponseSchemaModel = 81;
+export const UnitPriceModel = 82;
+export const UpgradeModel = 83;
+export const WindowOpenRequestModel = 84;
+export const WindowOpenResultModel = 85;
 
-export const renameMap: Record<string, RenameEntry[]> = {"AddressChangeCheckout":[["fulfillment","fulfillment",["r","CheckoutFulfillmentObject"]]],"AddressChangeResult":[["checkout","checkout",["r","AddressChangeCheckout"]],["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]],"Adjustment":[["line_items","lineItems",["a",["r","AdjustmentLineItem"]]],["occurred_at","occurredAt"],["totals","totals",["a",["r","LineItemTotal"]]]],"AdjustmentLineItem":[["measure","measure",["r","Measure"]]],"AuthResult":[["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]],"Buyer":[["first_name","firstName"],["last_name","lastName"],["phone_number","phoneNumber"]],"Checkout":[["buyer","buyer",["r","Buyer"]],["context","context",["r","Context"]],["continue_url","continueUrl"],["expires_at","expiresAt"],["fulfillment","fulfillment",["r","CheckoutFulfillment"]],["line_items","lineItems",["a",["r","LineItem"]]],["messages","messages",["a",["r","Message"]]],["order","order",["r","OrderConfirmation"]],["payment","payment",["r","Payment"]],["policies","policies",["a",["r","Policy"]]],["totals","totals",["a",["r","CheckoutTotal"]]],["ucp","ucp",["r","UcpCheckoutResponseSchema"]]],"CheckoutFulfillment":[["available_methods","availableMethods",["a",["r","FulfillmentAvailableMethod"]]],["methods","methods",["a",["r","FulfillmentMethod"]]]],"CheckoutFulfillmentObject":[["available_methods","availableMethods",["a",["r","FulfillmentAvailableMethod"]]],["methods","methods",["a",["r","FulfillmentMethod"]]]],"CheckoutTotal":[["display_text","displayText"],["lines","lines",["a",["r","Line"]]]],"Context":[["address_country","addressCountry"],["address_region","addressRegion"],["postal_code","postalCode"]],"CredentialCheckout":[["payment","payment",["r","Payment"]]],"CredentialResult":[["checkout","checkout",["r","CredentialCheckout"]],["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]],"EmbeddedTransportConfig":[["color_scheme","colorScheme"]],"ErrorResponse":[["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]],["ucp","ucp",["r","ErrorResponseUcp"]]],"ErrorResponseUcp":[["map_order","mapOrder"],["payment_handlers","paymentHandlers",["m",["a",["r","PaymentHandlerResponseSchema"]]]]],"Expectation":[["destination","destination",["r","PostalAddress"]],["fulfillable_on","fulfillableOn"],["line_items","lineItems"],["method_type","methodType"]],"Fulfillment":[["events","events",["a",["r","FulfillmentEvent"]]],["expectations","expectations",["a",["r","Expectation"]]]],"FulfillmentAvailableMethod":[["fulfillable_on","fulfillableOn"],["line_item_ids","lineItemIds"]],"FulfillmentDestination":[["address","address",["r","PostalAddress"]],["address_country","addressCountry"],["address_locality","addressLocality"],["address_region","addressRegion"],["extended_address","extendedAddress"],["first_name","firstName"],["last_name","lastName"],["phone_number","phoneNumber"],["postal_code","postalCode"],["street_address","streetAddress"]],"FulfillmentEvent":[["line_items","lineItems"],["occurred_at","occurredAt"],["tracking_number","trackingNumber"],["tracking_url","trackingUrl"]],"FulfillmentGroup":[["line_item_ids","lineItemIds"],["options","options",["a",["r","FulfillmentOption"]]],["selected_option_id","selectedOptionId"]],"FulfillmentMethod":[["destinations","destinations",["a",["r","FulfillmentDestination"]]],["groups","groups",["a",["r","FulfillmentGroup"]]],["line_item_ids","lineItemIds"],["selected_destination_id","selectedDestinationId"]],"FulfillmentOption":[["earliest_fulfillment_time","earliestFulfillmentTime"],["latest_fulfillment_time","latestFulfillmentTime"],["totals","totals",["a",["r","LineItemTotal"]]]],"InstrumentsChangeCheckout":[["payment","payment",["r","InstrumentsChangePayment"]]],"InstrumentsChangePayment":[["instruments","instruments",["a",["r","SelectedPaymentInstrument"]]],["selected_instrument_id","selectedInstrumentId"]],"InstrumentsChangeResult":[["checkout","checkout",["r","InstrumentsChangeCheckout"]],["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]],"InstrumentsChangeResultUcp":[["map_order","mapOrder"],["payment_handlers","paymentHandlers",["m",["a",["r","PaymentHandlerElement"]]]]],"Item":[["image_url","imageUrl"],["quantity_unit","quantityUnit",["r","QuantityUnit"]],["unit_price","unitPrice",["r","UnitPrice"]]],"Line":[["display_text","displayText"]],"LineItem":[["item","item",["r","Item"]],["parent_id","parentId"],["totals","totals",["a",["r","LineItemTotal"]]]],"LineItemTotal":[["display_text","displayText"]],"Measure":[["display_text","displayText"]],"Message":[["content_type","contentType"],["image_url","imageUrl"]],"Order":[["adjustments","adjustments",["a",["r","Adjustment"]]],["checkout_id","checkoutId"],["fulfillment","fulfillment",["r","Fulfillment"]],["line_items","lineItems",["a",["r","OrderLineItem"]]],["messages","messages",["a",["r","Message"]]],["permalink_url","permalinkUrl"],["policies","policies",["a",["r","Policy"]]],["totals","totals",["a",["r","CheckoutTotal"]]],["ucp","ucp",["r","UcpOrderResponseSchema"]]],"OrderConfirmation":[["permalink_url","permalinkUrl"]],"OrderLineItem":[["item","item",["r","Item"]],["parent_id","parentId"],["totals","totals",["a",["r","LineItemTotal"]]]],"Payment":[["instruments","instruments",["a",["r","SelectedPaymentInstrument"]]]],"PaymentHandlerElement":[["available_instruments","availableInstruments"]],"PaymentHandlerResponseSchema":[["available_instruments","availableInstruments"]],"Policy":[["applies_to","appliesTo"]],"PostalAddress":[["address_country","addressCountry"],["address_locality","addressLocality"],["address_region","addressRegion"],["extended_address","extendedAddress"],["first_name","firstName"],["last_name","lastName"],["phone_number","phoneNumber"],["postal_code","postalCode"],["street_address","streetAddress"]],"QuantityUnit":[["display_text","displayText"]],"ReadyCheckout":[["fulfillment","fulfillment",["r","CheckoutFulfillmentObject"]],["payment","payment",["r","ReadyPayment"]]],"ReadyPayment":[["instruments","instruments",["a",["r","SelectedPaymentInstrument"]]],["selected_instrument_id","selectedInstrumentId"]],"ReadyResult":[["checkout","checkout",["r","ReadyCheckout"]],["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]],"SelectedPaymentInstrument":[["billing_address","billingAddress",["r","PostalAddress"]],["handler_id","handlerId"]],"ServiceResponseSchema":[["config","config",["r","EmbeddedTransportConfig"]]],"UcpCheckoutResponseSchema":[["map_order","mapOrder"],["payment_handlers","paymentHandlers",["m",["a",["r","PaymentHandlerResponseSchema"]]]],["services","services",["m",["a",["r","ServiceResponseSchema"]]]]],"UcpOrderResponseSchema":[["map_order","mapOrder"],["payment_handlers","paymentHandlers",["m",["a",["r","PaymentHandlerResponseSchema"]]]]],"UnitPrice":[["measure","measure",["r","Measure"]],["reference","reference",["r","Measure"]]],"WindowOpenResult":[["ucp","ucp",["r","InstrumentsChangeResultUcp"]],["continue_url","continueUrl"],["messages","messages",["a",["r","Message"]]]]};
+export const renameFields = ["address","address_country","address_locality","address_region","adjustments","applies_to","available_instruments","available_methods","billing_address","buyer","checkout","checkout_id","color_scheme","config","content_type","context","continue_url","destination","destinations","display_text","earliest_fulfillment_time","events","expectations","expires_at","extended_address","first_name","fulfillable_on","fulfillment","groups","handler_id","image_url","instruments","item","last_name","latest_fulfillment_time","line_item_ids","line_items","lines","map_order","measure","messages","method_type","methods","occurred_at","options","order","parent_id","payment","payment_handlers","permalink_url","phone_number","policies","postal_code","quantity_unit","reference","selected_destination_id","selected_instrument_id","selected_option_id","services","street_address","totals","tracking_number","tracking_url","ucp","unit_price"];
+export const encodedRenameMap = "y#=#1&,#!b#P2!J$#Y%F$#%M!_$#V#I#X!!!!%b#P2!J$#Y%;!C!T!!!.+#+1#72!9!=#0F$#SJ$#YO#]Q#_U$#e_$#3b#r!$)$#GL$#K$)$#GL$#K!$5!G$#R!!!%#!%!V!#Q#_&,#8b#P2!J$#Y!!!!!#.!%2!J$#Yb#A$H!R%$#c!!&3#f<!F!K!!$7$#I8$#D$<!E!,!#f#!$!%!:!;!C!T!V!^!&F!M!`!a!%E!N$#L[!&4$#H>$#JE!Y!%6!D!_$#V#Q#N$A$#mZ!&,#Mb#P2!J$#Y$H!R%$#b%@!W#hc#u#5!%B#QP!_$#V!!#5!!#5!$0!@!!+&$#$-!=#FF$#^J$#YS!U$#e_$#3b#t#S!%B#QP!_$#V#A$#m!!#(!#(!!#'!+#!$!%!:!;!C!T!V!^!!#5!$=#1Q#j$A$#mZ!!&,#ib#P2!J$#Y$*#f?!!#/#?!!%H!R%$#c]%$#o!$H!R%$#c$I#XX#X!!%b#P2!J$#Y";

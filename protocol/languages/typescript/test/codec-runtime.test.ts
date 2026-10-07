@@ -2,6 +2,11 @@ import {expect, test} from 'vitest';
 
 import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {
+  CheckoutModel,
+  InstrumentsChangeResultUcpModel,
+  PostalAddressModel,
+} from '../src/generated/ProtocolRenameMap';
+import {
   decodeProtocolObject,
   encodeProtocolObject,
   ProtocolValidationError,
@@ -21,7 +26,7 @@ const wire = {
 };
 
 test('camelizes known schema fields on decode', () => {
-  const decoded = decodeProtocolObject(wire, 'Checkout') as Record<
+  const decoded = decodeProtocolObject(wire, CheckoutModel, 'Checkout') as Record<
     string,
     unknown
   >;
@@ -31,7 +36,7 @@ test('camelizes known schema fields on decode', () => {
 });
 
 test('preserves unknown extension keys unchanged on decode', () => {
-  const decoded = decodeProtocolObject(wire, 'Checkout') as Record<
+  const decoded = decodeProtocolObject(wire, CheckoutModel, 'Checkout') as Record<
     string,
     unknown
   >;
@@ -42,8 +47,8 @@ test('preserves unknown extension keys unchanged on decode', () => {
 });
 
 test('round-trips extension keys through decode + encode', () => {
-  const decoded = decodeProtocolObject(wire, 'Checkout');
-  const encoded = encodeProtocolObject(decoded, 'Checkout') as Record<
+  const decoded = decodeProtocolObject(wire, CheckoutModel, 'Checkout');
+  const encoded = encodeProtocolObject(decoded, CheckoutModel) as Record<
     string,
     unknown
   >;
@@ -56,6 +61,7 @@ test('round-trips extension keys through decode + encode', () => {
 test('renames fields inside array elements', () => {
   const decoded = decodeProtocolObject(
     {...wire, line_items: [{parent_id: 'parent-1', quantity: 2}]},
+    CheckoutModel,
     'Checkout',
   ) as Record<string, Array<Record<string, unknown>>>;
 
@@ -67,6 +73,7 @@ test('renames fields inside array elements', () => {
 test('renames fields inside map values', () => {
   const decoded = decodeProtocolObject(
     {payment_handlers: {stripe: [{available_instruments: ['card']}]}},
+    InstrumentsChangeResultUcpModel,
     'InstrumentsChangeResultUcp',
   ) as Record<string, Record<string, Array<Record<string, unknown>>>>;
 
@@ -75,9 +82,19 @@ test('renames fields inside map values', () => {
   expect('available_instruments' in handler).toBe(false);
 });
 
+test('decodes compact rename entries for later model IDs', () => {
+  const decoded = decodeProtocolObject(
+    {street_address: '151 O’Connor St', address_country: 'CA'},
+    PostalAddressModel,
+    'PostalAddress',
+  );
+
+  expect(decoded).toEqual({streetAddress: '151 O’Connor St', addressCountry: 'CA'});
+});
+
 test('throws when a required string field is not a string', () => {
   expectValidationError(
-    () => decodeProtocolObject({...wire, currency: 123}, 'Checkout'),
+    () => decodeProtocolObject({...wire, currency: 123}, CheckoutModel, 'Checkout'),
     'Checkout.currency',
     'invalid_type',
   );
@@ -98,10 +115,10 @@ test('treats structured-cloned undefined properties as absent without changing e
   };
 
   expect(Object.hasOwn(checkout, 'order')).toBe(true);
-  expect(decodeProtocolObject(checkout, 'Checkout')).toStrictEqual(
-    decodeProtocolObject(omitted, 'Checkout'),
+  expect(decodeProtocolObject(checkout, CheckoutModel, 'Checkout')).toStrictEqual(
+    decodeProtocolObject(omitted, CheckoutModel, 'Checkout'),
   );
-  const decoded = decodeProtocolObject(checkout, 'Checkout');
+  const decoded = decodeProtocolObject(checkout, CheckoutModel, 'Checkout');
   expect(decoded).not.toHaveProperty('order');
   expect(decoded).not.toHaveProperty('fulfillment');
   expect(decoded.buyer).not.toHaveProperty('firstName');
@@ -118,8 +135,8 @@ test('decodes direct objects and JSON-serialized delivery the same way', () => {
   });
   const serializedCheckout = JSON.parse(JSON.stringify(checkout));
 
-  expect(decodeProtocolObject(checkout, 'Checkout')).toStrictEqual(
-    decodeProtocolObject(serializedCheckout, 'Checkout'),
+  expect(decodeProtocolObject(checkout, CheckoutModel, 'Checkout')).toStrictEqual(
+    decodeProtocolObject(serializedCheckout, CheckoutModel, 'Checkout'),
   );
 });
 
@@ -134,6 +151,7 @@ test('preserves schema-valid null instead of treating it as absent', () => {
         methods: undefined,
       },
     },
+    CheckoutModel,
     'Checkout',
   );
 
@@ -146,7 +164,12 @@ test.each(['currency', 'totals', 'ucp'])(
   'rejects an undefined required Checkout.%s',
   field => {
     expectValidationError(
-      () => decodeProtocolObject({...wire, [field]: undefined}, 'Checkout'),
+      () =>
+        decodeProtocolObject(
+          {...wire, [field]: undefined},
+          CheckoutModel,
+          'Checkout',
+        ),
       `Checkout.${field}`,
       'missing_required',
     );
@@ -157,23 +180,27 @@ test('rejects undefined and malformed required fields inside a present order', (
   const permalink_url = 'https://example.test/orders/order-1';
 
   expectValidationError(
-    () => decodeProtocolObject(
-      {...wire, order: {id: undefined, permalink_url}},
-      'Checkout',
-    ),
+    () =>
+      decodeProtocolObject(
+        {...wire, order: {id: undefined, permalink_url}},
+        CheckoutModel,
+        'Checkout',
+      ),
     'Checkout.order.id',
     'missing_required',
   );
   expectValidationError(
-    () => decodeProtocolObject(
-      {...wire, order: {id: 'order-1', permalink_url: undefined}},
-      'Checkout',
-    ),
+    () =>
+      decodeProtocolObject(
+        {...wire, order: {id: 'order-1', permalink_url: undefined}},
+        CheckoutModel,
+        'Checkout',
+      ),
     'Checkout.order.permalink_url',
     'missing_required',
   );
   expectValidationError(
-    () => decodeProtocolObject({...wire, order: 123}, 'Checkout'),
+    () => decodeProtocolObject({...wire, order: 123}, CheckoutModel, 'Checkout'),
     'Checkout.order',
     'invalid_type',
   );
@@ -181,7 +208,12 @@ test('rejects undefined and malformed required fields inside a present order', (
 
 test('requires the version of a present ucp object', () => {
   expectValidationError(
-    () => decodeProtocolObject({...wire, ucp: {version: undefined}}, 'Checkout'),
+    () =>
+      decodeProtocolObject(
+        {...wire, ucp: {version: undefined}},
+        CheckoutModel,
+        'Checkout',
+      ),
     'Checkout.ucp.version',
     'missing_required',
   );
@@ -196,7 +228,7 @@ test.each([
   ['ucp.version', {ucp: {version: {value: '2026-04-08'}}}],
 ])('rejects non-string Checkout.%s', (field, nested) => {
   expectValidationError(
-    () => decodeProtocolObject({...wire, ...nested}, 'Checkout'),
+    () => decodeProtocolObject({...wire, ...nested}, CheckoutModel, 'Checkout'),
     `Checkout.${field}`,
     'invalid_type',
   );
@@ -205,7 +237,7 @@ test.each([
 test('does not accept inherited required fields', () => {
   const inheritedCheckout = Object.create(wire) as Record<string, unknown>;
   expectValidationError(
-    () => decodeProtocolObject(inheritedCheckout, 'Checkout'),
+    () => decodeProtocolObject(inheritedCheckout, CheckoutModel, 'Checkout'),
     'Checkout.currency',
     'missing_required',
   );
@@ -216,7 +248,12 @@ test('does not accept inherited required fields', () => {
   >;
   inheritedOrder.permalink_url = 'https://example.test/orders/order-1';
   expectValidationError(
-    () => decodeProtocolObject({...wire, order: inheritedOrder}, 'Checkout'),
+    () =>
+      decodeProtocolObject(
+        {...wire, order: inheritedOrder},
+        CheckoutModel,
+        'Checkout',
+      ),
     'Checkout.order.id',
     'missing_required',
   );
@@ -225,7 +262,12 @@ test('does not accept inherited required fields', () => {
 test('does not include a value in its validation error', () => {
   const malformedValue = {private_url: 'https://example.test/private/order-123'};
   expectValidationError(
-    () => decodeProtocolObject({...wire, currency: malformedValue}, 'Checkout'),
+    () =>
+      decodeProtocolObject(
+        {...wire, currency: malformedValue},
+        CheckoutModel,
+        'Checkout',
+      ),
     'Checkout.currency',
     'invalid_type',
   );
