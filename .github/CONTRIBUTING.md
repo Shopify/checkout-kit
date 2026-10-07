@@ -76,6 +76,29 @@ React Native sample apps can be run against local in-repo SDK sources with
 `dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
 checkout URL directly and does not use the shared storefront credential files.
 
+### Test coverage
+
+CI requires at least **85% statements, branches, functions, and lines** for
+each of the Web, React Native JavaScript, and TypeScript protocol packages.
+The thresholds apply to each package as a whole, including untested source
+files, rather than to individual files. Sample apps, test helpers, and type
+declarations do not contribute to these thresholds; the protocol also excludes
+generated models and its barrel export.
+
+Run the same coverage checks locally from the repository root:
+
+```bash
+pnpm --dir platforms/web test
+pnpm --dir platforms/react-native test --coverage --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests"
+pnpm --dir protocol test --coverage
+```
+
+A failing threshold fails the test command and its CI job. Add tests for the
+uncovered behavior instead of lowering the threshold. The thresholds live in
+`platforms/web/vite.config.ts`, `platforms/react-native/jest.config.js`, and
+`protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
+not yet enforce coverage thresholds.
+
 ### Testing PR builds with Tophat
 
 [Tophat](https://github.com/Shopify/tophat) is a macOS menu-bar app that

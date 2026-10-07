@@ -100,6 +100,40 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("allowedOrigins", () => {
+      it("reflects an array of origins to the attribute and back", () => {
+        const checkout = renderCheckout();
+        const origins = ["https://other.example.com", "https://*.example.org"];
+
+        checkout.allowedOrigins = origins;
+
+        expect(checkout.getAttribute("allowed-origins")).toBe(origins.join(" "));
+        expect(checkout.allowedOrigins).toEqual(origins);
+      });
+
+      it("parses comma- and whitespace-separated strings without empty entries", () => {
+        const checkout = renderCheckout();
+        const origins = " https://other.example.com,  https://*.example.org ";
+
+        checkout.allowedOrigins = origins;
+
+        expect(checkout.getAttribute("allowed-origins")).toBe(origins);
+        expect(checkout.allowedOrigins).toEqual([
+          "https://other.example.com",
+          "https://*.example.org",
+        ]);
+      });
+
+      it("removes the attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ "allowed-origins": "https://other.example.com" });
+
+        checkout.allowedOrigins = undefined;
+
+        expect(checkout.hasAttribute("allowed-origins")).toBe(false);
+        expect(checkout.allowedOrigins).toEqual([]);
+      });
+    });
+
     describe("logLevel", () => {
       it("defaults to 'error' when the attribute is absent", () => {
         const checkout = renderCheckout();
