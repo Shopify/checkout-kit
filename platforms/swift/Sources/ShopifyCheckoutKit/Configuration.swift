@@ -28,9 +28,6 @@ public struct Configuration: Sendable {
 
     public var tintColor: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
 
-    @available(*, renamed: "tintColor", message: "spinnerColor has been superseded by tintColor")
-    public var spinnerColor: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1.00)
-
     public var backgroundColor: UIColor = .systemBackground
 
     public var logger: Logger = NoOpLogger()
