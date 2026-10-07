@@ -28,7 +28,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
@@ -712,33 +711,110 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `calls onCheckoutDismissed if cancel is called`() {
-        val mockListener = mock<DefaultCheckoutListener>()
-        val sheet = presentBottomSheet(checkoutListener = mockListener)
+    fun `cancel notifies dismissal after the bottom sheet closes`() {
+        var sheetWasShowingWhenDismissed: Boolean? = null
+        lateinit var sheet: CheckoutBottomSheet
+        val checkoutListener = object : DefaultCheckoutListener() {
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) = Unit
+
+            override fun onCheckoutDismissed() {
+                sheetWasShowingWhenDismissed = sheet.isShowing
+            }
+        }
+        sheet = presentBottomSheet(checkoutListener = checkoutListener)
+        sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+            .layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
 
         sheet.cancel()
-        shadowOf(Looper.getMainLooper()).idle()
 
-        verify(mockListener).onCheckoutDismissed()
-        verify(mockListener, never()).onCheckoutFailed(any())
+        assertThat(sheetWasShowingWhenDismissed).isNull()
+        assertThat(sheet.isShowing).isTrue()
+
+        runDismissAnimation()
+
+        assertThat(sheetWasShowingWhenDismissed).isFalse()
+        assertThat(sheet.isShowing).isFalse()
     }
 
     @Test
-    fun `closeCheckoutWithError invokes onCheckoutFailed and dismisses the bottom sheet`() {
+    fun `gesture dismissal notifies after the bottom sheet closes`() {
+        var sheetWasShowingWhenDismissed: Boolean? = null
+        lateinit var sheet: CheckoutBottomSheet
+        val checkoutListener = object : DefaultCheckoutListener() {
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) = Unit
+
+            override fun onCheckoutDismissed() {
+                sheetWasShowingWhenDismissed = sheet.isShowing
+            }
+        }
+        sheet = presentBottomSheet(checkoutListener = checkoutListener)
+
+        sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!.onDismissRequested?.invoke()
+
+        assertThat(sheetWasShowingWhenDismissed).isFalse()
+        assertThat(sheet.isShowing).isFalse()
+    }
+
+    @Test
+    fun `programmatic dismissal does not notify checkout dismissal`() {
         val mockListener = mock<DefaultCheckoutListener>()
-        val checkoutSheet = presentBottomSheet(checkoutListener = mockListener)
+        val sheet = presentBottomSheet(checkoutListener = mockListener)
 
-        val error = checkoutException()
-
-        checkoutSheet.closeCheckoutWithError(error)
-        shadowOf(Looper.getMainLooper()).idle()
+        sheet.dismiss()
         runDismissAnimation()
 
         verify(mockListener, never()).onCheckoutDismissed()
-        val captor = argumentCaptor<CheckoutFailureEvent>()
-        verify(mockListener).onCheckoutFailed(captor.capture())
-        assertThat(captor.firstValue.error).isSameAs(error)
+    }
+
+    @Test
+    fun `closeCheckoutWithError invokes failure then dismissal after closing the bottom sheet`() {
+        val lifecycleEvents = mutableListOf<String>()
+        var sheetWasShowingWhenDismissed: Boolean? = null
+        lateinit var checkoutSheet: CheckoutBottomSheet
+        val checkoutListener = object : DefaultCheckoutListener() {
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) {
+                lifecycleEvents += "fail"
+            }
+
+            override fun onCheckoutDismissed() {
+                lifecycleEvents += "dismiss"
+                sheetWasShowingWhenDismissed = checkoutSheet.isShowing
+            }
+        }
+        checkoutSheet = presentBottomSheet(checkoutListener = checkoutListener)
+
+        checkoutSheet.closeCheckoutWithError(checkoutException())
+        runDismissAnimation()
+
+        assertThat(lifecycleEvents).isEqualTo(listOf("fail", "dismiss"))
+        assertThat(sheetWasShowingWhenDismissed).isFalse()
         assertThat(checkoutSheet.isShowing).isFalse()
+    }
+
+    @Test
+    fun `buyer dismissal followed by failure notifies failure before one finalized dismissal`() {
+        val lifecycleEvents = mutableListOf<String>()
+        val checkoutListener = object : DefaultCheckoutListener() {
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) {
+                lifecycleEvents += "fail"
+            }
+
+            override fun onCheckoutDismissed() {
+                lifecycleEvents += "dismiss"
+            }
+        }
+        val checkoutSheet = presentBottomSheet(checkoutListener = checkoutListener)
+        checkoutSheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+            .layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
+
+        checkoutSheet.cancel()
+        checkoutSheet.closeCheckoutWithError(checkoutException())
+
+        assertThat(lifecycleEvents).containsExactly("fail")
+
+        runDismissAnimation()
+
+        assertThat(lifecycleEvents).containsExactly("fail", "dismiss")
     }
 
     @Test

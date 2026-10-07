@@ -35,8 +35,9 @@ class ApplePayViewController: WalletController, PayController {
     @MainActor
     public var onCheckoutFail: ((CheckoutError) -> Void)?
 
-    /// Callback invoked when the buyer dismisses the checkout experience.
-    /// This closure is called on the main thread when the user dismisses the checkout.
+    /// Callback invoked when the active Apple Pay or Checkout Kit presentation closes.
+    /// This closure is called on the main thread independently of checkout outcome. When a
+    /// terminal failure closes Checkout Kit, ``onCheckoutFail`` is invoked before this closure.
     ///
     /// Example usage:
     /// ```swift

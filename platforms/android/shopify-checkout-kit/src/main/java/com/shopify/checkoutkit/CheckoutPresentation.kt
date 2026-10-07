@@ -61,7 +61,10 @@ public class CheckoutPresentation internal constructor() {
     }
 
     /**
-     * Called when the buyer dismisses checkout.
+     * Called after a Checkout Kit presentation closes or when embedded checkout requests dismissal.
+     *
+     * Dismissal describes presentation lifecycle independently of checkout outcome. When a terminal
+     * failure closes a Checkout Kit presentation, the [onFail] handler runs before this handler.
      */
     public fun onDismiss(handler: () -> Unit) {
         onDismiss = handler

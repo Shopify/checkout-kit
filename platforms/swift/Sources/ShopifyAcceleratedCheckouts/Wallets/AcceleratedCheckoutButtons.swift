@@ -207,7 +207,10 @@ extension AcceleratedCheckoutButtons {
         return newView
     }
 
-    /// Adds an action to perform when the buyer dismisses the checkout experience.
+    /// Adds an action to perform after the accelerated checkout presentation closes.
+    ///
+    /// Dismissal describes presentation lifecycle independently of checkout outcome. When a
+    /// terminal failure closes checkout, the `onFail` action runs before this action.
     ///
     /// Use this modifier to handle checkout dismissal:
     ///
@@ -219,7 +222,7 @@ extension AcceleratedCheckoutButtons {
     ///     }
     /// ```
     ///
-    /// - Parameter action: The action to perform when the buyer dismisses checkout
+    /// - Parameter action: The action to perform after the checkout presentation closes
     /// - Returns: A view with the checkout dismissal handler set
     public func onDismiss(_ action: @escaping () -> Void) -> AcceleratedCheckoutButtons {
         var newView = self

@@ -63,6 +63,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }()
 
     var progressObserver: NSKeyValueObservation?
+    private var hasNotifiedDismissal = false
 
     // MARK: Initializers
 
@@ -174,8 +175,9 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }
 
     @IBAction func close() {
-        didDismiss()
-        dismiss(animated: true)
+        dismiss(animated: true) { [weak self] in
+            self?.didDismiss()
+        }
     }
 
     public func presentationControllerDidDismiss(_: UIPresentationController) {
@@ -183,6 +185,9 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }
 
     private func didDismiss() {
+        guard !hasNotifiedDismissal else { return }
+
+        hasNotifiedDismissal = true
         onDismiss?()
         delegate?.checkoutDidDismiss()
     }
@@ -242,6 +247,8 @@ extension CheckoutWebViewController: CheckoutWebViewDelegate {
         let event = CheckoutFailureEvent(error: error)
         onFail?(event)
         delegate?.checkoutDidFail(event)
-        dismiss(animated: true)
+        dismiss(animated: true) { [weak self] in
+            self?.didDismiss()
+        }
     }
 }

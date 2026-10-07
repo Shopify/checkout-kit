@@ -7,11 +7,23 @@ import XCTest
 class TestableCheckoutWebViewController: CheckoutWebViewController {
     var dismissCalled = false
     var dismissAnimated: Bool = false
+    var completesDismissalImmediately = true
     var testIsBeingDismissed = false
+    private var dismissCompletion: (() -> Void)?
 
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         dismissCalled = true
         dismissAnimated = flag
+        if completesDismissalImmediately {
+            completion?()
+        } else {
+            dismissCompletion = completion
+        }
+    }
+
+    func completeDismissal() {
+        let completion = dismissCompletion
+        dismissCompletion = nil
         completion?()
     }
 
@@ -77,19 +89,42 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(topConstraint.secondAttribute, .top)
     }
 
-    func test_checkoutViewDidFailWithError_dismissesAndInvokesOnFail() {
-        var failCalled = false
+    func test_close_invokesDismissalAfterDismissCompletes() {
+        var lifecycleEvents: [String] = []
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
-        viewController.onFail = { _ in failCalled = true }
+        viewController.completesDismissalImmediately = false
+        viewController.onDismiss = { lifecycleEvents.append("dismiss") }
+
+        viewController.close()
+
+        XCTAssertTrue(viewController.dismissCalled)
+        XCTAssertTrue(viewController.dismissAnimated)
+        XCTAssertEqual(lifecycleEvents, [])
+
+        viewController.completeDismissal()
+
+        XCTAssertEqual(lifecycleEvents, ["dismiss"])
+    }
+
+    func test_checkoutViewDidFailWithError_invokesFailureThenDismissalAndDismisses() {
+        var lifecycleEvents: [String] = []
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.completesDismissalImmediately = false
+        viewController.onFail = { _ in lifecycleEvents.append("fail") }
+        viewController.onDismiss = { lifecycleEvents.append("dismiss") }
 
         viewController.checkoutViewDidFailWithError(error: sampleError)
 
-        XCTAssertTrue(failCalled)
+        XCTAssertEqual(lifecycleEvents, ["fail"])
         XCTAssertTrue(viewController.dismissCalled)
         XCTAssertTrue(viewController.dismissAnimated)
+
+        viewController.completeDismissal()
+
+        XCTAssertEqual(lifecycleEvents, ["fail", "dismiss"])
     }
 
-    func test_checkoutViewDidFailWithError_invokesDelegate() {
+    func test_checkoutViewDidFailWithError_invokesFailureThenDismissalDelegateCallbacks() {
         let delegate = MockCheckoutDelegate()
         let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
 
@@ -97,6 +132,42 @@ class CheckoutWebViewControllerTests: XCTestCase {
 
         XCTAssertEqual(delegate.failureEvents.count, 1)
         XCTAssertEqual(delegate.failureEvents.first?.error.code, sampleError.code)
+        XCTAssertEqual(delegate.didDismissCount, 1)
+    }
+
+    func test_checkoutViewDidFailWithError_notifiesDismissalOnceWhenPresentationAlsoReportsDismissal() {
+        let delegate = MockCheckoutDelegate()
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+
+        viewController.checkoutViewDidFailWithError(error: sampleError)
+        viewController.presentationControllerDidDismiss(
+            UIPresentationController(presentedViewController: viewController, presenting: nil)
+        )
+
+        XCTAssertEqual(delegate.didDismissCount, 1)
+    }
+
+    func test_close_notifiesDismissalOnceWhenPresentationAlsoReportsDismissal() {
+        let delegate = MockCheckoutDelegate()
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+        viewController.completesDismissalImmediately = false
+
+        viewController.close()
+        viewController.presentationControllerDidDismiss(
+            UIPresentationController(presentedViewController: viewController, presenting: nil)
+        )
+        viewController.completeDismissal()
+
+        XCTAssertEqual(delegate.didDismissCount, 1)
+    }
+
+    func test_programmaticDismissDoesNotNotifyDismissal() {
+        let delegate = MockCheckoutDelegate()
+        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+
+        viewController.dismiss(animated: true)
+
+        XCTAssertEqual(delegate.didDismissCount, 0)
     }
 
     func test_presentationControllerDidDismiss_invokesDelegateCancel() {
