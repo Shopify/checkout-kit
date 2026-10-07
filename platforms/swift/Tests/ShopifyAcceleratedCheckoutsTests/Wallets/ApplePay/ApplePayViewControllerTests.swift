@@ -133,12 +133,50 @@ class ApplePayViewControllerTests: XCTestCase {
         }
     }
 
+    /// Drives the real Apple Pay state machine without network access or real-time retry delays.
     class StatefulApplePayViewController: ApplePayViewController {
         let mockTopViewController = UIViewController()
+        private var observingAuthorizationDelegate: ObservingApplePayAuthorizationDelegate!
+
+        init(
+            identifier: CheckoutIdentifier,
+            configuration: ApplePayConfigurationWrapper,
+            storefront: StorefrontAPIProtocol
+        ) {
+            super.init(identifier: identifier, configuration: configuration)
+            self.storefront = storefront
+            observingAuthorizationDelegate = ObservingApplePayAuthorizationDelegate(
+                configuration: configuration,
+                controller: self,
+                clock: MockClock()
+            )
+        }
+
+        override var authorizationDelegate: ApplePayAuthorizationDelegate {
+            observingAuthorizationDelegate
+        }
+
+        var onTransition: ((ApplePayState) -> Void)? {
+            get { observingAuthorizationDelegate.onTransition }
+            set { observingAuthorizationDelegate.onTransition = newValue }
+        }
 
         override func getTopViewController() -> UIViewController? {
             mockTopViewController
         }
+    }
+
+    final class ObservingApplePayAuthorizationDelegate: ApplePayAuthorizationDelegate {
+        var onTransition: ((ApplePayState) -> Void)?
+
+        override func transition(to nextState: ApplePayState) async throws {
+            try await super.transition(to: nextState)
+            onTransition?(nextState)
+        }
+    }
+
+    final class PersonalDataStorefrontAPI: MockStorefrontAPI, @unchecked Sendable {
+        override func cartRemovePersonalData(id _: GraphQLScalars.ID) async throws {}
     }
 
     final class SuccessfulPaymentAuthorizationController: PaymentAuthorizationController {
@@ -231,7 +269,8 @@ class ApplePayViewControllerTests: XCTestCase {
     func test_checkoutDidFail_whenPresentedCheckoutFails_forwardsFailureAndDismissalThenResetsAuthorizationState() async throws {
         let controller = StatefulApplePayViewController(
             identifier: .cart(cartID: "gid://Shopify/Cart/test-cart-id"),
-            configuration: mockConfiguration
+            configuration: mockConfiguration,
+            storefront: PersonalDataStorefrontAPI()
         )
         let paymentController = SuccessfulPaymentAuthorizationController()
         controller.authorizationDelegate.paymentControllerFactory = { _ in paymentController }
@@ -249,10 +288,14 @@ class ApplePayViewControllerTests: XCTestCase {
 
         var failureWasForwarded = false
         let dismissExpectation = expectation(description: "Checkout dismissal should be forwarded")
+        let idleExpectation = expectation(description: "Apple Pay should return to idle")
         controller.eventHandlers = EventHandlers(
             checkoutDidFail: { _ in failureWasForwarded = true },
             checkoutDidDismiss: { dismissExpectation.fulfill() }
         )
+        controller.onTransition = { state in
+            if state == .idle { idleExpectation.fulfill() }
+        }
         let checkoutViewController = try XCTUnwrap(controller.checkoutViewController)
         let webViewController = try XCTUnwrap(
             checkoutViewController.viewControllers.first as? CheckoutWebViewController
@@ -263,11 +306,7 @@ class ApplePayViewControllerTests: XCTestCase {
         )
 
         XCTAssertTrue(failureWasForwarded)
-        await fulfillment(of: [dismissExpectation], timeout: 1.0)
-        for _ in 0 ..< 10 where controller.authorizationDelegate.state != .idle {
-            await Task.yield()
-        }
-
+        await fulfillment(of: [dismissExpectation, idleExpectation], timeout: 1.0, enforceOrder: true)
         XCTAssertEqual(controller.authorizationDelegate.state, .idle)
     }
 
