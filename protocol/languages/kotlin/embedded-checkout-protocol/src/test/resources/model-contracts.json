@@ -1,0 +1,169 @@
+{
+  "buyer": {
+    "email": "buyer@example.com",
+    "first_name": "Ada",
+    "last_name": "Example",
+    "phone_number": "+12025550123",
+    "com.example.extension": {
+      "nested": {
+        "flags": [
+          true,
+          false,
+          null
+        ],
+        "count": 3,
+        "fraction": 1.5
+      },
+      "items": [
+        "future",
+        {
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "context": {
+    "address_country": "IE",
+    "address_region": "Dublin",
+    "postal_code": "D02 TEST",
+    "currency": "EUR",
+    "eligibility": [
+      "com.example.member"
+    ],
+    "intent": "gift",
+    "language": "en-IE",
+    "location": "Dublin",
+    "payment": [
+      {
+        "handler": "com.example.payment",
+        "types": [
+          "card"
+        ]
+      }
+    ],
+    "com.example.extension": {
+      "nested": {
+        "flags": [
+          true,
+          false,
+          null
+        ],
+        "count": 3,
+        "fraction": 1.5
+      },
+      "items": [
+        "future",
+        {
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "credential": {
+    "type": "token",
+    "com.example.token": "synthetic-test-token",
+    "com.example.extension": {
+      "nested": {
+        "flags": [
+          true,
+          false,
+          null
+        ],
+        "count": 3,
+        "fraction": 1.5
+      },
+      "items": [
+        "future",
+        {
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "instrument": {
+    "billing_address": {
+      "first_name": "Ada",
+      "last_name": "Example",
+      "street_address": "1 Example Street",
+      "address_locality": "Dublin",
+      "address_region": "Dublin",
+      "postal_code": "D02 TEST",
+      "address_country": "IE"
+    },
+    "credential": {
+      "type": "token",
+      "com.example.token": "synthetic-test-token",
+      "com.example.extension": {
+        "nested": {
+          "flags": [
+            true,
+            false,
+            null
+          ],
+          "count": 3,
+          "fraction": 1.5
+        },
+        "items": [
+          "future",
+          {
+            "enabled": true
+          }
+        ]
+      }
+    },
+    "display": {
+      "label": "Test card",
+      "last_digits": "1234"
+    },
+    "handler_id": "example-handler",
+    "id": "example-instrument",
+    "type": "card",
+    "selected": true,
+    "com.example.extension": {
+      "nested": {
+        "flags": [
+          true,
+          false,
+          null
+        ],
+        "count": 3,
+        "fraction": 1.5
+      },
+      "items": [
+        "future",
+        {
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "policy": {
+    "applies_to": [
+      "$.line_items[0]"
+    ],
+    "description": {
+      "plain": "Return within 30 days",
+      "markdown": "Return within **30 days**",
+      "html": "Return within <b>30 days</b>"
+    },
+    "type": "com.example.return",
+    "url": "https://example.com/returns",
+    "com.example.extension": {
+      "nested": {
+        "flags": [
+          true,
+          false,
+          null
+        ],
+        "count": 3,
+        "fraction": 1.5
+      },
+      "items": [
+        "future",
+        {
+          "enabled": true
+        }
+      ]
+    }
+  }
+}
