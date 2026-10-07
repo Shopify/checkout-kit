@@ -452,10 +452,19 @@ workflows:
     steps:
       - git-clone@8: {}
       - script@1: *ruby_cache_fingerprint_step
+      # Bitrise's Ruby platform (arm64-darwin25) is missing from Gemfile.lock, so bundle
+      # install adds it and rewrites the lockfile. Keying on the lockfile itself would then
+      # save under a different key than the restore looked up, and the cache would never hit.
+      - script@1:
+          title: Snapshot the committed Swift lockfile for the gem cache key
+          inputs:
+            - content: |-
+                set -euo pipefail
+                cp platforms/swift/Gemfile.lock .swift-gemfile-lock-snapshot
       - restore-cache@3:
           inputs:
             - key: &swift_ruby_gems_cache_key |-
-                swift-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum ".ruby-cache-fingerprint" }}-{{ checksum "platforms/swift/Gemfile.lock" }}
+                swift-ruby-gems-{{ .OS }}-{{ .Arch }}-{{ checksum ".ruby-cache-fingerprint" }}-{{ checksum ".swift-gemfile-lock-snapshot" }}
       - script@1:
           title: Install Swift Ruby dependencies
           inputs:
