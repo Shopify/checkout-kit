@@ -75,7 +75,7 @@ open:
   "PRs": "https://github.com/Shopify/checkout-kit/pulls"
 
 check:
-  bundle-size-budget-tests: node --test .github/scripts/*bundle-size*.test.cjs
+  bundle-size-budget-tests: node --test .github/scripts/*bundle-size*.test.cjs && python3 .github/scripts/swift_bundle_size_test.py
   ejson-plaintext: ./scripts/ejson_lint
   generate-env-tests: ./scripts/test_generate_env_files
   storefront-env-tests: ./scripts/test_setup_storefront_env
@@ -526,6 +526,10 @@ commands:
   swift:
     desc: "Swift Checkout Kit commands"
     subcommands:
+      size:
+        desc: Measure incremental Release arm64 app sizes with the fixed Swift fixture
+        syntax: "<output.tsv>"
+        run: python3 .github/scripts/measure-swift-size "$@"
       build:
         desc: Build all Swift packages and the sample app
         run: |

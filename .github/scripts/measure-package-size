@@ -216,6 +216,7 @@ render_comment() {
     }
 
     function compression(artifact) {
+      if (artifact ~ / app$/) return "Uncompressed";
       if (artifact == "JavaScript") return "Uncompressed";
       if (artifact == "JavaScript (gzip)" || artifact == "npm tarball") return "gzip";
       if (artifact == "release AAR") return "ZIP";
@@ -308,6 +309,9 @@ render_comment() {
       print "## Bundle and package size";
       print "";
       print "Web bundle sizes cover shipped runtime JavaScript. Package sizes cover the full published archive, including any source maps, declarations, and documentation it contains.";
+      if ("Swift" SUBSEP "core incremental app" in seen) {
+        print "Swift incremental app sizes subtract a fixed empty app from an unsigned Release arm64 fixture, including linked code and resources. Accelerated includes core Checkout Kit. These are regression metrics, not App Store download sizes.";
+      }
       print "";
       print "| Platform | Measurement | Compression | Base | Head | Delta |";
       print "| --- | --- | --- | ---: | ---: | ---: |";

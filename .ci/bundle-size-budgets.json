@@ -13,6 +13,18 @@
       "hardKiB": 150
     }
   },
+  "swift": {
+    "core": {
+      "measurement": "core",
+      "softKiB": 1400,
+      "hardKiB": 1600
+    },
+    "accelerated": {
+      "measurement": "accelerated",
+      "softKiB": 2700,
+      "hardKiB": 3000
+    }
+  },
   "android": {
     "package": {
       "measurement": "package",
