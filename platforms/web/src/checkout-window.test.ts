@@ -464,7 +464,7 @@ describe("<shopify-checkout>", () => {
             expect(windowOpenSpy).toHaveBeenCalledTimes(1);
             expect(blockedEventSpy).toHaveBeenCalledTimes(1);
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-              "<shopify-checkout>: open() called from a blocked listener will be ignored; call it from a user action such as a click",
+              "<shopify-checkout>: open() is ignored in a blocked listener; use a user action",
             );
           });
         });

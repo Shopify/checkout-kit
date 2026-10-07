@@ -437,9 +437,7 @@ export class ShopifyCheckout
    */
   open(): void {
     if (this.#dispatchingBlocked) {
-      this.#logger.warn(
-        "open() called from a blocked listener will be ignored; call it from a user action such as a click",
-      );
+      this.#logger.warn("open() is ignored in a blocked listener; use a user action");
       return;
     }
 
