@@ -9,6 +9,7 @@ export {
   ShopifyCheckoutCompleteEvent,
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
+  ShopifyCheckoutBlockedEvent,
 } from "./checkout-events";
 
 export type {
@@ -16,6 +17,8 @@ export type {
   ShopifyCheckoutUpdateEventDetail,
   ShopifyCheckoutCompleteEventDetail,
   ShopifyCheckoutErrorEventDetail,
+  ShopifyCheckoutBlockedEventDetail,
+  CheckoutBlockedCode,
   ShopifyCheckoutEventMap,
 } from "./checkout-events";
 

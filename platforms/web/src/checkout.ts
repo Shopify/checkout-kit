@@ -18,6 +18,7 @@ import {
   ShopifyCheckoutCompleteEvent,
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
+  ShopifyCheckoutBlockedEvent,
   type ShopifyCheckoutEventMap,
 } from "./checkout-events";
 import stylesText from "./checkout.css?inline";
@@ -187,6 +188,7 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
  * @event {ShopifyCheckoutErrorEvent} error - Checkout could not open or reported a terminal error; an open session closes after this event.
  * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed, including after a blocked window.
+ * @event {ShopifyCheckoutBlockedEvent} blocked - The browser blocked the checkout window.
  *
  * @example
  * ```js
@@ -224,6 +226,7 @@ export class ShopifyCheckout
   #currentOpen: { controller: AbortController } | null = null;
   // Manages a blocked open, and the scrim dialog while it shows the blocked-window state
   #blockedOpen: { controller: AbortController } | null = null;
+  #dispatchingBlocked = false;
   // Manages the global message event listener for checkout protocol communication
   #checkoutProtocolController: { controller: AbortController } | null = null;
   // Shared protocol client that decodes messages and dispatches to handlers
@@ -433,6 +436,11 @@ export class ShopifyCheckout
    * Reveals checkout in the target.
    */
   open(): void {
+    if (this.#dispatchingBlocked) {
+      this.#logger.warn("open() is ignored in a blocked listener; use a user action");
+      return;
+    }
+
     const unsupportedCapabilities = getUnsupportedBrowserCapabilities();
     if (unsupportedCapabilities.length > 0) {
       this.#checkout = undefined;
@@ -504,6 +512,10 @@ export class ShopifyCheckout
         isRetry,
       });
       this.#showBlockedOverlay();
+      this.#dispatchingBlocked = true;
+      /** @ignore - Events are documented by the class @event tags. */
+      this.dispatchEvent(new ShopifyCheckoutBlockedEvent({ code: "popup_blocked" }));
+      this.#dispatchingBlocked = false;
       return;
     }
 
