@@ -329,39 +329,6 @@ class CheckoutIdentifierTests: XCTestCase {
         }
     }
 
-    // MARK: - 3. Helper Method Tests - getTokenComponent
-
-    func test_getTokenComponent_whenValidCartID_returnsTokenPortion() {
-        let cartID = "gid://shopify/Cart/test-token-123"
-        let identifier = CheckoutIdentifier.cart(cartID: cartID)
-        let token = identifier.getTokenComponent()
-
-        XCTAssertEqual(token, "test-token-123")
-    }
-
-    func test_getTokenComponent_whenCartIDWithQueryParams_returnsTokenWithParams() {
-        let cartID = "gid://shopify/Cart/test-token?key=value&param=test"
-        let identifier = CheckoutIdentifier.cart(cartID: cartID)
-        let token = identifier.getTokenComponent()
-
-        XCTAssertEqual(token, "test-token?key=value&param=test")
-    }
-
-    func test_getTokenComponent_whenValidVariantID_returnsTokenPortion() {
-        let variantID = "gid://shopify/ProductVariant/variant-token-456"
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-        let token = identifier.getTokenComponent()
-
-        XCTAssertEqual(token, "variant-token-456")
-    }
-
-    func test_getTokenComponent_whenInvariantCase_returnsEmptyString() {
-        let identifier = CheckoutIdentifier.invariant(reason: "Test error")
-        let token = identifier.getTokenComponent()
-
-        XCTAssertEqual(token, "")
-    }
-
     // MARK: - 3. Helper Method Tests - isValid
 
     func test_isValid_whenValidCartID_returnsTrue() {

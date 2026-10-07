@@ -199,15 +199,15 @@ final class GraphQLRequestDirectivesTests: XCTestCase {
 
     func testWithContextDirectiveWithQueryParameters() {
         let operation = GraphQLRequest(
-            query: "query GetProducts($first: Int!, $sortKey: ProductSortKeys) { products(first: $first, sortKey: $sortKey) { edges { node { id } } } }",
-            responseType: StorefrontAPI.ProductsQueryResponse.self
+            query: "query GetCart($id: ID!, $first: Int!) { cart(id: $id) { lines(first: $first) { edges { node { id } } } } }",
+            responseType: StorefrontAPI.CartQueryResponse.self
         )
         let context = InContextDirective(countryCode: CountryCode.DE, languageCode: LanguageCode.DE)
 
         let operationWithDirective = operation.withContextDirective(context)
 
         XCTAssertTrue(operationWithDirective.query.contains("@inContext(country: DE, language: DE)"))
-        XCTAssertTrue(operationWithDirective.query.contains("query GetProducts($first: Int!, $sortKey: ProductSortKeys)"))
+        XCTAssertTrue(operationWithDirective.query.contains("query GetCart($id: ID!, $first: Int!)"))
     }
 
     func testWithContextDirectivePreservesVariables() {

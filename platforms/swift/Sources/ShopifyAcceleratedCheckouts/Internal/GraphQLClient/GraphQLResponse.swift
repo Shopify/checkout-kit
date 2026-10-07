@@ -3,11 +3,6 @@ struct GraphQLResponse<T: Decodable & Sendable>: Decodable {
     let data: T?
     let errors: [GraphQLResponseError]?
     let extensions: [String: AnyCodable]?
-
-    /// Check if the response has errors
-    var hasErrors: Bool {
-        return errors != nil && !errors!.isEmpty
-    }
 }
 
 /// GraphQL error from response

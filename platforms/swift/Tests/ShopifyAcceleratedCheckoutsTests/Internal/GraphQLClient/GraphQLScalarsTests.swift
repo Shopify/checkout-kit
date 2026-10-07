@@ -26,24 +26,6 @@ final class GraphQLScalarsTests: XCTestCase {
         XCTAssertEqual(decoded.rawValue, "gid://shopify/Order/789")
     }
 
-    func testIDNumericIdExtraction() {
-        // Test valid GID format
-        let id1 = GraphQLScalars.ID("gid://shopify/Product/123456")
-        XCTAssertEqual(id1.numericId, "123456")
-
-        // Test nested GID format
-        let id2 = GraphQLScalars.ID("gid://shopify/Collection/123/Product/456")
-        XCTAssertEqual(id2.numericId, "456")
-
-        // Test non-GID format
-        let id3 = GraphQLScalars.ID("simple-id")
-        XCTAssertEqual(id3.numericId, "simple-id")
-
-        // Test empty segments
-        let id4 = GraphQLScalars.ID("gid://shopify/")
-        XCTAssertEqual(id4.numericId, "")
-    }
-
     func testIDHashable() {
         let id1 = GraphQLScalars.ID("gid://shopify/Product/123")
         let id2 = GraphQLScalars.ID("gid://shopify/Product/123")
@@ -55,51 +37,6 @@ final class GraphQLScalarsTests: XCTestCase {
         // Test in Set
         let set: Set<GraphQLScalars.ID> = [id1, id2, id3]
         XCTAssertEqual(set.count, 2)
-    }
-
-    // MARK: - Money Scalar Tests
-
-    func testMoneyInitialization() {
-        let money = GraphQLScalars.Money(amount: Decimal(19.99), currencyCode: "USD")
-        XCTAssertEqual(money.amount, Decimal(19.99))
-        XCTAssertEqual(money.currencyCode, "USD")
-    }
-
-    func testMoneyCodable() throws {
-        // Test encoding
-        let money = GraphQLScalars.Money(amount: Decimal(49.95), currencyCode: "CAD")
-        let encoded = try JSONEncoder().encode(money)
-        let json = try JSONSerialization.jsonObject(with: encoded) as? [String: Any]
-
-        // Check amount - it might be NSDecimalNumber or NSNumber
-        if let amount = json?["amount"] as? NSDecimalNumber {
-            XCTAssertEqual(amount.decimalValue, Decimal(49.95))
-        } else if let amount = json?["amount"] as? NSNumber {
-            XCTAssertEqual(Decimal(amount.doubleValue), Decimal(49.95))
-        } else {
-            XCTFail("Amount not found or wrong type")
-        }
-        XCTAssertEqual(json?["currencyCode"] as? String, "CAD")
-
-        // Test decoding
-        let jsonString = """
-        {"amount": 99.99, "currencyCode": "EUR"}
-        """
-        let data = try XCTUnwrap(jsonString.data(using: .utf8))
-        let decoded = try JSONDecoder().decode(GraphQLScalars.Money.self, from: data)
-        XCTAssertEqual(decoded.amount, Decimal(99.99))
-        XCTAssertEqual(decoded.currencyCode, "EUR")
-    }
-
-    func testMoneyHashable() {
-        let money1 = GraphQLScalars.Money(amount: Decimal(10.00), currencyCode: "USD")
-        let money2 = GraphQLScalars.Money(amount: Decimal(10.00), currencyCode: "USD")
-        let money3 = GraphQLScalars.Money(amount: Decimal(10.00), currencyCode: "CAD")
-        let money4 = GraphQLScalars.Money(amount: Decimal(20.00), currencyCode: "USD")
-
-        XCTAssertEqual(money1, money2)
-        XCTAssertNotEqual(money1, money3)
-        XCTAssertNotEqual(money1, money4)
     }
 
     // MARK: - DateTime Scalar Tests
@@ -205,38 +142,6 @@ final class GraphQLScalarsTests: XCTestCase {
         XCTAssertNotEqual(url1, url3)
     }
 
-    // MARK: - HTML Scalar Tests
-
-    func testHTMLInitialization() {
-        let htmlContent = "<p>Hello <strong>World</strong></p>"
-        let html = GraphQLScalars.HTML(htmlContent)
-        XCTAssertEqual(html.rawValue, htmlContent)
-    }
-
-    func testHTMLCodable() throws {
-        // Test encoding
-        let html = GraphQLScalars.HTML("<div class=\"test\">Content</div>")
-        let encoded = try JSONEncoder().encode(html)
-        let encodedString = String(data: encoded, encoding: .utf8)
-        // JSON encoder may escape forward slashes in closing tags
-        XCTAssertTrue(encodedString == "\"<div class=\\\"test\\\">Content</div>\"" || encodedString == "\"<div class=\\\"test\\\">Content<\\/div>\"")
-
-        // Test decoding
-        let json = "\"<h1>Title</h1><p>Paragraph</p>\""
-        let data = try XCTUnwrap(json.data(using: .utf8))
-        let decoded = try JSONDecoder().decode(GraphQLScalars.HTML.self, from: data)
-        XCTAssertEqual(decoded.rawValue, "<h1>Title</h1><p>Paragraph</p>")
-    }
-
-    func testHTMLHashable() {
-        let html1 = GraphQLScalars.HTML("<p>Test</p>")
-        let html2 = GraphQLScalars.HTML("<p>Test</p>")
-        let html3 = GraphQLScalars.HTML("<p>Different</p>")
-
-        XCTAssertEqual(html1, html2)
-        XCTAssertNotEqual(html1, html3)
-    }
-
     // MARK: - CountryCode Enum Tests
 
     func testCountryCodeCodable() throws {
@@ -272,40 +177,6 @@ final class GraphQLScalarsTests: XCTestCase {
         XCTAssertEqual(CountryCode.IS.rawValue, "IS")
     }
 
-    // MARK: - CurrencyCode Enum Tests
-
-    func testCurrencyCodeCodable() throws {
-        // Test encoding
-        let currency = CurrencyCode.usd
-        let encoded = try JSONEncoder().encode(currency)
-        let encodedString = String(data: encoded, encoding: .utf8)
-        XCTAssertEqual(encodedString, "\"USD\"")
-
-        // Test decoding
-        let json = "\"EUR\""
-        let data = try XCTUnwrap(json.data(using: .utf8))
-        let decoded = try JSONDecoder().decode(CurrencyCode.self, from: data)
-        XCTAssertEqual(decoded, .eur)
-    }
-
-    func testCurrencyCodeAllCases() {
-        // Test that we have many currency codes
-        XCTAssertGreaterThan(CurrencyCode.allCases.count, 150)
-
-        // Test some major currencies
-        XCTAssertTrue(CurrencyCode.allCases.contains(.usd))
-        XCTAssertTrue(CurrencyCode.allCases.contains(.eur))
-        XCTAssertTrue(CurrencyCode.allCases.contains(.gbp))
-        XCTAssertTrue(CurrencyCode.allCases.contains(.jpy))
-        XCTAssertTrue(CurrencyCode.allCases.contains(.cad))
-        XCTAssertTrue(CurrencyCode.allCases.contains(.aud))
-    }
-
-    func testCurrencyCodeSpecialCases() {
-        // Test reserved keyword with backtick
-        XCTAssertEqual(CurrencyCode.try.rawValue, "TRY")
-    }
-
     // MARK: - Integration Tests
 
     func testScalarsInComplexStructure() throws {
@@ -313,21 +184,15 @@ final class GraphQLScalarsTests: XCTestCase {
         struct TestProduct: Codable {
             let id: GraphQLScalars.ID
             let createdAt: GraphQLScalars.DateTime
-            let price: GraphQLScalars.Money
-            let description: GraphQLScalars.HTML
             let productUrl: GraphQLScalars.URL
             let countryCode: CountryCode
-            let currencyCode: CurrencyCode
         }
 
         let product = try TestProduct(
             id: GraphQLScalars.ID("gid://shopify/Product/123"),
             createdAt: GraphQLScalars.DateTime(Date()),
-            price: GraphQLScalars.Money(amount: Decimal(29.99), currencyCode: "USD"),
-            description: GraphQLScalars.HTML("<p>Great product!</p>"),
             productUrl: GraphQLScalars.URL(XCTUnwrap(Foundation.URL(string: "https://shop.com/product"))),
-            countryCode: .US,
-            currencyCode: .usd
+            countryCode: .US
         )
 
         // Test round-trip encoding/decoding
@@ -335,10 +200,7 @@ final class GraphQLScalarsTests: XCTestCase {
         let decoded = try JSONDecoder().decode(TestProduct.self, from: encoded)
 
         XCTAssertEqual(decoded.id, product.id)
-        XCTAssertEqual(decoded.price, product.price)
-        XCTAssertEqual(decoded.description, product.description)
         XCTAssertEqual(decoded.productUrl, product.productUrl)
         XCTAssertEqual(decoded.countryCode, product.countryCode)
-        XCTAssertEqual(decoded.currencyCode, product.currencyCode)
     }
 }

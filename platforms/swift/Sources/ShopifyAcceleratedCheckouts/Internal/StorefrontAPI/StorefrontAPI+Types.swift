@@ -7,14 +7,9 @@ extension StorefrontAPI {
     class Types {
         typealias ID = GraphQLScalars.ID
         typealias Cart = StorefrontAPI.Cart
-        typealias UserError = StorefrontAPI.CartUserError
-        typealias Product = StorefrontAPI.Product
-        typealias ProductVariant = StorefrontAPI.ProductVariant
-        typealias Shop = StorefrontAPI.Shop
         typealias Money = StorefrontAPI.MoneyV2
         typealias Address = StorefrontAPI.Address
         typealias ApplePayPayment = StorefrontAPI.ApplePayPayment
-        typealias CardBrand = StorefrontAPI.CardBrand
     }
 
     /// Represents a cart in the Storefront API
@@ -304,11 +299,6 @@ extension StorefrontAPI {
     /// Product variant connection
     struct ProductVariantConnection: Codable {
         let nodes: [ProductVariant]
-    }
-
-    /// Product connection
-    struct ProductConnection: Codable {
-        let nodes: [Product]
     }
 
     /// Image
@@ -807,11 +797,6 @@ extension StorefrontAPI {
         let cart: Cart?
     }
 
-    /// Response wrapper for products query
-    struct ProductsQueryResponse: Codable {
-        let products: ProductConnection
-    }
-
     /// Response wrapper for shop query
     struct ShopQueryResponse: Codable {
         let shop: Shop
@@ -886,9 +871,6 @@ extension StorefrontAPI {
 
     /// Type alias for Apple Pay billing address (uses same structure as Address)
     typealias ApplePayBillingAddress = Address
-
-    /// Type alias for delivery address (uses same structure as Address)
-    typealias DeliveryAddress = Address
 
     /// Apple Pay payment data
     struct ApplePayPayment {
