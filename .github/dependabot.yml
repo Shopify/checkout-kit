@@ -1,24 +1,36 @@
 version: 2
+
+# Version updates run monthly and are grouped so each ecosystem produces a small,
+# predictable set of pull requests. Security updates are configured separately and
+# are not delayed by this schedule.
 updates:
   - package-ecosystem: github-actions
-    directory: "/"
+    # Include local composite actions so the actions they use are updated too.
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: swift
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
 
-  # Android library
+  # Android library. The version catalog in platforms/android/gradle is shared with
+  # the Android sample app, so this entry covers the sample's catalog dependencies too.
   - package-ecosystem: gradle
     directory: "/platforms/android"
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 10
     cooldown:
       default-days: 7
@@ -43,48 +55,48 @@ updates:
       # (Jupiter/Vintage), not a drop-in update to junit:junit.
       - dependency-name: "junit:junit"
         versions: [">=5.0.0"]
+    groups:
+      android-gradle-plugin:
+        patterns:
+          - "com.android.*"
+      # KSP releases track Kotlin compiler versions, so they move together.
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "com.google.devtools.ksp*"
+        exclude-patterns:
+          - "org.jetbrains.kotlinx*"
+      apollo:
+        patterns:
+          - "com.apollographql*"
+      androidx:
+        patterns:
+          - "androidx.*"
+      android-test:
+        patterns:
+          - "junit:junit"
+          - "org.assertj*"
+          - "org.awaitility*"
+          - "org.mockito*"
+          - "org.robolectric*"
 
-  # Android sample app
+  # Android sample app. Its catalog dependencies are covered by the Android library
+  # entry above, so only update what the sample's own Gradle build declares.
   - package-ecosystem: gradle
     directory: "/platforms/android/samples/CheckoutKitAndroidDemo"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
     cooldown:
       default-days: 7
-    ignore:
-      # The sample includes the Android library as :lib, so library dependencies can
-      # appear in this Dependabot scan too.
-      # Keep Kotlin compiler/plugin updates on 2.x unless the consumer floor is
-      # deliberately re-evaluated.
-      - dependency-name: "org.jetbrains.kotlin.*"
-        versions: [">=3.0.0"]
-      # Keep the published stdlib dependency aligned with the Kotlin API/language
-      # consumer floor, not the newer compiler used to build the AAR.
-      - dependency-name: "org.jetbrains.kotlin:kotlin-stdlib"
-        versions: [">=2.1.0"]
-      # Keep kotlinx-serialization on 1.7.x while the library's Kotlin API/language
-      # consumer floor is pinned to 2.0.
-      - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-json"
-        versions: [">=1.8.0"]
-      # WebKit 1.16 raises minSdk to 24 and requests Kotlin stdlib 2.1. Keep the
-      # library's minSdk 23 / Kotlin 2.0 consumer baseline until it is deliberately revised.
-      - dependency-name: "androidx.webkit:webkit"
-        versions: [">=1.16.0"]
-      # Keep JUnit on 4.x. JUnit 5 is a test-platform migration
-      # (Jupiter/Vintage), not a drop-in update to junit:junit.
-      - dependency-name: "junit:junit"
-        versions: [">=5.0.0"]
-    groups:
-      apollo:
-        patterns:
-          - "com.apollographql.apollo*"
+    allow:
+      - dependency-name: "gradle-wrapper"
+      - dependency-name: "org.gradle.toolchains.foojay-resolver-convention"
 
   # React Native — root pnpm workspace
   - package-ecosystem: npm
     directory: "/platforms/react-native"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
     ignore:
@@ -92,12 +104,16 @@ updates:
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+    groups:
+      react-native:
+        patterns:
+          - "*"
 
   # React Native — Checkout Kit module
   - package-ecosystem: npm
     directory: "/platforms/react-native/modules/@shopify/checkout-kit-react-native"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
     ignore:
@@ -105,24 +121,33 @@ updates:
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+    groups:
+      react-native-module:
+        patterns:
+          - "*"
 
-  # React Native — sample app
+  # React Native — sample app. Native module updates also need `dev rn pod-install`,
+  # so grouping them means one Podfile.lock refresh per update cycle.
   - package-ecosystem: npm
     directory: "/platforms/react-native/sample"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
     ignore:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
+    groups:
+      react-native-sample:
+        patterns:
+          - "*"
 
   # React Native — sample iOS CocoaPods (via Bundler/Gemfile)
   - package-ecosystem: bundler
     directory: "/platforms/react-native/sample"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
     ignore:
@@ -130,39 +155,41 @@ updates:
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+    groups:
+      react-native-sample-gems:
+        patterns:
+          - "*"
 
   # Protocol tooling
   - package-ecosystem: npm
     directory: "/protocol"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
-    groups:
-      vitest:
-        patterns:
-          - "vitest"
-          - "@vitest/*"
     ignore:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+    groups:
+      protocol-tooling:
+        patterns:
+          - "*"
 
   # Web — @shopify/checkout-kit
   - package-ecosystem: npm
     directory: "/platforms/web"
     schedule:
-      interval: weekly
+      interval: monthly
     cooldown:
       default-days: 7
-    groups:
-      vitest:
-        patterns:
-          - "vitest"
-          - "@vitest/*"
     ignore:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+    groups:
+      web:
+        patterns:
+          - "*"
