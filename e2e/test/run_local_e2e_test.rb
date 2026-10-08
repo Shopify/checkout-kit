@@ -244,6 +244,32 @@ class RunLocalE2ETest < Minitest::Test
     end
   end
 
+  def test_skip_build_runs_selected_flows_without_building_or_starting_metro
+    Dir.mktmpdir do |directory|
+      scripts = File.join(directory, "e2e/scripts")
+      FileUtils.mkdir_p(scripts)
+      File.write(File.join(scripts, "maestro_bin"), "#!/bin/bash\nexit 0\n")
+      File.write(File.join(scripts, "run_maestro"), %(#!/bin/bash\nprintf '%s\\n' "$E2E_DEVICE_ID" "$@"\n))
+      FileUtils.chmod("+x", Dir.glob("#{scripts}/*"))
+      output, error, status = Open3.capture3("bash", "-c", <<~'SH', "skip-build-test", RUNNER, directory)
+        source "$1"
+        REPO_ROOT="$2"
+        load_application_tags() { :; }
+        load_eligible_test_files() { :; }
+        load_enabled_tags() { :; }
+        validate_explicit_tags() { :; }
+        select_test_files() { RESOLVED_TEST_FILES=(tests/shared/launch-smoke.yaml); }
+        resolve_device() { DEVICE_ID=synthetic-device; }
+        prepare_react_native_environment() { echo unexpected-metro >&2; exit 1; }
+        build_and_install() { echo unexpected-build >&2; exit 1; }
+        main react-native-android --skip-build
+      SH
+      assert status.success?, error
+      assert_equal ["synthetic-device", "android", "com.shopify.checkoutkit.reactnativedemo",
+        "checkout-kit-sample-ready", "", "", "react-native", "tests/shared/launch-smoke.yaml"], output.lines.map(&:chomp)
+    end
+  end
+
   private
 
   def picker_script(command)
