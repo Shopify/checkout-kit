@@ -67,18 +67,36 @@ public func invalidate() {
     CheckoutWebView.preloadCache.evict(with: .idle)
 }
 
+/// Presents checkout, or returns the existing checkout in the presenter’s modal hierarchy.
+/// Duplicate calls preserve the original checkout URL and delegate, including during dismissal.
 @MainActor
 @discardableResult
 public func present(checkout url: URL, from: UIViewController, delegate: (any CheckoutDelegate)? = nil) -> CheckoutViewController {
-    let decorated = CheckoutURLDecorator.decorate(url)
-    let viewController = CheckoutViewController(checkout: decorated, delegate: delegate)
-    from.present(viewController, animated: true)
-    return viewController
+    presentCheckout(checkout: url, from: from, delegate: delegate)
 }
 
 @MainActor
 @discardableResult
 package func present(checkout url: URL, from: UIViewController, entryPoint: MetaData.EntryPoint, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil) -> CheckoutViewController {
+    presentCheckout(checkout: url, from: from, delegate: delegate, client: client, entryPoint: entryPoint)
+}
+
+@MainActor
+private func presentCheckout(checkout url: URL, from: UIViewController, delegate: (any CheckoutDelegate)?, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutViewController {
+    // Start at the root so calls from a checkout child or a modal above it share the same guard.
+    var root = from
+    while let ancestor = root.parent ?? root.presentingViewController {
+        root = ancestor
+    }
+    var presented: UIViewController? = root
+    while let current = presented {
+        if let checkout = current as? CheckoutViewController {
+            OSLogger.shared.warn("Checkout is already presented; ignoring duplicate presentation.")
+            return checkout
+        }
+        presented = current.presentedViewController
+    }
+
     let decorated = CheckoutURLDecorator.decorate(url)
     let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
