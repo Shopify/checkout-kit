@@ -5,7 +5,7 @@ embeddedCheckoutProtocolAndroidRelease = "2026.08.25.1-alpha.1"
 # Published protocol version consumed by Checkout Kit.
 embeddedCheckoutProtocolAndroid = "2026.08.25.1-alpha.1"
 
-androidApplicationGradlePlugin = "9.3.1"
+androidApplicationGradlePlugin = "9.4.1"
 androidLibraryGradlePlugin = "9.3.1"
 apollo = "5.1.0"
 apolloCache = "1.0.7"
