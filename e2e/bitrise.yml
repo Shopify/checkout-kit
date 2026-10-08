@@ -667,11 +667,19 @@ workflows:
                 export STOREFRONT_DOMAIN=example.myshopify.com
                 export STOREFRONT_ACCESS_TOKEN=test-token
                 ./scripts/setup_storefront_env
+                export E2E_JUNIT_REPORT="$HOME/.maestro/tests/maestro-junit.xml"
                 ./e2e/scripts/run_local_e2e swift-ios tests/shared/launch-smoke.yaml
+      - custom-test-results-export@1:
+          is_always_run: true
+          inputs:
+            - test_name: Swift Maestro smoke
+            - base_path: "$HOME/.maestro/tests"
+            - search_pattern: maestro-junit.xml
       - deploy-to-bitrise-io@2:
           is_always_run: true
           inputs:
             - deploy_path: "$HOME/.maestro/tests"
+            - is_compress: "true"
 
   e2e-build-swift-ios:
     meta:
