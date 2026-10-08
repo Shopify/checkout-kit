@@ -32,7 +32,7 @@ export type { CheckoutError, CheckoutErrorCode } from "./models/error";
 
 // Documentation-safe types:
 
-export type CheckoutTarget = "auto" | "popup" | "_blank";
+export type CheckoutTarget = "auto" | "popup" | "inline" | "_blank";
 export type CheckoutAppearance = "app:light" | "app:dark" | "app:automatic" | "storefront";
 
 export interface CheckoutAttributes {
@@ -61,14 +61,16 @@ export interface MessageRejectedDetail {
 
 export interface CheckoutMethods {
   /**
-   * Opens the checkout in a popup window by default, but can be configured
-   * to open in a new tab or named window using the `target` property.
+   * Opens checkout in the selected target. Inline mounts automatically when connected;
+   * `open()` reopens a closed inline session and does not reload an active effective URL.
+   * A disconnected inline element does not mount until connected.
    */
   open?: () => void;
 
   /**
-   * Closes the checkout popup.
-   * Can be used after checkout completion or to cancel the checkout process
+   * Closes the active window or removes the inline iframe, preserving the latest checkout/error.
+   * Repeated close is a no-op. Inline stays closed until open, a changed source/appearance,
+   * re-entry into inline, or reconnection.
    */
   close?: () => void;
 }
@@ -86,8 +88,13 @@ export interface CheckoutProperties {
   /**
    * The mode in which to display the checkout when opened. Defaults to `'auto'`.
    * - `'popup'`: Opens checkout in a popup window
+   * - `'inline'`: Automatically embeds checkout in a host-sized iframe. Supply a definite
+   *   host or parent-container height; framing remains subject to checkout's CSP.
    * - `'_blank' | `'auto'`: Opens checkout in a new tab (default)
-   * - `string`: Opens checkout in a new named window
+   * - `string`: Opens checkout in a new named window, except the reserved targets above
+   *
+   * Inline source/appearance changes start a fresh session; invalid or removed sources,
+   * target changes, and disconnection close it. Completion leaves the receipt visible.
    *
    * For more details on window targets, see the [`Window.open()` `target` parameter](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target)
    *

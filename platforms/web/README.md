@@ -115,9 +115,9 @@ checkout:
 </script>
 ```
 
-The element has no visible layout of its own beyond a transient `<dialog>`
-scrim that appears over the host page while the popup is open. It can sit
-anywhere in your DOM.
+Window targets have no visible layout beyond the transient `<dialog>` scrim
+while checkout is open. With `target="inline"`, checkout fills the component's
+host/container instead. See [`target`](#target) for sizing and session controls.
 
 See [usage with the Storefront API](#usage-with-the-shopify-storefront-api)
 below for details on how to obtain a checkout URL.
@@ -342,6 +342,7 @@ Where the checkout is presented. Defaults to `"auto"`.
 | ---------- | ------------------------------------------------------------------- |
 | `"auto"`   | Opens checkout in a new browser tab (default).                      |
 | `"popup"`  | Opens checkout in a popup window sized and centered over the page.  |
+| `"inline"` | Automatically mounts checkout in an iframe sized to the host/container. |
 | `"_blank"` | Synonym for `"auto"` — new tab.                                     |
 | _(string)_ | Any other value is treated as a named window target, the same as the [`target` parameter of `window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open#target). |
 
@@ -362,6 +363,39 @@ Where the checkout is presented. Defaults to `"auto"`.
 > `blocked` to show your own message, and call `open()` again from a user
 > action such as a click. A call made directly from the listener is ignored.
 > The component logs a warning at `log-level="warn"` or more verbose.
+
+Inline needs a definite height on the host or its parent container:
+
+```html
+<div style="height: 600px">
+  <shopify-checkout
+    id="inline-checkout"
+    target="inline"
+    src="https://your-store.myshopify.com/cart/123456789:1"
+  ></shopify-checkout>
+</div>
+```
+
+Mounting a connected inline element with a valid HTTPS source starts checkout
+automatically. `open()` keeps an active session at the same effective URL;
+`close()` removes the iframe once and preserves the latest checkout/error.
+After closing, unchanged attribute writes keep it closed. `open()`, a changed
+source or appearance, re-entry into inline, or reconnection starts a fresh
+session and clears its snapshot/error history.
+
+Changing the effective source or appearance replaces the active iframe.
+Removing or invalidating the source, changing targets, or disconnecting closes
+it. Switching from inline to a window target still requires `open()`.
+Completion leaves the receipt visible; terminal errors emit `error`, then
+close. `focus()` focuses the active checkout window.
+
+The component does not negotiate content height, show a scrim in inline mode,
+or fall back to a popup when framing is denied. The checkout response's
+`frame-ancestors` CSP must already permit your origin; custom-domain or Shop Pay
+transitions outside that policy remain unsupported. Inline also requires a
+checkout deployment that permits ordinary Checkout Kit iframe sessions with
+the modern protocol. Deploy that provider support before releasing this
+consumer feature. No authentication token or forced app branding is added.
 
 ### `appearance`
 
@@ -451,7 +485,7 @@ include checkout URLs, message payloads, buyer data, or checkout, order,
 customer, or shop identifiers. Set the attribute or property to `false` to opt
 out; changing it at runtime also discards buffered measurements.
 
-On web, navigation duration starts when Checkout Kit opens the popup and ends
+On web, navigation duration starts before opening a window or navigating an inline iframe and ends
 when checkout sends `ec.start`, because the host page cannot reliably observe
 cross-origin checkout page-finish. `ec.start` means checkout is loaded and
 interactive.
@@ -509,7 +543,7 @@ element. Event payloads are available in `event.detail`.
 | `update`   | `{checkout}`   | A change to line items, fulfillment, totals, or checkout messages produces a different checkout snapshot. |
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
 | `error`    | `{error}`      | Checkout could not open or reported a terminal error, exposed as `{code, message}`. An open session closes automatically after this event. |
-| `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
+| `close`    | _(none)_       | The open session ended through `close()`, inline source/target/disconnection teardown, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
 | `blocked`  | `{code}`       | The browser blocked the checkout window, with `code` set to `"popup_blocked"`. Fires on every blocked attempt, whether or not the overlay is shown. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
@@ -523,8 +557,8 @@ identical snapshots are deduplicated, including when separate notifications
 describe the same checkout state. Read the fields you need from the full
 snapshot; there is no list of changed fields. Buyer and payment updates are
 not currently supported.
-Start and complete events are always delivered. Opening checkout starts a
-fresh snapshot history and clears the previous checkout and error properties.
+Start and complete events are always delivered. Starting a new checkout session
+clears the previous checkout and error properties and starts fresh snapshot history.
 
 ```ts
 checkout.addEventListener('complete', (event) => {

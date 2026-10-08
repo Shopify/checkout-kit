@@ -3,10 +3,25 @@
 }
 
 #shopify-element-wrapper,
-.Shopify-target {
+.Shopify-target,
+#checkout-iframe {
   inline-size: 100%;
   block-size: 100%;
   border: none;
+}
+
+:host([target="inline"]) {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+#checkout-iframe {
+  display: block;
+}
+
+.Shopify-target--inline .overlay {
+  display: none;
 }
 
 :host {

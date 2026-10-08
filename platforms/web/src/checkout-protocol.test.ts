@@ -1425,6 +1425,423 @@ describe("<shopify-checkout>", () => {
     });
   });
 
+  describe("inline protocol sessions", () => {
+    it.each(["https://demostore.mock.shop", "https://shop.app", "https://checkout.shop.app"])(
+      "replies to ec.ready with versioned success at the sender origin %s",
+      async (origin) => {
+        const checkout = renderCheckout({ target: "inline" });
+        const { checkoutWindow } = getInlineContext(checkout);
+        const postMessageSpy = vi.spyOn(checkoutWindow, "postMessage").mockImplementation(() => {});
+        const readySpy = vi.fn();
+        checkout.addEventListener("ec.ready" as never, readySpy as EventListener);
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "inline-ready", source: checkoutWindow, origin },
+        );
+        await flushProtocolDispatch();
+
+        expect(postMessageSpy).toHaveBeenCalledOnce();
+        expect(postMessageSpy).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "inline-ready",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
+          origin,
+        );
+        expect(readySpy).not.toHaveBeenCalled();
+      },
+    );
+
+    it("delivers start and changed snapshots while deduplicating equivalent inline updates", async () => {
+      const checkout = renderCheckout({ target: "inline" });
+      const { checkoutWindow } = getInlineContext(checkout);
+      const startSpy = vi.fn();
+      const updateSpy = vi.fn();
+      checkout.addEventListener("start", startSpy);
+      checkout.addEventListener("update", updateSpy);
+      const initial = makeCheckoutPayload({ totals: [{ type: "total", amount: 1000 }] });
+
+      simulateProtocolMessageEvent(checkout, "ec.start", initial, { source: checkoutWindow });
+      await flushProtocolDispatch();
+
+      expect(checkout.checkout).toEqual(decodeCheckout(initial));
+      expect(startSpy).toHaveBeenCalledOnce();
+      expect(startSpy.mock.calls[0]![0].detail.checkout).toBe(checkout.checkout);
+
+      simulateProtocolMessageEvent(checkout, "ec.totals.change", initial, {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+      expect(updateSpy).not.toHaveBeenCalled();
+
+      const changed = makeCheckoutPayload({
+        totals: [{ type: "total", amount: 1200 }],
+        "com.example.extension": { first: 1, second: 2 },
+      });
+      simulateProtocolMessageEvent(checkout, "ec.totals.change", changed, {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+
+      expect(checkout.checkout).toEqual(decodeCheckout(changed));
+      expect(updateSpy).toHaveBeenCalledOnce();
+      expect(updateSpy.mock.calls[0]![0].detail.checkout).toBe(checkout.checkout);
+
+      const equivalent = makeCheckoutPayload({
+        "com.example.extension": { second: 2, first: 1 },
+        totals: [{ amount: 1200, type: "total" }],
+      });
+      for (const method of CHECKOUT_CHANGE_METHODS) {
+        simulateProtocolMessageEvent(checkout, method, equivalent, { source: checkoutWindow });
+        await flushProtocolDispatch();
+      }
+
+      expect(updateSpy).toHaveBeenCalledOnce();
+      expect(checkout.checkout).toEqual(decodeCheckout(changed));
+    });
+
+    it("delivers completion and retains the inline receipt and its message ownership", async () => {
+      const checkout = renderCheckout({ target: "inline" });
+      const { iframe, checkoutWindow } = getInlineContext(checkout);
+      const completeSpy = vi.fn();
+      const closeSpy = vi.fn();
+      const updateSpy = vi.fn();
+      checkout.addEventListener("complete", completeSpy);
+      checkout.addEventListener("close", closeSpy);
+      checkout.addEventListener("update", updateSpy);
+      const payload = makeCheckoutPayload({
+        order: { id: "order-inline", permalink_url: "https://example.com/orders/inline" },
+      });
+
+      simulateProtocolMessageEvent(checkout, "ec.complete", payload, {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+
+      expect(completeSpy).toHaveBeenCalledOnce();
+      expect(completeSpy.mock.calls[0]![0].detail.checkout).toBe(checkout.checkout);
+      expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      expect(iframe.isConnected).toBe(true);
+      expect(getInlineContext(checkout).iframe).toBe(iframe);
+      expect(closeSpy).not.toHaveBeenCalled();
+
+      simulateProtocolMessageEvent(checkout, "ec.messages.change", payload, {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+      expect(updateSpy).not.toHaveBeenCalled();
+
+      const postMessageSpy = vi.spyOn(checkoutWindow, "postMessage").mockImplementation(() => {});
+      simulateProtocolMessageEvent(
+        checkout,
+        "ec.ready",
+        { delegate: [] },
+        { id: "receipt-ready", source: checkoutWindow },
+      );
+      await flushProtocolDispatch();
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        {
+          jsonrpc: "2.0",
+          id: "receipt-ready",
+          result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+        },
+        new URL(checkout.src).origin,
+      );
+    });
+
+    it("delivers terminal error before one close, preserves state, and resets state and dedup on reopen", async () => {
+      const checkout = renderCheckout({ target: "inline" });
+      const { iframe, checkoutWindow } = getInlineContext(checkout);
+      const updateSpy = vi.fn();
+      const errorSpy = vi.fn();
+      const order: string[] = [];
+      checkout.addEventListener("update", updateSpy);
+      checkout.addEventListener("error", (event) => {
+        order.push("error");
+        errorSpy(event);
+        expect(iframe.isConnected).toBe(true);
+      });
+      checkout.addEventListener("close", () => {
+        order.push("close");
+        expect(iframe.isConnected).toBe(false);
+      });
+      const payload = makeCheckoutPayload({ totals: [{ type: "total", amount: 1000 }] });
+      simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+      const snapshot = checkout.checkout;
+
+      simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+        source: checkoutWindow,
+      });
+      await flushProtocolDispatch();
+      checkout.close();
+
+      expect(order).toEqual(["error", "close"]);
+      expect(checkout.shadowRoot?.querySelector("#checkout-iframe")).toBeNull();
+      expect(checkout.checkout).toBe(snapshot);
+      expect(checkout.error).toEqual({ code: "unknown", message: "Session failed" });
+      expect(errorSpy.mock.calls[0]![0].detail.error).toBe(checkout.error);
+
+      checkout.open();
+      const reopened = getInlineContext(checkout);
+      expect(reopened.checkoutWindow).not.toBe(checkoutWindow);
+      expect(checkout.checkout).toBeUndefined();
+      expect(checkout.error).toBeUndefined();
+      simulateProtocolMessageEvent(checkout, "ec.totals.change", payload, {
+        source: reopened.checkoutWindow,
+      });
+      await flushProtocolDispatch();
+
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      expect(order).toEqual(["error", "close"]);
+    });
+
+    it("does not close a new inline session opened by a terminal error listener", async () => {
+      const checkout = renderCheckout({ target: "inline" });
+      const original = getInlineContext(checkout);
+      const closeSpy = vi.fn();
+      checkout.addEventListener("close", closeSpy);
+      checkout.addEventListener(
+        "error",
+        () => {
+          checkout.src = "https://demostore.mock.shop/cart/2:1";
+        },
+        { once: true },
+      );
+
+      simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+        source: original.checkoutWindow,
+      });
+      await flushProtocolDispatch();
+
+      const current = getInlineContext(checkout);
+      expect(current.checkoutWindow).not.toBe(original.checkoutWindow);
+      expect(current.iframe.isConnected).toBe(true);
+      expect(checkout.error).toBeUndefined();
+      expect(closeSpy).toHaveBeenCalledTimes(1);
+      checkout.close();
+      expect(closeSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(["removed", "unrelated"] as const)(
+      "ignores snapshots, terminal errors, and ready requests from a %s iframe",
+      async (sourceKind) => {
+        const checkout = renderCheckout({ target: "inline" });
+        const original = getInlineContext(checkout);
+        let rejectedWindow = original.checkoutWindow;
+        if (sourceKind === "removed") {
+          checkout.src = "https://demostore.mock.shop/cart/43696905224214:2";
+        } else {
+          const unrelatedIframe = document.createElement("iframe");
+          document.body.appendChild(unrelatedIframe);
+          if (!unrelatedIframe.contentWindow) throw new Error("Unrelated iframe has no window");
+          rejectedWindow = unrelatedIframe.contentWindow;
+        }
+        expect(original.iframe.isConnected).toBe(sourceKind === "unrelated");
+        const active = getInlineContext(checkout);
+        const postMessageSpy = vi.spyOn(rejectedWindow, "postMessage").mockImplementation(() => {});
+        const eventSpy = vi.fn();
+        for (const name of ["start", "update", "complete", "error", "close"] as const) {
+          checkout.addEventListener(name, eventSpy);
+        }
+        const payload = makeCheckoutPayload();
+        for (const method of ["ec.start", "ec.totals.change", "ec.complete"] as const) {
+          simulateProtocolMessageEvent(checkout, method, payload, { source: rejectedWindow });
+        }
+        simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+          source: rejectedWindow,
+        });
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "rejected-ready", source: rejectedWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(eventSpy).not.toHaveBeenCalled();
+        expect(postMessageSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+        expect(checkout.error).toBeUndefined();
+        expect(getInlineContext(checkout).iframe).toBe(active.iframe);
+
+        simulateProtocolMessageEvent(checkout, "ec.start", payload, {
+          source: active.checkoutWindow,
+        });
+        await flushProtocolDispatch();
+        expect(eventSpy).toHaveBeenCalledOnce();
+        expect(checkout.checkout).toEqual(decodeCheckout(payload));
+      },
+    );
+
+    it.each([
+      { origin: "https://untrusted.example", allowedOrigins: undefined },
+      { origin: "http://demostore.mock.shop", allowedOrigins: "*" },
+      { origin: "null", allowedOrigins: "*" },
+    ])("rejects inline messages and replies from $origin", async ({ origin, allowedOrigins }) => {
+      const checkout = renderCheckout({ target: "inline", "allowed-origins": allowedOrigins });
+      const { iframe, checkoutWindow } = getInlineContext(checkout);
+      const postMessageSpy = vi.spyOn(checkoutWindow, "postMessage").mockImplementation(() => {});
+      const eventSpy = vi.fn();
+      checkout.addEventListener("start", eventSpy);
+      checkout.addEventListener("error", eventSpy);
+      checkout.addEventListener("close", eventSpy);
+
+      simulateProtocolMessageEvent(checkout, "ec.start", makeCheckoutPayload(), {
+        source: checkoutWindow,
+        origin,
+      });
+      simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+        source: checkoutWindow,
+        origin,
+      });
+      simulateProtocolMessageEvent(
+        checkout,
+        "ec.ready",
+        { delegate: [] },
+        { id: "untrusted-ready", source: checkoutWindow, origin },
+      );
+      await flushProtocolDispatch();
+
+      expect(eventSpy).not.toHaveBeenCalled();
+      expect(postMessageSpy).not.toHaveBeenCalled();
+      expect(checkout.checkout).toBeUndefined();
+      expect(checkout.error).toBeUndefined();
+      expect(iframe.isConnected).toBe(true);
+    });
+
+    it.each(["never mounted", "closed"] as const)(
+      "ignores messages, including null sources, when inline is %s",
+      async (state) => {
+        const checkout = renderCheckout({
+          target: "inline",
+          ...(state === "never mounted" ? { src: "http://demostore.mock.shop/cart/1:1" } : {}),
+        });
+        const otherIframe = document.createElement("iframe");
+        document.body.appendChild(otherIframe);
+        if (!otherIframe.contentWindow) throw new Error("Unrelated iframe has no window");
+        const sourceWindow =
+          state === "closed"
+            ? getInlineContext(checkout).checkoutWindow
+            : otherIframe.contentWindow;
+        if (state === "closed") checkout.close();
+        const postMessageSpy = vi.spyOn(sourceWindow, "postMessage").mockImplementation(() => {});
+        const eventSpy = vi.fn();
+        for (const name of ["start", "update", "complete", "error", "close"] as const) {
+          checkout.addEventListener(name, eventSpy);
+        }
+        for (const source of [null, sourceWindow]) {
+          for (const method of ["ec.start", "ec.totals.change", "ec.complete"] as const) {
+            simulateProtocolMessageEvent(checkout, method, makeCheckoutPayload(), {
+              source,
+              origin: "https://shop.app",
+            });
+          }
+          simulateProtocolMessageEvent(checkout, "ec.error", makeErrorParams(), {
+            source,
+            origin: "https://shop.app",
+          });
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.ready",
+            { delegate: [] },
+            { id: "inactive-ready", source, origin: "https://shop.app" },
+          );
+        }
+        await flushProtocolDispatch();
+
+        expect(eventSpy).not.toHaveBeenCalled();
+        expect(postMessageSpy).not.toHaveBeenCalled();
+        expect(checkout.checkout).toBeUndefined();
+        expect(checkout.error).toBeUndefined();
+        expect(checkout.shadowRoot?.querySelector("#checkout-iframe")).toBeNull();
+      },
+    );
+
+    it.each(["close", "replacement"] as const)(
+      "does not post an async ready reply after session %s",
+      async (transition) => {
+        const checkout = renderCheckout({ target: "inline" });
+        const original = getInlineContext(checkout);
+        const oldPostMessageSpy = vi
+          .spyOn(original.checkoutWindow, "postMessage")
+          .mockImplementation(() => {});
+        const process = EmbeddedCheckoutProtocol.Client.prototype.process;
+        let resolveReply!: () => void;
+        const pendingReply = new Promise<void>((resolve) => {
+          resolveReply = resolve;
+        });
+        const processSpy = vi
+          .spyOn(EmbeddedCheckoutProtocol.Client.prototype, "process")
+          .mockImplementationOnce(async function (
+            this: EmbeddedCheckoutProtocol.Client,
+            serialized: string,
+          ) {
+            const response = await process.call(this, serialized);
+            await pendingReply;
+            return response;
+          });
+
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "delayed-ready", source: original.checkoutWindow },
+        );
+        await flushProtocolDispatch();
+        expect(processSpy).toHaveBeenCalledOnce();
+        expect(oldPostMessageSpy).not.toHaveBeenCalled();
+
+        if (transition === "close") {
+          checkout.close();
+        } else {
+          checkout.src = "https://demostore.mock.shop/cart/43696905224214:2";
+        }
+        expect(original.iframe.isConnected).toBe(false);
+        const replacement = transition === "replacement" ? getInlineContext(checkout) : undefined;
+        const newPostMessageSpy = replacement
+          ? vi.spyOn(replacement.checkoutWindow, "postMessage").mockImplementation(() => {})
+          : undefined;
+        resolveReply();
+        await flushProtocolDispatch();
+
+        expect(oldPostMessageSpy).not.toHaveBeenCalled();
+        expect(newPostMessageSpy?.mock.calls ?? []).toEqual([]);
+
+        if (transition === "close") checkout.open();
+        const active = getInlineContext(checkout);
+        const activePostMessageSpy =
+          newPostMessageSpy ??
+          vi.spyOn(active.checkoutWindow, "postMessage").mockImplementation(() => {});
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          { id: "active-ready", source: active.checkoutWindow },
+        );
+        await flushProtocolDispatch();
+
+        expect(activePostMessageSpy).toHaveBeenCalledOnce();
+        expect(activePostMessageSpy).toHaveBeenCalledWith(
+          {
+            jsonrpc: "2.0",
+            id: "active-ready",
+            result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+          },
+          new URL(checkout.src).origin,
+        );
+        expect(oldPostMessageSpy).not.toHaveBeenCalled();
+      },
+    );
+  });
+
   describe("log-level attribute", () => {
     it("logs a console warning for dropped messages when log-level is warn", async () => {
       const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
@@ -1725,6 +2142,15 @@ function openPopupCheckout(attributes: Record<string, string | undefined> = {}):
   vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
   checkout.open();
   return { checkout, mockCheckoutWindow };
+}
+
+function getInlineContext(checkout: ShopifyCheckout): {
+  iframe: HTMLIFrameElement;
+  checkoutWindow: Window;
+} {
+  const iframe = checkout.shadowRoot?.querySelector<HTMLIFrameElement>("#checkout-iframe");
+  if (!iframe?.contentWindow) throw new Error("Inline checkout iframe has no window");
+  return { iframe, checkoutWindow: iframe.contentWindow };
 }
 
 /**

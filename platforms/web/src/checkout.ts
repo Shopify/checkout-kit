@@ -173,12 +173,12 @@ const SHADOW_TEMPLATE = createTemplate(html`
 `);
 
 /**
- * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
- * (see `target`). To use, create a `shopify-checkout` element, set the `src` attribute to the
- * checkout URL (typically retrieved from the `cart.checkoutUrl` field), and then call `open()`.
+ * An element that renders a Shopify Checkout in a popup, browser tab/window, or host-sized
+ * inline iframe (see `target`). Set `src` to a checkout URL, then call `open()` for window
+ * targets. Inline automatically mounts when connected; supply a definite host/container height.
  *
  * @attribute src - The URL of the checkout to load.
- * @attribute target - Where the checkout is presented (auto, popup, new tab, or a named window).
+ * @attribute target - Where the checkout is presented (auto, popup, inline, new tab, or a named window).
  * @attribute appearance - Checkout appearance preference (app:light, app:dark, app:automatic, storefront).
  * @attribute log-level - Console logging verbosity (debug, warn, error, or none).
  * @attribute allowed-origins - Extra trusted message origins, separated by spaces or commas.
@@ -221,8 +221,9 @@ export class ShopifyCheckout
   #checkoutComparisonKey?: string;
 
   #checkoutWindow: WindowProxy | null = null;
+  #checkoutIframe: HTMLIFrameElement | null = null;
 
-  // Manages the listeners for the popup window, new tabs, and scrim dialog
+  // Manages the active presentation and its listeners
   #currentOpen: { controller: AbortController } | null = null;
   // Manages a blocked open, and the scrim dialog while it shows the blocked-window state
   #blockedOpen: { controller: AbortController } | null = null;
@@ -467,11 +468,20 @@ export class ShopifyCheckout
       return;
     }
 
+    if (target === "inline") {
+      this.#openInline(src);
+      return;
+    }
+
     const isRetry = this.#blockedOpen !== null;
 
     // Close any existing sessions before opening a new one
     this.#blockedOpen?.controller.abort(RETRY_ABORT_REASON);
-    this.close();
+    if (this.#currentOpen) {
+      this.close();
+      // A close listener may have selected or opened another presentation.
+      if (this.#currentOpen || this.target !== target || this.#srcAsURL()?.href !== src) return;
+    }
 
     this.#checkout = undefined;
     this.#error = undefined;
@@ -554,6 +564,84 @@ export class ShopifyCheckout
     this.#currentOpen = { controller: abortController };
     this.#checkoutWindow = checkoutWindow;
     this.#navigationStartedAt = this.telemetry ? navigationStartedAt : undefined;
+  }
+
+  #openInline(src: string): void {
+    if (!this.isConnected) return;
+    if (this.#checkoutIframe?.src === src && this.#currentOpen) return;
+
+    this.close();
+    // A close listener may have opened a new session or changed the element.
+    if (
+      this.#currentOpen ||
+      !this.isConnected ||
+      this.target !== "inline" ||
+      this.#srcAsURL()?.href !== src
+    )
+      return;
+
+    const target = this.#targetElement;
+    if (!target || !this.#checkoutProtocolController) return;
+
+    this.#checkout = undefined;
+    this.#error = undefined;
+    this.#checkoutComparisonKey = undefined;
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "checkout-iframe";
+    iframe.title = "Checkout";
+    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups");
+    iframe.setAttribute(
+      "allow",
+      "publickey-credentials-get https://pay.shopify.com https://shop.app; geolocation",
+    );
+
+    const session = { controller: new AbortController() };
+    this.#currentOpen = session;
+    this.#checkoutIframe = iframe;
+    target.appendChild(iframe);
+    const checkoutWindow = iframe.contentWindow;
+    if (!checkoutWindow) {
+      iframe.remove();
+      if (this.#currentOpen === session) {
+        this.#currentOpen = null;
+        this.#checkoutIframe = null;
+        this.#checkoutWindow = null;
+        this.#navigationStartedAt = undefined;
+      }
+      session.controller.abort();
+      return;
+    }
+
+    this.#checkoutWindow = checkoutWindow;
+    session.controller.signal.addEventListener(
+      "abort",
+      () => {
+        iframe.remove();
+        if (this.#currentOpen === session) {
+          this.#currentOpen = null;
+          this.#checkoutIframe = null;
+          this.#checkoutWindow = null;
+          this.#navigationStartedAt = undefined;
+        }
+        /** @ignore - Events are documented by the class @event tags. */
+        this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+      },
+      { once: true },
+    );
+
+    this.#navigationStartedAt = this.telemetry ? performance.now() : undefined;
+    iframe.src = src;
+  }
+
+  #syncInline(): void {
+    if (!this.isConnected || this.target !== "inline") return;
+    const src = this.#srcAsURL()?.href;
+    if (src) {
+      this.#openInline(src);
+    } else if (this.#checkoutIframe) {
+      this.close();
+    }
   }
 
   close(): void {
@@ -812,7 +900,7 @@ export class ShopifyCheckout
     // Source check: messages must come from the embedded checkout window
     // we opened. Unrelated postMessage traffic on the host page (other
     // SDKs, browser extensions, etc.) is dropped silently.
-    if (event.source !== this.#checkoutWindow) return;
+    if (!this.#checkoutWindow || event.source !== this.#checkoutWindow) return;
 
     try {
       this.#validateMessageOrigin(event);
@@ -881,6 +969,7 @@ export class ShopifyCheckout
         this.dispatchEvent(new ShopifyCheckoutCompleteEvent({ checkout: snapshot }));
       })
       .on(Event.error, ({ params: { error } }) => {
+        const session = this.#currentOpen;
         this.#recorder?.recordError({
           category: "protocol",
           stage: "message",
@@ -893,8 +982,10 @@ export class ShopifyCheckout
         this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error: this.#error }));
         // `ec.error` is terminal for the embedded session. Message severity is
         // payload detail for the checkout error, not a host-side recovery signal.
-        this.#recordNavigationFailure();
-        this.close();
+        if (this.#currentOpen === session) {
+          this.#recordNavigationFailure();
+          session?.controller.abort();
+        }
       })
       .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
         this.#updateCheckout(checkout);
@@ -934,8 +1025,17 @@ export class ShopifyCheckout
    * notifications resolve to `undefined` and post nothing.
    */
   async #dispatchProtocolMessage(serialized: string, event: MessageEvent): Promise<void> {
+    const session = this.#currentOpen;
+    const source = this.#checkoutWindow;
+    if (!session || !source || event.source !== source) return;
     const response = await this.#client.process(serialized);
-    if (response === undefined) return;
+    if (
+      response === undefined ||
+      this.#currentOpen !== session ||
+      session.controller.signal.aborted ||
+      this.#checkoutWindow !== source
+    )
+      return;
 
     const parsed = JSON.parse(response) as {
       error?: { code?: number };
@@ -950,10 +1050,7 @@ export class ShopifyCheckout
       this.#logger.warn(WINDOW_OPEN_INVALID_URL_WARNING, event.data);
     }
 
-    const { source } = event;
-    if (source) {
-      (source as WindowProxy).postMessage(parsed, event.origin);
-    }
+    source.postMessage(parsed, event.origin);
   }
 
   /**
@@ -989,6 +1086,7 @@ export class ShopifyCheckout
     this.#applyTargetClass();
 
     this.#initCheckoutProtocol();
+    this.#syncInline();
   }
 
   disconnectedCallback(): void {
@@ -1015,7 +1113,13 @@ export class ShopifyCheckout
 
         this.#removeTargetClass(oldValue);
         this.#applyTargetClass();
+        this.#syncInline();
 
+        break;
+      }
+      case "src":
+      case "appearance": {
+        this.#syncInline();
         break;
       }
       case "telemetry": {
