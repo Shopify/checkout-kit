@@ -61,6 +61,14 @@ export, and diagnostic artifacts with the Swift workflow. The existing
 It calls `run_local_e2e --skip-build` to keep matrix selection in one place and
 avoid rebuilding the app or starting Metro for a packaged React Native app.
 
+## Direct Maestro React Native Android workflow
+
+The manual `e2e-maestro-react-native-android` workflow uses the same Android API
+35 emulator and reporting as Kotlin, running the four shared checkout/launch
+flows enabled for React Native. It builds `assembleE2e` with bundled JavaScript
+and x86_64 native libraries, so no Metro server is needed. Published native SDKs
+remain the default. Physical-device APK builds still default to arm64-v8a.
+
 ## Pipeline
 
 The `e2e-browserstack` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
