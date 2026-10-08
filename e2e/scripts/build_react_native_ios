@@ -21,7 +21,7 @@ if [ "${E2E_IOS_SIMULATOR_ONLY:-0}" != 1 ]; then
     --app-name "$app_name" \
     --bundle-id com.shopify.checkoutkit.reactnativedemo \
     --profile-specifier bitrise-checkout-kit-e2e
-  
+
   e2e_log "Publishing iOS IPA path"
   envman add --key E2E_REACT_NATIVE_IOS_APP_PATH --value "$E2E_IOS_PROVISIONED_IPA"
 
