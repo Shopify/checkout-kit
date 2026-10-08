@@ -51,6 +51,9 @@ jobs:
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native
 
+      - name: Check lockfile is deduplicated
+        run: pnpm dedupe --check
+
       - name: Build module
         run: pnpm module build
 
