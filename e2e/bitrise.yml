@@ -37,58 +37,51 @@ tools:
   nodejs: 22.14.0
 
 pipelines:
-  e2e-browserstack:
+  e2e:
     # The required ci/bitrise/e2e/pr check must report for every ready PR.
     # Select applications in the run plan so unrelated changes still finish
-    # the pipeline successfully without starting builds or BrowserStack runs.
+    # the pipeline successfully without starting simulators or emulators.
     triggers:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    # Preserve the required GitHub check while making BrowserStack execution
-    # explicit in Bitrise. The direct Maestro cutover inherits this check.
-    status_report_name: "ci/bitrise/e2e/<event_type>"
+    # Each pipeline reports its own status; the direct Maestro pipeline keeps
+    # the existing required ci/bitrise/e2e/pr check after the cutover.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
     workflows:
-      e2e-produce-browserstack-run-plan: {}
-      e2e-build-react-native-ios:
+      e2e-plan: {}
+      e2e-maestro-swift-ios:
         run_if:
-          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_IOS" "true" }}'
+          expression: '{{ enveq "E2E_RUN_SWIFT_IOS" "true" }}'
         depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-react-native-android:
+          - e2e-plan
+      e2e-maestro-kotlin-android:
         run_if:
-          expression: '{{ enveq "E2E_BUILD_REACT_NATIVE_ANDROID" "true" }}'
+          expression: '{{ enveq "E2E_RUN_KOTLIN_ANDROID" "true" }}'
         depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-kotlin-android:
+          - e2e-plan
+      e2e-maestro-react-native-android:
         run_if:
-          expression: '{{ enveq "E2E_BUILD_KOTLIN_ANDROID" "true" }}'
+          expression: '{{ enveq "E2E_RUN_REACT_NATIVE_ANDROID" "true" }}'
         depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-build-swift-ios:
+          - e2e-plan
+      e2e-maestro-react-native-ios:
         run_if:
-          expression: '{{ enveq "E2E_BUILD_SWIFT_IOS" "true" }}'
+          expression: '{{ enveq "E2E_RUN_REACT_NATIVE_IOS" "true" }}'
         depends_on:
-          - e2e-produce-browserstack-run-plan
-      e2e-execute-browserstack-run:
-        run_if:
-          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
-        depends_on:
-          - e2e-produce-browserstack-run-plan
-          - e2e-build-react-native-ios
-          - e2e-build-react-native-android
-          - e2e-build-kotlin-android
-          - e2e-build-swift-ios
-        parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
+          - e2e-plan
       # Always publish the required check, including an empty native E2E plan.
       e2e-report:
         depends_on:
-          - e2e-produce-browserstack-run-plan
-          - e2e-execute-browserstack-run
+          - e2e-plan
+          - e2e-maestro-swift-ios
+          - e2e-maestro-kotlin-android
+          - e2e-maestro-react-native-android
+          - e2e-maestro-react-native-ios
         should_always_run: workflow
 
   # The macOS merge gate. Bitrise reports one status per pipeline, so keep
-  # macOS CI and BrowserStack E2E results separate.
+  # macOS CI and Maestro E2E results separate.
   ci-ios:
     # Deliberately unfiltered. ci-ios is a required check, and a required check that
     # never posts leaves a pull request permanently unmergeable. The cheap Linux
@@ -546,6 +539,35 @@ workflows:
                 e2e_log "Reporting iOS CI results to GitHub"
                 ruby e2e/scripts/report_ios_ci_results
 
+  e2e-plan:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Select direct Maestro workflows
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                changed_files="$(e2e_changed_files_file)"
+                branch_config="$(e2e_branch_bitrise_config)"
+                bitrise_env_file="$(e2e_deploy_dir)/maestro-env.txt"
+                ruby e2e/scripts/bitrise_e2e_run_plan --changed-files-file "$changed_files" --pipeline-config "$branch_config" > "$bitrise_env_file"
+                while IFS='=' read -r key value; do
+                  envman add --key "$key" --value "$value"
+                done < "$bitrise_env_file"
+      - share-pipeline-variable@1:
+          inputs:
+            - variables: |-
+                E2E_DIRECT_PLAN_READY
+                E2E_DIRECT_SELECTED_APPLICATIONS
+                E2E_RUN_SWIFT_IOS
+                E2E_RUN_KOTLIN_ANDROID
+                E2E_RUN_REACT_NATIVE_ANDROID
+                E2E_RUN_REACT_NATIVE_IOS
+
+  # Retained for BrowserStack fallback and on-demand Tophat artifact builds.
   e2e-produce-browserstack-run-plan:
     steps:
       - git-clone@8: {}
@@ -680,7 +702,7 @@ workflows:
                 ~/.gradle/caches
                 ~/.gradle/wrapper
 
-  # Manual proof of concept: run the Swift Maestro suite on the Bitrise host.
+  # These workflows also support manual runs of each complete target suite.
   e2e-maestro-swift-ios:
     status_report_name: "ci/bitrise/maestro-swift-ios/<event_type>"
     envs: &maestro_envs
@@ -894,6 +916,20 @@ workflows:
                 $BITRISE_DEPLOY_DIR/e2e/results:E2E_BROWSERSTACK_RESULTS_DIR
 
   e2e-report:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Report direct Maestro results
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_export_github_token
+                ruby e2e/scripts/report_bitrise_e2e_results
+
+  e2e-browserstack-report:
     steps:
       - git-clone@8: {}
       # An empty plan has no execution artifacts; the shared run count is enough
