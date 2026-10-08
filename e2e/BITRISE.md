@@ -22,6 +22,17 @@ Useful Bitrise app URLs:
 
 If a direct URL does not resolve in the current Bitrise UI, open the app overview and navigate to the matching area from the sidebar.
 
+## Direct Maestro smoke workflow
+
+The manual `e2e-maestro-swift-smoke` workflow builds the Swift sample for the
+Bitrise iOS simulator and runs `tests/shared/launch-smoke.yaml` using the pinned
+Maestro CLI and the existing local E2E runner. It uses placeholder storefront
+configuration; no storefront secrets, signing credentials, or BrowserStack
+credentials are needed. Maestro logs and screenshots are uploaded as artifacts.
+
+Select this workflow and the PR branch in Bitrise's **Start build** screen.
+It has no automatic triggers and does not participate in the required E2E pipeline.
+
 ## Pipeline
 
 The `e2e` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
