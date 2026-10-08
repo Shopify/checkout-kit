@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const { SourceMap } = require("node:module");
 const path = require("node:path");
 
 // Attributes every byte of shipped, minified JavaScript to the npm package
@@ -9,57 +10,31 @@ const path = require("node:path");
 // package that owns its output location.
 
 const UNATTRIBUTED = "(unattributed)";
-const BASE64 = Object.fromEntries(
-  [..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"].map((c, i) => [c, i]),
-);
 
-function decodeSegment(segment) {
-  const values = [];
-  let value = 0;
-  let shift = 0;
-  for (const char of segment) {
-    const digit = BASE64[char];
-    if (digit === undefined) throw new Error(`Invalid source map mapping: ${segment}`);
-    value += (digit & 31) << shift;
-    if (digit & 32) {
-      shift += 5;
-      continue;
-    }
-    values.push(value & 1 ? -(value >>> 1) : value >>> 1);
-    value = 0;
-    shift = 0;
-  }
-  if (shift !== 0) throw new Error(`Truncated source map mapping: ${segment}`);
-  return values;
-}
-
-// Returns byte counts per source index (null for unmapped) for one file.
-function attributeFile(code, map) {
+// Returns UTF-8 byte counts per original source path (null for unmapped) in one file.
+function attributeFile(code, payload) {
+  const map = new SourceMap(payload);
   const counts = new Map();
-  const add = (source, bytes) => {
-    if (bytes > 0) counts.set(source, (counts.get(source) ?? 0) + bytes);
+  const add = (source, text) => {
+    counts.set(source, (counts.get(source) ?? 0) + Buffer.byteLength(text));
+  };
+  // Source maps use zero-based lines and UTF-16 columns. Each column belongs to the
+  // nearest mapping at or before it on the same line. Columns before a line's first
+  // mapping, and mappings without a source, are unmapped.
+  const sourceAt = (line, column) => {
+    const entry = map.findEntry(line, column);
+    return entry.generatedLine === line ? (entry.originalSource ?? null) : null;
   };
   const lines = code.split("\n");
-  const mappingLines = map.mappings.split(";");
-  let source = 0;
-  lines.forEach((line, index) => {
-    const newline = index < lines.length - 1 ? 1 : 0;
-    const segments = [];
-    let column = 0;
-    for (const raw of (mappingLines[index] ?? "").split(",")) {
-      if (!raw) continue;
-      const fields = decodeSegment(raw);
-      column += fields[0];
-      if (fields.length > 1) source += fields[1];
-      segments.push([column, fields.length > 1 ? source : null]);
+  lines.forEach((text, line) => {
+    // Count runs of columns with the same source, so a surrogate pair is never split.
+    let start = 0;
+    for (let column = 1; column <= text.length; column++) {
+      if (column < text.length && sourceAt(line, column) === sourceAt(line, start)) continue;
+      add(sourceAt(line, start), text.slice(start, column));
+      start = column;
     }
-    // Source map columns are UTF-16 offsets, so slice the string, then count UTF-8 bytes.
-    const start = segments.length ? segments[0][0] : line.length;
-    add(null, Buffer.byteLength(line.slice(0, start)) + newline);
-    segments.forEach(([from, owner], i) => {
-      const to = i + 1 < segments.length ? segments[i + 1][0] : line.length;
-      add(owner, Buffer.byteLength(line.slice(from, to)));
-    });
+    if (line < lines.length - 1) add(null, "\n");
   });
   return counts;
 }
@@ -107,12 +82,9 @@ function attribute({ shippedDir, buildDir, repoRoot }) {
     }
     const map = JSON.parse(fs.readFileSync(mapPath, "utf8"));
     const sourceRoot = path.resolve(path.dirname(built), map.sourceRoot ?? "");
-    for (const [index, count] of attributeFile(code, map)) {
-      const source = index === null ? undefined : map.sources[index];
-      if (index !== null && typeof source !== "string")
-        throw new Error(`Source map for ${rel} references missing source ${index}`);
+    for (const [source, count] of attributeFile(code, map)) {
       const owner =
-        source === undefined
+        source === null
           ? UNATTRIBUTED
           : packageOwner(path.resolve(sourceRoot, source.replace(/[?#].*$/, "")), repoRoot, cache);
       add(owner, count);
@@ -136,7 +108,7 @@ function rows(platform, { totals }) {
     );
 }
 
-module.exports = { UNATTRIBUTED, decodeSegment, attributeFile, attribute, rows };
+module.exports = { UNATTRIBUTED, attributeFile, attribute, rows };
 
 if (require.main === module) {
   const [platform, shippedDir, buildDir, repoRoot] = process.argv.slice(2);

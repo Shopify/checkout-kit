@@ -5,44 +5,6 @@ const os = require("node:os");
 const path = require("node:path");
 const attribution = require("./bundle-size-attribution.cjs");
 
-const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-function encode(values) {
-  return values
-    .map((n) => {
-      let value = n < 0 ? (-n << 1) | 1 : n << 1;
-      let out = "";
-      do {
-        let digit = value & 31;
-        value >>>= 5;
-        if (value) digit |= 32;
-        out += BASE64[digit];
-      } while (value);
-      return out;
-    })
-    .join("");
-}
-
-// Lines of [column, sourceIndex | null] segments, with absolute values, encoded as deltas.
-function mappings(lines) {
-  let source = 0;
-  return lines
-    .map((segments) => {
-      let column = 0;
-      return segments
-        .map(([col, src]) => {
-          const fields = [col - column];
-          column = col;
-          if (src !== null) {
-            fields.push(src - source, 0, 0);
-            source = src;
-          }
-          return encode(fields);
-        })
-        .join(",");
-    })
-    .join(";");
-}
-
 function write(file, content) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, content);
@@ -56,21 +18,17 @@ function fixture() {
   return repo;
 }
 
-test("decodes VLQ segments, including negative and multi-digit values", () => {
-  assert.deepEqual(attribution.decodeSegment(encode([0, -3, 16, 1000])), [0, -3, 16, 1000]);
-  assert.throws(() => attribution.decodeSegment("g"), /Truncated/);
-  assert.throws(() => attribution.decodeSegment("!"), /Invalid/);
-});
-
 test("attributes every shipped byte to its source package", (t) => {
   const repo = fixture();
   t.after(() => fs.rmSync(repo, { recursive: true, force: true }));
   const build = path.join(repo, "web/dist");
   const shipped = path.join(repo, "shipped/dist");
 
-  // Line 1: "import" glue, then protocol code, then web code with a multibyte character.
-  // Line 2: no mappings at all (bundler glue). Line 3: a one-field (unmapped) segment.
-  const code = 'imp;P("x");W("é");\nexport{a};\nP();glue';
+  // Line 1: "imp;" glue, then protocol code from column 4, then web code from column 11.
+  //   The web code includes a 2-byte character and an emoji (a UTF-16 surrogate pair).
+  // Line 2: no mappings at all (bundler glue).
+  // Line 3: unnamed-package code from column 0, then a source-less mapping from column 4.
+  const code = 'imp;P("x");W("é😀");\nexport{a};\nP();glue';
   const map = {
     version: 3,
     // Relative to web/dist/chunks/, where the map was built. An unnamed package stays unattributed.
@@ -79,17 +37,8 @@ test("attributes every shipped byte to its source package", (t) => {
       "../../src/index.css?inline",
       "../../../unnamed/a.ts",
     ],
-    mappings: mappings([
-      [
-        [4, 0],
-        [11, 1],
-      ],
-      [],
-      [
-        [0, 2],
-        [4, null],
-      ],
-    ]),
+    // IAAA = column 4, source 0; OCAA = column +7 (11), source +1; ACAA = column 0, source +1; I = column +4, no source.
+    mappings: "IAAA,OCAA;;ACAA,I",
   };
   write(path.join(shipped, "chunks/main.js"), code);
   write(path.join(shipped, "chunks/main.js.map"), JSON.stringify(map));
@@ -103,17 +52,17 @@ test("attributes every shipped byte to its source package", (t) => {
     totals: {
       "(unattributed)": 4 + 1 + "export{a};\n".length + 4 + 4,
       "@acme/protocol": 'P("x");'.length,
-      "@acme/web": Buffer.byteLength('W("é");') + shim,
+      "@acme/web": Buffer.byteLength('W("é😀");') + shim,
     },
   });
   assert.deepEqual(attribution.rows("Web", result), [
-    `Web\tJavaScript package @acme/web\t${Buffer.byteLength('W("é");') + shim}`,
+    `Web\tJavaScript package @acme/web\t${Buffer.byteLength('W("é😀");') + shim}`,
     "Web\tJavaScript package @acme/protocol\t7",
     `Web\tJavaScript unattributed\t${result.totals["(unattributed)"]}`,
   ]);
 });
 
-test("never attributes sources outside the repository and rejects broken maps", (t) => {
+test("never attributes sources outside the repository", (t) => {
   const repo = fixture();
   t.after(() => fs.rmSync(repo, { recursive: true, force: true }));
   const build = path.join(repo, "web/dist");
@@ -121,22 +70,10 @@ test("never attributes sources outside the repository and rejects broken maps", 
   write(path.join(shipped, "a.js"), "abc");
   write(
     path.join(shipped, "a.js.map"),
-    JSON.stringify({
-      version: 3,
-      sources: ["../../../outside.ts"],
-      mappings: mappings([[[0, 0]]]),
-    }),
+    JSON.stringify({ version: 3, sources: ["../../../outside.ts"], mappings: "AAAA" }),
   );
   assert.deepEqual(
     attribution.attribute({ shippedDir: shipped, buildDir: build, repoRoot: repo }).totals,
     { "(unattributed)": 3 },
-  );
-  write(
-    path.join(shipped, "a.js.map"),
-    JSON.stringify({ version: 3, sources: [], mappings: mappings([[[0, 0]]]) }),
-  );
-  assert.throws(
-    () => attribution.attribute({ shippedDir: shipped, buildDir: build, repoRoot: repo }),
-    /missing source/,
   );
 });
