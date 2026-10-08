@@ -36,9 +36,9 @@ needed. The checkout flows submit test orders using the E2E store's test gateway
 
 The workflow sets `E2E_JUNIT_REPORT` to generate a JUnit report, exports its
 results to Bitrise's **Tests** tab, and uploads the Maestro output directory as
-a compressed artifact. It sets `E2E_MAESTRO_TEST_RETRIES=1` to rerun only failed
-flows once, matching the BrowserStack retry policy. Tests that recover are named
-`(passed on retry 1)` in the Tests tab; the artifact retains each attempt's JUnit
+a compressed artifact. It sets `E2E_MAESTRO_TEST_RETRIES=2` to rerun only failed
+flows up to twice (three attempts total). Tests that recover are named
+`(passed on retry 1)` or `(passed on retry 2)` in the Tests tab; the artifact retains each attempt's JUnit
 report and Maestro diagnostics. The workflow installs pinned REXML 3.4.4 for
 report merging. Local runs still default to no whole-flow retries.
 
