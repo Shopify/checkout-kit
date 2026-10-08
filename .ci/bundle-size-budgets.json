@@ -4,6 +4,24 @@
       "measurement": "bundle",
       "softKiB": 40,
       "hardKiB": 50
+    },
+    "checkoutKit": {
+      "measurement": "bundlePackage",
+      "package": "@shopify/checkout-kit",
+      "softKiB": 18,
+      "hardKiB": 24
+    },
+    "protocol": {
+      "measurement": "bundlePackage",
+      "package": "@shopify/checkout-kit-protocol",
+      "softKiB": 16,
+      "hardKiB": 20
+    },
+    "telemetry": {
+      "measurement": "bundlePackage",
+      "package": "@shopify/checkout-kit-telemetry",
+      "softKiB": 5,
+      "hardKiB": 8
     }
   },
   "react-native": {
