@@ -750,6 +750,46 @@ workflows:
                 ./e2e/scripts/run_bitrise_maestro kotlin-android "$E2E_KOTLIN_ANDROID_APP_PATH"
       - bundle::export-maestro-results: {}
 
+  e2e-maestro-react-native-android:
+    status_report_name: "ci/bitrise/maestro-react-native-android/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-android-emulator: {}
+      - bundle::install-maestro: {}
+      - bundle::install-node-modules: {}
+      - restore-cache@3:
+          inputs:
+            - key: *rn_gradle_cache_key
+      - script@1:
+          title: Build the React Native E2E app for x86_64
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./platforms/react-native/scripts/check_no_local_sdk_default
+                E2E_REACT_NATIVE_ANDROID_ARCHITECTURES=x86_64 ./e2e/scripts/build_react_native_android
+      - save-cache@1:
+          inputs:
+            - key: *rn_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - script@1:
+          title: Run the React Native Android Maestro suite
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro react-native-android "$E2E_REACT_NATIVE_ANDROID_APP_PATH"
+      - bundle::export-maestro-results: {}
+
   e2e-build-swift-ios:
     meta:
       bitrise.io:
