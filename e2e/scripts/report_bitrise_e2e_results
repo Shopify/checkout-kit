@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require_relative "../lib/bitrise_e2e_run_plan"
+require_relative "../lib/bitrise_e2e_reporter"
+require_relative "../lib/github_token"
+
+plan = BitriseE2ERunPlan.load(File.expand_path("../config/matrix.yml", __dir__))
+plan.ensure_valid!
+selected_ids = begin
+  JSON.parse(ENV.fetch("E2E_DIRECT_SELECTED_APPLICATIONS", ""))
+rescue JSON::ParserError
+  nil
+end
+manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/targets.json", __dir__)))
+pr_number = ENV["BITRISE_PULL_REQUEST"].to_s.strip
+has_pr = !["", "false", "0"].include?(pr_number)
+token = GitHubToken.resolve if has_pr
+sha = ENV["BITRISE_GIT_COMMIT"]
+if has_pr
+  abort "BITRISE_GIT_COMMIT is required" if sha.to_s.empty?
+  abort "GitHub token is required" if token.to_s.empty?
+end
+
+reporter = BitriseE2EReporter.new(
+  applications: plan.selected_applications,
+  selected_ids: selected_ids,
+  plan_ready: ENV["E2E_DIRECT_PLAN_READY"],
+  repository: ENV.fetch("GITHUB_REPOSITORY", "Shopify/checkout-kit"),
+  sha: sha,
+  pr_number: has_pr ? Integer(pr_number) : nil,
+  token: token,
+  branch: ENV["BITRISE_GIT_BRANCH"],
+  app_slug: manifest.fetch("app_slug"),
+  targets: manifest.fetch("targets"),
+  stages: BitrisePipelineStages.from_json(ENV["BITRISEIO_FINISHED_WORKFLOWS"], app_slug: manifest.fetch("app_slug")),
+  pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]
+)
+reporter.publish! if has_pr
+puts reporter.markdown_summary
+exit(reporter.conclusion == "success" ? 0 : 1)
