@@ -637,6 +637,7 @@ workflows:
   e2e-maestro-swift-ios:
     status_report_name: "ci/bitrise/maestro-swift-ios/<event_type>"
     envs:
+      - E2E_MAESTRO_TEST_RETRIES: "1"
       # Keep first-run notices out of the installer's exact version check.
       - MAESTRO_CLI_NO_ANALYTICS: "1"
       - MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
