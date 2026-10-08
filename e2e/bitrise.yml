@@ -790,6 +790,45 @@ workflows:
                 ./e2e/scripts/run_bitrise_maestro react-native-android "$E2E_REACT_NATIVE_ANDROID_APP_PATH"
       - bundle::export-maestro-results: {}
 
+  e2e-maestro-react-native-ios:
+    status_report_name: "ci/bitrise/maestro-react-native-ios/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - bundle::install-maestro: {}
+      - bundle::install-node-modules: {}
+      - script@1:
+          title: Verify React Native resolves the published native SDKs
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./platforms/react-native/scripts/check_no_local_sdk_default
+                ./platforms/react-native/scripts/check_published_podfile_lock platforms/react-native/sample/ios/Podfile.lock
+      - bundle::install-ruby-gems: {}
+      - bundle::install-cocoapods: {}
+      - script@1:
+          title: Build the React Native Release simulator app
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                E2E_IOS_SIMULATOR_ONLY=1 ./e2e/scripts/build_react_native_ios
+      - script@1:
+          title: Run the React Native iOS Maestro suite
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro react-native-ios "$E2E_REACT_NATIVE_IOS_SIMULATOR_APP_BUNDLE"
+      - bundle::export-maestro-results: {}
+
   e2e-build-swift-ios:
     meta:
       bitrise.io:
