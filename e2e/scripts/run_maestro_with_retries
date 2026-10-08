@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require "rexml/document"
+require "tmpdir"
+require "yaml"
+
+# Maestro 2.4 has no CLI retry flag. Run the selected suite once, then rerun only
+# failed flows. Keep raw attempts separate from the final Bitrise JUnit report.
+class MaestroRetryRunner
+  def initialize(command:, files:, report:, retries:, execute: ->(*args) { system(*args) })
+    raise ArgumentError, "E2E_MAESTRO_TEST_RETRIES must be between 1 and 5" unless retries.match?(/\A[1-5]\z/)
+    raise ArgumentError, "Retries require E2E_JUNIT_REPORT" if report.to_s.empty?
+    raise ArgumentError, "Retries require explicit flow files" if files.empty?
+
+    @command, @report, @retries, @execute = command, report, retries.to_i, execute
+    @files_by_name = files.to_h do |file|
+      header = YAML.safe_load(File.read(file).split(/^---\s*$/, 2).first)
+      [header.fetch("name", File.basename(file, ".yaml")), file]
+    end
+    raise ArgumentError, "Flow names must be unique for retries" unless @files_by_name.size == files.size
+  end
+
+  def run
+    pending = @files_by_name.keys
+    final = nil
+    # A fresh directory prevents stale reports from a previous run being reused.
+    FileUtils.mkdir_p(File.dirname(@report))
+    FileUtils.rm_f(@report)
+    attempts_dir = Dir.mktmpdir("maestro-attempts-", File.dirname(@report))
+
+    (0..@retries).each do |attempt|
+      directory = File.join(attempts_dir, "attempt-#{attempt + 1}")
+      FileUtils.mkdir_p(directory)
+      attempt_report = File.join(directory, "junit.xml")
+      puts "Maestro attempt #{attempt + 1}: #{pending.size} flow(s)"
+      success = @execute.call(*@command, "--format", "junit", "--output", attempt_report,
+        "--debug-output", directory, *pending.map { |name| @files_by_name.fetch(name) })
+      raise "Maestro did not produce a JUnit report" unless File.file?(attempt_report)
+
+      current = REXML::Document.new(File.read(attempt_report))
+      cases = REXML::XPath.match(current, "//testcase")
+      names = cases.map { |test| test.attributes["name"] }
+      raise "Maestro report has no tests or unexpected flow names" if names.empty? || names.uniq != names || !(names - pending).empty?
+      # The initial invocation may filter flows using Maestro's tag selectors.
+      filtered = @command.any? { |arg| ["--include-tags", "--exclude-tags"].include?(arg) }
+      raise "Maestro report is incomplete" if (attempt.positive? || !filtered) && names.sort != pending.sort
+      raise "Previously failed flow was skipped on retry" if attempt.positive? && cases.any? { |test| test.elements["skipped"] }
+      raise "Maestro exited unsuccessfully without reporting a test failure" if !success && cases.none? { |test| failed?(test) }
+
+      if final
+        cases.each do |test|
+          previous = REXML::XPath.match(final, "//testcase").find { |item| item.attributes["name"] == test.attributes["name"] }
+          test.attributes["time"] = (previous.attributes["time"].to_f + test.attributes["time"].to_f).to_s
+          unless failed?(test) || test.elements["skipped"]
+            test.attributes["name"] = "#{test.attributes['name']} (passed on retry #{attempt})"
+            test.add_element("system-out").text = "Failed an earlier attempt. Raw reports and diagnostics: #{attempts_dir}"
+            puts test.attributes["name"]
+          end
+          previous.parent.insert_before(previous, test.deep_clone)
+          previous.parent.delete_element(previous)
+        end
+      else
+        final = current
+      end
+
+      REXML::XPath.each(final, "//testsuite") do |suite|
+        tests = suite.get_elements("testcase")
+        suite.attributes["tests"] = tests.size.to_s
+        suite.attributes["failures"] = tests.count { |test| test.elements["failure"] }.to_s
+        suite.attributes["errors"] = tests.count { |test| test.elements["error"] }.to_s
+        suite.attributes["skipped"] = tests.count { |test| test.elements["skipped"] }.to_s
+        suite.attributes["time"] = tests.sum { |test| test.attributes["time"].to_f }.to_s
+      end
+      File.write(@report, final.to_s)
+      pending = cases.select { |test| failed?(test) }.map { |test| test.attributes["name"] }
+      return true if pending.empty?
+    end
+    false
+  end
+
+  private
+
+  def failed?(test)
+    test.elements["failure"] || test.elements["error"]
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  begin
+    separator = ARGV.index("--") or raise ArgumentError, "Expected command -- flow files"
+    runner = MaestroRetryRunner.new(command: ARGV.take(separator), files: ARGV.drop(separator + 1),
+      report: ENV["E2E_JUNIT_REPORT"], retries: ENV.fetch("E2E_MAESTRO_TEST_RETRIES", "0"))
+    exit(runner.run ? 0 : 1)
+  rescue StandardError => error
+    warn "Maestro retry runner failed: #{error.message}"
+    exit 1
+  end
+end
