@@ -1,3 +1,4 @@
+import {readFile, writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
@@ -9,6 +10,29 @@ import packageJson from './package.json';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
+
+// API Extractor (rollupTypes) drops `declare global` blocks, so the published
+// declarations lose the element's tag-name typing. Add it back to the rolled-up
+// entry, where `ShopifyCheckout` is declared. Keep in sync with
+// src/checkout-web-component.ts.
+const tagNameMap = `
+declare global {
+  interface HTMLElementTagNameMap {
+    "shopify-checkout": ShopifyCheckout;
+  }
+}
+`;
+
+async function addTagNameMap() {
+  const file = fromRoot('dist/index.d.ts');
+  const declarations = await readFile(file, 'utf8');
+  if (!/^export declare class ShopifyCheckout\b/m.test(declarations)) {
+    throw new Error('dist/index.d.ts no longer declares ShopifyCheckout; update addTagNameMap.');
+  }
+  if (!declarations.includes('interface HTMLElementTagNameMap')) {
+    await writeFile(file, `${declarations.trimEnd()}\n${tagNameMap}`);
+  }
+}
 
 export default defineConfig({
   define: {
@@ -24,6 +48,7 @@ export default defineConfig({
       insertTypesEntry: true,
       rollupTypes: true,
       bundledPackages: ['@shopify/checkout-kit-protocol'],
+      afterBuild: addTagNameMap,
     }),
   ],
   build: {
