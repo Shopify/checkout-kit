@@ -9,6 +9,10 @@ until the suite is stable, then make it required — no code change is needed to
 or un-gate. This single umbrella check stays stable across matrix changes, so
 requiring it never churns as applications, OS versions, or suites are added.
 
+When a change selects no native E2E runs, only the planner and reporter run. The
+reporter skips artifact downloads and publishes a successful **"Checkout Kit E2E"**
+check stating that no native E2E runs were selected.
+
 The runner never hard-fails on test or infrastructure problems: every run writes a
 `result.json` and exits `0`, so the report workflow always has data to publish. The
 report posts one **"Checkout Kit E2E"** Check Run and one sticky PR comment carrying the

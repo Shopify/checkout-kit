@@ -61,6 +61,7 @@ class E2EGitHubReporter
     lines = []
     lines << "## Checkout Kit E2E results"
     lines << ""
+    lines << "No native E2E runs were selected for this change." if @expected == 0 && @results.empty?
     lines.concat(results_table) unless @results.empty?
     unless complete?
       lines << "" unless @results.empty?
@@ -191,6 +192,8 @@ class E2EGitHubReporter
   end
 
   def expected_stage_names
+    return [] if @expected == 0
+
     application_ids = @run_plan.map { |run| run["application_id"] }.compact.uniq
     application_ids.map { |application_id| "e2e-build-#{application_id}" } + [EXECUTE_STAGE_NAME]
   end

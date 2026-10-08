@@ -82,10 +82,10 @@ pipelines:
           - e2e-build-kotlin-android
           - e2e-build-swift-ios
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
+      # Always publish the required check, including an empty native E2E plan.
       e2e-report:
-        run_if:
-          expression: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
         depends_on:
+          - e2e-produce-browserstack-run-plan
           - e2e-execute-browserstack-run
         should_always_run: workflow
 
@@ -700,7 +700,10 @@ workflows:
   e2e-report:
     steps:
       - git-clone@8: {}
+      # An empty plan has no execution artifacts; the shared run count is enough
+      # for the reporter to publish a successful no-runs result.
       - pull-intermediate-files@1:
+          run_if: '{{ enveq "E2E_HAS_E2E_RUNS" "true" }}'
           inputs:
             - artifact_sources: e2e-produce-browserstack-run-plan,e2e-execute-browserstack-run.*
       - script@1:

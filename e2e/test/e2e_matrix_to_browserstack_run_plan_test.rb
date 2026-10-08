@@ -259,12 +259,18 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal false, trigger.fetch("draft_enabled")
   end
 
-  def test_workflow_and_docs_changes_run_only_the_planner
+  def test_web_workflow_and_docs_changes_run_only_the_planner_and_reporter
     workflows = e2e_pipeline.fetch("workflows")
     planner = "e2e-produce-browserstack-run-plan"
     refute workflows.fetch(planner).key?("run_if"), "The planner must run to complete the required pipeline"
+    report = workflows.fetch("e2e-report")
+    refute report.key?("run_if"), "The required E2E report must run even when no tests are selected"
+    assert_equal "workflow", report.fetch("should_always_run")
+    assert_includes report.fetch("depends_on"), planner
+    assert_includes report.fetch("depends_on"), "e2e-execute-browserstack-run"
 
     [
+      ["platforms/web/src/components/shopify-checkout/shopify-checkout.ts"],
       [".github/workflows/protocol-test.yml", ".github/workflows/rn-test.yml", ".github/workflows/web.yml"],
       ["README.md"],
       ["platforms/react-native/docs/assets/screenshot.png"]
@@ -275,7 +281,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
       env = run_plan.bitrise_env
 
       workflows.each do |name, workflow|
-        next if name == planner
+        next if [planner, "e2e-report"].include?(name)
 
         expression = workflow.fetch("run_if").fetch("expression")
         flag = /\A\{\{\s+enveq "(E2E_[A-Z0-9_]+)" "true"\s+\}\}\z/.match(expression)

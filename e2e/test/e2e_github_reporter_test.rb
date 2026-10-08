@@ -112,6 +112,37 @@ class E2EGitHubReporterTest < Minitest::Test
     {"target" => target, "application_id" => target, "passed" => true, "execute" => "."}
   end
 
+  def test_empty_plan_publishes_a_successful_required_check
+    client = GitHubClient.new
+    report = reporter(
+      expected: 0,
+      stages: stage_roster(workflow("e2e-execute-browserstack-run", status: "", external_id: "")),
+      client: client
+    )
+
+    report.publish!
+
+    check = client.posts.first.last
+    assert_equal "Checkout Kit E2E", check.fetch(:name)
+    assert_equal "completed", check.fetch(:status)
+    assert_equal "success", check.fetch(:conclusion)
+    assert_equal "Checkout Kit E2E success", check.dig(:output, :title)
+    assert_includes check.dig(:output, :summary), "No native E2E runs were selected for this change."
+    refute_includes report.comment_body, "## Install this build"
+  end
+
+  def test_missing_expected_results_still_publish_a_failure
+    client = GitHubClient.new
+    report = reporter(expected: 1, run_plan: [swift_ios_run], client: client)
+
+    report.publish!
+
+    check = client.posts.first.last
+    assert_equal "failure", check.fetch(:conclusion)
+    assert_includes check.dig(:output, :summary), "Expected 1 run, received 0"
+    refute_includes check.dig(:output, :summary), "No native E2E runs were selected"
+  end
+
   def test_install_table_lists_every_produced_target
     body = reporter(results: [result("react-native"), result("swift"), result("kotlin")]).comment_body
 
