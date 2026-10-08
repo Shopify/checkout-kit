@@ -192,6 +192,8 @@ class E2EGitHubReporter
   end
 
   def expected_stage_names
+    return [] if @expected == 0
+
     application_ids = @run_plan.map { |run| run["application_id"] }.compact.uniq
     application_ids.map { |application_id| "e2e-build-#{application_id}" } + [EXECUTE_STAGE_NAME]
   end

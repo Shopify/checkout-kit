@@ -114,7 +114,11 @@ class E2EGitHubReporterTest < Minitest::Test
 
   def test_empty_plan_publishes_a_successful_required_check
     client = GitHubClient.new
-    report = reporter(expected: 0, client: client)
+    report = reporter(
+      expected: 0,
+      stages: stage_roster(workflow("e2e-execute-browserstack-run", status: "", external_id: "")),
+      client: client
+    )
 
     report.publish!
 
@@ -122,6 +126,7 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_equal "Checkout Kit E2E", check.fetch(:name)
     assert_equal "completed", check.fetch(:status)
     assert_equal "success", check.fetch(:conclusion)
+    assert_equal "Checkout Kit E2E success", check.dig(:output, :title)
     assert_includes check.dig(:output, :summary), "No native E2E runs were selected for this change."
     refute_includes report.comment_body, "## Install this build"
   end
