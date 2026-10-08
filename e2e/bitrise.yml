@@ -636,6 +636,10 @@ workflows:
   # Manual proof of concept: run the existing launch flow on the Bitrise host.
   e2e-maestro-swift-smoke:
     status_report_name: "ci/bitrise/maestro-swift-smoke/<event_type>"
+    envs:
+      # Keep first-run notices out of the installer's exact version check.
+      - MAESTRO_CLI_NO_ANALYTICS: "1"
+      - MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
     meta:
       bitrise.io:
         stack: *macos_stack
