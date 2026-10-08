@@ -22,15 +22,21 @@ Useful Bitrise app URLs:
 
 If a direct URL does not resolve in the current Bitrise UI, open the app overview and navigate to the matching area from the sidebar.
 
-## Direct Maestro smoke workflow
+## Direct Maestro Swift workflow
 
-The manual `e2e-maestro-swift-smoke` workflow builds the Swift sample for the
-Bitrise iOS simulator and runs `tests/shared/launch-smoke.yaml` using the pinned
-Maestro CLI and the existing local E2E runner. It uses placeholder storefront
-configuration; no storefront secrets, signing credentials, or BrowserStack
-credentials are needed. The workflow sets `E2E_JUNIT_REPORT` to generate a JUnit
-report, exports its results to Bitrise's **Tests** tab, and uploads the Maestro
-output directory as a compressed artifact.
+The manual `e2e-maestro-swift-ios` workflow builds the Swift sample for the
+Bitrise iOS simulator and runs every flow enabled for `swift-ios` in
+`e2e/config/matrix.yml` using the pinned Maestro CLI and existing local E2E
+runner. This covers launch, checkout presentation and dismissal, guest checkout,
+buyer identity checkout, and native preload reuse.
+
+It uses the existing encrypted E2E storefront configuration and requires the
+`EJSON_PRIVATE_KEY` Bitrise secret. Signing and BrowserStack credentials are not
+needed. The checkout flows submit test orders using the E2E store's test gateway.
+
+The workflow sets `E2E_JUNIT_REPORT` to generate a JUnit report, exports its
+results to Bitrise's **Tests** tab, and uploads the Maestro output directory as
+a compressed artifact.
 
 Select this workflow and the PR branch in Bitrise's **Start build** screen.
 It has no automatic triggers and does not participate in the required E2E pipeline.
