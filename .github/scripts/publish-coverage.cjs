@@ -105,7 +105,7 @@ function metric(row) {
 
 function render(results) {
   const lines = [marker, "# Coverage Report", "",
-    "| Status | Platform / target | Lines | Branches | Functions / Methods | Report |",
+    "| Status | Platform / target | Lines | Branches | Functions | Report |",
     "| :---: | --- | ---: | ---: | ---: | --- |"];
   const statuses = {
     success: ["✅", "—"], pending: ["⏳", "Waiting for coverage"],

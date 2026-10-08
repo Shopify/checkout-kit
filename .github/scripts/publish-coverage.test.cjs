@@ -54,7 +54,7 @@ test("one comment combines the existing JavaScript reports without native covera
   const body = f.writes[0].body;
   assert.equal(f.writes.length, 1);
   assert.ok(body.startsWith(reporter.marker));
-  assert.ok(body.includes("| Status | Platform / target | Lines | Branches | Functions / Methods | Report |"));
+  assert.ok(body.includes("| Status | Platform / target | Lines | Branches | Functions | Report |"));
   for (const platform of reporter.platforms.filter((item) => item.id !== "protocol"))
     assert.ok(body.includes(`| ✅ | ${platform.title} | 70% |`));
   assert.ok(body.includes("| ✅ | Embedded Checkout Protocol (TS) | 70% | 70% | 70% |"));
