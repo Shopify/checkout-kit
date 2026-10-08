@@ -12,6 +12,11 @@ export type Refs = {
   storefrontSourceFields: HTMLFieldSetElement;
   buildWorkspace: HTMLDivElement;
   manualWorkspace: HTMLDivElement;
+  storefront: HTMLElement;
+  inlineCheckoutContainer: HTMLDivElement;
+  inlineControls: HTMLElement;
+  inlineCloseButton: HTMLButtonElement;
+  inlineFocusButton: HTMLButtonElement;
   storefrontInput: HTMLInputElement;
   checkoutTarget: HTMLSelectElement;
   checkoutAppearance: HTMLSelectElement;
@@ -58,6 +63,11 @@ export function queryRefs(): Refs {
     storefrontSourceFields: $<HTMLFieldSetElement>("#storefront-source-fields"),
     buildWorkspace: $<HTMLDivElement>("#build-workspace"),
     manualWorkspace: $<HTMLDivElement>("#manual-workspace"),
+    storefront: $<HTMLElement>(".storefront"),
+    inlineCheckoutContainer: $<HTMLDivElement>("#inline-checkout-container"),
+    inlineControls: $<HTMLElement>("#inline-controls"),
+    inlineCloseButton: $<HTMLButtonElement>("#inline-close"),
+    inlineFocusButton: $<HTMLButtonElement>("#inline-focus"),
     storefrontInput: $<HTMLInputElement>("#storefront-domain"),
     checkoutTarget: $<HTMLSelectElement>("#checkout-target"),
     checkoutAppearance: $<HTMLSelectElement>("#checkout-appearance"),

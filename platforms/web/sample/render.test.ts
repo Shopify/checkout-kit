@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import "../src/checkout-web-component";
+
 import type { ProductVariantOption } from "./cart";
 import { queryRefs, type Refs } from "./dom";
 import { renderApp } from "./render";
-import { createInitialState, type AppState, type SettingsSlice } from "./state";
+import { createInitialState, createStore, type AppState, type SettingsSlice } from "./state";
 import { SAMPLE_SHELL } from "./shell";
 import { renderCart } from "./views/cart";
 import { renderLog } from "./views/log";
@@ -218,6 +220,40 @@ describe("renderLog", () => {
 });
 
 describe("renderApp", () => {
+  it("keeps the close event visible when clearing an active inline source reenters rendering", () => {
+    const checkout = document.createElement("shopify-checkout");
+    checkout.telemetry = false;
+    checkout.logLevel = "none";
+    refs.inlineCheckoutContainer.append(checkout);
+    const store = createStore(
+      state({
+        sourceMode: "manual",
+        target: "inline",
+        manualSrc: "https://checkout.example/cart/1:1",
+      }),
+    );
+    store.subscribe(() => renderApp(refs, store.getState(), checkout));
+    checkout.addEventListener("close", () => {
+      store.setState({
+        log: [{ type: "close", time: "00:00:01.000", snapshot: "{}" }, ...store.getState().log],
+      });
+    });
+
+    try {
+      renderApp(refs, store.getState(), checkout);
+      expect(checkout.shadowRoot!.querySelector("iframe")).not.toBeNull();
+      store.setState({ manualSrc: "" });
+
+      expect(checkout.shadowRoot!.querySelector("iframe")).toBeNull();
+      expect(store.getState().log.map((entry) => entry.type)).toEqual(["close"]);
+      expect(
+        [...refs.eventLog.querySelectorAll(".event-entry-name")].map((entry) => entry.textContent),
+      ).toEqual(["close"]);
+    } finally {
+      checkout.remove();
+    }
+  });
+
   it("renders every panel from a single state object", () => {
     const checkout = document.createElement("div");
     renderApp(

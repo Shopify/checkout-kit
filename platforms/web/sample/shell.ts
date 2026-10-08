@@ -13,6 +13,7 @@ export const SAMPLE_SHELL = `
       <select id="checkout-target" name="target">
         <option value="popup" selected>popup</option>
         <option value="auto">auto</option>
+        <option value="inline">inline (embedded)</option>
       </select>
       <select id="checkout-appearance" name="appearance">
         <option value="" selected></option>
@@ -31,6 +32,7 @@ export const SAMPLE_SHELL = `
     <button type="button" id="toggle-settings" class="panel-collapse-toggle" aria-expanded="true"></button>
     <button type="button" id="toggle-events" class="panel-collapse-toggle" aria-expanded="true"></button>
 
+    <section class="panel storefront">
     <div id="build-workspace">
       <p id="cart-summary-text"></p>
       <span id="cart-count">0 items</span>
@@ -48,6 +50,12 @@ export const SAMPLE_SHELL = `
       <input id="manual-src" type="url" name="manual-src" />
       <button type="button" id="manual-checkout" disabled>Open checkout</button>
     </div>
+      <div id="inline-controls" hidden>
+        <button type="button" id="inline-close">Close checkout</button>
+        <button type="button" id="inline-focus">Focus checkout</button>
+      </div>
+      <div id="inline-checkout-container"></div>
+    </section>
 
     <dl>
       <dd id="state-checkout">—</dd>

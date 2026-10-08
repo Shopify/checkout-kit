@@ -26,7 +26,7 @@ const EVENT_TYPES = ["start", "update", "complete", "close", "error", "blocked"]
 const refs = queryRefs();
 
 const checkout = document.createElement("shopify-checkout") as ShopifyCheckout;
-document.body.append(checkout);
+refs.inlineCheckoutContainer.append(checkout);
 
 const persisted = loadPersistedSettings();
 hydrateSettingsForm(persisted);
@@ -181,6 +181,8 @@ function attachListeners(): void {
 
   refs.cartCheckoutButton.addEventListener("click", openCheckout);
   refs.manualCheckoutButton.addEventListener("click", openCheckout);
+  refs.inlineCloseButton.addEventListener("click", () => checkout.close());
+  refs.inlineFocusButton.addEventListener("click", () => checkout.focus());
 
   refs.productList.addEventListener("click", (event) => {
     const target = event.target;

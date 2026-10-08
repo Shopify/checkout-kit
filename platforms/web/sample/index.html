@@ -60,6 +60,7 @@
               <select id="checkout-target" name="target">
                 <option value="popup" selected>popup (window)</option>
                 <option value="auto">auto (new tab)</option>
+                <option value="inline">inline (embedded)</option>
               </select>
             </label>
 
@@ -200,6 +201,11 @@
             </button>
           </section>
         </div>
+        <div id="inline-controls" hidden>
+          <button type="button" id="inline-close">Close checkout</button>
+          <button type="button" id="inline-focus">Focus checkout</button>
+        </div>
+        <div id="inline-checkout-container"></div>
       </section>
 
       <div

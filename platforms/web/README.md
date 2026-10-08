@@ -634,6 +634,10 @@ pnpm sample
 
 Then open the dev server URL and paste a valid checkout URL into the `src`
 field to try `open()` / `close()` / `focus()` and see the live event stream.
+Select **inline (embedded)** to use the sample's 600px checkout mount and
+Close/Focus controls. The existing Open checkout button reopens a closed
+session. A localhost CSP refusal is expected for origins checkout does not
+permit; it is not evidence that the positive inline integration works.
 
 ## Contributing
 

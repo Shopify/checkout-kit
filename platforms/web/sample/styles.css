@@ -541,6 +541,37 @@ button:disabled {
   overflow: hidden;
 }
 
+.storefront.inline-mode {
+  overflow-y: auto;
+}
+
+.storefront.inline-mode .workspace {
+  flex: 0 0 24rem;
+  block-size: 24rem;
+  overflow-y: auto;
+}
+
+.storefront.inline-mode .product-scroll {
+  flex: none;
+}
+
+#inline-checkout-container {
+  flex: 0 0 0;
+  block-size: 0;
+}
+
+.inline-mode #inline-checkout-container {
+  flex: 0 0 600px;
+  block-size: 600px;
+  inline-size: 100%;
+}
+
+#inline-controls {
+  display: flex;
+  flex: none;
+  gap: 14px;
+}
+
 .workspace {
   display: flex;
   flex: 1 1 auto;

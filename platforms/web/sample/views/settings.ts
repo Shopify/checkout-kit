@@ -7,6 +7,9 @@ export function renderSettings(refs: Refs, state: AppState, checkout: HTMLElemen
   refs.storefrontSourceFields.hidden = isManual;
   refs.buildWorkspace.hidden = isManual;
   refs.manualWorkspace.hidden = !isManual;
+  const isInline = state.target === "inline";
+  refs.storefront.classList.toggle("inline-mode", isInline);
+  refs.inlineControls.hidden = !isInline;
 
   const isInvalid =
     state.sourceMode === "build" && normalizeStorefrontDomain(state.storefrontDomain) === "";
