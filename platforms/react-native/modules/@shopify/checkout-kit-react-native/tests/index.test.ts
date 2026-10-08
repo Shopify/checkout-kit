@@ -454,6 +454,31 @@ describe('ShopifyCheckoutKit', () => {
       },
     );
 
+    it('keeps a reentrant presentation subscribed when the first present throws', () => {
+      const firstSubscription = {remove: jest.fn()};
+      const secondSubscription = {remove: jest.fn()};
+      NativeModule.onDispatch
+        .mockReturnValueOnce(firstSubscription)
+        .mockReturnValueOnce(secondSubscription);
+      NativeModule.present.mockImplementationOnce(() => {
+        lastDispatch()(JSON.stringify({type: 'close'}));
+      });
+      const instance = new ShopifyCheckout();
+      const secondClose = jest.fn();
+      expect(() =>
+        instance.present(checkoutUrl, {
+          onClose: () => {
+            instance.present(checkoutUrl, {onClose: secondClose});
+            throw new Error('consumer error');
+          },
+        }),
+      ).toThrow('consumer error');
+      expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
+      expect(secondSubscription.remove).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'close'}));
+      expect(secondClose).toHaveBeenCalledTimes(1);
+    });
+
     it('releases the subscription even if the terminal callback throws', () => {
       const subscription = {remove: jest.fn()};
       NativeModule.onDispatch.mockReturnValueOnce(subscription);

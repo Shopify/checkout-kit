@@ -142,12 +142,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     this.releaseDispatchSubscription();
 
     let subscription: {remove: () => void} | undefined;
-    const release = () => {
-      subscription?.remove();
-      if (this.dispatchSubscription === subscription) {
-        this.dispatchSubscription = undefined;
-      }
-    };
     const {dispatcher, subscribedMethods} = createPresentDispatcher({
       callbacks,
       protocol,
@@ -158,27 +152,23 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         this.handleDefaultGeolocationRequest(),
       respondToGeolocationRequest: allow =>
         this.respondToGeolocationRequest(allow),
-      onTerminal: release,
+      onTerminal: () => {
+        if (subscription) this.releaseDispatchSubscription(subscription);
+      },
     });
 
     if (dispatcher) {
-      let active = true;
-      const nativeSubscription = RNShopifyCheckoutKit.onDispatch(json => {
-        if (active) dispatcher(json);
+      subscription = RNShopifyCheckoutKit.onDispatch(json => {
+        if (subscription && this.dispatchSubscription === subscription)
+          dispatcher(json);
       });
-      subscription = {
-        remove: () => {
-          active = false;
-          nativeSubscription.remove();
-        },
-      };
       this.dispatchSubscription = subscription;
     }
 
     try {
       RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
     } catch (error) {
-      release();
+      if (subscription) this.releaseDispatchSubscription(subscription);
       throw error;
     }
   }
@@ -358,9 +348,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return this.features[feature] ?? true;
   }
 
-  private releaseDispatchSubscription(): void {
-    this.dispatchSubscription?.remove();
+  private releaseDispatchSubscription(only?: {remove: () => void}): void {
+    if (only && this.dispatchSubscription !== only) return;
+    const subscription = this.dispatchSubscription;
     this.dispatchSubscription = undefined;
+    subscription?.remove();
   }
 
   /**
