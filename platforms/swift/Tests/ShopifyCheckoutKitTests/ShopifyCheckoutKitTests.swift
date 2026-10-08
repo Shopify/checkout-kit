@@ -90,6 +90,70 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertNotNil(webViewController.checkoutView?.client)
     }
 
+    func test_present_duplicatePreservesCheckoutAndDelegate() throws {
+        let presenter = RecordingCheckoutPresenter()
+        let originalDelegate = MockCheckoutDelegate()
+        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, delegate: originalDelegate)
+
+        let duplicate = try ShopifyCheckoutKit.present(
+            checkout: XCTUnwrap(URL(string: "https://shop.example/checkouts/cn/other")),
+            from: presenter,
+            delegate: MockCheckoutDelegate()
+        )
+
+        XCTAssertTrue(duplicate === checkout)
+        XCTAssertEqual(presenter.presentationCount, 1)
+        let content = try XCTUnwrap(checkout.viewControllers.first as? CheckoutWebViewController)
+        XCTAssertTrue(content.delegate === originalDelegate)
+    }
+
+    func test_present_fromCheckoutOrItsChildReturnsExistingCheckout() throws {
+        let presenter = RecordingCheckoutPresenter()
+        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        let child = try XCTUnwrap(checkout.viewControllers.first)
+
+        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: checkout) === checkout)
+        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: child) === checkout)
+        XCTAssertEqual(presenter.presentationCount, 1)
+    }
+
+    func test_present_fromContainerChildFindsPresentedCheckout() {
+        let presenter = RecordingCheckoutPresenter()
+        let child = UIViewController()
+        presenter.addChild(child)
+        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+
+        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: child) === checkout)
+        XCTAssertEqual(presenter.presentationCount, 1)
+    }
+
+    func test_present_acceleratedEntryPointUsesSameGuard() {
+        let presenter = RecordingCheckoutPresenter()
+        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts)
+
+        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter) === checkout)
+        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts) === checkout)
+        XCTAssertEqual(presenter.presentationCount, 1)
+    }
+
+    func test_present_afterDismissalCreatesNewCheckoutEvenWhenOldControllerIsRetained() {
+        let presenter = RecordingCheckoutPresenter()
+        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        presenter.modal = nil
+
+        let next = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+
+        XCTAssertFalse(next === checkout)
+        XCTAssertEqual(presenter.presentationCount, 2)
+    }
+
+    func test_present_independentPresentersCanPresentTheirOwnCheckout() {
+        let first = ShopifyCheckoutKit.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
+        let second = ShopifyCheckoutKit.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
+
+        XCTAssertFalse(first === second)
+    }
+
     func test_logger_withDifferentLogLevels_shouldHaveCorrectLogLevel() {
         ShopifyCheckoutKit.configuration.logLevel = .debug
         XCTAssertEqual(
@@ -140,5 +204,21 @@ class ShopifyCheckoutKitTests: XCTestCase {
             states.contains(PreloadState.loading),
             "States should include .loading after starting preload"
         )
+    }
+}
+
+@MainActor
+private final class RecordingCheckoutPresenter: UIViewController {
+    var modal: UIViewController?
+    private(set) var presentationCount = 0
+
+    override var presentedViewController: UIViewController? {
+        modal
+    }
+
+    override func present(_ viewControllerToPresent: UIViewController, animated _: Bool, completion: (() -> Void)? = nil) {
+        presentationCount += 1
+        modal = viewControllerToPresent
+        completion?()
     }
 }
