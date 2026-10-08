@@ -199,17 +199,25 @@ step_bundles:
 
   install-maestro:
     steps:
+      - restore-cache@3:
+          inputs:
+            - key: &maestro_cli_cache_key |-
+                maestro-cli-{{ .OS }}-{{ .Arch }}-{{ checksum "e2e/.maestro-version" }}
       - script@1:
           title: Install Maestro and report tooling
           timeout: 600
           inputs:
             - content: |-
                 set -euo pipefail
-                ./scripts/install_maestro
+                ./scripts/install_maestro --check || ./scripts/install_maestro
                 gem install rexml --version 3.4.4 --install-dir "$HOME/.maestro-report-gems" --no-document
                 export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
                 ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
                 envman add --key GEM_PATH --value "$GEM_PATH"
+      - save-cache@1:
+          inputs:
+            - key: *maestro_cli_cache_key
+            - paths: ~/.maestro-versions
 
   export-maestro-results:
     steps:

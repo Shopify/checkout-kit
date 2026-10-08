@@ -45,6 +45,10 @@ report merging. Local runs still default to no whole-flow retries.
 Select this workflow and the PR branch in Bitrise's **Start build** screen.
 It has no automatic triggers and does not participate in the required E2E pipeline.
 
+The pinned Maestro distribution is cached by OS, architecture, and the checksum
+of `e2e/.maestro-version`. Each run verifies the restored CLI version before
+using it and installs the pin if the cache is absent or invalid.
+
 ## Direct Maestro Android workflow
 
 The manual `e2e-maestro-kotlin-android` workflow builds the Kotlin sample and runs
