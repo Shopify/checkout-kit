@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../../.." && pwd)"
+report_dir="$repo_root/.xcresults/coverage"
+result_bundle="$repo_root/.xcresults/ShopifyCheckoutKit-Package-coverage.xcresult"
+
+# Remove old exports before running so a failed test run cannot publish stale coverage.
+mkdir -p "$report_dir"
+rm -f "$report_dir/coverage.json" "$report_dir/coverage.txt"
+
+ENABLE_CODE_COVERAGE=1 "$script_dir/xcode_run" test ShopifyCheckoutKit-Package
+
+xcrun xccov view --report --json "$result_bundle" > "$report_dir/coverage.json"
+xcrun xccov view --report "$result_bundle" > "$report_dir/coverage.txt"
+xcrun xccov view --report --only-targets "$result_bundle"
+printf '\nCoverage reports: %s\n' "$report_dir"
