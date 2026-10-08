@@ -387,7 +387,6 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private permissionGranted(status: PermissionStatus): boolean {
     return status === 'granted';
   }
-
 }
 
 // API

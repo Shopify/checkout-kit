@@ -188,7 +188,8 @@ describe('AcceleratedCheckoutButtons', () => {
     it('warns when native reports an unknown protocol event', () => {
       const warn = jest.spyOn(global.console, 'warn').mockImplementation();
       const getViewManagerConfig = UIManager.getViewManagerConfig as jest.Mock;
-      const defaultImplementation = getViewManagerConfig.getMockImplementation();
+      const defaultImplementation =
+        getViewManagerConfig.getMockImplementation();
       getViewManagerConfig.mockImplementation((name: string) => {
         if (name === 'RCTAcceleratedCheckoutButtons') {
           return {
@@ -206,9 +207,7 @@ describe('AcceleratedCheckoutButtons', () => {
       render(<AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />);
 
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'events missing from js:     ec.future.event',
-        ),
+        expect.stringContaining('events missing from js:     ec.future.event'),
       );
 
       getViewManagerConfig.mockImplementation(defaultImplementation);

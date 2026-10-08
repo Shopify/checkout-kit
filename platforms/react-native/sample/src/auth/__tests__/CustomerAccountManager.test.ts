@@ -27,8 +27,7 @@ function buildIdToken(payload: Record<string, unknown>): string {
 beforeEach(() => {
   jest.restoreAllMocks();
   global.fetch = jest.fn();
-  const EncryptedStorage =
-    require('react-native-encrypted-storage').default;
+  const EncryptedStorage = require('react-native-encrypted-storage').default;
   EncryptedStorage.clear();
 });
 
@@ -41,9 +40,7 @@ describe('CustomerAccountManager', () => {
     });
 
     it('returns the correct callbackScheme', () => {
-      expect(CustomerAccountManager.callbackScheme).toBe(
-        `shop.${SHOP_ID}.app`,
-      );
+      expect(CustomerAccountManager.callbackScheme).toBe(`shop.${SHOP_ID}.app`);
     });
   });
 
@@ -167,8 +164,7 @@ describe('CustomerAccountManager', () => {
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () =>
-          JSON.parse(createTokenResponseBody({expires_in: 60})),
+        json: async () => JSON.parse(createTokenResponseBody({expires_in: 60})),
       });
 
       await manager.handleAuthCallback('test-code', state);

@@ -9,7 +9,9 @@
     "build:android": "bash ./scripts/build_android",
     "release:android": "bash ./scripts/release_android",
     "build:ios": "sh ./scripts/build_ios",
-    "lint": "pnpm run typecheck && eslint .",
+    "lint": "pnpm run typecheck && oxlint --config ../.oxlintrc.json . && pnpm run format:check",
+    "format": "oxfmt src @types index.js",
+    "format:check": "oxfmt --check src @types index.js",
     "ios": "bash ./scripts/ios",
     "start": "react-native start -- --reset-cache",
     "typecheck": "tsc --noEmit",
@@ -46,24 +48,5 @@
   },
   "engines": {
     "node": ">= 18"
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": "@react-native",
-    "rules": {
-      "no-console": "off",
-      "@typescript-eslint/no-shadow": "off"
-    },
-    "overrides": [
-      {
-        "files": [
-          "*.ts",
-          "*.tsx"
-        ],
-        "rules": {
-          "@typescript-eslint/consistent-type-imports": "error"
-        }
-      }
-    ]
   }
 }

@@ -18,16 +18,11 @@
     "overrides": {
       "shell-quote": ">=1.8.4",
       "qs": ">=6.15.2",
-      "flatted": ">=3.4.2",
-      "minimatch@9": ">=9.0.7",
-      "glob@10": ">=10.5.0",
       "picomatch": ">=4.0.4",
-      "js-yaml@3": ">=3.14.2",
       "js-yaml@4": ">=4.2.0",
       "@babel/core": ">=7.29.6",
       "@babel/plugin-transform-modules-systemjs": ">=7.29.4",
       "lodash": ">=4.18.0",
-      "handlebars": ">=4.7.9",
       "fast-xml-parser": ">=5.7.0"
     }
   },
@@ -47,14 +42,13 @@
     "@react-native-community/cli-platform-android": "19.1.2",
     "@react-native-community/cli-platform-ios": "19.1.2",
     "@react-native/babel-preset": "0.80.2",
-    "@react-native/eslint-config": "0.80.2",
     "@react-native/metro-config": "0.80.2",
     "@testing-library/react-native": "^13.3.1",
     "@types/jest": "^29.5.13",
     "@types/react": "^19.1.0",
-    "eslint": "^8.57.1",
     "jest": "^30.0.5",
-    "prettier": "^3.2.5",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
     "react": "19.1.0",
     "react-native": "0.80.2",
     "react-test-renderer": "19.1.0",
@@ -62,16 +56,6 @@
   },
   "engines": {
     "node": "22.14.0"
-  },
-  "prettier": {
-    "arrowParens": "avoid",
-    "bracketSameLine": true,
-    "bracketSpacing": false,
-    "singleQuote": true,
-    "trailingComma": "all",
-    "semi": true,
-    "useTabs": false,
-    "proseWrap": "always"
   },
   "keywords": [
     "react-native",

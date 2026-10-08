@@ -28,9 +28,7 @@ export const CHECKOUT_ENVELOPE = {
         price: 2999,
         image_url: 'https://cdn.example.com/products/beanie.png',
       },
-      totals: [
-        {type: 'subtotal', amount: 5998, display_text: 'Subtotal'},
-      ],
+      totals: [{type: 'subtotal', amount: 5998, display_text: 'Subtotal'}],
     },
     {
       id: 'line-2',
@@ -42,9 +40,7 @@ export const CHECKOUT_ENVELOPE = {
         price: 500,
         image_url: 'https://cdn.example.com/products/giftwrap.png',
       },
-      totals: [
-        {type: 'subtotal', amount: 500, display_text: 'Subtotal'},
-      ],
+      totals: [{type: 'subtotal', amount: 500, display_text: 'Subtotal'}],
     },
   ],
   totals: [

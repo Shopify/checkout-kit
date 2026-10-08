@@ -52,7 +52,11 @@ export function createPresentDispatcher({
   const needsDefaultGeolocation =
     Platform.OS === 'android' && handleDefaultGeolocationRequests;
 
-  if (!callbacks && !needsDefaultGeolocation && subscribedMethods.length === 0) {
+  if (
+    !callbacks &&
+    !needsDefaultGeolocation &&
+    subscribedMethods.length === 0
+  ) {
     return {dispatcher: null, subscribedMethods};
   }
 
@@ -184,7 +188,10 @@ function routeSdkLifecycleEvent(
     needsDefaultGeolocation,
     handleDefaultGeolocationRequest,
     respondToGeolocationRequest,
-  }: Omit<CreatePresentDispatcherOptions, 'handleDefaultGeolocationRequests'> & {
+  }: Omit<
+    CreatePresentDispatcherOptions,
+    'handleDefaultGeolocationRequests'
+  > & {
     needsDefaultGeolocation: boolean;
   },
 ): PresentDispatchResult {

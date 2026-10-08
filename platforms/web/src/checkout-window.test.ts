@@ -616,18 +616,6 @@ describe("<shopify-checkout>", () => {
       });
 
       describe("overlay scrim", () => {
-        function openWithRealOverlay(): {
-          checkout: ShopifyCheckout;
-          mockWindow: Window;
-        } {
-          const checkout = renderCheckout({ target: "popup" });
-          const mockWindow = createMockWindow();
-          vi.spyOn(window, "open").mockReturnValue(mockWindow);
-          vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
-          checkout.open();
-          return { checkout, mockWindow };
-        }
-
         it("closes the dialog when the overlay close button is clicked", () => {
           const { checkout } = openWithRealOverlay();
           const dialog = checkout.shadowRoot!.querySelector<HTMLDialogElement>("#overlay")!;
@@ -864,6 +852,18 @@ describe("<shopify-checkout>", () => {
 });
 
 // Test utilities
+
+function openWithRealOverlay(): {
+  checkout: ShopifyCheckout;
+  mockWindow: Window;
+} {
+  const checkout = renderCheckout({ target: "popup" });
+  const mockWindow = createMockWindow();
+  vi.spyOn(window, "open").mockReturnValue(mockWindow);
+  vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+  checkout.open();
+  return { checkout, mockWindow };
+}
 
 function renderCheckout(attributes: Record<string, string | undefined> = {}) {
   const defaultSrc = "https://demostore.mock.shop/cart/43696905224214:1";

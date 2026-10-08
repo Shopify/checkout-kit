@@ -17,7 +17,10 @@ import {Convert} from '../src/generated/Models';
 import {CHECKOUT_ENVELOPE, RESULT_FIXTURE} from './fixtures';
 
 describe('Client', () => {
-  const READY_PARAMS = {delegate: ['payment.credential'], auth: {type: 'oauth'}};
+  const READY_PARAMS = {
+    delegate: ['payment.credential'],
+    auth: {type: 'oauth'},
+  };
 
   test('dispatches a notification message to its registered handler', async () => {
     const received = [];
@@ -67,7 +70,12 @@ describe('Client', () => {
     });
 
     const response = await client.process(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 7, params: READY_PARAMS}),
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.ready',
+        id: 7,
+        params: READY_PARAMS,
+      }),
     );
 
     expect(handledMessage).toEqual({
@@ -89,7 +97,12 @@ describe('Client', () => {
     );
 
     const response = await client.process(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 'r-1', params: READY_PARAMS}),
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.ready',
+        id: 'r-1',
+        params: READY_PARAMS,
+      }),
     );
 
     expect(JSON.parse(response)).toEqual({
@@ -177,7 +190,12 @@ describe('Client', () => {
     const client = new Client();
 
     const response = await client.process(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.auth', id: 9, params: {type: 'oauth'}}),
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.auth',
+        id: 9,
+        params: {type: 'oauth'},
+      }),
     );
 
     expect(JSON.parse(response)).toEqual({
@@ -188,9 +206,12 @@ describe('Client', () => {
   });
 
   test('returns invalid_params when the payload fails to decode', async () => {
-    const client = new Client().on(requestDescriptors.paymentInstrumentsChange, () => {
-      throw new Error('handler should not run');
-    });
+    const client = new Client().on(
+      requestDescriptors.paymentInstrumentsChange,
+      () => {
+        throw new Error('handler should not run');
+      },
+    );
 
     const response = await client.process(
       JSON.stringify({
@@ -214,7 +235,12 @@ describe('Client', () => {
     });
 
     const response = await client.process(
-      JSON.stringify({jsonrpc: '2.0', method: 'ec.ready', id: 5, params: READY_PARAMS}),
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'ec.ready',
+        id: 5,
+        params: READY_PARAMS,
+      }),
     );
 
     expect(JSON.parse(response)).toEqual({

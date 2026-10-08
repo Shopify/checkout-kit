@@ -30,10 +30,13 @@ describe('spec metadata', () => {
       '../../kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt',
       'public const val SPEC_VERSION: String =',
     ],
-  ])('keeps the generated %s version aligned with the lockfile', (_language, file, declaration) => {
-    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
-    expect(source).toContain(`${declaration} "${protocolVersion}"`);
-  });
+  ])(
+    'keeps the generated %s version aligned with the lockfile',
+    (_language, file, declaration) => {
+      const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+      expect(source).toContain(`${declaration} "${protocolVersion}"`);
+    },
+  );
 
   test('exposes the declared delegations', () => {
     expect({...Delegations}).toEqual({

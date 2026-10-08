@@ -128,7 +128,8 @@ describe('CheckoutKitTelemetry', () => {
 
     await telemetry.flush();
     const body = JSON.parse(fetch.mock.calls[0]![1].body as string);
-    const points = body.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.dataPoints;
+    const points =
+      body.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.dataPoints;
     expect(points[0].asInt).toBe('1');
   });
 
@@ -169,9 +170,11 @@ describe('CheckoutKitTelemetry', () => {
 
   it('awaits an in-flight export during shutdown', async () => {
     let resolveFetch: ((value: {ok: boolean}) => void) | undefined;
-    const fetch = vi.fn().mockImplementation(
-      () => new Promise<{ok: boolean}>((resolve) => (resolveFetch = resolve)),
-    );
+    const fetch = vi
+      .fn()
+      .mockImplementation(
+        () => new Promise<{ok: boolean}>(resolve => (resolveFetch = resolve)),
+      );
     const telemetry = createCheckoutKitTelemetryForTesting({
       sdkVersion: '1.2.3',
       fetch,
@@ -208,7 +211,9 @@ describe('CheckoutKitTelemetry', () => {
       retryable: true,
     });
 
-    await expect(telemetry.shutdown({discardPending: true})).resolves.toBe(true);
+    await expect(telemetry.shutdown({discardPending: true})).resolves.toBe(
+      true,
+    );
     telemetry.start();
     await expect(telemetry.flush()).resolves.toBe(false);
     await expect(telemetry.shutdown()).resolves.toBe(true);
@@ -246,30 +251,54 @@ describe('CheckoutKitTelemetry', () => {
   });
 
   it('bypasses backoff for the final shutdown flush', async () => {
-    const fetch = vi.fn().mockResolvedValueOnce({ok: false}).mockResolvedValue({ok: true});
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ok: false})
+      .mockResolvedValue({ok: true});
     const telemetry = createCheckoutKitTelemetryForTesting({
       sdkVersion: '1.2.3',
       fetch,
       now: () => BigInt(1),
     });
-    telemetry.recordError({category: 'http', stage: 'load', code: '5xx', retryable: true});
+    telemetry.recordError({
+      category: 'http',
+      stage: 'load',
+      code: '5xx',
+      retryable: true,
+    });
     await telemetry.flush();
-    telemetry.recordError({category: 'http', stage: 'load', code: '5xx', retryable: true});
+    telemetry.recordError({
+      category: 'http',
+      stage: 'load',
+      code: '5xx',
+      retryable: true,
+    });
 
     await expect(telemetry.shutdown()).resolves.toBe(true);
     expect(fetch).toHaveBeenCalledTimes(2);
     const finalPayload = JSON.parse(fetch.mock.calls[1]![1].body as string);
-    expect(finalPayload.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.dataPoints[0].asInt).toBe('2');
+    expect(
+      finalPayload.resourceMetrics[0].scopeMetrics[0].metrics[0].sum
+        .dataPoints[0].asInt,
+    ).toBe('2');
   });
 
   it('bypasses backoff for keepalive flushes', async () => {
-    const fetch = vi.fn().mockResolvedValueOnce({ok: false}).mockResolvedValue({ok: true});
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ok: false})
+      .mockResolvedValue({ok: true});
     const telemetry = createCheckoutKitTelemetryForTesting({
       sdkVersion: '1.2.3',
       fetch,
       now: () => BigInt(1),
     });
-    telemetry.recordError({category: 'http', stage: 'load', code: '5xx', retryable: true});
+    telemetry.recordError({
+      category: 'http',
+      stage: 'load',
+      code: '5xx',
+      retryable: true,
+    });
     await telemetry.flush();
 
     await expect(telemetry.flush()).resolves.toBe(false);
@@ -284,7 +313,7 @@ describe('CheckoutKitTelemetry', () => {
       .fn()
       .mockImplementationOnce(
         () =>
-          new Promise<{ok: boolean}>((resolve) => {
+          new Promise<{ok: boolean}>(resolve => {
             resolveFirstFetch = resolve;
           }),
       )
@@ -315,7 +344,8 @@ describe('CheckoutKitTelemetry', () => {
     expect(fetch.mock.calls[1]![1].keepalive).toBe(true);
     const keepalivePayload = JSON.parse(fetch.mock.calls[1]![1].body as string);
     expect(
-      keepalivePayload.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.dataPoints[0].asInt,
+      keepalivePayload.resourceMetrics[0].scopeMetrics[0].metrics[0].sum
+        .dataPoints[0].asInt,
     ).toBe('1');
     await expect(terminalFlush).resolves.toBe(true);
 
