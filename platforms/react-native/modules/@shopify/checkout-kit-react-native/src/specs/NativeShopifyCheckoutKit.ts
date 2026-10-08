@@ -56,7 +56,7 @@ export interface Spec extends TurboModule {
   readonly onDispatch: CodegenTypes.EventEmitter<string>;
   readonly onPreloadStateChange: CodegenTypes.EventEmitter<string>;
 
-  present(checkoutUrl: string, requestId: string): void;
+  present(checkoutUrl: string): void;
   preload(checkoutUrl: string, requestId: string): void;
   dismiss(): void;
   invalidateCache(): void;
@@ -74,7 +74,7 @@ export interface Spec extends TurboModule {
   ): boolean;
   isAcceleratedCheckoutAvailable(): boolean;
   isApplePayAvailable(): boolean;
-  respondToGeolocationRequest(allow: boolean, requestId: string): void;
+  respondToGeolocationRequest(allow: boolean): void;
   addListener(eventName: string): void;
   removeListeners(count: number): void;
   getConstants(): {

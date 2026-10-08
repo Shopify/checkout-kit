@@ -487,7 +487,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func testFailedPresentDoesNotRetainCheckoutSheet() {
         let presentAttemptCompleted = expectation(description: "present attempt completed")
 
-        shopifyCheckoutKit.present("", requestId: "test")
+        shopifyCheckoutKit.present("")
 
         DispatchQueue.main.async {
             XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
@@ -530,25 +530,22 @@ extension ShopifyCheckoutKitTests {
     @MainActor
     func testPresentDuringProgrammaticDismissWaitsForTheOldSheet() async {
         let module = PresentationTrackingModule()
-        module.present("https://example.test/first", requestId: "first")
+        module.present("https://example.test/first")
         await flushPresentationQueue()
         let oldSheet = module.sheets[0]
         let oldEvents = module.delegates[0]
         module.dismiss()
-        module.present("https://example.test/second", requestId: "second")
+        module.present("https://example.test/second")
         await flushPresentationQueue()
         XCTAssertEqual(module.urls.count, 1)
-        XCTAssertEqual(oldEvents.requestId, "first")
 
         let reopened = expectation(description: "new checkout presented after dismissal")
         module.onPresent = { reopened.fulfill() }
         oldSheet.finishDismissal()
         await fulfillment(of: [reopened], timeout: 1)
         XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/second")
-        XCTAssertTrue(module.events[0].contains("\"requestId\":\"first\""))
         oldEvents.checkoutDidDismiss()
         XCTAssertEqual(module.events.count, 1)
-        XCTAssertEqual(module.delegates.last?.requestId, "second")
     }
 
     @MainActor
@@ -564,12 +561,12 @@ extension ShopifyCheckoutKitTests {
     @MainActor
     private func assertPresentFromTerminalWaits(fail: Bool) async {
         let module = PresentationTrackingModule()
-        module.present("https://example.test/first", requestId: "first")
+        module.present("https://example.test/first")
         await flushPresentationQueue()
         let oldSheet = module.sheets[0]
         module.onEvent = {
             module.onEvent = nil
-            module.present("https://example.test/second", requestId: "second")
+            module.present("https://example.test/second")
         }
         if fail {
             module.delegates[0].checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
@@ -583,16 +580,15 @@ extension ShopifyCheckoutKitTests {
         oldSheet.finishDismissal()
         await fulfillment(of: [reopened], timeout: 1)
         XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/second")
-        XCTAssertEqual(module.delegates.last?.requestId, "second")
     }
 
     @MainActor
     func testDismissCancelsAnIOSPresentationWaitingForTheOldSheet() async {
         let module = PresentationTrackingModule()
-        module.present("https://example.test/first", requestId: "first")
+        module.present("https://example.test/first")
         await flushPresentationQueue()
         module.dismiss()
-        module.present("https://example.test/second", requestId: "second")
+        module.present("https://example.test/second")
         await flushPresentationQueue()
         module.dismiss()
         await flushPresentationQueue()
@@ -602,18 +598,20 @@ extension ShopifyCheckoutKitTests {
         module.sheets[0].finishDismissal()
         await fulfillment(of: [reopened], timeout: 0.05)
         XCTAssertEqual(module.events.count, 2)
-        XCTAssertTrue(module.events.contains { $0.contains("\"requestId\":\"second\"") })
     }
 
     @MainActor
-    func testPresentWhileActiveOnlyReplacesCallbacks() async {
+    func testPresentWhileActivePreservesOriginalDelegate() async {
         let module = PresentationTrackingModule()
-        module.present("https://example.test/first", requestId: "first")
+        module.present("https://example.test/first")
         await flushPresentationQueue()
-        module.present("https://example.test/second", requestId: "second")
+        let originalDelegate = module.delegates[0]
+        module.present("https://example.test/second")
         await flushPresentationQueue()
         XCTAssertEqual(module.urls.count, 1)
-        XCTAssertEqual(module.delegates[0].requestId, "second")
+        XCTAssertTrue(module.delegates[0] === originalDelegate)
+        originalDelegate.checkoutDidDismiss()
+        XCTAssertEqual(module.events.count, 1)
     }
 
     @MainActor

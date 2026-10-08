@@ -314,7 +314,7 @@ export interface ShopifyCheckoutKit {
    * @param checkoutURL The URL of the checkout to display.
    * @param callbacks Lifecycle callbacks. Callbacks remain
    * active until dismissal or failure, including after completion. Repeated calls
-   * while checkout is visible replace its callbacks without opening another sheet.
+   * while a checkout session is active are ignored, including across instances.
    */
   present(checkoutURL: string, callbacks?: PresentCallbacks): void;
   /**
@@ -340,7 +340,8 @@ export interface ShopifyCheckoutKit {
    */
   getConfig(): Configuration;
   /**
-   * Cleans up any event callbacks to prevent memory leaks.
+   * Stops consumer callbacks and cancels pending geolocation responses.
+   * The native checkout remains open and tracked until its session ends.
    */
   teardown(): void;
 

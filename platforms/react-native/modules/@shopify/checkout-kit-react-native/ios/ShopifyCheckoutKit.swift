@@ -92,7 +92,7 @@ class RCTShopifyCheckoutKit: NSObject {
         DispatchQueue.main.async {
             let sheet = self.checkoutSheet
             let events = self.checkoutEvents
-            // Detach the closing session before a queued present can replace its ID.
+            // Keep the closing session separate until UIKit completes dismissal.
             self.checkoutSheet = nil
             self.checkoutEvents = nil
             guard let sheet else {
@@ -114,18 +114,11 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func present(_ checkoutURL: String, requestId: String) {
+    @objc func present(_ checkoutURL: String) {
         DispatchQueue.main.async {
-            if let sheet = self.checkoutSheet {
-                // Only replace callbacks while the same sheet remains active.
-                if !sheet.isBeingDismissed, let events = self.checkoutEvents {
-                    events.requestId = requestId
-                    return
-                }
-                self.closingCheckoutSheet = sheet
-                self.checkoutSheet = nil
-            }
-            let events = CheckoutEventBridge(requestId: requestId, dispatch: { [weak self] json in
+            // Preserve the active session, including a presentation waiting for dismissal.
+            guard self.checkoutEvents == nil else { return }
+            let events = CheckoutEventBridge(dispatch: { [weak self] json in
                 self?.emitDispatchEvent(json)
             }, onTerminal: { [weak self] ended in
                 guard let self, self.checkoutEvents === ended else { return }
@@ -344,7 +337,7 @@ class RCTShopifyCheckoutKit: NSObject {
         return NSNumber(value: available)
     }
 
-    @objc func respondToGeolocationRequest(_: Bool, requestId _: String) {
+    @objc func respondToGeolocationRequest(_: Bool) {
         // No-op on iOS — geolocation permission is handled natively
     }
 

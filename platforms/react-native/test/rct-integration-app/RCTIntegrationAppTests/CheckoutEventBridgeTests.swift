@@ -16,10 +16,9 @@ final class CheckoutEventBridgeTests: XCTestCase {
     }
 
     func testSnapshotPreservesWireFieldsAndExtensionsWithoutMetadata() throws {
-        let json = try XCTUnwrap(checkoutEventJSON(type: .start, checkout: checkout(), requestId: "request-1"))
+        let json = try XCTUnwrap(checkoutEventJSON(type: .start, checkout: checkout()))
         let envelope = try parse(json)
         XCTAssertEqual(envelope["type"] as? String, "start")
-        XCTAssertEqual(envelope["requestId"] as? String, "request-1")
         let payload = try XCTUnwrap(envelope["payload"] as? [String: Any])
         let checkout = try XCTUnwrap(payload["checkout"] as? [String: Any])
         XCTAssertNil(checkout["ucp"])
@@ -33,7 +32,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
     func testCompletionDoesNotReleaseCallbacks() throws {
         var events: [String] = []
         var terminalCount = 0
-        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
+        let bridge = CheckoutEventBridge(dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         let checkout = try checkout()
         bridge.checkoutDidStart(CheckoutStartEvent(checkout: checkout))
         bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout))
@@ -48,7 +47,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
 
     func testFailureUsesErrorEventAndReleasesCallbacks() throws {
         var events: [String] = []
-        let bridge = CheckoutEventBridge(requestId: "request-1", dispatch: { events.append($0) }, onTerminal: { _ in })
+        let bridge = CheckoutEventBridge(dispatch: { events.append($0) }, onTerminal: { _ in })
         bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
         bridge.checkoutDidDismiss()
         let envelope = try parse(XCTUnwrap(events.first))
@@ -56,14 +55,6 @@ final class CheckoutEventBridgeTests: XCTestCase {
         let error = try XCTUnwrap(payload["error"] as? [String: Any])
         XCTAssertEqual(error["code"] as? String, "sdk_error")
         XCTAssertEqual(events.count, 1)
-    }
-
-    func testReplacingCallbacksRetainsTheNativeSession() throws {
-        var events: [String] = []
-        let bridge = CheckoutEventBridge(requestId: "old", dispatch: { events.append($0) }, onTerminal: { _ in })
-        bridge.requestId = "new"
-        try bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout()))
-        XCTAssertEqual(try parse(XCTUnwrap(events.first))["requestId"] as? String, "new")
     }
 
     private func parse(_ json: String) throws -> [String: Any] {

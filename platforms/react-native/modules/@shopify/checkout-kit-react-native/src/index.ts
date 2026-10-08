@@ -41,8 +41,6 @@ import type {
 } from './components/AcceleratedCheckoutButtons';
 import {preload as preloadCheckout} from './preload';
 
-let presentationSequence = 0;
-
 const defaultFeatures: Features = {
   handleGeolocationRequests: true,
 };
@@ -54,6 +52,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   private features: Features;
 
   private dispatchSubscription?: {remove: () => void};
+
+  private presentation?: {
+    callbacks?: PresentCallbacks;
+    cancellation: AbortController;
+  };
 
   private preloadSubscription?: CheckoutPreloadSubscription;
 
@@ -98,6 +101,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Dismisses the currently displayed checkout sheet
    */
   public dismiss(): void {
+    ShopifyCheckout.activePresentation?.cancelGeolocationRequest();
     RNShopifyCheckoutKit.dismiss();
   }
 
@@ -123,25 +127,37 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
 
   /** Presents checkout with lifecycle callbacks. */
   public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
-    ShopifyCheckout.activePresentation?.releaseDispatchSubscription();
+    if (ShopifyCheckout.activePresentation) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[ShopifyCheckoutKit] Checkout is already presented; ignoring duplicate presentation.',
+      );
+      return;
+    }
     let subscription: {remove: () => void} | undefined;
-    const requestId = `present-${++presentationSequence}`;
-    const {dispatcher} = createPresentDispatcher({
+    const cancellation = new AbortController();
+    const presentation = {
       callbacks,
-      requestId,
+      cancellation,
+      geolocationSignal: cancellation.signal,
       handleDefaultGeolocationRequests: this.featureEnabled(
         'handleGeolocationRequests',
       ),
       handleDefaultGeolocationRequest: async () => {
-        const allowed = await this.requestGeolocation();
-        this.respondToGeolocationRequest(allowed, requestId);
+        const allowed = await this.requestGeolocation().catch(() => false);
+        if (!cancellation.signal.aborted)
+          this.respondToGeolocationRequest(allowed);
       },
-      respondToGeolocationRequest: allow =>
-        this.respondToGeolocationRequest(allow, requestId),
+      respondToGeolocationRequest: (allow: boolean) => {
+        if (!cancellation.signal.aborted)
+          this.respondToGeolocationRequest(allow);
+      },
       onTerminal: () => {
         if (subscription) this.releaseDispatchSubscription(subscription);
       },
-    });
+    };
+    this.presentation = presentation;
+    const {dispatcher} = createPresentDispatcher(presentation);
     subscription = RNShopifyCheckoutKit.onDispatch(json => {
       if (subscription && this.dispatchSubscription === subscription)
         dispatcher(json);
@@ -149,7 +165,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     this.dispatchSubscription = subscription;
     ShopifyCheckout.activePresentation = this;
     try {
-      RNShopifyCheckoutKit.present(checkoutUrl, requestId);
+      RNShopifyCheckoutKit.present(checkoutUrl);
     } catch (error) {
       this.releaseDispatchSubscription(subscription);
       throw error;
@@ -182,7 +198,10 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * Stops callbacks retained by this instance without invalidating preload.
    */
   public teardown() {
-    this.releaseDispatchSubscription();
+    this.cancelGeolocationRequest();
+    if (this.presentation) this.presentation.callbacks = undefined;
+    // Keep the internal subscription until native checkout ends, so another
+    // instance cannot attach callbacks to a sheet that is still open.
     this.preloadSubscription?.remove();
     this.preloadSubscription = undefined;
   }
@@ -335,9 +354,19 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     if (only && this.dispatchSubscription !== only) return;
     const subscription = this.dispatchSubscription;
     this.dispatchSubscription = undefined;
+    this.presentation?.cancellation.abort();
+    if (this.presentation) this.presentation.callbacks = undefined;
+    this.presentation = undefined;
     if (ShopifyCheckout.activePresentation === this)
       ShopifyCheckout.activePresentation = undefined;
     subscription?.remove();
+  }
+
+  private cancelGeolocationRequest(): void {
+    const presentation = this.presentation;
+    if (!presentation || presentation.cancellation.signal.aborted) return;
+    presentation.cancellation.abort();
+    this.respondToGeolocationRequest(false);
   }
 
   /**
@@ -345,9 +374,9 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * This does not request OS location permissions; callers should check
    * or request Android permissions before responding.
    */
-  private respondToGeolocationRequest(allow: boolean, requestId: string): void {
+  private respondToGeolocationRequest(allow: boolean): void {
     if (Platform.OS === 'android') {
-      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow, requestId);
+      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow);
     }
   }
 

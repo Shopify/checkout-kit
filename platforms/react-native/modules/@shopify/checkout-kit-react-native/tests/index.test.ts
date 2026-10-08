@@ -180,16 +180,7 @@ function lastDispatch(): Dispatch {
       'Expected the last present() call to subscribe to dispatch events',
     );
   }
-  const requestId = NativeModule.present.mock.calls.at(-1)?.[1];
-  return json => {
-    let envelope;
-    try {
-      envelope = JSON.parse(json);
-    } catch {
-      return dispatch(json);
-    }
-    return dispatch(JSON.stringify({requestId, ...envelope}));
-  };
+  return dispatch;
 }
 
 type PreloadDispatch = (eventJson: string) => void;
@@ -201,16 +192,7 @@ function preloadDispatch(): PreloadDispatch {
   if (!dispatch) {
     throw new Error('Expected preload() to subscribe to preload state events');
   }
-  const requestId = NativeModule.present.mock.calls.at(-1)?.[1];
-  return json => {
-    let envelope;
-    try {
-      envelope = JSON.parse(json);
-    } catch {
-      return dispatch(json);
-    }
-    return dispatch(JSON.stringify({requestId, ...envelope}));
-  };
+  return dispatch;
 }
 
 function preloadRequestId(call = 0): string {
@@ -225,6 +207,9 @@ function preloadRequestId(call = 0): string {
 
 describe('ShopifyCheckoutKit', () => {
   afterEach(() => {
+    // Native dismissal completes any presentation left open by the test.
+    for (const [dispatch] of NativeModule.onDispatch.mock.calls)
+      dispatch(JSON.stringify({type: 'dismiss'}));
     __resetPreloadForTests();
     NativeModule.setConfig.mockReset();
     jest.clearAllMocks();
@@ -424,12 +409,9 @@ describe('ShopifyCheckoutKit', () => {
       totals: [],
     };
 
-    it('passes a session ID to native', () => {
+    it('presents checkout without a session ID', () => {
       new ShopifyCheckout().present(checkoutUrl);
-      expect(NativeModule.present).toHaveBeenCalledWith(
-        checkoutUrl,
-        expect.any(String),
-      );
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
     });
 
     it('keeps a reentrant presentation subscribed when the first present throws', () => {
@@ -512,43 +494,55 @@ describe('ShopifyCheckoutKit', () => {
       expect(remove).toHaveBeenCalledTimes(1);
     });
 
-    it('ignores queued events from earlier presentations', () => {
+    it.each([false, true])(
+      'ignores duplicate presentations across instances: %s',
+      anotherInstance => {
+        const first = new ShopifyCheckout();
+        const second = anotherInstance ? new ShopifyCheckout() : first;
+        const onDismiss = jest.fn();
+        const replacementDismiss = jest.fn();
+        first.present(checkoutUrl, {onDismiss});
+        second.present('https://example.test/other', {
+          onDismiss: replacementDismiss,
+        });
+        expect(NativeModule.present).toHaveBeenCalledTimes(1);
+        expect(NativeModule.onDispatch).toHaveBeenCalledTimes(1);
+        lastDispatch()(JSON.stringify({type: 'dismiss'}));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+        expect(replacementDismiss).not.toHaveBeenCalled();
+      },
+    );
+
+    it('ignores queued events from a finished presentation after reopening', () => {
       const instance = new ShopifyCheckout();
-      const first = jest.fn();
-      const second = jest.fn();
-      instance.present(checkoutUrl, {onDismiss: first});
+      instance.present(checkoutUrl);
       const oldDispatch = lastDispatch();
-      const oldId = NativeModule.present.mock.calls.at(-1)[1];
-      instance.present(checkoutUrl, {onDismiss: second});
       oldDispatch(JSON.stringify({type: 'dismiss'}));
-      lastDispatch()(JSON.stringify({requestId: oldId, type: 'dismiss'}));
-      expect(first).not.toHaveBeenCalled();
-      expect(second).not.toHaveBeenCalled();
+      const onDismiss = jest.fn();
+      instance.present(checkoutUrl, {onDismiss});
+      oldDispatch(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).not.toHaveBeenCalled();
       lastDispatch()(JSON.stringify({type: 'dismiss'}));
-      expect(second).toHaveBeenCalledTimes(1);
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('releases the previous instance without letting its teardown affect the new owner', () => {
+    it('keeps session ownership after teardown until native dismissal', () => {
       const first = new ShopifyCheckout();
       const second = new ShopifyCheckout();
-      const firstRemove = jest.fn();
-      const secondRemove = jest.fn();
-      const firstDismiss = jest.fn();
-      const secondDismiss = jest.fn();
-      NativeModule.onDispatch
-        .mockReturnValueOnce({remove: firstRemove})
-        .mockReturnValueOnce({remove: secondRemove});
-      first.present(checkoutUrl, {onDismiss: firstDismiss});
-      const oldDispatch = lastDispatch();
-      second.present(checkoutUrl, {onDismiss: secondDismiss});
-      expect(firstRemove).toHaveBeenCalledTimes(1);
+      const onDismiss = jest.fn();
+      const onUpdate = jest.fn();
+      first.present(checkoutUrl, {onDismiss, onUpdate});
       first.teardown();
-      oldDispatch(JSON.stringify({type: 'dismiss'}));
-      expect(firstDismiss).not.toHaveBeenCalled();
-      expect(secondRemove).not.toHaveBeenCalled();
+      second.present(checkoutUrl);
+      expect(NativeModule.present).toHaveBeenCalledTimes(1);
+      lastDispatch()(JSON.stringify({type: 'update', payload: {checkout}}));
       lastDispatch()(JSON.stringify({type: 'dismiss'}));
-      expect(secondDismiss).toHaveBeenCalledTimes(1);
-      expect(secondRemove).toHaveBeenCalledTimes(1);
+      expect(onDismiss).not.toHaveBeenCalled();
+      expect(onUpdate).not.toHaveBeenCalled();
+      second.present(checkoutUrl, {onDismiss});
+      first.teardown();
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
     it.each(['dismiss', 'fail'])(
@@ -720,10 +714,7 @@ describe('ShopifyCheckoutKit', () => {
       it('subscribes to dispatch events when the default handler is enabled, even without callbacks', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(
-          checkoutUrl,
-          expect.any(String),
-        );
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
         expect(NativeModule.onDispatch).toHaveBeenCalledWith(
           expect.any(Function),
         );
@@ -734,10 +725,7 @@ describe('ShopifyCheckoutKit', () => {
           handleGeolocationRequests: false,
         });
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(
-          checkoutUrl,
-          expect.any(String),
-        );
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -763,7 +751,6 @@ describe('ShopifyCheckoutKit', () => {
         ]);
         expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
           true,
-          expect.any(String),
         );
       });
 
@@ -790,7 +777,6 @@ describe('ShopifyCheckoutKit', () => {
         ]);
         expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
           false,
-          expect.any(String),
         );
       });
 
@@ -820,8 +806,83 @@ describe('ShopifyCheckoutKit', () => {
 
         expect(NativeModule.respondToGeolocationRequest).toHaveBeenCalledWith(
           true,
-          expect.any(String),
         );
+      });
+
+      it.each(['dismiss', 'fail', 'teardown', 'programmatic'])(
+        'ignores a permission result after %s',
+        async close => {
+          let resolve!: (permissions: Record<string, string>) => void;
+          (PermissionsAndroid.requestMultiple as jest.Mock).mockReturnValueOnce(
+            new Promise(result => {
+              resolve = result;
+            }),
+          );
+          const instance = new ShopifyCheckout();
+          instance.present(checkoutUrl);
+          lastDispatch()(geolocationEnvelope);
+          if (close === 'teardown') instance.teardown();
+          else if (close === 'programmatic') instance.dismiss();
+          else
+            lastDispatch()(
+              JSON.stringify({
+                type: close,
+                payload: {error: {code: 'sdk_error', message: 'closed'}},
+              }),
+            );
+          if (close === 'dismiss' || close === 'fail')
+            instance.present(checkoutUrl);
+          NativeModule.respondToGeolocationRequest.mockClear();
+          resolve({'android.permission.ACCESS_FINE_LOCATION': 'granted'});
+          await flush();
+          expect(
+            NativeModule.respondToGeolocationRequest,
+          ).not.toHaveBeenCalled();
+        },
+      );
+
+      it.each(['dismiss', 'fail', 'teardown', 'programmatic'])(
+        'invalidates a saved response after %s',
+        close => {
+          const instance = new ShopifyCheckout();
+          const onGeolocationRequest = jest.fn();
+          instance.present(checkoutUrl, {onGeolocationRequest});
+          lastDispatch()(geolocationEnvelope);
+          const {respond} = onGeolocationRequest.mock.calls[0][0];
+          if (close === 'teardown') instance.teardown();
+          else if (close === 'programmatic') instance.dismiss();
+          else
+            lastDispatch()(
+              JSON.stringify({
+                type: close,
+                payload: {error: {code: 'sdk_error', message: 'closed'}},
+              }),
+            );
+          if (close === 'dismiss' || close === 'fail')
+            instance.present(checkoutUrl);
+          NativeModule.respondToGeolocationRequest.mockClear();
+          respond(true);
+          expect(
+            NativeModule.respondToGeolocationRequest,
+          ).not.toHaveBeenCalled();
+        },
+      );
+
+      it('ignores a permission rejection while programmatic dismissal is pending', async () => {
+        let reject!: (error: Error) => void;
+        (PermissionsAndroid.requestMultiple as jest.Mock).mockReturnValueOnce(
+          new Promise((_, fail) => {
+            reject = fail;
+          }),
+        );
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl);
+        lastDispatch()(geolocationEnvelope);
+        instance.dismiss();
+        NativeModule.respondToGeolocationRequest.mockClear();
+        reject(new Error('Permission activity closed'));
+        await flush();
+        expect(NativeModule.respondToGeolocationRequest).not.toHaveBeenCalled();
       });
 
       it('does not run the default handler when the feature is disabled', async () => {
@@ -851,10 +912,7 @@ describe('ShopifyCheckoutKit', () => {
       it('presents with the default link policy on iOS', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(
-          checkoutUrl,
-          expect.any(String),
-        );
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

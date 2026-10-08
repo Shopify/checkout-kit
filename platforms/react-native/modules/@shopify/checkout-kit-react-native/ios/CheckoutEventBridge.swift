@@ -5,7 +5,6 @@ import ShopifyCheckoutKit
 /// the shared schema and preserves extension keys unchanged.
 struct DispatchEnvelope<Payload: Encodable>: Encodable {
     let type: String
-    let requestId: String?
     let payload: Payload
 }
 
@@ -13,14 +12,14 @@ struct CheckoutEventPayload: Encodable {
     let checkout: Checkout
 }
 
-func checkoutEventJSON(type: DispatchEventType, checkout: Checkout, requestId: String? = nil) -> String? {
+func checkoutEventJSON(type: DispatchEventType, checkout: Checkout) -> String? {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .custom { date, encoder in
         var container = encoder.singleValueContainer()
         try container.encode(date.ISO8601Format(Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
     }
     do {
-        let data = try encoder.encode(DispatchEnvelope(type: type.rawValue, requestId: requestId, payload: CheckoutEventPayload(checkout: checkout)))
+        let data = try encoder.encode(DispatchEnvelope(type: type.rawValue, payload: CheckoutEventPayload(checkout: checkout)))
         return String(data: data, encoding: .utf8)
     } catch {
         NSLog("[ShopifyCheckoutKit] Failed to serialize checkout event")
@@ -31,12 +30,10 @@ func checkoutEventJSON(type: DispatchEventType, checkout: Checkout, requestId: S
 /// A presentation retains its own delegate so queued events cannot cross sessions.
 @MainActor
 final class CheckoutEventBridge: CheckoutDelegate {
-    var requestId: String
     private var dispatch: ((String) -> Void)?
     private let onTerminal: (CheckoutEventBridge) -> Void
 
-    init(requestId: String, dispatch: @escaping (String) -> Void, onTerminal: @escaping (CheckoutEventBridge) -> Void) {
-        self.requestId = requestId
+    init(dispatch: @escaping (String) -> Void, onTerminal: @escaping (CheckoutEventBridge) -> Void) {
         self.dispatch = dispatch
         self.onTerminal = onTerminal
     }
@@ -62,12 +59,12 @@ final class CheckoutEventBridge: CheckoutDelegate {
     }
 
     private func emit(_ type: DispatchEventType, checkout: Checkout) {
-        guard let json = checkoutEventJSON(type: type, checkout: checkout, requestId: requestId) else { return }
+        guard let json = checkoutEventJSON(type: type, checkout: checkout) else { return }
         dispatch?(json)
     }
 
     private func emit(_ type: DispatchEventType, payload: [String: Any] = [:]) {
-        let envelope: [String: Any] = ["type": type.rawValue, "requestId": requestId, "payload": payload]
+        let envelope: [String: Any] = ["type": type.rawValue, "payload": payload]
         guard let data = try? JSONSerialization.data(withJSONObject: envelope), let json = String(data: data, encoding: .utf8) else { return }
         dispatch?(json)
     }

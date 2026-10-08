@@ -83,24 +83,21 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, String requestId) {
+  public void present(String checkoutURL) {
     if (invalidated) return;
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       currentActivity.runOnUiThread(() -> {
         if (invalidated) return;
-        CustomCheckoutListener listener = checkoutListener;
-        if (checkoutSheet == null || listener == null || listener.isReleased()) {
-          releaseCheckoutListener();
-          listener = new CustomCheckoutListener(this::emitDispatchEvent);
-          checkoutListener = listener;
-        }
-        listener.configure(requestId, this::finishCheckoutPresentation);
+        // Ignore duplicate calls without replacing the active listener or policy.
+        if (checkoutListener != null && !checkoutListener.isReleased()) return;
+        CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
+        checkoutListener = listener;
+        listener.setOnTerminal(this::finishCheckoutPresentation);
         presentCheckout(checkoutURL, (ComponentActivity) currentActivity, listener, SystemClock.uptimeMillis() + PRESENTATION_TIMEOUT_MS);
       });
     } else {
       CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
-      listener.configure(requestId, () -> {});
       listener.onCheckoutDismissed();
     }
   }
@@ -333,9 +330,9 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void respondToGeolocationRequest(boolean allow, String requestId) {
+  public void respondToGeolocationRequest(boolean allow) {
     UiThreadUtil.runOnUiThread(() -> {
-      if (checkoutListener != null && checkoutListener.matchesRequest(requestId)) {
+      if (checkoutListener != null) {
         checkoutListener.invokeGeolocationCallback(allow);
       }
     });

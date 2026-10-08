@@ -16,7 +16,7 @@ export class LifecycleEventParseError extends Error {
 
 interface CreatePresentDispatcherOptions {
   callbacks?: PresentCallbacks;
-  requestId?: string;
+  geolocationSignal?: AbortSignal;
   handleDefaultGeolocationRequests?: boolean;
   handleDefaultGeolocationRequest?: () => void | Promise<void>;
   respondToGeolocationRequest?: (allow: boolean) => void;
@@ -45,11 +45,6 @@ function dispatchEnvelope(
     logParseError('envelope is missing a string `type` discriminator');
     return;
   }
-  if (
-    options.requestId !== undefined &&
-    envelope.requestId !== options.requestId
-  )
-    return;
   const {type, payload} = envelope;
   if (!isSdkLifecycleEventType(type)) {
     // eslint-disable-next-line no-console
@@ -102,6 +97,7 @@ function dispatchEnvelope(
       return;
     }
     case 'geolocationRequest':
+      if (options.geolocationSignal?.aborted) return;
       if (!isPlainObject(payload) || typeof payload.origin !== 'string') {
         logParseError('`geolocationRequest` envelope payload is malformed');
         return;

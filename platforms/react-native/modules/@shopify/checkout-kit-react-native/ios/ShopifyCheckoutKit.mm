@@ -17,8 +17,7 @@
 
 RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
 
-RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
-                  requestId:(NSString *)requestId)
+RCT_EXTERN_METHOD(present:(NSString *)checkoutURL)
 
 RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL
                   requestId:(NSString *)requestId)

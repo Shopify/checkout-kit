@@ -32,6 +32,9 @@ describe('ShopifyCheckoutProvider', () => {
   );
 
   afterEach(() => {
+    for (const [dispatch] of NativeModules.ShopifyCheckoutKit.onDispatch.mock
+      .calls)
+      dispatch(JSON.stringify({type: 'dismiss'}));
     __resetPreloadForTests();
     jest.clearAllMocks();
   });
@@ -147,6 +150,9 @@ describe('useShopifyCheckout', () => {
   );
 
   afterEach(() => {
+    for (const [dispatch] of NativeModules.ShopifyCheckoutKit.onDispatch.mock
+      .calls)
+      dispatch(JSON.stringify({type: 'dismiss'}));
     __resetPreloadForTests();
     jest.clearAllMocks();
   });
@@ -169,7 +175,6 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      expect.any(String),
     );
   });
 
@@ -198,10 +203,8 @@ describe('useShopifyCheckout', () => {
     );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
-      expect.any(String),
     );
   });
-
 
   it('does not call present with empty checkoutUrl', () => {
     let hookValue: any;

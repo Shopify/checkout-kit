@@ -823,10 +823,11 @@ Completion keeps callbacks active until dismissal or failure. Delay changes that
 unmount checkout UI, such as clearing the cart that owns accelerated buttons,
 until dismissal or failure. Calling `dismiss()` also delivers `onDismiss`.
 
-Repeated `present()` calls while a sheet is visible replace its callbacks; the
-existing checkout stays open. This also applies across `ShopifyCheckout` instances:
-the latest presenter owns the callbacks. `teardown()` stops observations owned by
-that instance without dismissing the sheet.
+Repeated `present()` calls while a checkout session is active are ignored,
+including calls from another `ShopifyCheckout` instance. The original checkout
+and callbacks remain active. `teardown()` stops consumer callbacks and cancels
+pending geolocation responses without dismissing the sheet; another checkout
+can be presented once the native session ends.
 
 ### Migrating from protocol callbacks
 

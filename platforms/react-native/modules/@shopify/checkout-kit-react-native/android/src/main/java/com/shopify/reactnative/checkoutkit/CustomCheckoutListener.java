@@ -20,16 +20,12 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
-  private String requestId = "";
   private Runnable onTerminal = () -> {};
 
-  public void configure(String requestId, Runnable onTerminal) {
-    invokeGeolocationCallback(false);
-    this.requestId = requestId;
+  public void setOnTerminal(Runnable onTerminal) {
     this.onTerminal = onTerminal;
   }
 
-  public boolean matchesRequest(String requestId) { return this.requestId.equals(requestId); }
   public boolean isReleased() { return dispatch.isReleased(); }
 
   // Geolocation-specific variables
@@ -156,7 +152,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private void emitCheckout(String type, Checkout checkout) {
     if (dispatch.isReleased()) return;
     try {
-      dispatch.invoke(CheckoutEventSerialization.checkout(type, requestId, checkout));
+      dispatch.invoke(CheckoutEventSerialization.checkout(type, checkout));
     } catch (Exception e) {
       Log.e(TAG, "Error serializing checkout event");
     }
@@ -167,7 +163,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private String buildEnvelope(String type, @Nullable Object payload) throws IOException {
     ObjectNode envelope = mapper.createObjectNode();
     envelope.put("type", type);
-    envelope.put("requestId", requestId);
     if (payload != null) {
       envelope.set("payload", mapper.valueToTree(payload));
     }

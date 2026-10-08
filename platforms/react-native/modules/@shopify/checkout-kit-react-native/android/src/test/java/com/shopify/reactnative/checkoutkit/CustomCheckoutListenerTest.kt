@@ -84,6 +84,21 @@ class CustomCheckoutListenerTest {
         assertThat(captured).hasSize(1)
     }
 
+    @Test
+    fun `terminal cleanup denies pending geolocation exactly once`() {
+        val listener = CustomCheckoutListener(DispatchCallback {})
+        val decisions = mutableListOf<Triple<String, Boolean, Boolean>>()
+        listener.onGeolocationPermissionsShowPrompt("https://example.test") { origin, allow, retain ->
+            decisions.add(Triple(origin, allow, retain))
+        }
+
+        listener.onCheckoutDismissed()
+        listener.invokeGeolocationCallback(true)
+        listener.release()
+
+        assertThat(decisions).containsExactly(Triple("https://example.test", false, false))
+    }
+
     private fun payloadOf(envelope: JsonObject): JsonObject =
         envelope["payload"]?.jsonObject?.get("error")?.jsonObject ?: JsonObject(emptyMap())
 }
