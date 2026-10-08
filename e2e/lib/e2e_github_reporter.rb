@@ -61,6 +61,7 @@ class E2EGitHubReporter
     lines = []
     lines << "## Checkout Kit E2E results"
     lines << ""
+    lines << "No native E2E runs were selected for this change." if @expected == 0 && @results.empty?
     lines.concat(results_table) unless @results.empty?
     unless complete?
       lines << "" unless @results.empty?

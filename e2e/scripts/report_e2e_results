@@ -53,7 +53,7 @@ if result_paths.empty?
   warn "No E2E result files found under #{options.fetch(:results_root)}"
   exit 1 if expected.nil?
 
-  warn "Publishing an incomplete report: expected #{expected} run(s), found 0"
+  warn "Publishing report: expected #{expected} run(s), found 0"
 end
 
 results = result_paths.sort.map { |path| JSON.parse(File.read(path)) }
