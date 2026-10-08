@@ -11,9 +11,6 @@ const resolvePackageRoot = packageName =>
 
 module.exports = {
   dependencies: {
-    '@react-native-masked-view/masked-view': {
-      root: resolvePackageRoot('@react-native-masked-view/masked-view'),
-    },
     react: {
       root: resolvePackageRoot('react'),
     },
@@ -25,9 +22,6 @@ module.exports = {
     },
     'react-native-encrypted-storage': {
       root: resolvePackageRoot('react-native-encrypted-storage'),
-    },
-    'react-native-gesture-handler': {
-      root: resolvePackageRoot('react-native-gesture-handler'),
     },
     'react-native-nitro-modules': {
       root: resolvePackageRoot('react-native-nitro-modules'),

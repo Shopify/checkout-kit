@@ -57,7 +57,6 @@
     "prettier": "^3.2.5",
     "react": "19.1.0",
     "react-native": "0.80.2",
-    "react-native-gesture-handler": "2.26.0",
     "react-test-renderer": "19.1.0",
     "typescript": "^5.9.2"
   },
