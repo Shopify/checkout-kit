@@ -1,4 +1,4 @@
-import { ShopifyCheckout } from "./checkout";
+import { ShopifyCheckout } from "./shopify-checkout";
 
 declare global {
   interface HTMLElementTagNameMap {

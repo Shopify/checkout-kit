@@ -21,7 +21,7 @@ export default {
         pathNot: [
           "(^|/)node_modules/",
           "^package\\.json$",
-          "^src/checkout\\.types\\.ts$",
+          "^src/components/shopify-checkout/checkout\\.types\\.ts$",
           "\\.d\\.ts$",
           "\\.test\\.ts$",
           "\\.test-helpers\\.ts$",

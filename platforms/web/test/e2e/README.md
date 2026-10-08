@@ -1,6 +1,6 @@
 # Web browser tests
 
-Playwright loads the built `platforms/web/dist/index.js` in Chromium and exercises
+Playwright loads the built `platforms/web/dist/shopify-checkout.js` in Chromium and exercises
 the real custom element, popup, and cross-origin `postMessage` exchange. A routed
 HTTPS checkout fixture supplies synthetic protocol messages; telemetry is disabled
 and unexpected external requests are blocked and fail the test. No storefront,

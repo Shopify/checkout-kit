@@ -1,8 +1,11 @@
 [
+  "dist/chunks/register.js",
+  "dist/chunks/register.js.map",
   "dist/custom-elements.json",
   "dist/index.d.ts",
   "dist/index.js",
-  "dist/index.js.map",
+  "dist/shopify-checkout.d.ts",
+  "dist/shopify-checkout.js",
   "LICENSE",
   "package.json",
   "README.md"

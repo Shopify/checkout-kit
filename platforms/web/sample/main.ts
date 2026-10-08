@@ -1,4 +1,4 @@
-import "@shopify/checkout-kit";
+import "@shopify/checkout-kit/shopify-checkout";
 import type { ShopifyCheckout } from "@shopify/checkout-kit";
 
 import { normalizeQuantity, normalizeStorefrontDomain, upsertCartLine } from "./cart";

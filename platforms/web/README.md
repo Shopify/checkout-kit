@@ -86,12 +86,17 @@ Once the first stable `4.0.0` ships, the standard `pnpm add @shopify/checkout-ki
 
 ## Basic Usage
 
-Import the package once anywhere in your application. The import has a side
-effect — it registers `<shopify-checkout>` with `customElements`:
+Import the component once anywhere in your application. This entry registers
+only `<shopify-checkout>` with `customElements`:
 
 ```ts
-import '@shopify/checkout-kit';
+import '@shopify/checkout-kit/shopify-checkout';
 ```
+
+Components use separate entry points within the same npm package. Import only
+the components you need. The existing root import (`@shopify/checkout-kit`)
+continues to register `<shopify-checkout>` for compatibility; it will not
+automatically register additional components.
 
 Then render the element anywhere in your HTML and call `open()` to present
 checkout:
@@ -106,7 +111,7 @@ checkout:
 <button id="buy-now">Buy now</button>
 
 <script type="module">
-  import '@shopify/checkout-kit';
+  import '@shopify/checkout-kit/shopify-checkout';
 
   const checkout = document.getElementById('checkout');
   document.getElementById('buy-now').addEventListener('click', () => {
@@ -127,7 +132,7 @@ below for details on how to obtain a checkout URL.
 If you'd rather not declare the element in HTML, create one from JavaScript:
 
 ```ts
-import '@shopify/checkout-kit';
+import '@shopify/checkout-kit/shopify-checkout';
 import type {ShopifyCheckout} from '@shopify/checkout-kit';
 
 const checkout = document.createElement('shopify-checkout') as ShopifyCheckout;
@@ -145,8 +150,8 @@ checkout.close();
 ```
 
 The `ShopifyCheckout` class is also exported directly when you need the
-constructor. The package has a single entry point, so this named import also
-registers `<shopify-checkout>` with `customElements`:
+constructor. This existing root import also registers `<shopify-checkout>`
+with `customElements`:
 
 ```ts
 import {ShopifyCheckout} from '@shopify/checkout-kit';
@@ -168,7 +173,7 @@ subscribing to Checkout Kit events.
 
 ```tsx
 import {useEffect, useRef} from 'react';
-import '@shopify/checkout-kit';
+import '@shopify/checkout-kit/shopify-checkout';
 import type {ShopifyCheckout} from '@shopify/checkout-kit';
 
 export function BuyNowButton({checkoutUrl}: {checkoutUrl: string}) {
@@ -239,7 +244,7 @@ declare module 'react' {
 > the `react` module.
 
 > [!NOTE]
-> The `import '@shopify/checkout-kit'` side effect registers the element with
+> The `import '@shopify/checkout-kit/shopify-checkout'` side effect registers the element with
 > `customElements` and touches browser-only globals, so it must run on the
 > client. In server-rendered frameworks (Next.js, Remix), keep the import and
 > the component in a client component — e.g. add `'use client'` to the top of
@@ -614,3 +619,17 @@ conventions, and one-time setup notes.
 ## License
 
 Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
+
+## Source organization
+
+Component implementations live in `src/components/<component-name>/`, with an
+explicitly named implementation file such as
+`src/components/shopify-checkout/shopify-checkout.ts`. Keep component-specific
+styles, events, types, and tests alongside it; `register.ts` registers its custom
+element. Import files directly rather than adding component barrel files.
+
+New components such as `accelerated-checkouts`, `universal-checkout`, and
+`shop-wallet` should follow the same layout when added. Shared models and helpers
+stay outside component directories. `src/index.ts` remains the public npm entry
+for `@shopify/checkout-kit`. Expose each component through its own package subpath
+pointing to `register.ts`; do not add every component registration to the root entry.

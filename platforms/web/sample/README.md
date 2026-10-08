@@ -1,6 +1,6 @@
 # Web Component Playground
 
-A development harness for the `<shopify-checkout>` web component. It imports the same entry as published consumers (`@shopify/checkout-kit`, aliased to `../src/index.ts` in dev), registers the custom element, and logs Checkout Kit lifecycle events.
+A development harness for the `<shopify-checkout>` web component. It imports the same entry as published consumers (`@shopify/checkout-kit/shopify-checkout`, aliased to `../src/components/shopify-checkout/register.ts` in dev), registers the custom element, and logs Checkout Kit lifecycle events.
 
 ## Run locally
 

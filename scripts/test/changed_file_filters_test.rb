@@ -18,7 +18,7 @@ class ChangedFileFiltersTest < Minitest::Test
   def test_matches_platform_and_telemetry_paths_independently
     {
       "web" => [
-        "platforms/web/src/checkout.ts",
+        "platforms/web/src/components/shopify-checkout/shopify-checkout.ts",
         "telemetry/languages/typescript/src/types.ts",
         "telemetry/contract/schema.json"
       ],

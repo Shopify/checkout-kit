@@ -10,8 +10,8 @@ import {
 } from "@shopify/checkout-kit-protocol";
 
 import { getUnsupportedBrowserCapabilities, supportsShadowDOM } from "./browser-capabilities";
-import { toCheckout, checkoutComparisonKey } from "./models/checkout";
-import { toCheckoutError } from "./models/error";
+import { toCheckout, checkoutComparisonKey } from "../../models/checkout";
+import { toCheckoutError } from "../../models/error";
 import {
   ShopifyCheckoutStartEvent,
   ShopifyCheckoutUpdateEvent,
@@ -21,11 +21,15 @@ import {
   ShopifyCheckoutBlockedEvent,
   type ShopifyCheckoutEventMap,
 } from "./checkout-events";
-import stylesText from "./checkout.css?inline";
-import { Logger, coerceLogLevel } from "./logger";
-import { createTelemetry, telemetryProtocolMethod, type CheckoutKitTelemetry } from "./telemetry";
-import { createTemplate, html, safe } from "./utils";
-import { CK_VERSION } from "./version";
+import stylesText from "./shopify-checkout.css?inline";
+import { Logger, coerceLogLevel } from "../../logger";
+import {
+  createTelemetry,
+  telemetryProtocolMethod,
+  type CheckoutKitTelemetry,
+} from "../../telemetry";
+import { createTemplate, html, safe } from "../../utils";
+import { CK_VERSION } from "../../version";
 import type {
   CheckoutAttributes,
   CheckoutMethods,
@@ -41,7 +45,7 @@ import type {
 
 export const DEFAULT_POPUP_WIDTH = 600;
 export const DEFAULT_POPUP_HEIGHT = 600;
-export { CK_VERSION } from "./version";
+export { CK_VERSION } from "../../version";
 
 /**
  * Shopify-owned origins always allowed to post messages, alongside the cart

@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
-import { version } from "../package.json";
+import { version } from "../../../package.json";
 
-import "./checkout-web-component";
-import { CK_VERSION } from "./checkout";
+import "./register";
+import { CK_VERSION } from "./shopify-checkout";
 import {
   createTestTelemetry,
   installTestTelemetryFactory,
   mockTelemetry,
-} from "./telemetry.test-helpers";
-import { overrideTelemetryFactoryForTesting } from "./telemetry";
+} from "../../telemetry.test-helpers";
+import { overrideTelemetryFactoryForTesting } from "../../telemetry";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 

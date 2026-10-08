@@ -6,7 +6,8 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "@shopify/checkout-kit": ["../src/index.ts"]
+      "@shopify/checkout-kit": ["../src/index.ts"],
+      "@shopify/checkout-kit/shopify-checkout": ["../src/components/shopify-checkout/register.ts"]
     }
   },
   "include": ["./**/*.ts", "./**/*.d.ts"]
