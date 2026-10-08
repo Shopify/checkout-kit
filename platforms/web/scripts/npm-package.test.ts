@@ -86,18 +86,29 @@ describe("npm component entry points", () => {
     }
   });
 
-  it("resolves the component import and public types in a TypeScript consumer", async () => {
+  it.each([
+    {
+      name: "with public types from the root",
+      source: `
+        import '${componentEntry}';
+        import type { ShopifyCheckout } from '${rootEntry}';
+        const checkout: ShopifyCheckout = document.createElement('shopify-checkout');
+        checkout.open();
+      `,
+    },
+    {
+      // The tag-name typing must arrive with the component import alone.
+      name: "from the component import alone",
+      source: `
+        import '${componentEntry}';
+        document.createElement('shopify-checkout').open();
+        document.querySelector('shopify-checkout')?.close();
+      `,
+    },
+  ])("types the shopify-checkout tag in a TypeScript consumer $name", async ({ source }) => {
     const fixture = await createConsumer();
     const entry = join(fixture, "main.ts");
-    await writeFile(
-      entry,
-      `
-      import '${componentEntry}';
-      import type { ShopifyCheckout } from '${rootEntry}';
-      const checkout = document.createElement('shopify-checkout') as ShopifyCheckout;
-      checkout.open();
-    `,
-    );
+    await writeFile(entry, source);
     expect(() =>
       execFileSync(
         process.execPath,

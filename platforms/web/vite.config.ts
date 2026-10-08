@@ -36,6 +36,9 @@ export default defineConfig({
       async afterBuild() {
         const entry = fromRoot('dist/index.d.ts');
         await writeFile(entry, appendTagNameMap(await readFile(entry, 'utf8'), tagNames.tags));
+        // Component entries have no exports of their own and roll up to `export {}`. Load the root
+        // declarations so a component import alone brings the tag-name typing.
+        await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
       },
     }),
   ],

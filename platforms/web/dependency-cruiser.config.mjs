@@ -21,7 +21,8 @@ export default {
         pathNot: [
           "(^|/)node_modules/",
           "^package\\.json$",
-          "^src/components/shopify-checkout/checkout\\.types\\.ts$",
+          // Type-only modules are erased at compile time, so nothing reaches them at runtime.
+          "\\.types\\.ts$",
           "\\.d\\.ts$",
           "\\.test\\.ts$",
           "\\.test-helpers\\.ts$",
