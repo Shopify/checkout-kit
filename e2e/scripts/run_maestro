@@ -32,6 +32,10 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 CONTROL_LINK="${APP_ID}://e2e"
 
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
+if [ -n "${E2E_JUNIT_REPORT:-}" ]; then
+  mkdir -p "$(dirname "$E2E_JUNIT_REPORT")"
+  MAESTRO_ARGS+=(--format junit --output "$E2E_JUNIT_REPORT")
+fi
 TEST_DIRECTORIES=(tests/shared)
 TEST_FILES=()
 
