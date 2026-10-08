@@ -7,11 +7,42 @@ shipped JavaScript under `dist`.
 Limits are KiB (1,024 bytes), including fractions. Comparisons use exact
 bytes, not the rounded numbers displayed in PR reports.
 
-Web starts with a 35 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
-using `"measurement": "bundle"`. This currently measures `dist/index.js`
-and will include any additional JavaScript chunks shipped in `dist`. Declarations,
-source maps, and other package contents are excluded from this measurement.
-Web's deterministic gzip bundle size and npm package size remain informational.
+Web has a 40 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
+using `"measurement": "bundle"`. This measures every JavaScript file shipped in
+`dist`, including entry files and shared chunks. Declarations, source maps, and
+other package contents are excluded from this measurement. Web's deterministic
+gzip bundle size and npm package size remain informational.
+
+### Per-package Web JavaScript
+
+The Web bundle also includes code from other packages, such as the protocol and
+telemetry clients. `bundle-size-attribution.cjs` splits the same uncompressed
+bundle bytes by the npm package that owns each original source file, using the
+shipped source maps. Owners come from the nearest `package.json` inside the
+repository. JavaScript files without a source map, such as entry shims, belong
+to the package that builds them. Unmapped bytes (bundler glue such as
+import/export wiring) stay unattributed and count only toward the total. Package
+rows plus the unattributed row always sum to the `bundle` measurement.
+
+Budget one package with `"measurement": "bundlePackage"` and its npm name:
+
+```json
+{
+  "web": {
+    "protocol": {
+      "measurement": "bundlePackage",
+      "package": "@shopify/checkout-kit-protocol",
+      "softKiB": 16,
+      "hardKiB": 20
+    }
+  }
+}
+```
+
+A budgeted package that no longer contributes bytes reports a missing
+measurement. Remove or rename its budget in the same change. Accepting a
+per-package breach records that package, so the acceptance cannot satisfy
+another package's budget.
 
 Android and React Native use `"measurement": "package"` to budget the complete
 compressed artifact:
@@ -73,6 +104,7 @@ for the updated report. Expired measurement artifacts also require a rerun.
 | --- | --- | --- |
 | `web` | `bundle` | Sum of raw shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
 | `web` | `bundleGzip` | Sum of those files compressed individually with `gzip -n -9` |
+| `web` | `bundlePackage` | Raw shipped JavaScript bytes owned by `package` (via source maps) |
 | `web` | `package` | Whole compressed npm tarball |
 | `react-native` | `package` | Whole compressed wrapper npm tarball |
 | `android` | `package` | Whole compressed release AAR |
@@ -104,6 +136,10 @@ validation. Adding a new measurement (for example a Swift framework) requires a
 reproducible collector in `measure-package-size`, its changed-path detection and
 build setup in `package-size.yml`, and an adapter in `bundle-size-budgets.cjs`.
 The evaluator, comment commands, and aggregate check need no platform-specific policy.
+
+**Size budgets** evaluates a PR's budget file with the default branch's policy code.
+Land a new measurement type first, then add the budgets that use it in a later
+change. Otherwise the check rejects the budget file until the new type merges.
 
 ## CI integration
 

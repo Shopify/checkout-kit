@@ -118,8 +118,14 @@ measure_web_package() {
     rm -rf "$js_dir"
     return 1
   fi
-  printf "Web\tJavaScript\t%s\n" "$javascript_bytes" >> "$output_file"
-  printf "Web\tJavaScript (gzip)\t%s\n" "$gzip_bytes" >> "$output_file"
+  {
+    printf "Web\tJavaScript\t%s\n" "$javascript_bytes"
+    printf "Web\tJavaScript (gzip)\t%s\n" "$gzip_bytes"
+    # Split the same shipped JavaScript by source package using its source maps.
+    # Map sources are relative to the build output, so resolve them from dist/.
+    node "$script_repo_root/.github/scripts/bundle-size-attribution.cjs" \
+      "Web" "$js_dir/package/dist" "$repo_root/platforms/web/dist" "$repo_root"
+  } >> "$output_file"
   rm -rf "$js_dir"
   record_artifact "Web" "npm tarball" "$tarball"
   record_tarball_breakdown "Web" "npm tarball" "$tarball"
@@ -206,6 +212,12 @@ render_comment() {
       if (artifact == "JavaScript" || artifact == "JavaScript (gzip)") {
         return "JavaScript bundle";
       }
+      if (index(artifact, "JavaScript package ") == 1) {
+        return "JavaScript from `" substr(artifact, 20) "`";
+      }
+      if (artifact == "JavaScript unattributed") {
+        return "JavaScript bundler glue (unattributed)";
+      }
       if (artifact == "npm tarball") {
         return "npm package (`.tgz`)";
       }
@@ -216,7 +228,7 @@ render_comment() {
     }
 
     function compression(artifact) {
-      if (artifact == "JavaScript") return "Uncompressed";
+      if (artifact == "JavaScript" || index(artifact, "JavaScript package ") == 1 || artifact == "JavaScript unattributed") return "Uncompressed";
       if (artifact == "JavaScript (gzip)" || artifact == "npm tarball") return "gzip";
       if (artifact == "release AAR") return "ZIP";
       return "Unspecified";
@@ -382,7 +394,7 @@ render_comment() {
       print "";
       print "<details><summary>How sizes are measured</summary>";
       print "";
-      print "_Measured from the PR base SHA and PR head SHA. Web bundle rows sum shipped `.js`, `.mjs`, and `.cjs` files under `dist/`, excluding source maps and declarations. The gzip bundle size sums files compressed individually with `gzip -n -9`. npm package sizes are gzip-compressed `.tgz` archives; Android AAR sizes are ZIP archives. Package sizes are not final app binary sizes._";
+      print "_Measured from the PR base SHA and PR head SHA. Web bundle rows sum shipped `.js`, `.mjs`, and `.cjs` files under `dist/`, excluding source maps and declarations. Per-package JavaScript rows split those same uncompressed bytes by the npm package that owns each source file, using the bundle source maps; unmapped bundler glue is unattributed, and the rows sum to the uncompressed bundle. The gzip bundle size sums files compressed individually with `gzip -n -9`. npm package sizes are gzip-compressed `.tgz` archives; Android AAR sizes are ZIP archives. Package sizes are not final app binary sizes._";
       print "";
       print "</details>";
     }
