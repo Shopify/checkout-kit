@@ -203,6 +203,9 @@
         "usr": "s:18ShopifyCheckoutKit9configureyyyAA13ConfigurationVzXEF",
         "mangledName": "$s18ShopifyCheckoutKit9configureyyyAA13ConfigurationVzXEF",
         "moduleName": "ShopifyCheckoutKit",
+        "declAttributes": [
+          "Custom"
+        ],
         "funcSelfKind": "NonMutating"
       },
       {
@@ -6277,48 +6280,6 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(checkout:delegate:)",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "CheckoutViewController",
-                "printedName": "ShopifyCheckoutKit.CheckoutViewController",
-                "usr": "c:@M@ShopifyCheckoutKit@objc(cs)CheckoutViewController"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "URL",
-                "printedName": "Foundation.URL",
-                "usr": "s:10Foundation3URLV"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Optional",
-                "printedName": "(any ShopifyCheckoutKit.CheckoutDelegate)?",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "CheckoutDelegate",
-                    "printedName": "any ShopifyCheckoutKit.CheckoutDelegate",
-                    "usr": "s:18ShopifyCheckoutKit0B8DelegateP"
-                  }
-                ],
-                "hasDefaultArg": true,
-                "usr": "s:Sq"
-              }
-            ],
-            "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegateAC10Foundation3URLV_AA0B8Delegate_pSgtcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegateAC10Foundation3URLV_AA0B8Delegate_pSgtcfc",
-            "moduleName": "ShopifyCheckoutKit",
-            "declAttributes": [
-              "Custom"
-            ],
-            "init_kind": "Convenience"
-          },
-          {
-            "kind": "Constructor",
-            "name": "init",
             "printedName": "init(checkout:configuration:delegate:client:entryPoint:)",
             "children": [
               {
@@ -6395,6 +6356,48 @@
               "Custom"
             ],
             "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(checkout:delegate:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CheckoutViewController",
+                "printedName": "ShopifyCheckoutKit.CheckoutViewController",
+                "usr": "c:@M@ShopifyCheckoutKit@objc(cs)CheckoutViewController"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "URL",
+                "printedName": "Foundation.URL",
+                "usr": "s:10Foundation3URLV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "(any ShopifyCheckoutKit.CheckoutDelegate)?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutDelegate",
+                    "printedName": "any ShopifyCheckoutKit.CheckoutDelegate",
+                    "usr": "s:18ShopifyCheckoutKit0B8DelegateP"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegateAC10Foundation3URLV_AA0B8Delegate_pSgtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B14ViewControllerC8checkout8delegateAC10Foundation3URLV_AA0B8Delegate_pSgtcfc",
+            "moduleName": "ShopifyCheckoutKit",
+            "declAttributes": [
+              "Custom"
+            ],
+            "init_kind": "Convenience"
           },
           {
             "kind": "Constructor",
@@ -11676,29 +11679,6 @@
             "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvg",
             "moduleName": "ShopifyCheckoutKit",
             "accessorKind": "get"
-          },
-          {
-            "kind": "Accessor",
-            "name": "Set",
-            "printedName": "Set()",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "Void",
-                "printedName": "()"
-              },
-              {
-                "kind": "TypeNominal",
-                "name": "Configuration",
-                "printedName": "ShopifyCheckoutKit.Configuration",
-                "usr": "s:18ShopifyCheckoutKit13ConfigurationV"
-              }
-            ],
-            "declKind": "Accessor",
-            "usr": "s:18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
-            "mangledName": "$s18ShopifyCheckoutKit13configurationAA13ConfigurationVvs",
-            "moduleName": "ShopifyCheckoutKit",
-            "accessorKind": "set"
           }
         ]
       }

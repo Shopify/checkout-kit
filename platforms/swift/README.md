@@ -227,8 +227,7 @@ Clear unused preloaded checkout work with `invalidate`:
 ShopifyCheckoutKit.invalidate()
 ```
 
-Updating configuration through `ShopifyCheckoutKit.configure {}` or a direct
-mutation such as `ShopifyCheckoutKit.configuration.title = "Checkout"` triggers
+Updating configuration through `ShopifyCheckoutKit.configure {}` triggers
 `ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a
 stale checkout. If a preload may already have run when configuration changes,
 call `preload` again.
@@ -243,7 +242,7 @@ ShopifyCheckoutKit.configure {
 
 ## Configure checkout
 
-Configure global presentation defaults before presenting checkout:
+Configure global presentation defaults before presenting checkout. `ShopifyCheckoutKit.configuration` is read-only; `configure {}` is the only way to change it and must be called on the main actor:
 
 ```swift
 import ShopifyCheckoutKit
@@ -589,7 +588,7 @@ Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and 
 
 ## Troubleshooting
 
-- Use `ShopifyCheckoutKit.configuration.logLevel = .debug` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
+- Use `ShopifyCheckoutKit.configure { $0.logLevel = .debug }` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
 - If checkout reports an expired, completed, or invalid cart, create a new cart and use its `checkoutUrl`.
 - If Apple Pay dismisses immediately, verify the merchant ID, entitlements, payment processing certificate, and device wallet setup.
 - If Universal Links do not open the app, verify the associated domain entitlement and the `/.well-known/apple-app-site-association` file on your custom storefront domain.

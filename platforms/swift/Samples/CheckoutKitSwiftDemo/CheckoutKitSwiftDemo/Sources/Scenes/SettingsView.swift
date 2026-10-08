@@ -140,10 +140,11 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selectedAppearance = option.appearance
-                            ShopifyCheckoutKit.configuration.appearance = option.appearance
-                            ShopifyCheckoutKit.configuration.tintColor = option.appearance.colorScheme.tintColor
-                            ShopifyCheckoutKit.configuration.backgroundColor =
-                                option.appearance.colorScheme.backgroundColor
+                            ShopifyCheckoutKit.configure {
+                                $0.appearance = option.appearance
+                                $0.tintColor = option.appearance.colorScheme.tintColor
+                                $0.backgroundColor = option.appearance.colorScheme.backgroundColor
+                            }
                             NotificationCenter.default.post(
                                 name: .colorSchemeChanged, object: nil
                             )
