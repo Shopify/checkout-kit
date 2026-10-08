@@ -652,12 +652,14 @@ workflows:
           inputs:
             - mintfile_dir: platforms/swift
       - script@1:
-          title: Install the pinned Maestro CLI
+          title: Install Maestro and report tooling
           timeout: 600
           inputs:
             - content: |-
                 set -euo pipefail
                 ./scripts/install_maestro
+                gem install rexml --version 3.4.4 --user-install --no-document
+                ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
       - script@1:
           title: Build and run the Swift Maestro suite on the simulator
           timeout: 5400
