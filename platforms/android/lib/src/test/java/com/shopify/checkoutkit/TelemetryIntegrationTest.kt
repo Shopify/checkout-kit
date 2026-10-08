@@ -285,6 +285,25 @@ class TelemetryIntegrationTest {
     }
 
     @Test
+    fun `each navigation gets fresh timing and reports completion only once`() {
+        val view = CheckoutWebView(activity, FakeWebMessageTransport())
+        val client = view.CheckoutWebViewClient()
+        for (preloaded in listOf(true, false)) {
+            view.loadCheckout("https://checkout.example/checkouts/timing", isPreload = preloaded)
+            shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+            val url = requireNotNull(shadowOf(view).lastLoadedUrl)
+            client.onPageFinished(view, url)
+            client.onPageFinished(view, url)
+        }
+
+        assertThat(recorder.durations.map { it.preloaded }).containsExactly(true, false)
+        assertThat(recorder.durations.map { it.result })
+            .containsOnly(TelemetryNavigationDurationResult.Success)
+        assertThat(recorder.durations.map { it.milliseconds }).allMatch { it >= 0.0 }
+        view.destroy()
+    }
+
+    @Test
     fun `maps a missing error code to unknown`() {
         assertThat(CheckoutTelemetry.errorCode(null))
             .isEqualTo(TelemetryErrorCode.Unknown)

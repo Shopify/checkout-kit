@@ -427,7 +427,7 @@ private sealed interface AttributeValue {
     data class BooleanValue(val value: Boolean) : AttributeValue
 }
 
-private data class Measurement(
+private class Measurement(
     val type: MeasurementType,
     val name: String,
     val value: Double,

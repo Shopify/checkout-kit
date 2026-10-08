@@ -63,6 +63,21 @@ class CheckoutMessageIngressPolicyTest {
             )
     }
 
+    @Test
+    fun `repeated origins still check the frame of each message`() {
+        val origin = "https://checkout.example.com"
+        val policy = CheckoutMessageIngressPolicy(setOf(origin), origin)
+        val messages = listOf(message(origin), message(origin, isMainFrame = false), message(origin))
+
+        assertThat(messages.map(policy::evaluate)).containsExactly(
+            CheckoutMessageIngressPolicy.Decision.Accepted,
+            CheckoutMessageIngressPolicy.Decision.Rejected(
+                CheckoutMessageRejection(origin, CheckoutMessageRejection.Reason.CHILD_FRAME),
+            ),
+            CheckoutMessageIngressPolicy.Decision.Accepted,
+        )
+    }
+
     private fun message(origin: String, isMainFrame: Boolean = true): IncomingCheckoutMessage =
         IncomingCheckoutMessage(origin = origin, isMainFrame = isMainFrame)
 }

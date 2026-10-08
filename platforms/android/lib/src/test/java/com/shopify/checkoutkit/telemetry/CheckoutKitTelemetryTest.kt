@@ -60,6 +60,39 @@ class CheckoutKitTelemetryTest {
     }
 
     @Test
+    fun `uses custom exporter configuration without dropping its capacity limit`() {
+        val request = RecordedRequest()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        try {
+            val telemetry = OtlpExporter(
+                configuration = CheckoutKitTelemetryConfiguration(
+                    sdkVersion = "9.8.7",
+                    endpoint = "https://telemetry.example/metrics",
+                    exportIntervalMillis = 0,
+                    maxPendingMeasurements = 1,
+                ),
+                transport = TelemetryTransport { endpoint, body ->
+                    request.endpoint = endpoint
+                    request.body = body
+                    true
+                },
+                executor = executor,
+            )
+            repeat(2) {
+                telemetry.recordNavigationDuration(
+                    TelemetryNavigationDurationMetric(100.0, TelemetryNavigationDurationResult.Success, false),
+                )
+            }
+
+            assertThat(flush(telemetry)).isTrue()
+            assertThat(request.endpoint).isEqualTo("https://telemetry.example/metrics")
+            assertThat(request.body).contains("\"count\":\"1\"", "\"sum\":100.0", "\"version\":\"9.8.7\"")
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun `bounds pending measurements and isolates export failure`() {
         val executor = Executors.newSingleThreadScheduledExecutor()
         val exportAttempts = AtomicInteger()
@@ -103,7 +136,7 @@ class CheckoutKitTelemetryTest {
     }
 
     @Test
-    fun `records finite non-negative durations only`() {
+    fun `records repeated finite durations without deduplicating measurements`() {
         val request = RecordedRequest()
         val executor = Executors.newSingleThreadScheduledExecutor()
         val telemetry = OtlpExporter(
@@ -119,12 +152,14 @@ class CheckoutKitTelemetryTest {
         telemetry.recordNavigationDuration(
             TelemetryNavigationDurationMetric(Double.NaN, TelemetryNavigationDurationResult.Failure, false),
         )
-        telemetry.recordNavigationDuration(
-            TelemetryNavigationDurationMetric(450.0, TelemetryNavigationDurationResult.Success, false),
-        )
+        repeat(2) {
+            telemetry.recordNavigationDuration(
+                TelemetryNavigationDurationMetric(450.0, TelemetryNavigationDurationResult.Success, false),
+            )
+        }
 
         assertThat(flush(telemetry)).isTrue()
-        assertThat(request.body).contains("\"count\":\"1\"", "\"sum\":450.0")
+        assertThat(request.body).contains("\"count\":\"2\"", "\"sum\":900.0")
         executor.shutdownNow()
     }
 

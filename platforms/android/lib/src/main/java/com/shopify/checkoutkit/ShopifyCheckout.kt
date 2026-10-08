@@ -384,7 +384,7 @@ public class ShopifyCheckout @MainThread internal constructor(
 private fun Context.isDarkTheme(): Boolean =
     resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
 
-internal data class CheckoutHostConfiguration(
+internal class CheckoutHostConfiguration(
     val listener: CheckoutListener,
     val protocolClient: CheckoutProtocol.Client?,
     val onDismissRequest: () -> Unit,
