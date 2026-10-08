@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Install a CI-built app and run its matrix-selected flows on this worker.
+set -euo pipefail
+
+target="${1:?target is required}"
+app_path="${2:?built app path is required}"
+case "$target" in
+  kotlin-android|react-native-android)
+    export E2E_DEVICE_ID="${BITRISE_EMULATOR_SERIAL:?Android emulator must be booted}"
+    adb -s "$E2E_DEVICE_ID" install -r "$app_path"
+    ;;
+  react-native-ios)
+    export E2E_DEVICE_ID="${CURRENT_SIMULATOR_UUID:?iOS simulator must be booted}"
+    xcrun simctl install "$E2E_DEVICE_ID" "$app_path"
+    ;;
+  *) echo "Unsupported prebuilt E2E target: $target" >&2; exit 1 ;;
+esac
+
+exec "$(dirname "$0")/run_local_e2e" "$target" --skip-build
