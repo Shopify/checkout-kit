@@ -39,7 +39,8 @@ results to Bitrise's **Tests** tab, and uploads the Maestro output directory as
 a compressed artifact. It sets `E2E_MAESTRO_TEST_RETRIES=1` to rerun only failed
 flows once, matching the BrowserStack retry policy. Tests that recover are named
 `(passed on retry 1)` in the Tests tab; the artifact retains each attempt's JUnit
-report and Maestro diagnostics. Local runs still default to no whole-flow retries.
+report and Maestro diagnostics. The workflow installs pinned REXML 3.4.4 for
+report merging. Local runs still default to no whole-flow retries.
 
 Select this workflow and the PR branch in Bitrise's **Start build** screen.
 It has no automatic triggers and does not participate in the required E2E pipeline.
