@@ -673,8 +673,8 @@ workflows:
           is_always_run: true
           inputs:
             - test_name: Swift Maestro smoke
-            - base_path: "$HOME/.maestro/tests"
-            - search_pattern: maestro-junit.xml
+            - base_path: "$HOME/.maestro/tests/maestro-junit.xml"
+            - search_pattern: "*"
       - deploy-to-bitrise-io@2:
           is_always_run: true
           inputs:
