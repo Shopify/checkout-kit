@@ -203,12 +203,44 @@ const SHADOW_TEMPLATE = createTemplate(html`
  * document.body.append(checkout);
  * checkout.open();
  * ```
+ *
+ * @tagname shopify-checkout
  */
 export class ShopifyCheckout
   extends HTMLElement
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
   static observedAttributes = ["src", "target", "appearance", "telemetry"] as const;
+
+  /**
+   * Registers the element and returns the class registered for `name`.
+   *
+   * `import "@shopify/checkout-kit/shopify-checkout"` registers `<shopify-checkout>` for you.
+   * Call this when importing from `@shopify/checkout-kit`, which registers nothing, or to use
+   * a custom tag name. A registry accepts each constructor only once, so every custom name gets
+   * its own subclass.
+   *
+   * Registering a name this class (or a subclass) already owns returns that class.
+   *
+   * @param name - The tag name. Defaults to `shopify-checkout`.
+   * @param registry - The registry to define the element in. Defaults to `customElements`.
+   * @throws {Error} If another element already owns `name`.
+   */
+  static register<T extends typeof ShopifyCheckout>(
+    this: T,
+    name: string = "shopify-checkout",
+    registry: CustomElementRegistry = customElements,
+  ): T {
+    const existing = registry.get(name);
+    if (existing !== undefined) {
+      if (existing === this || existing.prototype instanceof this) return existing as T;
+      throw new Error(`Cannot register <${name}>: another element already uses that name.`);
+    }
+    const element =
+      name === "shopify-checkout" ? this : class extends (this as typeof ShopifyCheckout) {};
+    registry.define(name, element);
+    return element as T;
+  }
 
   constructor() {
     super();

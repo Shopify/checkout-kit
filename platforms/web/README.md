@@ -94,9 +94,15 @@ import '@shopify/checkout-kit/shopify-checkout';
 ```
 
 Components use separate entry points within the same npm package. Import only
-the components you need. The existing root import (`@shopify/checkout-kit`)
-continues to register `<shopify-checkout>` for compatibility; it will not
-automatically register additional components.
+the components you need. The package root (`@shopify/checkout-kit`) exports the
+classes, events, and types without registering anything; see
+[manual registration](#manual-registration-and-custom-tag-names).
+
+> [!IMPORTANT]
+> `import '@shopify/checkout-kit'` no longer registers `<shopify-checkout>`.
+> Import `@shopify/checkout-kit/shopify-checkout` instead, or call
+> `ShopifyCheckout.register()`. Without either, `<shopify-checkout>` elements
+> stay unregistered and checkout won't open.
 
 Then render the element anywhere in your HTML and call `open()` to present
 checkout:
@@ -149,17 +155,46 @@ checkout.open();
 checkout.close();
 ```
 
-The `ShopifyCheckout` class is also exported directly when you need the
-constructor. This existing root import also registers `<shopify-checkout>`
-with `customElements`:
+## Manual registration and custom tag names
+
+The package root exports the `ShopifyCheckout` class without registering it.
+Call `ShopifyCheckout.register()` to register `<shopify-checkout>` yourself, for
+example to control when registration happens:
 
 ```ts
 import {ShopifyCheckout} from '@shopify/checkout-kit';
+
+ShopifyCheckout.register();
 
 const checkout = new ShopifyCheckout();
 checkout.src = 'https://your-store.myshopify.com/checkouts/cn/abc123';
 document.body.append(checkout);
 ```
+
+Pass a tag name to register the element under a different name. `register()`
+returns the registered class: each custom name gets its own subclass of
+`ShopifyCheckout`, because the browser accepts each constructor only once.
+
+```ts
+import {ShopifyCheckout} from '@shopify/checkout-kit';
+
+const AcmeCheckout = ShopifyCheckout.register('acme-checkout');
+
+const checkout = document.querySelector('acme-checkout') as InstanceType<typeof AcmeCheckout>;
+checkout.open();
+```
+
+- Calling `register()` again for a name this class already registered returns
+  the existing class, so it's safe to call more than once.
+- It throws if another element already uses the name, including a separate copy
+  of Checkout Kit. The component entry instead leaves an existing
+  `<shopify-checkout>` in place, so loading Checkout Kit twice doesn't fail.
+- Importing `@shopify/checkout-kit/shopify-checkout` registers
+  `<shopify-checkout>`. It also works alongside custom names: the page then has
+  both tags.
+- TypeScript only knows the default tag: `document.createElement('shopify-checkout')`
+  returns a `ShopifyCheckout`. Custom tags return a plain `HTMLElement`, so use
+  the class `register()` returns or a cast.
 
 ## Usage with other frameworks
 
@@ -244,11 +279,10 @@ declare module 'react' {
 > the `react` module.
 
 > [!NOTE]
-> The `import '@shopify/checkout-kit/shopify-checkout'` side effect registers the element with
-> `customElements` and touches browser-only globals, so it must run on the
-> client. In server-rendered frameworks (Next.js, Remix), keep the import and
-> the component in a client component — e.g. add `'use client'` to the top of
-> the file.
+> Both `import '@shopify/checkout-kit/shopify-checkout'` and the package root
+> touch browser-only globals when they load, so they must run on the client. In
+> server-rendered frameworks (Next.js, Remix), keep the import and the component
+> in a client component — e.g. add `'use client'` to the top of the file.
 
 ## Usage with the Shopify Storefront API
 
@@ -630,6 +664,9 @@ element. Import files directly rather than adding component barrel files.
 
 New components such as `accelerated-checkouts`, `universal-checkout`, and
 `shop-wallet` should follow the same layout when added. Shared models and helpers
-stay outside component directories. `src/index.ts` remains the public npm entry
-for `@shopify/checkout-kit`. Expose each component through its own package subpath
-pointing to `register.ts`; do not add every component registration to the root entry.
+stay outside component directories. `src/index.ts` is the public npm entry
+for `@shopify/checkout-kit`: it exports classes, events, and types, and must not
+register elements. Expose each component through its own package subpath
+pointing to `register.ts`, which registers the element through the class's static
+`register()`. Add `@tagname` to the class so the custom elements manifest maps the
+tag to it, and list the component entry in `sideEffects`.

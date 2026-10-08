@@ -30,18 +30,82 @@ describe("npm component entry points", () => {
     return fixture;
   }
 
+  const importRoot = `import { ShopifyCheckout } from ${JSON.stringify(rootEntry)};`;
+  const importComponent = `import ${JSON.stringify(componentEntry)};`;
+
   it.each([
-    { name: "component subpath", entries: [componentEntry] },
-    { name: "legacy root", entries: [rootEntry] },
-    { name: "component followed by root", entries: [componentEntry, rootEntry] },
-    { name: "root followed by component", entries: [rootEntry, componentEntry] },
-  ])("preserves registration after consumer bundling: $name", async ({ entries }) => {
+    {
+      name: "component import",
+      source: importComponent,
+      registered: ["shopify-checkout"],
+      root: false,
+    },
+    {
+      name: "root import alone registers nothing",
+      source: `${importRoot}\nglobalThis.checkoutClass = ShopifyCheckout;`,
+      registered: [],
+      root: true,
+    },
+    {
+      name: "root import then register()",
+      source: `${importRoot}\nShopifyCheckout.register();`,
+      registered: ["shopify-checkout"],
+      root: true,
+    },
+    {
+      name: "root import then a custom tag name",
+      source: `${importRoot}\nShopifyCheckout.register("acme-checkout");`,
+      registered: ["acme-checkout"],
+      root: true,
+    },
+    {
+      name: "component import then a custom tag name",
+      source: `${importComponent}\n${importRoot}\nShopifyCheckout.register("acme-checkout");`,
+      registered: ["shopify-checkout", "acme-checkout"],
+      root: true,
+    },
+    {
+      name: "root import followed by component import",
+      source: `${importRoot}\n${importComponent}\nShopifyCheckout.register();`,
+      registered: ["shopify-checkout"],
+      root: true,
+    },
+  ])("registers after consumer bundling: $name", async ({ source, registered, root }) => {
+    const { window, modules } = await bundleAndRun(source);
+    try {
+      const tags = ["shopify-checkout", "acme-checkout"];
+      expect(
+        Object.fromEntries(tags.map((tag) => [tag, Boolean(window.customElements.get(tag))])),
+      ).toEqual(Object.fromEntries(tags.map((tag) => [tag, registered.includes(tag)])));
+      for (const tag of registered) {
+        const element = window.document.createElement(tag);
+        expect(typeof (element as unknown as { open: unknown }).open).toBe("function");
+      }
+      // Component consumers must not go through the umbrella entry.
+      expect(modules.some((id) => id.endsWith("/dist/index.js"))).toBe(root);
+    } finally {
+      await window.happyDOM.close();
+    }
+  });
+
+  it("leaves an existing <shopify-checkout> in place when the component entry loads", async () => {
+    // For example a second copy of Checkout Kit, such as the CDN loader alongside a bundle.
+    const { window } = await bundleAndRun(
+      importComponent,
+      'customElements.define("shopify-checkout", class Existing extends HTMLElement {});',
+    );
+    try {
+      expect(window.customElements.get("shopify-checkout")?.name).toBe("Existing");
+    } finally {
+      await window.happyDOM.close();
+    }
+  });
+
+  // Bundles `source` as a consumer would, then evaluates it in a fresh window after `prelude`.
+  async function bundleAndRun(source: string, prelude = "") {
     const fixture = await createConsumer();
     const entry = join(fixture, "main.js");
-    await writeFile(
-      entry,
-      entries.map((specifier) => `import ${JSON.stringify(specifier)};`).join("\n"),
-    );
+    await writeFile(entry, source);
 
     const modules: string[] = [];
     const result = await build({
@@ -68,23 +132,15 @@ describe("npm component entry points", () => {
         suppressInsecureJavaScriptEnvironmentWarning: true,
       },
     });
-    try {
-      for (const bundle of [result].flat()) {
-        if (!("output" in bundle)) continue;
-        for (const output of bundle.output) {
-          if (output.type !== "chunk") continue;
-          window.eval(output.code);
-        }
+    if (prelude) window.eval(prelude);
+    for (const bundle of [result].flat()) {
+      if (!("output" in bundle)) continue;
+      for (const output of bundle.output) {
+        if (output.type === "chunk") window.eval(output.code);
       }
-      expect(window.customElements.get("shopify-checkout")).toBeDefined();
-      const element = window.document.createElement("shopify-checkout");
-      expect(typeof (element as unknown as { open: unknown }).open).toBe("function");
-      // Component consumers must not go through the umbrella entry.
-      expect(modules.some((id) => id.endsWith("/dist/index.js"))).toBe(entries.includes(rootEntry));
-    } finally {
-      await window.happyDOM.close();
     }
-  });
+    return { window, modules };
+  }
 
   it.each([
     {

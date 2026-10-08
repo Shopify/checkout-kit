@@ -23,7 +23,7 @@ describe("@shopify/checkout-kit public entry", () => {
     }
   });
 
-  it("registers <shopify-checkout> as a side effect of importing the entry", () => {
-    expect(customElements.get("shopify-checkout")).toBe(pkg.ShopifyCheckout);
+  it("does not register any element when imported", () => {
+    expect(customElements.get("shopify-checkout")).toBeUndefined();
   });
 });

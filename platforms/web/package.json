@@ -37,11 +37,8 @@
     "./package.json": "./package.json"
   },
   "sideEffects": [
-    "./src/index.ts",
     "./src/components/shopify-checkout/register.ts",
-    "./dist/index.js",
-    "./dist/shopify-checkout.js",
-    "./dist/chunks/*.js"
+    "./dist/shopify-checkout.js"
   ],
   "files": [
     "LICENSE",
