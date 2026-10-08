@@ -825,7 +825,12 @@ until dismissal or failure. Calling `dismiss()` also delivers `onDismiss`.
 
 Repeated `present()` calls while a checkout session is active are ignored,
 including calls from another `ShopifyCheckout` instance. The original checkout
-and callbacks remain active. `teardown()` stops consumer callbacks and cancels
+and callbacks remain active. Calls made while the previous sheet is closing are
+also ignored, without firing callbacks for the ignored attempt. `onDismiss` and
+`onFail` can run before the closing animation finishes, so presenting from those
+callbacks is not guaranteed to open another checkout.
+
+`teardown()` stops consumer callbacks and cancels
 pending geolocation responses without dismissing the sheet; another checkout
 can be presented once the native session ends.
 

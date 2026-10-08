@@ -175,6 +175,7 @@ describe('useShopifyCheckout', () => {
 
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      expect.any(Function),
     );
   });
 
@@ -203,6 +204,7 @@ describe('useShopifyCheckout', () => {
     );
     expect(NativeModules.ShopifyCheckoutKit.present).toHaveBeenCalledWith(
       checkoutUrl,
+      expect.any(Function),
     );
   });
 

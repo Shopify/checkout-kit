@@ -314,7 +314,8 @@ export interface ShopifyCheckoutKit {
    * @param checkoutURL The URL of the checkout to display.
    * @param callbacks Lifecycle callbacks. Callbacks remain
    * active until dismissal or failure, including after completion. Repeated calls
-   * while a checkout session is active are ignored, including across instances.
+   * while checkout is active or closing are ignored, including across instances.
+   * Ignored attempts do not fire callbacks.
    */
   present(checkoutURL: string, callbacks?: PresentCallbacks): void;
   /**

@@ -411,7 +411,7 @@ describe('ShopifyCheckoutKit', () => {
 
     it('presents checkout without a session ID', () => {
       new ShopifyCheckout().present(checkoutUrl);
-      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
     });
 
     it('keeps a reentrant presentation subscribed when the first present throws', () => {
@@ -437,6 +437,40 @@ describe('ShopifyCheckoutKit', () => {
       expect(secondSubscription.remove).not.toHaveBeenCalled();
       lastDispatch()(JSON.stringify({type: 'dismiss'}));
       expect(secondDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('silently releases an attempt ignored by native and allows a later attempt', () => {
+      const remove = jest.fn();
+      NativeModule.onDispatch.mockReturnValueOnce({remove});
+      const instance = new ShopifyCheckout();
+      const onDismiss = jest.fn();
+      const onFail = jest.fn();
+      instance.present(checkoutUrl, {onDismiss, onFail});
+      const rejectedDispatch = lastDispatch();
+      NativeModule.present.mock.calls[0][1](false);
+      expect(remove).toHaveBeenCalledTimes(1);
+      expect(onDismiss).not.toHaveBeenCalled();
+      expect(onFail).not.toHaveBeenCalled();
+
+      instance.present(checkoutUrl, {onDismiss});
+      expect(NativeModule.present).toHaveBeenCalledTimes(2);
+      NativeModule.present.mock.calls[1][1](true);
+      rejectedDispatch(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not release a newer session when an old result arrives late', () => {
+      const instance = new ShopifyCheckout();
+      instance.present(checkoutUrl);
+      const firstResult = NativeModule.present.mock.calls[0][1];
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      const onDismiss = jest.fn();
+      instance.present(checkoutUrl, {onDismiss});
+      firstResult(false);
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
     it('delivers snapshots and keeps completion separate from dismissal', () => {
@@ -546,7 +580,7 @@ describe('ShopifyCheckoutKit', () => {
     });
 
     it.each(['dismiss', 'fail'])(
-      'allows presenting again inside the %s callback',
+      'keeps an accepted presentation from the %s callback subscribed',
       type => {
         const instance = new ShopifyCheckout();
         const nextRemove = jest.fn();
@@ -714,7 +748,7 @@ describe('ShopifyCheckoutKit', () => {
       it('subscribes to dispatch events when the default handler is enabled, even without callbacks', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
         expect(NativeModule.onDispatch).toHaveBeenCalledWith(
           expect.any(Function),
         );
@@ -725,7 +759,7 @@ describe('ShopifyCheckoutKit', () => {
           handleGeolocationRequests: false,
         });
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -912,7 +946,7 @@ describe('ShopifyCheckoutKit', () => {
       it('presents with the default link policy on iOS', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl);
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

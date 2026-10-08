@@ -6,6 +6,7 @@ import android.webkit.GeolocationPermissions;
 import androidx.activity.ComponentActivity;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.JavaOnlyArray;
 import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.Promise;
@@ -57,6 +58,8 @@ public class ShopifyCheckoutKitModuleTest {
   private ReactApplicationContext mockReactContext;
   @Mock
   private ComponentActivity mockComponentActivity;
+  @Mock
+  private Callback presentationResult;
   @Captor
   ArgumentCaptor<Runnable> runnableCaptor;
   @Captor
@@ -157,7 +160,7 @@ public class ShopifyCheckoutKitModuleTest {
       String checkoutUrl = "https://shopify.com";
       mockedShopifyCheckoutKit.when(() -> ShopifyCheckoutKit.present(
           eq(checkoutUrl), any(), any())).thenReturn(mock(CheckoutHandle.class));
-      shopifyCheckoutKitModule.present(checkoutUrl);
+      shopifyCheckoutKitModule.present(checkoutUrl, presentationResult);
 
       verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
       runnableCaptor.getValue().run();
@@ -178,9 +181,9 @@ public class ShopifyCheckoutKitModuleTest {
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
       nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(sheet);
-      shopifyCheckoutKitModule.present("https://example.test/first");
+      shopifyCheckoutKitModule.present("https://example.test/first", presentationResult);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(eq("https://example.test/first"), eq(mockComponentActivity), listeners.capture()));
-      shopifyCheckoutKitModule.present("https://example.test/second");
+      shopifyCheckoutKitModule.present("https://example.test/second", presentationResult);
       nativeKit.verifyNoMoreInteractions();
       listeners.getValue().onCheckoutDismissed();
       assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
@@ -211,7 +214,7 @@ public class ShopifyCheckoutKitModuleTest {
       nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, secondSheet);
 
-      shopifyCheckoutKitModule.present("https://example.com/first");
+      shopifyCheckoutKitModule.present("https://example.com/first", presentationResult);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       CustomCheckoutListener firstListener = listeners.getValue();
@@ -229,7 +232,7 @@ public class ShopifyCheckoutKitModuleTest {
       shopifyCheckoutKitModule.dismiss();
       shadowOf(Looper.getMainLooper()).idle();
       when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
-      shopifyCheckoutKitModule.present("https://example.com/second");
+      shopifyCheckoutKitModule.present("https://example.com/second", presentationResult);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/second"), eq(mockComponentActivity), listeners.capture()));
       assertThat(listeners.getValue().isReleased()).isFalse();
@@ -242,21 +245,21 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testCanPresentFromDismissCallbackWhilePreviousSheetIsClosing() {
-    assertCanPresentFromTerminalCallback(false, false);
+  public void testPresentFromDismissCallbackIsIgnoredWhileClosing() {
+    assertPresentWhileClosingIsIgnored("programmatic");
   }
 
   @Test
-  public void testCanPresentFromFailCallbackWhilePreviousSheetIsClosing() {
-    assertCanPresentFromTerminalCallback(true, false);
+  public void testPresentFromFailCallbackIsIgnoredWhileClosing() {
+    assertPresentWhileClosingIsIgnored("fail");
   }
 
   @Test
-  public void testDismissCancelsPresentationWaitingForPreviousSheetToClose() {
-    assertCanPresentFromTerminalCallback(false, true);
+  public void testPresentFromBuyerDismissCallbackIsIgnoredWhileClosing() {
+    assertPresentWhileClosingIsIgnored("buyer");
   }
 
-  private void assertCanPresentFromTerminalCallback(boolean fail, boolean cancelPending) {
+  private void assertPresentWhileClosingIsIgnored(String terminal) {
     doAnswer(invocation -> {
       ((Runnable) invocation.getArgument(0)).run();
       return null;
@@ -266,92 +269,78 @@ public class ShopifyCheckoutKitModuleTest {
       CheckoutHandle firstSheet = mock(CheckoutHandle.class);
       CheckoutHandle secondSheet = mock(CheckoutHandle.class);
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
+      Callback ignoredResult = mock(Callback.class);
       nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, firstSheet, firstSheet, secondSheet);
-      shopifyCheckoutKitModule.present("https://example.com/first");
+      shopifyCheckoutKitModule.present("https://example.com/first", presentationResult);
+      verify(presentationResult).invoke(true);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       shopifyCheckoutKitModule.onDispatch = event -> {
         shopifyCheckoutKitModule.onDispatch = null;
-        shopifyCheckoutKitModule.present("https://example.com/second");
+        shopifyCheckoutKitModule.present("https://example.com/ignored", ignoredResult);
       };
 
-      if (fail) listeners.getValue().onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
+      if (terminal.equals("fail")) listeners.getValue().onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
+      else if (terminal.equals("buyer")) listeners.getValue().onCheckoutDismissed();
       else shopifyCheckoutKitModule.dismiss();
       shadowOf(Looper.getMainLooper()).idle();
-      if (cancelPending) shopifyCheckoutKitModule.dismiss();
-      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
-
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
-          eq("https://example.com/second"), eq(mockComponentActivity), listeners.capture()),
-          times(cancelPending ? 1 : 3));
-      CustomCheckoutListener secondListener = listeners.getValue();
-      assertThat(secondListener.isReleased()).isEqualTo(cancelPending);
-      if (!cancelPending) {
-        secondListener.onCheckoutDismissed();
-      }
+          eq("https://example.com/ignored"), eq(mockComponentActivity), listeners.capture()));
+      assertThat(listeners.getValue().isReleased()).isTrue();
+      verify(ignoredResult).invoke(false);
+
+      // Repeated explicit attempts still recognize the closing handle.
+      shopifyCheckoutKitModule.present("https://example.com/still-closing", ignoredResult);
+      verify(ignoredResult, times(2)).invoke(false);
+      nativeKit.clearInvocations();
+      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
+      nativeKit.verifyNoInteractions();
+      assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
+
+      shopifyCheckoutKitModule.present("https://example.com/after-close", presentationResult);
+      verify(presentationResult, times(2)).invoke(true);
+      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+          eq("https://example.com/after-close"), eq(mockComponentActivity), listeners.capture()));
+      assertThat(listeners.getValue().isReleased()).isFalse();
+      listeners.getValue().onCheckoutDismissed();
       assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
-      assertThat(shopifyCheckoutKitModule.dispatchEvents.get(1))
-          .contains("\"type\":\"dismiss\"");
       verifyNoInteractions(secondSheet);
+    }
+  }
+
+  @Test
+  public void testSynchronousInitializationFailureStillEmitsFailure() {
+    doAnswer(invocation -> {
+      ((Runnable) invocation.getArgument(0)).run();
+      return null;
+    }).when(mockComponentActivity).runOnUiThread(any());
+    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+          .thenAnswer(invocation -> {
+            CustomCheckoutListener listener = invocation.getArgument(2);
+            listener.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
+            return null;
+          });
+      shopifyCheckoutKitModule.present("https://example.com/failing", presentationResult);
+      verify(presentationResult).invoke(true);
+      assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
+      assertThat(shopifyCheckoutKitModule.dispatchEvents.get(0)).contains("\"type\":\"fail\"");
     }
   }
 
   @Test
   public void testInvalidationCancelsQueuedPresentation() {
     try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
-      shopifyCheckoutKitModule.present("https://example.com/checkout");
+      shopifyCheckoutKitModule.present("https://example.com/checkout", presentationResult);
       verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
       shopifyCheckoutKitModule.invalidate();
       runnableCaptor.getValue().run();
       shadowOf(Looper.getMainLooper()).idle();
-      shopifyCheckoutKitModule.present("https://example.com/checkout");
+      shopifyCheckoutKitModule.present("https://example.com/checkout", presentationResult);
       nativeKit.verifyNoInteractions();
+      verify(presentationResult, times(2)).invoke(false);
       assertThat(shopifyCheckoutKitModule.dispatchEvents).isEmpty();
-    }
-  }
-
-  @Test
-  public void testStuckClosingHandleFailsOnceAndStopsRetrying() {
-    assertStopsWaitingForClosingHandle(false);
-  }
-
-  @Test
-  public void testInvalidationCancelsPendingPresentationRetry() {
-    assertStopsWaitingForClosingHandle(true);
-  }
-
-  private void assertStopsWaitingForClosingHandle(boolean invalidate) {
-    doAnswer(invocation -> {
-      ((Runnable) invocation.getArgument(0)).run();
-      return null;
-    }).when(mockComponentActivity).runOnUiThread(any());
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
-      CheckoutHandle closing = mock(CheckoutHandle.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
-          .thenReturn(closing);
-      shopifyCheckoutKitModule.present("https://example.com/first");
-      shopifyCheckoutKitModule.dismiss();
-      shadowOf(Looper.getMainLooper()).idle();
-      shopifyCheckoutKitModule.present("https://example.com/second");
-      if (invalidate) shopifyCheckoutKitModule.invalidate();
-      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
-      if (invalidate) {
-        assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
-      } else {
-        assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
-        assertThat(shopifyCheckoutKitModule.dispatchEvents.get(1))
-            .contains("\"type\":\"fail\"", "sdk_error");
-      }
-      nativeKit.clearInvocations();
-      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
-      nativeKit.verifyNoInteractions();
-      if (!invalidate) {
-        nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
-            .thenReturn(mock(CheckoutHandle.class));
-        shopifyCheckoutKitModule.present("https://example.com/third");
-        nativeKit.verify(() -> ShopifyCheckoutKit.present(eq("https://example.com/third"), eq(mockComponentActivity), any()));
-      }
     }
   }
 

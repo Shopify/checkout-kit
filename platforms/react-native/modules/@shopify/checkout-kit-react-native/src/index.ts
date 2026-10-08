@@ -165,7 +165,12 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     this.dispatchSubscription = subscription;
     ShopifyCheckout.activePresentation = this;
     try {
-      RNShopifyCheckoutKit.present(checkoutUrl);
+      RNShopifyCheckoutKit.present(checkoutUrl, accepted => {
+        // Native can ignore the attempt while the previous sheet is closing.
+        // Release only this attempt, without reporting a checkout dismissal.
+        if (!accepted && subscription)
+          this.releaseDispatchSubscription(subscription);
+      });
     } catch (error) {
       this.releaseDispatchSubscription(subscription);
       throw error;

@@ -114,10 +114,20 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func present(_ checkoutURL: String) {
+    @objc func present(_ checkoutURL: String, onResult: @escaping RCTResponseSenderBlock) {
         DispatchQueue.main.async {
-            // Preserve the active session, including a presentation waiting for dismissal.
-            guard self.checkoutEvents == nil else { return }
+            // Preserve the active session and ignore attempts during dismissal.
+            guard self.checkoutEvents == nil else {
+                onResult([false])
+                return
+            }
+            if let closing = self.closingCheckoutSheet,
+               closing.presentingViewController != nil || closing.isBeingDismissed || closing.isBeingPresented
+            {
+                onResult([false])
+                return
+            }
+            self.closingCheckoutSheet = nil
             let events = CheckoutEventBridge(dispatch: { [weak self] json in
                 self?.emitDispatchEvent(json)
             }, onTerminal: { [weak self] ended in
@@ -128,31 +138,14 @@ class RCTShopifyCheckoutKit: NSObject {
                 self.checkoutSheet = nil
             })
             self.checkoutEvents = events
-            self.presentWhenReady(checkoutURL, events: events, deadline: ProcessInfo.processInfo.systemUptime + 5)
-        }
-    }
-
-    @MainActor
-    private func presentWhenReady(_ checkoutURL: String, events: CheckoutEventBridge, deadline: TimeInterval) {
-        guard checkoutEvents === events else { return }
-        if let closing = closingCheckoutSheet,
-           closing.presentingViewController != nil || closing.isBeingDismissed || closing.isBeingPresented
-        {
-            guard ProcessInfo.processInfo.systemUptime < deadline else {
-                events.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Timed out waiting for the previous checkout to close")))
+            guard let url = URL(string: checkoutURL), let viewController = self.getCurrentViewController() else {
+                events.checkoutDidDismiss()
+                onResult([true])
                 return
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.016) { [weak self] in
-                self?.presentWhenReady(checkoutURL, events: events, deadline: deadline)
-            }
-            return
+            self.checkoutSheet = self.presentCheckout(url, from: viewController, delegate: events)
+            onResult([true])
         }
-        closingCheckoutSheet = nil
-        guard let url = URL(string: checkoutURL), let viewController = getCurrentViewController() else {
-            events.checkoutDidDismiss()
-            return
-        }
-        checkoutSheet = presentCheckout(url, from: viewController, delegate: events)
     }
 
     @MainActor
