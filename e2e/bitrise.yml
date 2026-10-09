@@ -184,6 +184,55 @@ step_bundles:
             - api_token: $SLACK_AUTH_TOKEN
             - channel: C069N25R7EH
           is_always_run: false
+  # Linux workers provide hardware acceleration for x86_64 Android emulators.
+  create-android-emulator:
+    steps:
+      - avd-manager@2:
+          inputs:
+            - api_level: "35"
+            - profile: pixel_7
+            - tag: google_apis
+            - abi: x86_64
+            - emulator_id: checkout-kit-e2e
+            - headless_mode: "yes"
+            - disable_animations: "yes"
+
+  install-maestro:
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &maestro_cli_cache_key |-
+                maestro-cli-{{ .OS }}-{{ .Arch }}-{{ checksum "e2e/.maestro-version" }}
+      - script@1:
+          title: Install Maestro and report tooling
+          timeout: 600
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./scripts/install_maestro --check || ./scripts/install_maestro
+                gem install rexml --version 3.4.4 --install-dir "$HOME/.maestro-report-gems" --no-document
+                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
+                ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
+                envman add --key GEM_PATH --value "$GEM_PATH"
+      - save-cache@1:
+          inputs:
+            - key: *maestro_cli_cache_key
+            - paths: ~/.maestro-versions
+
+  export-maestro-results:
+    steps:
+      - custom-test-results-export@1:
+          is_always_run: true
+          inputs:
+            - test_name: Maestro
+            - base_path: "$E2E_JUNIT_REPORT"
+            - search_pattern: "*"
+      - deploy-to-bitrise-io@2:
+          is_always_run: true
+          inputs:
+            - deploy_path: "$HOME/.maestro/tests"
+            - is_compress: "true"
+
   install-node-modules:
     steps:
       - restore-cache@3:
@@ -634,7 +683,8 @@ workflows:
   # Manual proof of concept: run the Swift Maestro suite on the Bitrise host.
   e2e-maestro-swift-ios:
     status_report_name: "ci/bitrise/maestro-swift-ios/<event_type>"
-    envs:
+    envs: &maestro_envs
+      - E2E_JUNIT_REPORT: "$HOME/.maestro/tests/maestro-junit.xml"
       - E2E_MAESTRO_TEST_RETRIES: "2"
       # Keep first-run notices out of the installer's exact version check.
       - MAESTRO_CLI_NO_ANALYTICS: "1"
@@ -649,16 +699,7 @@ workflows:
       - bundle::bootstrap-mint:
           inputs:
             - mintfile_dir: platforms/swift
-      - script@1:
-          title: Install Maestro and report tooling
-          timeout: 600
-          inputs:
-            - content: |-
-                set -euo pipefail
-                ./scripts/install_maestro
-                gem install rexml --version 3.4.4 --install-dir "$HOME/.maestro-report-gems" --no-document
-                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
-                ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
+      - bundle::install-maestro: {}
       - script@1:
           title: Build and run the Swift Maestro suite on the simulator
           timeout: 5400
@@ -668,20 +709,46 @@ workflows:
                 set -euo pipefail
                 source ./e2e/scripts/bitrise_ci_helpers
                 e2e_configure_storefront
-                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
-                export E2E_JUNIT_REPORT="$HOME/.maestro/tests/maestro-junit.xml"
                 ./e2e/scripts/run_local_e2e swift-ios
-      - custom-test-results-export@1:
-          is_always_run: true
+      - bundle::export-maestro-results: {}
+
+  e2e-maestro-kotlin-android:
+    status_report_name: "ci/bitrise/maestro-kotlin-android/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-android-emulator: {}
+      - bundle::install-maestro: {}
+      - restore-cache@3:
           inputs:
-            - test_name: Swift Maestro
-            - base_path: "$HOME/.maestro/tests/maestro-junit.xml"
-            - search_pattern: "*"
-      - deploy-to-bitrise-io@2:
-          is_always_run: true
+            - key: *kotlin_gradle_cache_key
+      - script@1:
+          title: Build the Kotlin E2E app
+          timeout: 3600
+          no_output_timeout: 1800
           inputs:
-            - deploy_path: "$HOME/.maestro/tests"
-            - is_compress: "true"
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/build_kotlin_android
+      - save-cache@1:
+          inputs:
+            - key: *kotlin_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - script@1:
+          title: Run the Kotlin Maestro suite on the emulator
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro kotlin-android "$E2E_KOTLIN_ANDROID_APP_PATH"
+      - bundle::export-maestro-results: {}
 
   e2e-build-swift-ios:
     meta:

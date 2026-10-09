@@ -45,6 +45,22 @@ report merging. Local runs still default to no whole-flow retries.
 Select this workflow and the PR branch in Bitrise's **Start build** screen.
 It has no automatic triggers and does not participate in the required E2E pipeline.
 
+The pinned Maestro distribution is cached by OS, architecture, and the checksum
+of `e2e/.maestro-version`. Each run verifies the restored CLI version before
+using it and installs the pin if the cache is absent or invalid.
+
+## Direct Maestro Android workflow
+
+The manual `e2e-maestro-kotlin-android` workflow builds the Kotlin sample and runs
+all five enabled flows on a Linux worker with a Pixel 7 x86_64 emulator running
+Android API 35. It shares Maestro installation, two failed-flow retries, JUnit
+export, and diagnostic artifacts with the Swift workflow. The existing
+`EJSON_PRIVATE_KEY` secret configures the test storefront.
+
+`run_bitrise_maestro` installs the built app on the workflow's selected device.
+It calls `run_local_e2e --skip-build` to keep matrix selection in one place and
+avoid rebuilding the app or starting Metro for a packaged React Native app.
+
 ## Pipeline
 
 The `e2e-browserstack` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
