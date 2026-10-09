@@ -12,6 +12,8 @@
 
 **Checkout Kit for Swift** lets iOS apps present Shopify checkout in a native sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods. The Swift package also includes `ShopifyAcceleratedCheckouts`, a SwiftUI library for rendering Shop Pay and Apple Pay buttons on iOS 16+.
 
+Browse the [Swift API reference](https://shopify.github.io/checkout-kit/) for both SDK modules.
+
 - [Requirements](#requirements)
 - [Install](#install)
   - [Swift Package Manager](#swift-package-manager)
@@ -595,6 +597,42 @@ See [Samples](Samples/README.md):
 ## Contributing
 
 See [CONTRIBUTING](../../.github/CONTRIBUTING.md).
+
+### API reference
+
+The [Swift API reference](https://shopify.github.io/checkout-kit/) covers
+`ShopifyCheckoutKit` and `ShopifyAcceleratedCheckouts`. It is generated from the
+most recently published Swift release, including prereleases, rather than `main`.
+Each deployment replaces the previous reference; versioned documentation is not
+retained.
+
+Build the same DocC site locally with Xcode 26.2:
+
+```sh
+dev swift docs
+```
+
+The generated site is written to `.build/swift-docs/site`, with `checkout-kit` as
+the hosting base path. To preview it at the root of a local web server:
+
+```sh
+dev swift docs ''
+python3 -m http.server 8000 --directory .build/swift-docs/site
+```
+
+Open `http://localhost:8000` to browse both modules. Generated files stay in
+`.build` and are uploaded as a Pages artifact rather than committed.
+
+Before the first deployment, select **GitHub Actions** in the repository's
+**Settings → Pages → Build and deployment → Source**. The `github-pages`
+environment must allow deployments from `main` and Swift release tags.
+The **Swift — Documentation** workflow publishes on Swift releases; the release
+automation explicitly dispatches it because releases created with `GITHUB_TOKEN`
+do not trigger other workflows. To republish an existing release, run that workflow
+from `main` and provide its published Swift tag. Pull requests build the site and
+upload an artifact without deploying it.
+
+### Checks
 
 Useful checks before opening a Swift change:
 

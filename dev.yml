@@ -526,6 +526,11 @@ commands:
   swift:
     desc: "Swift Checkout Kit commands"
     subcommands:
+      docs:
+        desc: "Build the Swift API reference. Usage: dev swift docs [hosting-base-path]"
+        syntax: "[hosting-base-path]"
+        run: platforms/swift/Scripts/build_docs "$@"
+
       build:
         desc: Build all Swift packages and the sample app
         run: |

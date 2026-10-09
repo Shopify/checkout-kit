@@ -151,10 +151,16 @@ jobs:
           TAG: ${{ steps.release.outputs.tag }}
           PUBLISH_WORKFLOW: ${{ steps.release.outputs.publish_workflow }}
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           gh workflow run "$PUBLISH_WORKFLOW" --ref "$TAG"
           echo "::notice::Dispatched ${PUBLISH_WORKFLOW} at ${TAG}."
+          # Releases created with GITHUB_TOKEN do not trigger release workflows.
+          if [ "$PUBLISH_WORKFLOW" = "swift-publish.yml" ]; then
+            gh workflow run swift-docs.yml --ref "$DEFAULT_BRANCH" -f tag="$TAG"
+            echo "::notice::Dispatched Swift documentation for ${TAG}."
+          fi
 
       - name: Summary
         env:
