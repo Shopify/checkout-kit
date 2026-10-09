@@ -27,13 +27,24 @@ func checkoutEventJSON(type: DispatchEventType, checkout: Checkout) -> String? {
     }
 }
 
+func checkoutLinkAction(_ value: String) -> CheckoutLinkAction {
+    switch value {
+    case "handled": return .handled
+    case "cancel": return .cancel
+    default: return .open
+    }
+}
+
 /// A presentation retains its own delegate so queued events cannot cross sessions.
 @MainActor
 final class CheckoutEventBridge: CheckoutDelegate {
     private var dispatch: ((String) -> Void)?
     private let onTerminal: (CheckoutEventBridge) -> Void
 
-    init(dispatch: @escaping (String) -> Void, onTerminal: @escaping (CheckoutEventBridge) -> Void) {
+    let linkAction: CheckoutLinkAction
+
+    init(linkAction: String, dispatch: @escaping (String) -> Void, onTerminal: @escaping (CheckoutEventBridge) -> Void) {
+        self.linkAction = checkoutLinkAction(linkAction)
         self.dispatch = dispatch
         self.onTerminal = onTerminal
     }
@@ -56,6 +67,12 @@ final class CheckoutEventBridge: CheckoutDelegate {
 
     func checkoutDidDismiss() {
         finish(.dismiss)
+    }
+
+    func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
+        guard dispatch != nil else { return .cancel }
+        emit(.linkClick, payload: ShopifyEventSerialization.serialize(clickEvent: link.url))
+        return linkAction
     }
 
     private func emit(_ type: DispatchEventType, checkout: Checkout) {

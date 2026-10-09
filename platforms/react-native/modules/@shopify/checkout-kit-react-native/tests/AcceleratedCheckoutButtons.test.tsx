@@ -179,6 +179,21 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(onStart).not.toHaveBeenCalled();
     });
 
+    it.each(['open', 'handled', 'cancel'] as const)(
+      'passes the %s link policy to native',
+      linkAction => {
+        const {getByTestId} = render(
+          <AcceleratedCheckoutButtons
+            cartId="cart-1"
+            linkAction={linkAction}
+          />,
+        );
+        expect(
+          getByTestId('accelerated-checkout-buttons').props.linkAction,
+        ).toBe(linkAction);
+      },
+    );
+
     it('uses default values for cornerRadius', () => {
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
@@ -331,6 +346,34 @@ describe('AcceleratedCheckoutButtons', () => {
       });
     });
 
+    it('handles onLinkClick when URL is present and ignores when absent', () => {
+      const onLinkClick = jest.fn();
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons
+          cartId="gid://shopify/Cart/123"
+          onLinkClick={onLinkClick}
+        />,
+      );
+      const nativeComponent = getByTestId('accelerated-checkout-buttons');
+      nativeComponent.props.onDispatch({
+        nativeEvent: {
+          value: JSON.stringify({
+            type: 'linkClick',
+            payload: {url: 'https://example.test/link'},
+          }),
+        },
+      });
+      expect(onLinkClick).toHaveBeenCalledWith({
+        url: 'https://example.test/link',
+      });
+
+      onLinkClick.mockClear();
+      nativeComponent.props.onDispatch({
+        nativeEvent: {value: JSON.stringify({type: 'linkClick', payload: {}})},
+      });
+      expect(onLinkClick).not.toHaveBeenCalled();
+    });
+
     it('applies dynamic height when onSizeChange is emitted', async () => {
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons cartId="gid://shopify/Cart/123" />,
@@ -370,6 +413,7 @@ describe('AcceleratedCheckoutButtons', () => {
         onFail: jest.fn(),
         onDismiss: jest.fn(),
         onRenderStateChange: jest.fn(),
+        onLinkClick: jest.fn(),
       };
 
       expect(() => {

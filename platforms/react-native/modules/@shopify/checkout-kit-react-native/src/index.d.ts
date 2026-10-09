@@ -12,6 +12,8 @@ export type {
   CheckoutUpdateEvent,
   CheckoutCompleteEvent,
   CheckoutFailureEvent,
+  CheckoutLink,
+  CheckoutLinkAction,
   CheckoutEventHandlers,
 } from './checkout';
 
@@ -184,7 +186,7 @@ export interface GeolocationRequestEvent {
   respond: (allow: boolean) => void;
 }
 
-/** Lifecycle callbacks for a checkout presentation. */
+/** Lifecycle callbacks and link policy for a checkout presentation. */
 export interface PresentCallbacks extends CheckoutEventHandlers {
   /**
    * Fires when the checkout sheet requests geolocation permissions.
@@ -312,7 +314,7 @@ export interface ShopifyCheckoutKit {
    * Present the checkout.
    *
    * @param checkoutURL The URL of the checkout to display.
-   * @param callbacks Lifecycle callbacks. Callbacks remain
+   * @param callbacks Lifecycle callbacks and native link policy. Callbacks remain
    * active until dismissal or failure, including after completion. Repeated calls
    * while checkout is active or closing are ignored, including across instances.
    * Ignored attempts do not fire callbacks.

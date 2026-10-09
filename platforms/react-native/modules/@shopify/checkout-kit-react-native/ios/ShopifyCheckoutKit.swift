@@ -17,6 +17,7 @@ enum DispatchEventType: String, CaseIterable {
     case update
     case complete
     case dismiss
+    case linkClick
     case fail
     case geolocationRequest
 }
@@ -114,7 +115,7 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func present(_ checkoutURL: String, onResult: @escaping RCTResponseSenderBlock) {
+    @objc func present(_ checkoutURL: String, linkAction: String, onResult: @escaping RCTResponseSenderBlock) {
         DispatchQueue.main.async {
             // Preserve the active session and ignore attempts during dismissal.
             guard self.checkoutEvents == nil else {
@@ -128,7 +129,7 @@ class RCTShopifyCheckoutKit: NSObject {
                 return
             }
             self.closingCheckoutSheet = nil
-            let events = CheckoutEventBridge(dispatch: { [weak self] json in
+            let events = CheckoutEventBridge(linkAction: linkAction, dispatch: { [weak self] json in
                 self?.emitDispatchEvent(json)
             }, onTerminal: { [weak self] ended in
                 guard let self, self.checkoutEvents === ended else { return }

@@ -817,6 +817,7 @@ shopify.present(checkoutUrl, {
 | `onComplete` | `{checkout: Checkout}` | Checkout completes. The confirmation UI can remain visible. |
 | `onDismiss` | None | Checkout is dismissed, including after completion. |
 | `onFail` | `{error: CheckoutException}` | Checkout cannot continue. |
+| `onLinkClick` | `{url: string}` | Checkout requests opening a link. |
 | `onGeolocationRequest` | `GeolocationRequestEvent` | Android sheets only. See [geolocation handling](#opting-out-of-the-default-behavior). |
 
 Completion keeps callbacks active until dismissal or failure. Delay changes that
@@ -825,7 +826,7 @@ until dismissal or failure. Calling `dismiss()` also delivers `onDismiss`.
 
 Repeated `present()` calls while a checkout session is active are ignored,
 including calls from another `ShopifyCheckout` instance. The original checkout
-and callbacks remain active. Calls made while the previous sheet is closing are
+and callbacks and link policy remain active. Calls made while the previous sheet is closing are
 also ignored, without firing callbacks for the ignored attempt. `onDismiss` and
 `onFail` can run before the closing animation finishes, so presenting from those
 callbacks is not guaranteed to open another checkout.
@@ -833,6 +834,24 @@ callbacks is not guaranteed to open another checkout.
 `teardown()` stops consumer callbacks and cancels
 pending geolocation responses without dismissing the sheet; another checkout
 can be presented once the native session ends.
+
+### Link handling
+
+Set `linkAction` before presentation (or on the accelerated buttons):
+
+- `open` (default): let the native SDK open links.
+- `handled`: your app opens or routes links itself.
+- `cancel`: prevent links from opening.
+
+`onLinkClick` is an asynchronous notification. Its return value cannot change the
+native decision. For custom routing, pair it with `linkAction: 'handled'`:
+
+```tsx
+shopify.present(checkoutUrl, {
+  linkAction: 'handled',
+  onLinkClick: ({url}) => Linking.openURL(url),
+});
+```
 
 ### Migrating from protocol callbacks
 
@@ -843,8 +862,8 @@ data from `event.checkout`. Terminal protocol errors now arrive through `onFail`
 checkout messages remain available in snapshots.
 
 Rename sheet `onClose` and accelerated `onCancel` to `onDismiss`. Change
-`onFail(error)` to `onFail({error})`. The accelerated `onClickLink` prop is removed;
-native SDKs open checkout links by default. `CheckoutProtocol`,
+`onFail(error)` to `onFail({error})`, and accelerated `onClickLink(url)` to
+`onLinkClick({url})` with the appropriate `linkAction`. `CheckoutProtocol`,
 `ProtocolHandlers`, and protocol payload exports have been removed.
 
 ## Identity & customer accounts
@@ -1168,7 +1187,7 @@ The `cornerRadius` prop lets you match the buttons to other calls-to-action in y
 
 ### Handle loading, errors, and lifecycle events
 
-Accelerated buttons use the same lifecycle callbacks as sheets.
+Accelerated buttons use the same lifecycle callbacks and link policy as sheets.
 Use a ref to remember completion without unmounting the button's confirmation UI:
 
 ```tsx
@@ -1192,6 +1211,8 @@ const completed = useRef(false);
     console.error('Accelerated checkout failed:', error.code);
   }}
   onRenderStateChange={(event) => setRenderState(event.state)}
+  linkAction="handled"
+  onLinkClick={({url}) => Linking.openURL(url)}
 />
 ```
 

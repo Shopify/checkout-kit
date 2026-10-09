@@ -27,6 +27,7 @@ interface NativeProps extends ViewProps {
   wallets?: ReadonlyArray<string>;
   applePayLabel?: string;
   applePayStyle?: string;
+  linkAction?: string;
   onDismiss?: DirectEventHandler<null>;
   onRenderStateChange?: BubblingEventHandler<RenderStateChangeEvent>;
   onDispatch?: DirectEventHandler<DispatchEvent>;

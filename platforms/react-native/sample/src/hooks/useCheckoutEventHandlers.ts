@@ -40,5 +40,6 @@ export function useShopifyEventHandlers(
       finishCheckout();
     },
     onRenderStateChange: event => log('onRenderStateChange', event),
+    onLinkClick: () => log('onLinkClick'),
   };
 }

@@ -15,6 +15,7 @@ export const SDK_LIFECYCLE_EVENT_TYPES = [
   'update',
   'complete',
   'dismiss',
+  'linkClick',
   'fail',
   'geolocationRequest',
 ] as const;

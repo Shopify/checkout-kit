@@ -52,6 +52,11 @@ export interface CheckoutCompleteEvent {
 export interface CheckoutFailureEvent {
   error: CheckoutException;
 }
+export interface CheckoutLink {
+  url: string;
+}
+export type CheckoutLinkAction = 'open' | 'handled' | 'cancel';
+
 /** Lifecycle callbacks shared by checkout sheets and accelerated buttons. */
 export interface CheckoutEventHandlers {
   onStart?: (event: CheckoutStartEvent) => void;
@@ -60,6 +65,10 @@ export interface CheckoutEventHandlers {
   onComplete?: (event: CheckoutCompleteEvent) => void;
   onFail?: (event: CheckoutFailureEvent) => void;
   onDismiss?: () => void;
+  /** Notification only; use linkAction to choose the native response. */
+  onLinkClick?: (link: CheckoutLink) => void;
+  /** Native link policy, chosen before presentation. Defaults to open. */
+  linkAction?: CheckoutLinkAction;
 }
 
 export function decodeCheckout(value: unknown): Checkout {

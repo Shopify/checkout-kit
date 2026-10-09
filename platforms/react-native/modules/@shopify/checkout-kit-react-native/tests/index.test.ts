@@ -49,6 +49,7 @@ beforeEach(() => {
       'complete',
       'dismiss',
       'fail',
+      'linkClick',
       'geolocationRequest',
     ],
   });
@@ -409,9 +410,22 @@ describe('ShopifyCheckoutKit', () => {
       totals: [],
     };
 
+    it.each(['open', 'handled', 'cancel'] as const)(
+      'passes the %s link policy to native',
+      linkAction => {
+        const instance = new ShopifyCheckout();
+        instance.present(checkoutUrl, {linkAction});
+        expect(NativeModule.present).toHaveBeenCalledWith(
+          checkoutUrl,
+          linkAction,
+          expect.any(Function),
+        );
+      },
+    );
+
     it('presents checkout without a session ID', () => {
       new ShopifyCheckout().present(checkoutUrl);
-      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
     });
 
     it('keeps a reentrant presentation subscribed when the first present throws', () => {
@@ -447,14 +461,14 @@ describe('ShopifyCheckoutKit', () => {
       const onFail = jest.fn();
       instance.present(checkoutUrl, {onDismiss, onFail});
       const rejectedDispatch = lastDispatch();
-      NativeModule.present.mock.calls[0][1](false);
+      NativeModule.present.mock.calls[0][2](false);
       expect(remove).toHaveBeenCalledTimes(1);
       expect(onDismiss).not.toHaveBeenCalled();
       expect(onFail).not.toHaveBeenCalled();
 
       instance.present(checkoutUrl, {onDismiss});
       expect(NativeModule.present).toHaveBeenCalledTimes(2);
-      NativeModule.present.mock.calls[1][1](true);
+      NativeModule.present.mock.calls[1][2](true);
       rejectedDispatch(JSON.stringify({type: 'dismiss'}));
       expect(onDismiss).not.toHaveBeenCalled();
       lastDispatch()(JSON.stringify({type: 'dismiss'}));
@@ -464,7 +478,7 @@ describe('ShopifyCheckoutKit', () => {
     it('does not release a newer session when an old result arrives late', () => {
       const instance = new ShopifyCheckout();
       instance.present(checkoutUrl);
-      const firstResult = NativeModule.present.mock.calls[0][1];
+      const firstResult = NativeModule.present.mock.calls[0][2];
       lastDispatch()(JSON.stringify({type: 'dismiss'}));
       const onDismiss = jest.fn();
       instance.present(checkoutUrl, {onDismiss});
@@ -535,17 +549,38 @@ describe('ShopifyCheckoutKit', () => {
         const second = anotherInstance ? new ShopifyCheckout() : first;
         const onDismiss = jest.fn();
         const replacementDismiss = jest.fn();
-        first.present(checkoutUrl, {onDismiss});
+        first.present(checkoutUrl, {onDismiss, linkAction: 'handled'});
         second.present('https://example.test/other', {
           onDismiss: replacementDismiss,
+          linkAction: 'cancel',
         });
         expect(NativeModule.present).toHaveBeenCalledTimes(1);
+        expect(NativeModule.present).toHaveBeenCalledWith(
+          checkoutUrl, 'handled', expect.any(Function),
+        );
         expect(NativeModule.onDispatch).toHaveBeenCalledTimes(1);
         lastDispatch()(JSON.stringify({type: 'dismiss'}));
         expect(onDismiss).toHaveBeenCalledTimes(1);
         expect(replacementDismiss).not.toHaveBeenCalled();
       },
     );
+
+    it('delivers a link notification', () => {
+      const onLinkClick = jest.fn();
+      new ShopifyCheckout().present(checkoutUrl, {
+        linkAction: 'handled',
+        onLinkClick,
+      });
+      lastDispatch()(
+        JSON.stringify({
+          type: 'linkClick',
+          payload: {url: 'https://example.test/policy'},
+        }),
+      );
+      expect(onLinkClick).toHaveBeenCalledWith({
+        url: 'https://example.test/policy',
+      });
+    });
 
     it('ignores queued events from a finished presentation after reopening', () => {
       const instance = new ShopifyCheckout();
@@ -748,7 +783,7 @@ describe('ShopifyCheckoutKit', () => {
       it('subscribes to dispatch events when the default handler is enabled, even without callbacks', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
         expect(NativeModule.onDispatch).toHaveBeenCalledWith(
           expect.any(Function),
         );
@@ -759,7 +794,7 @@ describe('ShopifyCheckoutKit', () => {
           handleGeolocationRequests: false,
         });
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -946,7 +981,7 @@ describe('ShopifyCheckoutKit', () => {
       it('presents with the default link policy on iOS', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

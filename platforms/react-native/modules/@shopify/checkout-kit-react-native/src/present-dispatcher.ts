@@ -96,6 +96,13 @@ function dispatchEnvelope(
       });
       return;
     }
+    case 'linkClick':
+      if (!isPlainObject(payload) || typeof payload.url !== 'string') {
+        logParseError('`linkClick` envelope payload is malformed');
+        return;
+      }
+      callbacks?.onLinkClick?.({url: payload.url});
+      return;
     case 'geolocationRequest':
       if (options.geolocationSignal?.aborted) return;
       if (!isPlainObject(payload) || typeof payload.origin !== 'string') {

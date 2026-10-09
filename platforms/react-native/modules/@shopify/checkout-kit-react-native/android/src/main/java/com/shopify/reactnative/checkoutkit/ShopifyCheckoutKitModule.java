@@ -81,7 +81,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void present(String checkoutURL, Callback onResult) {
+  public void present(String checkoutURL, String linkAction, Callback onResult) {
     if (invalidated) {
       onResult.invoke(false);
       return;
@@ -96,7 +96,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         }
         CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
         checkoutListener = listener;
-        listener.setOnTerminal(this::finishCheckoutPresentation);
+        listener.configure(linkAction, this::finishCheckoutPresentation);
         CheckoutHandle sheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity, listener);
         // Initialization can fail synchronously and already emit a terminal event.
         if (checkoutListener != listener) {
