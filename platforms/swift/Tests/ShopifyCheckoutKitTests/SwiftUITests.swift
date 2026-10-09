@@ -1,4 +1,5 @@
 @testable import ShopifyCheckoutKit
+import SwiftUI
 import XCTest
 
 @MainActor
@@ -8,12 +9,61 @@ class CheckoutViewControllerTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        checkoutURL = URL(string: "https://www.shopify.com")
+        ShopifyCheckoutKit.configure {
+            $0 = Configuration()
+            $0.appearance = .app(.dark)
+            $0.preloading.enabled = false
+        }
+        CheckoutWebView.invalidate()
+        checkoutURL = URL(string: "https://www.shopify.com?key=cart_token")
         checkoutViewController = CheckoutViewController(checkout: checkoutURL)
+    }
+
+    override func tearDown() async throws {
+        CheckoutWebView.invalidate()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        try await super.tearDown()
     }
 
     func testInit() {
         XCTAssertNotNil(checkoutViewController)
+    }
+
+    func testInitDecoratesCheckoutURL() throws {
+        try assertDecoratedCheckoutURL(loadedCheckoutURL(from: checkoutViewController))
+    }
+
+    func testInitWithPreviouslyDecoratedURLDoesNotDuplicateCheckoutParams() throws {
+        let viewController = CheckoutViewController(checkout: CheckoutProtocol.url(for: checkoutURL))
+
+        try assertDecoratedCheckoutURL(loadedCheckoutURL(from: viewController))
+    }
+
+    func testInitReusesCheckoutPreloadedFromTheSameUndecoratedURL() throws {
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
+        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        let preloadedView = try XCTUnwrap(
+            CheckoutWebView.preloadCache.view(
+                for: PreloadKey(url: CheckoutURLDecorator.decorate(checkoutURL), entryPoint: nil)
+            )
+        )
+
+        let viewController = CheckoutViewController(checkout: checkoutURL)
+        let webViewController = try XCTUnwrap(
+            viewController.viewControllers.compactMap { $0 as? CheckoutWebViewController }.first
+        )
+
+        XCTAssertTrue(webViewController.checkoutView === preloadedView)
+        withExtendedLifetime(preload) {}
+    }
+
+    func testEntryPointInitDecoratesCheckoutURL() throws {
+        let viewController = CheckoutViewController(
+            checkout: checkoutURL,
+            entryPoint: .acceleratedCheckouts
+        )
+
+        try assertDecoratedCheckoutURL(loadedCheckoutURL(from: viewController))
     }
 }
 
@@ -24,8 +74,12 @@ class ShopifyCheckoutTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
-        checkoutURL = URL(string: "https://www.shopify.com")
+        ShopifyCheckoutKit.configure {
+            $0 = Configuration()
+            $0.appearance = .app(.dark)
+            $0.preloading.enabled = false
+        }
+        checkoutURL = URL(string: "https://www.shopify.com?key=cart_token")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
@@ -82,6 +136,38 @@ class ShopifyCheckoutTests: XCTestCase {
         XCTAssertEqual(sheet.onLinkClickAction?(expectedLink), .handled)
         XCTAssertEqual(receivedLink, expectedLink)
     }
+
+    func testCheckoutViewControllerDecoratesCheckoutURLAfterAppearanceModifierRuns() async throws {
+        let sheet = shopifyCheckout.appearance(.storefront)
+        let hostingController = UIHostingController(rootView: sheet)
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = hostingController
+        window.makeKeyAndVisible()
+        hostingController.loadViewIfNeeded()
+
+        var descendant: CheckoutViewController?
+        for _ in 0 ..< 10 where descendant == nil {
+            hostingController.view.layoutIfNeeded()
+            descendant = descendantCheckoutViewController(from: hostingController)
+            await Task.yield()
+        }
+
+        let checkoutViewController = try XCTUnwrap(descendant)
+        try assertDecoratedCheckoutURL(
+            loadedCheckoutURL(from: checkoutViewController),
+            colorScheme: "light",
+            branding: "shop"
+        )
+        withExtendedLifetime(window) {}
+    }
+
+    private func descendantCheckoutViewController(from viewController: UIViewController) -> CheckoutViewController? {
+        if let checkoutViewController = viewController as? CheckoutViewController {
+            return checkoutViewController
+        }
+
+        return viewController.children.lazy.compactMap(descendantCheckoutViewController).first
+    }
 }
 
 @MainActor
@@ -121,14 +207,6 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(sheet.configuration.appearance, appearance)
         XCTAssertEqual(shopifyCheckout.configuration.appearance, globalAppearance)
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
-    }
-
-    func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
-        let sheet = shopifyCheckout.appearance(.app(.dark))
-        let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
-
-        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "dark")
-        XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "app")
     }
 
     func testTintColorIsCapturedWithoutChangingGlobalConfiguration() {

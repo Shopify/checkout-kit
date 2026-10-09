@@ -16,8 +16,9 @@ public class CheckoutViewController: UINavigationController {
 
     /// Shared initializer that lets SwiftUI inject instance-scoped configuration while package callers use the global default.
     package init(checkout url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+        let decoratedURL = CheckoutURLDecorator.decorate(url, configuration: configuration)
         let rootViewController = CheckoutWebViewController(
-            checkoutURL: url,
+            checkoutURL: decoratedURL,
             configuration: configuration,
             delegate: delegate,
             client: client,
@@ -61,13 +62,9 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         configuration = ShopifyCheckoutKit.configuration
     }
 
-    var decoratedCheckoutURL: URL {
-        CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration)
-    }
-
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
         let viewController = CheckoutViewController(
-            checkout: decoratedCheckoutURL,
+            checkout: checkoutURL,
             configuration: configuration
         )
         configureWebViewController(viewController)

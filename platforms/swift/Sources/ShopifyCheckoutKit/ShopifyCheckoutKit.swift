@@ -85,8 +85,7 @@ private func presentCheckout(checkout url: URL, from: UIViewController, delegate
         presented = current.presentedViewController
     }
 
-    let decorated = CheckoutURLDecorator.decorate(url)
-    let viewController = CheckoutViewController(checkout: decorated, delegate: delegate, client: client, entryPoint: entryPoint)
+    let viewController = CheckoutViewController(checkout: url, delegate: delegate, client: client, entryPoint: entryPoint)
     from.present(viewController, animated: true)
     return viewController
 }
