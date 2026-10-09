@@ -50,8 +50,9 @@ let retrySequence = 0;
 /**
  * Loads Checkout Kit components and registers their custom elements.
  *
- * Every name is validated before anything is fetched, so a typo cannot leave
- * the page half-loaded. Loading a component more than once is safe: the
+ * Nothing is loaded implicitly: an empty list is rejected, and every name is
+ * validated before anything is fetched, so a typo cannot leave the page
+ * half-loaded. Loading a component more than once is safe: the
  * browser caches the module, custom-element registration happens once, and
  * concurrent requests share one in-flight load. The returned promise rejects
  * if any component fails; a later call retries only what has not loaded.
@@ -62,6 +63,13 @@ let retrySequence = 0;
  * the chunk URL, which the browser treats as a fresh module.
  */
 export async function loadComponents(components: readonly string[]): Promise<void> {
+  // An empty list is almost certainly a mistake, and silently resolving would
+  // leave it unclear whether nothing or everything was loaded. Nothing is ever
+  // loaded implicitly; name every component you need.
+  if (components.length === 0) {
+    throw new Error("loadComponents() requires at least one component name.");
+  }
+
   // Validate everything first, then load each distinct component once.
   const names = new Set(components.map(toComponentName));
   await Promise.all([...names].map(loadOne));

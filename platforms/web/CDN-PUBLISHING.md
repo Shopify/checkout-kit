@@ -79,8 +79,9 @@ await loadComponents(["shopify-checkout"]);
 
 The initial supported component is `shopify-checkout`; component names are the
 custom element tags they register. `loadComponents` takes an array so a page
-can request several components in one call; every name is validated before
-anything is fetched, and the call rejects if any component fails to load. The
+can request several components in one call. Nothing is loaded implicitly: an
+empty list is rejected, every name is validated before anything is fetched,
+and the call rejects if any component fails to load. The
 loader resolves each component
 to a self-contained implementation chunk under the same major-version directory
 and registers `<shopify-checkout>`. Repeating a request for the same component

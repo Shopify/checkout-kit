@@ -24,8 +24,10 @@ describe("Checkout Kit CDN loader", () => {
     await expect(loadComponents(["shopify-checkout"])).resolves.toBeUndefined();
   });
 
-  it("accepts an empty list", async () => {
-    await expect(loadComponents([])).resolves.toBeUndefined();
+  it("rejects an empty list rather than loading nothing or everything", async () => {
+    await expect(loadComponents([])).rejects.toThrow(
+      "loadComponents() requires at least one component name.",
+    );
   });
 
   it("accepts repeated names in one call", async () => {
