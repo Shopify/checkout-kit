@@ -191,7 +191,7 @@ After each upload, `slack@4.3.0` posts an Install button to channel `C069N25R7EH
 
 ## Required app environment variables
 
-Direct workflows share `E2E_MAESTRO_TEST_RETRIES=2` and `E2E_JUNIT_REPORT` in `e2e/bitrise.yml`. The following legacy BrowserStack defaults remain under `app.envs` for rollback; they do not configure the direct workflows.
+Direct workflows share `E2E_MAESTRO_TEST_RETRIES=2` and `E2E_JUNIT_REPORT` in `e2e/bitrise.yml`. The following BrowserStack defaults remain under `app.envs` for the optional real-device pipeline; they do not configure the direct workflows.
 
 | Variable                           | Value  | Purpose                                           |
 | ---------------------------------- | ------ | ------------------------------------------------- |
@@ -202,10 +202,10 @@ Direct workflows share `E2E_MAESTRO_TEST_RETRIES=2` and `E2E_JUNIT_REPORT` in `e
 
 Each workflow's main `script` step sets its own wall-clock budget with the Bitrise `timeout` and `no_output_timeout` step properties instead of wrapping individual commands.
 
-The BrowserStack workflows and scripts remain in the repository during migration.
-They are outside the required pipeline. Reverting the pipeline cutover restores
-the previous BrowserStack graph; credentials and signed artifact workflows remain
-available. Remove them only after direct execution has proved stable.
+BrowserStack remains a supported, optional real-device path after the cutover.
+The `e2e-browserstack` pipeline reuses the signed artifact builds and BrowserStack
+credentials. It has no automatic triggers and is separate from the required
+`e2e` pipeline.
 
 ## Encrypted storefront configuration
 
@@ -257,7 +257,28 @@ Upload the signing certificate and provisioning profile for the React Native sam
 | `E2E_IOS_CODE_SIGN_IDENTITY`             | `Apple Development`                       | Code signing identity used for iOS archive and export signing.                                                                                      |
 | `E2E_IOS_PROVISIONING_PROFILE_SPECIFIER` | `bitrise-checkout-kit-e2e`                | Provisioning profile specifier installed by Bitrise and passed to `xcodebuild`; override it if the Bitrise-installed profile uses a different name. |
 
-## Legacy BrowserStack execution (rollback)
+## Optional BrowserStack real-device pipeline
+
+In Bitrise, choose **Start build**, select the branch, and choose the
+`e2e-browserstack` pipeline. A manual branch run selects all applications in the
+existing matrix, builds device artifacts, runs Maestro on BrowserStack, and
+collects the results. No revert or change to the default pipeline is needed.
+
+The always-run `e2e-browserstack-report` workflow saves `browserstack-summary.md`
+as a Bitrise artifact and fails when expected results are missing or failed.
+It does not publish a GitHub Check Run or update the direct pipeline's sticky PR
+comment, even when the manual run is associated with a PR. Its pipeline status
+uses the separate `ci/bitrise/e2e-browserstack/<event_type>` name.
+
+Keep this path for hardware-dependent coverage and future Apple Pay work. Apple
+Pay is not enabled by this pipeline: BrowserStack documents Apple Pay automation
+for [Appium](https://www.browserstack.com/docs/app-automate/appium/apple-pay),
+including signing requirements. Confirm Maestro-specific support and device
+provisioning before adding those tests. The default Bitrise jobs use simulators
+and emulators; Bitrise's separate
+[Firebase integration](https://docs.bitrise.io/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)
+runs XCTest on physical iOS devices.
+
 
 The `e2e-execute-browserstack-run` workflow resolves the Bitrise parallel index into a BrowserStack run plan row, resolves a BrowserStack device dynamically, uploads the app artifact and E2E tests zip, executes the selected flow, and stores raw plus normalized result JSON as artifacts.
 

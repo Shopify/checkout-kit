@@ -251,7 +251,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
   # A required pipeline status cannot be published when its trigger rejects the PR.
   def test_required_pipeline_starts_for_every_ready_pull_request
-    assert_equal "ci/bitrise/e2e/<event_type>", e2e_pipeline.fetch("status_report_name")
+    assert_equal "ci/bitrise/e2e/<event_type>", e2e_pipeline.fetch("status_report_name").gsub("<target_id>", "e2e")
     trigger = e2e_pipeline.fetch("triggers").fetch("pull_request").find do |candidate|
       candidate["source_branch"] == "*" && !candidate.key?("changed_files")
     end

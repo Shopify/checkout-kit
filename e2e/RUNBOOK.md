@@ -66,12 +66,19 @@ Use the published native SDKs for React Native. Direct CI pins Android API 35 an
 the iOS runtime provided by the Xcode stack in `e2e/bitrise.yml`; it does not use
 BrowserStack's dynamic device selectors.
 
-## BrowserStack rollback
+## BrowserStack real-device runs
 
-The BrowserStack implementation, credentials, and signed artifact workflows remain
-available during migration. Revert the pipeline cutover to restore its previous
-graph. BrowserStack-specific retry, polling, and signing settings are documented
-in [BITRISE.md](BITRISE.md); they do not affect direct Maestro execution.
+BrowserStack remains available alongside the default Bitrise simulator/emulator
+pipeline. In Bitrise, choose **Start build**, select the branch, and select
+`e2e-browserstack`. It has no automatic triggers and uses the existing signed
+artifact builds, matrix, and credentials. The reporter saves
+`browserstack-summary.md` to Bitrise and fails on missing or failed results,
+without replacing the required direct E2E check or PR comment.
+
+Keep this path for hardware-dependent tests and future Apple Pay coverage. Apple
+Pay support for Maestro and the required device/signing setup still need to be
+confirmed before adding those flows. BrowserStack-specific retry, polling, and
+signing settings are documented in [BITRISE.md](BITRISE.md).
 
 ## The iOS check failed or never posted
 
