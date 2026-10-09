@@ -78,7 +78,7 @@ when "bitrise-env"
 when "assert-pipeline-coverage"
   pipeline_config_path = options.fetch(:pipeline_config) { CliOutput.die("--pipeline-config PATH is required") }
   pipeline_config = YAML.safe_load_file(pipeline_config_path, aliases: true) || {}
-  available_workflows = (pipeline_config.dig("pipelines", "e2e", "workflows") || {}).keys
+  available_workflows = (pipeline_config.dig("pipelines", "e2e-browserstack", "workflows") || {}).keys
   errors = run_plan.missing_build_workflow_errors(available_workflows)
   unless errors.empty?
     CliOutput.die(errors.join("\n"), hint: E2EMatrixToBrowserStackRunPlan::MISSING_BUILD_WORKFLOW_HINT)
