@@ -24,13 +24,13 @@ class ShopifyCheckoutTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configuration = Configuration()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configuration = Configuration()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -91,13 +91,13 @@ class CheckoutConfigurableTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configuration = Configuration()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configuration = Configuration()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -173,8 +173,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
     }
 
-    func testModifiersDoNotInvalidatePreload() async {
-        await Task.yield()
+    func testModifiersDoNotInvalidatePreload() {
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
@@ -184,7 +183,6 @@ class CheckoutConfigurableTests: XCTestCase {
             .tintColor(.blue)
             .title("Instance checkout")
             .closeButtonTintColor(.green)
-        await Task.yield()
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }

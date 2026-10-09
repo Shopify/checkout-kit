@@ -125,7 +125,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     }
 
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         ShopifyCheckoutKit.preload(checkout: url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutURLDecorator.decorate(url), entryPoint: nil)
         viewController.loadViewIfNeeded()
@@ -143,7 +143,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     }
 
     func test_viewDidDisappear_cleansUpConsumedPreloadedWebViewWhenDismissed() throws {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         ShopifyCheckoutKit.preload(checkout: url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutURLDecorator.decorate(url), entryPoint: nil)
         viewController.loadViewIfNeeded()
@@ -167,7 +167,7 @@ class CheckoutWebViewControllerTests: XCTestCase {
     func test_viewDidDisappear_preservesReplacementPreloadWhenPresentedCheckoutIsDismissed() throws {
         ShopifyCheckoutKit.invalidate()
         defer { ShopifyCheckoutKit.invalidate() }
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         ShopifyCheckoutKit.preload(checkout: url)
         let checkoutURL = CheckoutURLDecorator.decorate(url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: checkoutURL, entryPoint: nil)

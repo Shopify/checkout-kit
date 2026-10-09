@@ -47,17 +47,18 @@ final class TestableOSLogger: Sendable {
     }
 }
 
+@MainActor
 final class OSLoggerTests: XCTestCase {
     var originalConfiguration: Configuration!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         originalConfiguration = ShopifyCheckoutKit.configuration
     }
 
-    override func tearDown() {
-        ShopifyCheckoutKit.configuration = originalConfiguration
-        super.tearDown()
+    override func tearDown() async throws {
+        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
+        try await super.tearDown()
     }
 
     private func emitAll(_ logger: TestableOSLogger) {
@@ -154,7 +155,7 @@ final class OSLoggerTests: XCTestCase {
     }
 
     func test_sharedLogger_withConfigurationLogLevel_shouldMaintainBackwardsCompatibility() {
-        ShopifyCheckoutKit.configuration.logLevel = .debug
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
         OSLogger.shared.info("test message")
     }
 

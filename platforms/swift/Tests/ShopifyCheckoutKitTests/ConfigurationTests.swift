@@ -15,7 +15,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     private func resetConfigurationState() {
-        ShopifyCheckoutKit.configuration = Configuration()
+        ShopifyCheckoutKit.configure { $0 = Configuration() }
         CheckoutWebView.invalidate()
     }
 
@@ -25,16 +25,16 @@ class ConfigurationTests: XCTestCase {
 
     func testCloseButtonTintColorCanBeSet() {
         let customColor = UIColor.red
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = customColor
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = customColor }
 
         XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, customColor)
     }
 
     func testCloseButtonTintColorCanBeReset() {
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = .blue
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = .blue }
         XCTAssertNotNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
 
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
+        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = nil }
         XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
     }
 
@@ -51,25 +51,21 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testAllowedMessageOriginsCanBeSet() {
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://example.com", "*"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://example.com", "*"] }
         XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, ["https://example.com", "*"])
     }
 
-    func testPreloadingCanBeDisabled() async throws {
+    func testPreloadingCanBeDisabled() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
-
-        for _ in 0 ..< 10 where CheckoutWebView.preloadCache.hasEntry() {
-            await Task.yield()
-        }
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
 
         XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
-    func testChangingConfigurationWithoutChangingPreloadingDoesNotInvalidatePreload() async throws {
+    func testConfigureInvalidatesPreload() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
@@ -79,17 +75,23 @@ class ConfigurationTests: XCTestCase {
             $0.title = "Thank you!"
         }
 
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+    }
+
+    func testPreloadAfterConfigureIsRetained() async throws {
+        let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
+
+        ShopifyCheckoutKit.configure {
+            $0.title = "Thank you!"
+        }
+        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
+
         for _ in 0 ..< 10 {
             await Task.yield()
         }
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
-    }
-
-    func testAppearanceCanBeSetDirectly() {
-        ShopifyCheckoutKit.configuration.appearance = .app(.light)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light))
     }
 
     func testConfigureCanBatchConfigurationChanges() {
@@ -102,8 +104,8 @@ class ConfigurationTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
     }
 
-    func testDirectConfigurationMutationUpdatesLogger() {
-        ShopifyCheckoutKit.configuration.logLevel = .debug
+    func testConfigureUpdatesLogger() {
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
 
         XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .debug)
         XCTAssertEqual(OSLogger.shared.logLevel, .debug)

@@ -15,13 +15,13 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configuration = originalConfiguration
+        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
         CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
 
     func testDisabledTelemetryDoesNotForwardMetrics() {
-        ShopifyCheckoutKit.configuration.telemetry.enabled = false
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -31,7 +31,7 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testEnabledTelemetryForwardsMetrics() {
-        ShopifyCheckoutKit.configuration.telemetry.enabled = true
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -41,8 +41,8 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testReenabledTelemetryUsesInstalledRecorder() {
-        ShopifyCheckoutKit.configuration.telemetry.enabled = false
-        ShopifyCheckoutKit.configuration.telemetry.enabled = true
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -52,7 +52,7 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testRecorderStampsProductPerEntryPoint() {
-        ShopifyCheckoutKit.configuration.telemetry.enabled = true
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder(for: nil).recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)

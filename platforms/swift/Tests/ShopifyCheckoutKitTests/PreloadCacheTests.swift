@@ -18,14 +18,14 @@ class PreloadCacheTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         CheckoutTelemetry.overrideRecorderForTesting(NoOpTestTelemetryRecorder())
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         CheckoutWebView.invalidate()
     }
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = [] }
         CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
@@ -125,12 +125,12 @@ class PreloadCacheTests: XCTestCase {
     }
 
     func test_MessageRejectionDoesNotFailBackgroundedPreload() {
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let entry = storeCacheEntry()
         entry.loadedCheckoutURL = url
         entry.messageOrigin = { _ in
             MessageOrigin(scheme: "https", host: "evil.example.com", port: nil)
         }
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
         let delegate = MockCheckoutWebViewDelegate()
         entry.viewDelegate = delegate
 

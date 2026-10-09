@@ -15,7 +15,7 @@ class CheckoutWebViewTests: XCTestCase {
         try await super.setUp()
         telemetryRecorder = MockCheckoutTelemetryRecorder()
         CheckoutTelemetry.overrideRecorderForTesting(telemetryRecorder)
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         CheckoutWebView.invalidate()
         view = CheckoutWebView.for(checkout: url)
         mockDelegate = MockCheckoutWebViewDelegate()
@@ -29,7 +29,7 @@ class CheckoutWebViewTests: XCTestCase {
     override func tearDown() async throws {
         view.viewDelegate = nil
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
@@ -399,7 +399,7 @@ class CheckoutWebViewTests: XCTestCase {
     }
 
     func testPreloadDoesNotUseHeaderWhenPreloadingDisabled() {
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
         let webView = LoadedRequestObservableWebView()
 
         webView.load(checkout: url, isPreload: true)
@@ -522,12 +522,12 @@ class CheckoutWebViewTests: XCTestCase {
         perform: (RecordingLogger) throws -> Void
     ) rethrows {
         let originalConfiguration = ShopifyCheckoutKit.configuration
-        defer { ShopifyCheckoutKit.configuration = originalConfiguration }
+        defer { ShopifyCheckoutKit.configure { $0 = originalConfiguration } }
         let logger = RecordingLogger()
         var configuration = originalConfiguration
         configuration.logger = logger
         configuration.logLevel = logLevel
-        ShopifyCheckoutKit.configuration = configuration
+        ShopifyCheckoutKit.configure { $0 = configuration }
 
         try perform(logger)
     }
@@ -1388,7 +1388,7 @@ class CheckoutWebViewTests: XCTestCase {
     private static let readyBody = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
 
     private func resetOriginValidationConfig() {
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = [] }
     }
 
     /// Captures rejection logs at the default `.warn` level, verifying that
@@ -1454,7 +1454,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://evil.example.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let (logger, restoreLogger) = captureWarnLogs()
         defer { restoreLogger() }
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1476,7 +1476,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         stubMessageOrigin("https://trusted.example.com")
         view.messageRequestURL = { _ in URL(string: "https://trusted.example.com:0")! }
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let (logger, restoreLogger) = captureWarnLogs()
         defer { restoreLogger() }
 
@@ -1519,7 +1519,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://trusted.example.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1537,7 +1537,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.loadedCheckoutURL = url
         // url is https://shopify1.shopify.com/checkouts/cn/123
         stubMessageOrigin("https://shopify1.shopify.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1554,7 +1554,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://checkout.shop.app")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1571,7 +1571,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://checkout.shop.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1588,7 +1588,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://evil.example.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["*"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["*"] }
         let responseSent = expectation(description: "response sent")
         MockCheckoutBridge.sendResponseExpectation = responseSent
         let message = MockScriptMessage(body: Self.readyBody)
@@ -1605,7 +1605,7 @@ class CheckoutWebViewTests: XCTestCase {
         view.client = nil
         view.loadedCheckoutURL = url
         stubMessageOrigin("https://evil.example.com")
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = ["https://trusted.example.com"]
+        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://trusted.example.com"] }
         let message = MockScriptMessage(body: Self.readyBody)
 
         view.userContentController(WKUserContentController(), didReceive: message)

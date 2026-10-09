@@ -14,13 +14,13 @@ class PreloadObservabilityTests: XCTestCase {
         try await super.setUp()
         telemetryRecorder = PreloadTelemetryRecorder()
         CheckoutTelemetry.overrideRecorderForTesting(telemetryRecorder)
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         CheckoutWebView.invalidate()
     }
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
@@ -418,7 +418,7 @@ class PreloadObservabilityTests: XCTestCase {
     func testDisablingPreloadViaConfigTransitionsToIdle() async {
         let preload = ShopifyCheckoutKit.preload(checkout: url)
 
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
 
         for _ in 0 ..< 20 where preload?.state != .idle {
             await Task.yield()

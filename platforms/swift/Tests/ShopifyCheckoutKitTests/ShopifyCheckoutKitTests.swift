@@ -15,7 +15,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configuration = originalConfiguration
+        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
         try await super.tearDown()
     }
 
@@ -55,7 +55,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_configuration_canDisableTelemetry() {
-        ShopifyCheckoutKit.configuration.telemetry.enabled = false
+        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
 
         XCTAssertFalse(ShopifyCheckoutKit.configuration.telemetry.enabled)
     }
@@ -64,7 +64,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let originalLogger = OSLogger.shared
         let originalLogLevel = OSLogger.shared.logLevel
 
-        ShopifyCheckoutKit.configuration.logLevel = originalLogLevel
+        ShopifyCheckoutKit.configure { $0.logLevel = originalLogLevel }
         let newLogger = OSLogger.shared
 
         XCTAssertTrue(
@@ -155,28 +155,28 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_logger_withDifferentLogLevels_shouldHaveCorrectLogLevel() {
-        ShopifyCheckoutKit.configuration.logLevel = .debug
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .debug,
             "Logger should have .debug log level"
         )
 
-        ShopifyCheckoutKit.configuration.logLevel = .debug
+        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .debug,
             "Logger should have .debug log level"
         )
 
-        ShopifyCheckoutKit.configuration.logLevel = .error
+        ShopifyCheckoutKit.configure { $0.logLevel = .error }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .error,
             "Logger should have .error log level"
         )
 
-        ShopifyCheckoutKit.configuration.logLevel = .none
+        ShopifyCheckoutKit.configure { $0.logLevel = .none }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .none,
@@ -185,12 +185,12 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_preload_returnsNilWhenDisabled() {
-        ShopifyCheckoutKit.configuration.preloading.enabled = false
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
         XCTAssertNil(ShopifyCheckoutKit.preload(checkout: checkoutURL))
     }
 
     func test_preload_returnsPreloadWhenEnabled() {
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
+        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
         let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
         var states: [PreloadState] = []
 
