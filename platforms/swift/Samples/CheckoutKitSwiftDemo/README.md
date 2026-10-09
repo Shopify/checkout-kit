@@ -61,7 +61,7 @@ Do not edit files in `Generated/` by hand. Update `.graphql` files and regenerat
 1. `Network.swift` creates an `ApolloClient` that points at the configured Storefront API endpoint and attaches the Storefront access token.
 2. `StorefrontClient.swift` and `CartManager.swift` call Apollo using generated operation types such as `Storefront.CartCreateMutation` and `Storefront.GetCartQuery`.
 3. `AcceleratedCheckoutsConfiguredView.swift` injects the storefront, Apple Pay, locale, contact-field, buyer contact, and shipping-country configuration used by accelerated checkout buttons.
-4. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`, while `CartView.swift` handles `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick`.
+4. `CheckoutCoordinator.swift` presents `cart.checkoutUrl` with `ShopifyCheckoutKit`. The Cart tab presents checkout with `ShopifyCheckout` (SwiftUI) or a directly constructed `CheckoutViewController` (UIKit), selected under **Settings → Features → Checkout presentation**; `CartCheckoutPresentation.swift` handles the lifecycle callbacks for both.
 5. Apollo decodes responses into generated Swift types, so schema or operation changes surface as compile errors.
 
 ## Setup
@@ -156,6 +156,7 @@ All commands are run from the **repo root** (`checkout-kit/`):
 | `CheckoutKitSwiftDemo/Sources/Scenes/AcceleratedCheckoutsSettingsView.swift` | Dedicated accelerated checkout and Apple Pay settings screen. |
 | `CheckoutKitSwiftDemo/Sources/App/CartManager.swift` | Cart state and Storefront API mutations. |
 | `CheckoutKitSwiftDemo/Sources/App/CheckoutCoordinator.swift` | Checkout presentation. |
-| `CheckoutKitSwiftDemo/Sources/Scenes/Cart/CartView.swift` | Public checkout callbacks for regular and accelerated checkout. |
+| `CheckoutKitSwiftDemo/Sources/Scenes/Cart/CartView.swift` | Cart tab with regular and accelerated checkout entrypoints. |
+| `CheckoutKitSwiftDemo/Sources/Scenes/Cart/CartCheckoutPresentation.swift` | SwiftUI or UIKit checkout presentation and public checkout callbacks for the Cart tab. |
 | `Package.resolved` | Dependency pins copied into the generated Xcode project's workspace. |
 | `project.yml` | Generates the Xcode project, Info.plist, and Associated Domains entitlements through XcodeGen. |
