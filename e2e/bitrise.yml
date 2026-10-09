@@ -350,8 +350,9 @@ workflows:
                 set -euo pipefail
                 cd platforms/swift
                 ./Scripts/test_coverage
+                ruby ../../scripts/check_coverage swift ../../.xcresults/coverage/coverage.json
       - deploy-to-bitrise-io@2:
-          is_always_run: false
+          is_always_run: true
           inputs:
             - deploy_path: "$BITRISE_SOURCE_DIR/.xcresults/coverage"
       - script@1:
@@ -373,12 +374,16 @@ workflows:
 
       - script@1:
           title: Run Embedded Checkout Protocol Swift coverage
+          is_always_run: true
           inputs:
             - content: |-
                 set -euo pipefail
-                ./protocol/scripts/test_swift_coverage
+                outcome=success
+                ./protocol/scripts/test_swift_coverage || outcome=failure
+                envman add --key PROTOCOL_SWIFT_TEST_OUTCOME --value "$outcome"
+                test "$outcome" = success
       - deploy-to-bitrise-io@2:
-          is_always_run: false
+          is_always_run: true
           inputs:
             - deploy_path: "$BITRISE_SOURCE_DIR/protocol/languages/swift/.build/coverage"
       - script@1:
@@ -392,10 +397,7 @@ workflows:
                 export COVERAGE_SHA="${BITRISE_GIT_COMMIT:-}"
                 export COVERAGE_REPORT_URL="${BITRISE_BUILD_URL:-}"
                 export COVERAGE_TOKEN="${OVERRIDE_GITHUB_TOKEN:-${GIT_HTTP_PASSWORD:-}}"
-                export COVERAGE_TEST_OUTCOME=success
-                if [ "${BITRISE_BUILD_STATUS:-0}" != "0" ]; then
-                  export COVERAGE_TEST_OUTCOME=failure
-                fi
+                export COVERAGE_TEST_OUTCOME="${PROTOCOL_SWIFT_TEST_OUTCOME:-failure}"
                 ruby scripts/report_coverage protocol-swift protocol/languages/swift/.build/coverage/coverage.json
 
   ci-ios-swift-samples:
