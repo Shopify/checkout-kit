@@ -1,6 +1,6 @@
 # Bitrise E2E Pipeline
 
-Checkout Kit E2E tests run in Bitrise through the `e2e` pipeline, with this app-level setup.
+Checkout Kit E2E tests run on BrowserStack through Bitrise’s `e2e-browserstack` pipeline, with this app-level setup.
 
 ## Bitrise app
 
@@ -47,7 +47,7 @@ It has no automatic triggers and does not participate in the required E2E pipeli
 
 ## Pipeline
 
-The `e2e` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
+The `e2e-browserstack` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
 
 ```text
 e2e/bitrise.yml
@@ -65,7 +65,9 @@ bitrise validate -c e2e/bitrise.yml
 
 ## PR and manual runs
 
-The `e2e` pipeline defines a target-based pull request trigger in `e2e/bitrise.yml` with no `changed_files` filter. The `ci/bitrise/e2e/pr` pipeline check is required for merging, so every non-draft pull request must start the pipeline and receive a result, including changes limited to docs or GitHub workflows. Target-based triggers are defined on each pipeline so one pull request can start both `e2e` and `ci-ios`; the legacy project-level `trigger_map` starts only its first match and must not be restored.
+The pipeline keeps the existing `ci/bitrise/e2e/pr` GitHub check name so repository branch protection continues to work. Its Bitrise name explicitly identifies BrowserStack as the test executor.
+
+The `e2e-browserstack` pipeline defines a target-based pull request trigger in `e2e/bitrise.yml` with no `changed_files` filter. The `ci/bitrise/e2e/pr` pipeline check is required for merging, so every non-draft pull request must start the pipeline and receive a result, including changes limited to docs or GitHub workflows. Target-based triggers are defined on each pipeline so one pull request can start both `e2e-browserstack` and `ci-ios`; the legacy project-level `trigger_map` starts only its first match and must not be restored.
 
 Shared changed-file filter groups live in `.ci/changed-file-filters.yml` and are consumed by both GitHub Actions and Bitrise E2E. Each application in `e2e/config/matrix.yml` declares `changed_files_filters` by shared group name. The run-plan producer fetches the PR file list from GitHub, applies those groups, emits only matching application rows into the BrowserStack run plan, and shares `E2E_BUILD_*` variables that gate downstream Bitrise build workflows with `run_if`.
 
@@ -73,21 +75,21 @@ Changes that select no applications run only the lightweight `e2e-produce-browse
 
 For example, `platforms/react-native/README.md` is excluded by the Markdown filters, and `.github/workflows/rn-test.yml` does not select an E2E application. Both changes start the planner and finish successfully without allocating app build machines or BrowserStack devices. The runtime filters make the per-application decision after the required pipeline starts.
 
-A manually started pipeline has no pull request file list, so it selects every application in the E2E matrix. Choose the branch and `e2e` pipeline from the Bitrise **Start build** page to run the complete E2E suite against that branch. No push trigger is configured, so merging to `main` does not automatically start this pipeline.
+A manually started pipeline has no pull request file list, so it selects every application in the E2E matrix. Choose the branch and `e2e-browserstack` pipeline from the Bitrise **Start build** page to run the complete E2E suite against that branch. No push trigger is configured, so merging to `main` does not automatically start this pipeline.
 
 ## The `ci-ios` pipeline
 
-`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. Bitrise reports one status per pipeline, so keeping it separate from `e2e` gives macOS CI and BrowserStack E2E their own results.
+`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. Bitrise reports one status per pipeline, so keeping it separate from `e2e-browserstack` gives macOS CI and BrowserStack E2E their own results.
 
 ### Its trigger carries no `changed_files`
 
-Like `e2e`, the `ci-ios` target-based pull request trigger has no file filter. `ci-ios` is a merge-blocking check, and a required check that never posts leaves a pull request permanently unmergeable — so the pipeline has to start on every non-draft pull request, including a docs-only one.
+Like `e2e-browserstack`, the `ci-ios` target-based pull request trigger has no file filter. `ci-ios` is a merge-blocking check, and a required check that never posts leaves a pull request permanently unmergeable — so the pipeline has to start on every non-draft pull request, including a docs-only one.
 
 Selection happens inside the pipeline instead. The Linux `ci-ios-plan` workflow reads the pull request's changed files, applies the shared filter groups in `.ci/changed-file-filters.yml` through `e2e/config/ios_ci.yml`, and publishes one `CI_IOS_*` variable per job with `share-pipeline-variable`. Each macOS workflow guards on its own variable with `run_if`. A change that needs no macOS job runs the Linux plan and the report, and nothing else.
 
 Both required pipelines start on every non-draft pull request and select their work at runtime.
 
-A manually started `ci-ios` pipeline selects all four macOS jobs. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e`, `ci-ios` has no push trigger and does not run automatically after a merge to `main`.
+A manually started `ci-ios` pipeline selects all four macOS jobs. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e-browserstack`, `ci-ios` has no push trigger and does not run automatically after a merge to `main`.
 
 ### The check is self-posted
 
@@ -246,7 +248,7 @@ For pull request builds, the `e2e-report` workflow creates commit statuses, Chec
 The Bitrise project has **Project settings > Repository > Extend GitHub App permissions to builds** enabled. Bitrise exposes the build-scoped GitHub App token as `GIT_HTTP_PASSWORD`. GitHub API scripts prefer an explicit `OVERRIDE_GITHUB_TOKEN` for local runs and otherwise use `GIT_HTTP_PASSWORD`; they intentionally ignore the shared `GITHUB_TOKEN` because it is not authenticated as the GitHub App required to create Check Runs.
 
 The sticky PR comment includes a **Bitrise builds** section with links to the
-`e2e` and `ci-ios` pipelines. The E2E link comes from the reporting pipeline's
+`e2e-browserstack` and `ci-ios` pipelines. The E2E link comes from the reporting pipeline's
 `BITRISEIO_PIPELINE_BUILD_URL`; other links are read from native Bitrise GitHub
 checks on the reported commit. Queued and running builds can be linked without
 waiting for them to finish. If a check has not appeared or the lookup fails, the
