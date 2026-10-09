@@ -10,13 +10,13 @@ Kit sample apps. Two complementary setups live here:
 
 - **Local** runs, one command per target, that build the sample app, install it on
   the booted device, and run the tests in `tests/`. Tags select which tests run.
-- A **CI matrix** that expands applications and OS version tags into BrowserStack
-  Maestro run rows. Every row runs the whole `tests/` folder and tags select what
-  runs inside it.
+- **Bitrise** workflows that build each selected application and run Maestro on
+  a simulator or emulator on the build host. The same matrix tags select tests.
 
 Local runs call `scripts/run_local_e2e`, which builds and installs the target
-before delegating the Maestro invocation to `scripts/run_maestro`. CI applies the
-same environment contract through the BrowserStack run plan.
+before delegating the Maestro invocation to `scripts/run_maestro`. Bitrise uses
+these runners too, with two retries of failed flows, JUnit results in the **Tests**
+tab, and per-attempt diagnostics. See [Bitrise setup](BITRISE.md).
 
 ## Encrypted environments
 
@@ -112,11 +112,9 @@ connection options and Android through the launch intent.
 
 ## Matrix
 
-CI runs are described by `config/matrix.yml`. The matrix expands applications and
-OS version tags into a BrowserStack run plan. Because Bitrise has no built-in
-matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb` transforms the
-matrix into a BrowserStack run plan and the pipeline parallelizes over the
-resulting rows.
+CI runs are described by `config/matrix.yml`. `BitriseE2ERunPlan` applies its
+changed-file filters and validates tags using the shared matrix loader. The
+`e2e` pipeline runs one `e2e-maestro-*` workflow per selected application.
 
 Current applications:
 
@@ -125,9 +123,10 @@ Current applications:
 - Kotlin Android sample app
 - Swift iOS sample app
 
-Current OS version tag:
-
-- `latest`
+The `latest` OS tag is used by the optional `e2e-browserstack` real-device pipeline. Direct runs
+use the simulator on the pinned Xcode stack and Android API 35; they do not resolve
+BrowserStack's latest device. The planner rejects additional OS tags so new OS
+coverage cannot be silently omitted.
 
 Every run executes the whole `tests/` folder. The top-level `tags:` block sets the
 default include and exclude lists, and an application may override either one to
@@ -143,7 +142,7 @@ Validate the matrix:
 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate
 ```
 
-Expand the BrowserStack run plan:
+Inspect the optional BrowserStack real-device run plan:
 
 ```bash
 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand
@@ -180,8 +179,9 @@ ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan count
   environment contract and target-specific test-file selection in one place.
 - `scripts/bitrise_ci_helpers` holds shared functions used by CI builds, including
   EJSON setup and `e2e_configure_storefront`.
-- `config/matrix.yml`, `lib/e2e_matrix_to_browserstack_run_plan.rb`, and
-  `scripts/` drive the BrowserStack run plan.
+- `config/matrix.yml` and `lib/bitrise_e2e_run_plan.rb` select direct CI workflows.
+- `scripts/run_bitrise_maestro` installs a packaged app and invokes the shared
+  runner with `--skip-build`, without rebuilding or starting Metro.
 
 Maestro resolves the `flows:` glob in `config.yaml` relative to the path on the
 command line. BrowserStack passes the workspace root because `scripts/zip_e2e_tests`

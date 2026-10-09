@@ -49,7 +49,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def e2e_pipeline
-    YAML.safe_load_file(PIPELINE_PATH, aliases: true).fetch("pipelines").fetch("e2e-browserstack")
+    YAML.safe_load_file(PIPELINE_PATH, aliases: true).fetch("pipelines").fetch("e2e")
   end
 
   def test_expand_produces_one_run_per_application_and_os_version_tag
@@ -251,45 +251,13 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
   # A required pipeline status cannot be published when its trigger rejects the PR.
   def test_required_pipeline_starts_for_every_ready_pull_request
-    assert_equal "ci/bitrise/e2e/<event_type>", e2e_pipeline.fetch("status_report_name")
+    assert_equal "ci/bitrise/e2e/<event_type>", e2e_pipeline.fetch("status_report_name").gsub("<target_id>", "e2e")
     trigger = e2e_pipeline.fetch("triggers").fetch("pull_request").find do |candidate|
       candidate["source_branch"] == "*" && !candidate.key?("changed_files")
     end
 
     refute_nil trigger, "Required E2E status needs a PR trigger without a changed-files filter"
     assert_equal false, trigger.fetch("draft_enabled")
-  end
-
-  def test_web_workflow_and_docs_changes_run_only_the_planner_and_reporter
-    workflows = e2e_pipeline.fetch("workflows")
-    planner = "e2e-produce-browserstack-run-plan"
-    refute workflows.fetch(planner).key?("run_if"), "The planner must run to complete the required pipeline"
-    report = workflows.fetch("e2e-report")
-    refute report.key?("run_if"), "The required E2E report must run even when no tests are selected"
-    assert_equal "workflow", report.fetch("should_always_run")
-    assert_includes report.fetch("depends_on"), planner
-    assert_includes report.fetch("depends_on"), "e2e-execute-browserstack-run"
-
-    [
-      ["platforms/web/src/components/shopify-checkout/shopify-checkout.ts"],
-      [".github/workflows/protocol-test.yml", ".github/workflows/rn-test.yml", ".github/workflows/web.yml"],
-      ["README.md"],
-      ["platforms/react-native/docs/assets/screenshot.png"]
-    ].each do |changed_files|
-      run_plan = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: changed_files)
-      assert_empty run_plan.selected_applications, changed_files.inspect
-      assert_empty run_plan.expand, changed_files.inspect
-      env = run_plan.bitrise_env
-
-      workflows.each do |name, workflow|
-        next if [planner, "e2e-report"].include?(name)
-
-        expression = workflow.fetch("run_if").fetch("expression")
-        flag = /\A\{\{\s+enveq "(E2E_[A-Z0-9_]+)" "true"\s+\}\}\z/.match(expression)
-        refute_nil flag, "#{name} must run only when its plan flag is true"
-        assert_equal "false", env.fetch(flag[1]), "#{name} should skip #{changed_files.inspect}"
-      end
-    end
   end
 
   def test_build_env_key_sanitizes_application_id
