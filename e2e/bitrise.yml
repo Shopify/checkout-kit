@@ -37,7 +37,7 @@ tools:
   nodejs: 22.14.0
 
 pipelines:
-  e2e:
+  e2e-browserstack:
     # The required ci/bitrise/e2e/pr check must report for every ready PR.
     # Select applications in the run plan so unrelated changes still finish
     # the pipeline successfully without starting builds or BrowserStack runs.
@@ -45,11 +45,9 @@ pipelines:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
-    # which is identical for every pipeline on this app. A second triggered
-    # pipeline would then overwrite this one's commit status. <target_id>
-    # expands to the pipeline id, so each pipeline owns its own check.
-    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    # Preserve the required GitHub check while making BrowserStack execution
+    # explicit in Bitrise. The direct Maestro cutover inherits this check.
+    status_report_name: "ci/bitrise/e2e/<event_type>"
     workflows:
       e2e-produce-browserstack-run-plan: {}
       e2e-build-react-native-ios:
@@ -632,6 +630,58 @@ workflows:
             - paths: |-
                 ~/.gradle/caches
                 ~/.gradle/wrapper
+
+  # Manual proof of concept: run the Swift Maestro suite on the Bitrise host.
+  e2e-maestro-swift-ios:
+    status_report_name: "ci/bitrise/maestro-swift-ios/<event_type>"
+    envs:
+      - E2E_MAESTRO_TEST_RETRIES: "2"
+      # Keep first-run notices out of the installer's exact version check.
+      - MAESTRO_CLI_NO_ANALYTICS: "1"
+      - MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - script@1:
+          title: Install Maestro and report tooling
+          timeout: 600
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./scripts/install_maestro
+                gem install rexml --version 3.4.4 --install-dir "$HOME/.maestro-report-gems" --no-document
+                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
+                ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
+      - script@1:
+          title: Build and run the Swift Maestro suite on the simulator
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source ./e2e/scripts/bitrise_ci_helpers
+                e2e_configure_storefront
+                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
+                export E2E_JUNIT_REPORT="$HOME/.maestro/tests/maestro-junit.xml"
+                ./e2e/scripts/run_local_e2e swift-ios
+      - custom-test-results-export@1:
+          is_always_run: true
+          inputs:
+            - test_name: Swift Maestro
+            - base_path: "$HOME/.maestro/tests/maestro-junit.xml"
+            - search_pattern: "*"
+      - deploy-to-bitrise-io@2:
+          is_always_run: true
+          inputs:
+            - deploy_path: "$HOME/.maestro/tests"
+            - is_compress: "true"
 
   e2e-build-swift-ios:
     meta:
