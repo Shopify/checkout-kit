@@ -123,7 +123,7 @@ Current applications:
 - Kotlin Android sample app
 - Swift iOS sample app
 
-The legacy `latest` OS tag is retained for BrowserStack rollback. Direct runs
+The `latest` OS tag is used by the optional `e2e-browserstack` real-device pipeline. Direct runs
 use the simulator on the pinned Xcode stack and Android API 35; they do not resolve
 BrowserStack's latest device. The planner rejects additional OS tags so new OS
 coverage cannot be silently omitted.
@@ -142,7 +142,7 @@ Validate the matrix:
 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate
 ```
 
-Inspect the legacy BrowserStack run plan (retained for rollback):
+Inspect the optional BrowserStack real-device run plan:
 
 ```bash
 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand
