@@ -424,6 +424,110 @@ describe('ShopifyCheckoutKit', () => {
       expect(secondSubscription.remove).not.toHaveBeenCalled();
     });
 
+    it.each(['close', 'fail'])(
+      'keeps a presentation opened from %s subscribed',
+      type => {
+        const firstSubscription = {remove: jest.fn()};
+        const secondSubscription = {remove: jest.fn()};
+        NativeModule.onDispatch
+          .mockReturnValueOnce(firstSubscription)
+          .mockReturnValueOnce(secondSubscription);
+        const instance = new ShopifyCheckout();
+        const secondClose = jest.fn();
+        const presentAgain = () => {
+          expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
+          instance.present(checkoutUrl, {onClose: secondClose});
+        };
+        instance.present(checkoutUrl, {
+          onClose: presentAgain,
+          onFail: presentAgain,
+        });
+        const firstDispatch = lastDispatch();
+        firstDispatch(
+          JSON.stringify({type, payload: {code: 'unknown', message: 'failed'}}),
+        );
+        expect(secondSubscription.remove).not.toHaveBeenCalled();
+        firstDispatch(JSON.stringify({type: 'close'}));
+        expect(secondClose).not.toHaveBeenCalled();
+        lastDispatch()(JSON.stringify({type: 'close'}));
+        expect(secondClose).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it('keeps a reentrant presentation subscribed when the first present throws', () => {
+      const firstSubscription = {remove: jest.fn()};
+      const secondSubscription = {remove: jest.fn()};
+      NativeModule.onDispatch
+        .mockReturnValueOnce(firstSubscription)
+        .mockReturnValueOnce(secondSubscription);
+      NativeModule.present.mockImplementationOnce(() => {
+        lastDispatch()(JSON.stringify({type: 'close'}));
+      });
+      const instance = new ShopifyCheckout();
+      const secondClose = jest.fn();
+      expect(() =>
+        instance.present(checkoutUrl, {
+          onClose: () => {
+            instance.present(checkoutUrl, {onClose: secondClose});
+            throw new Error('consumer error');
+          },
+        }),
+      ).toThrow('consumer error');
+      expect(firstSubscription.remove).toHaveBeenCalledTimes(1);
+      expect(secondSubscription.remove).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'close'}));
+      expect(secondClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('releases the subscription even if the terminal callback throws', () => {
+      const subscription = {remove: jest.fn()};
+      NativeModule.onDispatch.mockReturnValueOnce(subscription);
+      const onClose = jest.fn(() => {
+        throw new Error('consumer error');
+      });
+      const instance = new ShopifyCheckout();
+      instance.present(checkoutUrl, {onClose});
+      const dispatch = lastDispatch();
+      expect(() => dispatch(JSON.stringify({type: 'close'}))).toThrow(
+        'consumer error',
+      );
+      expect(subscription.remove).toHaveBeenCalledTimes(1);
+      dispatch(JSON.stringify({type: 'close'}));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['replace', 'dismiss', 'teardown'])(
+      'ignores queued events after %s',
+      action => {
+        const instance = new ShopifyCheckout();
+        const onClose = jest.fn();
+        instance.present(checkoutUrl, {onClose});
+        const staleDispatch = lastDispatch();
+        if (action === 'replace')
+          instance.present(checkoutUrl, {onClose: jest.fn()});
+        else if (action === 'dismiss') instance.dismiss();
+        else instance.teardown();
+        staleDispatch(JSON.stringify({type: 'close'}));
+        expect(onClose).not.toHaveBeenCalled();
+      },
+    );
+
+    it('releases the subscription when native presentation throws', () => {
+      const subscription = {remove: jest.fn()};
+      NativeModule.onDispatch.mockReturnValueOnce(subscription);
+      NativeModule.present.mockImplementationOnce(() => {
+        throw new Error('native error');
+      });
+      const instance = new ShopifyCheckout();
+      const onClose = jest.fn();
+      expect(() => instance.present(checkoutUrl, {onClose})).toThrow(
+        'native error',
+      );
+      expect(subscription.remove).toHaveBeenCalledTimes(1);
+      lastDispatch()(JSON.stringify({type: 'close'}));
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
     it('releases the dispatch subscription after a terminal close event', () => {
       const subscription = {remove: jest.fn()};
       NativeModule.onDispatch.mockReturnValueOnce(subscription);
@@ -634,8 +738,10 @@ describe('ShopifyCheckoutKit', () => {
           {onClose, onFail, onGeolocationRequest},
           {[CheckoutProtocol.start]: onStart},
         );
-        const dispatch = lastDispatch();
+        let dispatch = lastDispatch();
         dispatch(JSON.stringify({type: 'close'}));
+        instance.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
+        dispatch = lastDispatch();
         dispatch(
           JSON.stringify({
             type: 'fail',
@@ -646,6 +752,8 @@ describe('ShopifyCheckoutKit', () => {
             },
           }),
         );
+        instance.present(checkoutUrl, {onClose, onFail, onGeolocationRequest});
+        dispatch = lastDispatch();
         dispatch(
           JSON.stringify({
             type: 'geolocationRequest',

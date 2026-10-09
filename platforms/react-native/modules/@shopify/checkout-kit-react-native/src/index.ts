@@ -141,6 +141,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   ): void {
     this.releaseDispatchSubscription();
 
+    let subscription: {remove: () => void} | undefined;
     const {dispatcher, subscribedMethods} = createPresentDispatcher({
       callbacks,
       protocol,
@@ -151,20 +152,25 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         this.handleDefaultGeolocationRequest(),
       respondToGeolocationRequest: allow =>
         this.respondToGeolocationRequest(allow),
+      onTerminal: () => {
+        if (subscription) this.releaseDispatchSubscription(subscription);
+      },
     });
 
     if (dispatcher) {
-      this.dispatchSubscription = RNShopifyCheckoutKit.onDispatch(
-        envelopeJson => {
-          const result = dispatcher(envelopeJson);
-          if (result.terminal) {
-            this.releaseDispatchSubscription();
-          }
-        },
-      );
+      subscription = RNShopifyCheckoutKit.onDispatch(json => {
+        if (subscription && this.dispatchSubscription === subscription)
+          dispatcher(json);
+      });
+      this.dispatchSubscription = subscription;
     }
 
-    RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
+    try {
+      RNShopifyCheckoutKit.present(checkoutUrl, subscribedMethods);
+    } catch (error) {
+      if (subscription) this.releaseDispatchSubscription(subscription);
+      throw error;
+    }
   }
 
   /**
@@ -342,9 +348,11 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     return this.features[feature] ?? true;
   }
 
-  private releaseDispatchSubscription(): void {
-    this.dispatchSubscription?.remove();
+  private releaseDispatchSubscription(only?: {remove: () => void}): void {
+    if (only && this.dispatchSubscription !== only) return;
+    const subscription = this.dispatchSubscription;
     this.dispatchSubscription = undefined;
+    subscription?.remove();
   }
 
   /**
