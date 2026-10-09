@@ -63,8 +63,6 @@ jobs:
               - 'Package.swift'
               - 'Package.resolved'
               - '.github/workflows/swift-lint.yml'
-              - '.github/workflows/breaking-changes.yml'
-              - '.github/actions/setup-mint/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             # Common React Native infra: JS-level jobs (jest, lint, packed
@@ -78,7 +76,6 @@ jobs:
               - '.github/scripts/package-json-version'
               - '.github/scripts/validate-release-version'
               - '.github/actions/setup/**'
-              - '.github/actions/setup-mint/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/breaking-changes.yml'
               - '.github/workflows/ci.yml'
@@ -223,12 +220,10 @@ jobs:
     name: Breaking Changes
     needs: changes
     if: |
-      needs.changes.outputs.swift == 'true' ||
       needs.changes.outputs.android == 'true' ||
       needs.changes.outputs.reactNative == 'true'
     uses: ./.github/workflows/breaking-changes.yml
     with:
-      swift: ${{ needs.changes.outputs.swift }}
       android: ${{ needs.changes.outputs.android }}
       react-native: ${{ needs.changes.outputs.reactNative }}
 

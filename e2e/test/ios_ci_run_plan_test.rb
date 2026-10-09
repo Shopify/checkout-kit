@@ -11,8 +11,8 @@ class IOSCIRunPlanTest < Minitest::Test
   SWIFT_FILTERS = ["swift", "protocolSwift", "protocolShared", "packageSwift", "ciFilters", "iosCiConfig"].freeze
   REACT_NATIVE_FILTERS = ["reactNative", "protocolTypescript", "protocolShared", "packageSwift", "ciFilters", "iosCiConfig"].freeze
 
-  # The real config carries only the jobs already ported to Bitrise, so the four-job
-  # selection rules are exercised against a fixture that names all four macOS jobs.
+  # The real config's jobs fall into a Swift group and a React Native group, so the
+  # selection rules are exercised against a fixture with two jobs from each group.
   def four_job_config
     {
       "version" => 1,
@@ -67,8 +67,8 @@ class IOSCIRunPlanTest < Minitest::Test
     )
   end
 
-  # ci.yml lists Package.swift under both the swift and reactNativeIos infra filters,
-  # so a manifest change has to keep selecting all four macOS jobs after the port.
+  # Both groups subscribe to packageSwift, because the React Native apps resolve the
+  # root Swift package too.
   def test_swift_package_manifest_change_selects_every_job
     assert_equal(
       ["swift-package-tests", "swift-samples", "react-native-build-ios", "react-native-test-ios"],
@@ -80,8 +80,8 @@ class IOSCIRunPlanTest < Minitest::Test
     assert_empty selected_ids(["platforms/swift/docs/usage.md"])
   end
 
-  # An e2e/** edit that only touches Maestro flows must not boot four macOS machines,
-  # so the iOS jobs subscribe to the narrower iosCiConfig filter instead.
+  # An e2e/** edit that only touches Maestro flows must not boot macOS machines, so
+  # the iOS jobs subscribe to the narrower iosCiConfig filter instead.
   def test_maestro_flow_change_selects_no_job
     assert_empty selected_ids(["e2e/tests/checkout/launch.yaml"])
   end
@@ -200,6 +200,37 @@ class IOSCIRunPlanTest < Minitest::Test
     loaded = IOSCIRunPlan.load(CONFIG_PATH, changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
 
     assert_includes loaded.selected_job_ids, "swift-package-tests"
+  end
+
+  # The React Native bridge lint reads Swift source only, so unlike the React Native
+  # app builds it must not run for a change to the root package manifest.
+  def test_real_config_package_manifest_change_skips_the_react_native_bridge_lint
+    loaded = IOSCIRunPlan.load(CONFIG_PATH, changed_files: ["Package.swift"])
+
+    assert_equal(
+      [
+        "swift-package-tests",
+        "swift-samples",
+        "swift-lint",
+        "swift-podspec-lint",
+        "swift-api-check",
+        "react-native-build-ios",
+        "react-native-test-ios"
+      ],
+      loaded.selected_job_ids
+    )
+  end
+
+  def test_real_config_react_native_bridge_change_selects_the_react_native_jobs
+    loaded = IOSCIRunPlan.load(
+      CONFIG_PATH,
+      changed_files: ["platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/ShopifyCheckoutKit.swift"]
+    )
+
+    assert_equal(
+      ["react-native-build-ios", "react-native-test-ios", "react-native-lint-ios"],
+      loaded.selected_job_ids
+    )
   end
 
   def test_real_config_has_no_validation_errors

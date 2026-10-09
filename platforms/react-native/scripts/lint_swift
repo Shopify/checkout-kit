@@ -43,7 +43,7 @@ resolve_tool() {
         fi
     fi
 
-    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    if [[ "${CI:-}" == "true" ]]; then
         echo "❌ $display_name must resolve through Mint in CI" >&2
         print_install_instructions >&2
         return 1

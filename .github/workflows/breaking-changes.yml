@@ -3,9 +3,6 @@ name: Breaking Changes
 on:
   workflow_call:
     inputs:
-      swift:
-        type: string
-        required: true
       android:
         type: string
         required: true
@@ -14,10 +11,6 @@ on:
         required: true
   workflow_dispatch:
     inputs:
-      swift:
-        type: string
-        required: false
-        default: 'true'
       android:
         type: string
         required: false
@@ -31,24 +24,6 @@ permissions:
   contents: read
 
 jobs:
-  swift:
-    name: Swift
-    if: inputs.swift == 'true'
-    runs-on: ${{ vars.MACOS_RUNNER }}
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: platforms/swift
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Switch to Xcode 26.2
-        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
-
-      - name: Check public Swift API baseline
-        run: ./Scripts/api check
-
   android:
     name: Android
     if: inputs.android == 'true'
