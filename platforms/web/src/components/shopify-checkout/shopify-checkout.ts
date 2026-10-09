@@ -176,6 +176,15 @@ const SHADOW_TEMPLATE = createTemplate(html`
   </div>
 `);
 
+// The tag this class registers under by default (see `register()`). Declared
+// beside the class so the typing ships with it: both the package root and the
+// component entry import this module, so either import types the element.
+declare global {
+  interface HTMLElementTagNameMap {
+    "shopify-checkout": ShopifyCheckout;
+  }
+}
+
 /**
  * An element that renders a Shopify Checkout. Checkout opens in a popup or browser tab/window
  * (see `target`). To use, create a `shopify-checkout` element, set the `src` attribute to the

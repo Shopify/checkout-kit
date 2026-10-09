@@ -1,46 +1,41 @@
-import {readFile, writeFile} from 'node:fs/promises';
+import {writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
 import browserslistToEsbuild from 'browserslist-to-esbuild';
 import {defineConfig} from 'vitest/config';
-import dts from 'vite-plugin-dts';
+import {dts} from 'rolldown-plugin-dts';
 
 import packageJson from './package.json' with {type: 'json'};
-import {appendTagNameMap, createTagNameCollector} from './scripts/tag-name-map.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
 
-// Restores custom element tag-name typing that API Extractor drops from the
-// rolled-up declarations (microsoft/rushstack#1709); see scripts/tag-name-map.ts.
-const tagNames = createTagNameCollector();
-
 export default defineConfig({
+  // Generated declarations must not go through the JS transform.
+  oxc: {exclude: [/\.js$/, /\.d\.[cm]?ts$/]},
   define: {
     CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
   },
   plugins: [
-    dts({
-      entryRoot: fromRoot('src'),
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts'],
-      outDir: fromRoot('dist'),
-      tsconfigPath: fromRoot('tsconfig.json'),
-      insertTypesEntry: true,
-      rollupTypes: true,
-      bundledPackages: ['@shopify/checkout-kit-protocol'],
-      beforeWriteFile(filePath, content) {
-        tagNames.add(filePath, content);
-      },
-      async afterBuild() {
-        const entry = fromRoot('dist/index.d.ts');
-        await writeFile(entry, appendTagNameMap(await readFile(entry, 'utf8'), tagNames.tags));
-        // Component entries have no exports of their own and roll up to `export {}`. Load the root
+    // Bundles declarations with Rolldown. Unlike API Extractor it keeps
+    // `declare global` augmentations (microsoft/rushstack#1709), so the
+    // component entries' HTMLElementTagNameMap entries ship as written.
+    // Build only: Vitest shares this config and the plugin needs Rolldown input.
+    ...dts({
+      // Keep side-effect-only modules (component registration) and their
+      // global augmentations in the bundled declarations.
+      sideEffects: true,
+    }).map((plugin) => ({...plugin, apply: 'build' as const})),
+    {
+      name: 'checkout-kit:component-entry-declarations',
+      apply: 'build',
+      async closeBundle() {
+        // Component entries have no exports of their own. Load the root
         // declarations so a component import alone brings the tag-name typing.
         await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
       },
-    }),
+    },
   ],
   build: {
     target: browserslistToEsbuild(),
