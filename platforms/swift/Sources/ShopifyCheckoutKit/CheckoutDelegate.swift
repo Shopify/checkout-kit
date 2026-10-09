@@ -15,7 +15,10 @@ public protocol CheckoutDelegate: AnyObject {
     /// Asks the delegate how to handle a link clicked in checkout.
     func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction
 
-    /// Tells the delegate that the buyer dismissed checkout.
+    /// Tells the delegate after the presented checkout closes.
+    ///
+    /// Dismissal describes presentation lifecycle independently of checkout outcome. When a
+    /// terminal failure closes checkout, ``checkoutDidFail(_:)`` is called before this method.
     func checkoutDidDismiss()
 
     /// Tells the delegate that checkout cannot continue.
