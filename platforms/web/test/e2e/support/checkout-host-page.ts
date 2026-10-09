@@ -1,8 +1,15 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import type { ShopifyCheckout, ShopifyCheckoutEventMap } from "@shopify/checkout-kit";
+import type { ShopifyCheckoutEventMap } from "@shopify/checkout-kit";
 
 import { checkoutSrc } from "./checkout-fixture";
 import { ShopifyCheckoutPopup } from "./shopify-checkout-popup";
+
+// Resolve the element type through the published tag-name typing, as consumers
+// do with document.createElement("shopify-checkout"). Locator.evaluate infers
+// the element type from the callback parameter, so no casts are needed. If the
+// package stops shipping its HTMLElementTagNameMap entry, the e2e typecheck
+// fails here.
+type CheckoutElement = HTMLElementTagNameMap["shopify-checkout"];
 import type { CheckoutEventRecord, ConfigureOptions } from "./types";
 
 export class CheckoutHostPage {
@@ -26,8 +33,7 @@ export class CheckoutHostPage {
   }
 
   async configure(options: ConfigureOptions): Promise<void> {
-    await this.component.evaluate((element, { src, target, logLevel }) => {
-      const checkout = element as ShopifyCheckout;
+    await this.component.evaluate((checkout: CheckoutElement, { src, target, logLevel }) => {
       if (src !== undefined) checkout.src = src;
       if (target !== undefined) checkout.target = target;
       if (logLevel !== undefined) checkout.logLevel = logLevel;
@@ -35,7 +41,7 @@ export class CheckoutHostPage {
   }
 
   async close(): Promise<void> {
-    await this.component.evaluate((element) => (element as ShopifyCheckout).close());
+    await this.component.evaluate((checkout: CheckoutElement) => checkout.close());
   }
 
   async clickBuy(): Promise<void> {
@@ -80,11 +86,11 @@ export class CheckoutHostPage {
   }
 
   async checkout() {
-    return this.component.evaluate((element) => (element as ShopifyCheckout).checkout);
+    return this.component.evaluate((checkout: CheckoutElement) => checkout.checkout);
   }
 
   async error() {
-    return this.component.evaluate((element) => (element as ShopifyCheckout).error);
+    return this.component.evaluate((checkout: CheckoutElement) => checkout.error);
   }
 
   async expectEvent(type: CheckoutEventRecord["type"]): Promise<void> {

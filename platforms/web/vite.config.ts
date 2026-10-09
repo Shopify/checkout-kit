@@ -1,3 +1,4 @@
+import {readFile, writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
@@ -6,9 +7,14 @@ import {defineConfig} from 'vitest/config';
 import dts from 'vite-plugin-dts';
 
 import packageJson from './package.json';
+import {appendTagNameMap, createTagNameCollector} from './scripts/tag-name-map';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
+
+// Restores custom element tag-name typing that API Extractor drops from the
+// rolled-up declarations (microsoft/rushstack#1709); see scripts/tag-name-map.ts.
+const tagNames = createTagNameCollector();
 
 export default defineConfig({
   define: {
@@ -24,6 +30,13 @@ export default defineConfig({
       insertTypesEntry: true,
       rollupTypes: true,
       bundledPackages: ['@shopify/checkout-kit-protocol'],
+      beforeWriteFile(filePath, content) {
+        tagNames.add(filePath, content);
+      },
+      async afterBuild() {
+        const entry = fromRoot('dist/index.d.ts');
+        await writeFile(entry, appendTagNameMap(await readFile(entry, 'utf8'), tagNames.tags));
+      },
     }),
   ],
   build: {
@@ -62,7 +75,7 @@ export default defineConfig({
     },
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.ts', 'sample/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html', 'lcov'],
