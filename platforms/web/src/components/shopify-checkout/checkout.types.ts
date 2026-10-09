@@ -9,6 +9,16 @@ import type {
 } from "@shopify/checkout-kit-protocol";
 
 import type { LogLevel } from "../../logger";
+import type { ShopifyCheckout } from "./shopify-checkout";
+
+// The tag `ShopifyCheckout.register()` uses by default. Both the package root
+// and the component entry reach this module, so either import alone types
+// `document.createElement("shopify-checkout")`.
+declare global {
+  interface HTMLElementTagNameMap {
+    "shopify-checkout": ShopifyCheckout;
+  }
+}
 
 export type { LogLevel };
 export type { Checkout } from "../../models/checkout";

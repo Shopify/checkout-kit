@@ -1,46 +1,39 @@
-import {readFile, writeFile} from 'node:fs/promises';
+import {writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
 import browserslistToEsbuild from 'browserslist-to-esbuild';
 import {defineConfig} from 'vitest/config';
-import dts from 'vite-plugin-dts';
+import {dts} from 'rolldown-plugin-dts';
 
 import packageJson from './package.json' with {type: 'json'};
-import {appendTagNameMap, createTagNameCollector} from './scripts/tag-name-map.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
 
-// Restores custom element tag-name typing that API Extractor drops from the
-// rolled-up declarations (microsoft/rushstack#1709); see scripts/tag-name-map.ts.
-const tagNames = createTagNameCollector();
-
 export default defineConfig({
+  // Generated declarations must not go through the JS transform.
+  oxc: {exclude: [/\.js$/, /\.d\.[cm]?ts$/]},
   define: {
     CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
   },
   plugins: [
-    dts({
-      entryRoot: fromRoot('src'),
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts'],
-      outDir: fromRoot('dist'),
-      tsconfigPath: fromRoot('tsconfig.json'),
-      insertTypesEntry: true,
-      rollupTypes: true,
-      bundledPackages: ['@shopify/checkout-kit-protocol'],
-      beforeWriteFile(filePath, content) {
-        tagNames.add(filePath, content);
-      },
-      async afterBuild() {
-        const entry = fromRoot('dist/index.d.ts');
-        await writeFile(entry, appendTagNameMap(await readFile(entry, 'utf8'), tagNames.tags));
-        // Component entries have no exports of their own and roll up to `export {}`. Load the root
-        // declarations so a component import alone brings the tag-name typing.
+    // Bundles declarations with Rolldown. Unlike API Extractor it keeps
+    // `declare global` augmentations (microsoft/rushstack#1709), so each
+    // component's HTMLElementTagNameMap entry ships as written in its types
+    // module. Default options; `apply: 'build'` because Vitest shares this
+    // config and the plugin needs Rolldown build input.
+    ...dts().map((plugin) => ({...plugin, apply: 'build' as const})),
+    {
+      // `dist/<component>.d.ts` is the declaration file for the component
+      // entry (`@shopify/checkout-kit/shopify-checkout`). The entry has no
+      // exports of its own, so load the root declarations: a component import
+      // alone then brings the tag-name typing.
+      name: 'checkout-kit:component-entry-declarations',
+      async closeBundle() {
         await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
       },
-    }),
+    },
   ],
   build: {
     target: browserslistToEsbuild(),
