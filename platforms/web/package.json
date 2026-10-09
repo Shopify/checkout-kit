@@ -55,9 +55,11 @@
     "ecommerce"
   ],
   "scripts": {
-    "clean": "rm -rf dist sample/dist coverage",
-    "build": "vite build && pnpm run build:manifest",
-    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
+    "clean": "rm -rf dist dist-cdn sample/dist coverage",
+    "build": "pnpm run build:npm && pnpm run build:cdn",
+    "build:npm": "vite build && pnpm run build:manifest",
+    "build:cdn": "vite build --config vite.cdn.config.ts",
+    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' 'src/cdn-loader.ts' --outdir dist",
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -73,11 +75,11 @@
     "sample:build": "vite build --config sample/vite.config.ts",
     "sample:preview": "vite preview --config sample/vite.config.ts",
     "sample:typecheck": "tsc --noEmit -p sample/tsconfig.json",
+    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
     "verify": "publint && vitest run --config vitest.package.config.ts",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "prepack": "pnpm run build",
-    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json"
+    "prepack": "pnpm run build:npm"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",

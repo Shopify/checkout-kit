@@ -58,9 +58,18 @@ Click through and approve.
 Once approved, the workflow:
 
 1. Validates the tag's version matches `package.json`
-2. Runs the full pipeline (lint, test, build, publint)
+2. Runs lint and tests, builds npm and CDN separately, and verifies both outputs
 3. Packs the tarball and prints its contents
-4. Publishes to npm with the appropriate dist-tag and SLSA provenance
+4. Verifies the CDN deploy identity holds the bucket permissions the upload
+   needs (no credentials are left on disk at this point)
+5. Publishes the verified `dist/` to npm with the appropriate dist-tag and
+   SLSA provenance (`--ignore-scripts`, so `prepack` does not rebuild)
+6. Deploys the matching major-version CDN loader and its private implementation
+   chunks from `dist-cdn/`: stable versions on `latest` that are not marked as
+   GitHub prereleases go to `v<major>/web-components.js`; all other releases go
+   to the testing-only `v<major>/unstable/web-components.js`
+
+See [CDN publishing](./CDN-PUBLISHING.md) for the CDN URL contract and loader behavior.
 
 After it's green, sanity check:
 
@@ -74,6 +83,33 @@ npm view @shopify/checkout-kit version
 
 The package page on npm shows a _Provenance_ badge linking to the workflow
 run that built it.
+
+The CDN caches `/checkout-kit/` paths for up to 30 minutes at the edge and 10
+minutes in the browser, with no purge on upload. Allow for that before checking
+the deployed loader, and confirm the build with its `version` export:
+
+```js
+// In a browser console (the loader is minified, so grep is not reliable):
+(await import("https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js")).version;
+(await import("https://cdn.shopify.com/checkout-kit/v4/web-components.js")).version;
+```
+
+### Bad deploy
+
+A bad stable deploy stays live for up to ~40 minutes (30 at the edge, then 10
+in browsers) unless purged. To roll back:
+
+1. Re-run the workflow run of the release you want to restore (Actions → the
+   release's run → "Re-run all jobs"). It skips the already-published npm
+   version and redeploys that release's CDN assets. A *fresh* manual dispatch
+   refuses to deploy an already-published version, because `main` may no
+   longer match the published tarball; re-running an existing run is fine.
+2. Purge the loader URL (`/checkout-kit/v<major>/web-components.js`) from the CDN
+   edge using the internal CDN purge process. Only the loader needs purging;
+   chunks are content-hashed. Browser caches cannot be purged and expire within
+   10 minutes.
+3. Fix forward with a new patch release; `npm deprecate` the bad version if it
+   also shipped to npm.
 
 ## Tag and dist-tag conventions
 
@@ -100,9 +136,9 @@ The dist-tag is computed from three layered signals, in priority order:
 If none of the above applies (stable version, no override, not flagged as
 pre-release), the workflow publishes under `latest`.
 
-If you ever genuinely want to publish a `-alpha.X` version under `latest`
-(rare — usually a mistake), use the `tag` `workflow_dispatch` input to
-explicitly override.
+The `tag` override controls npm publication. Even if a prerelease is explicitly
+published under npm's `latest` tag, it still goes to the unstable CDN URL.
+Non-`latest` tags all share that same unstable destination within the major.
 
 The `web/` tag prefix is required so the publish workflow knows the release
 is for the web platform. Other platforms have their own prefixes:
@@ -120,7 +156,8 @@ You can trigger the workflow directly without creating a GitHub Release:
 2. Choose the branch (usually `main`)
 3. Optionally:
    - **Override dist-tag** — e.g. `latest`, `next`, `beta`, `experimental`
-   - **Dry run** — runs everything except the final `npm publish`. Use this
+   - **Dry run** — runs validation and reports the selected CDN URL without
+     publishing to npm or uploading CDN assets. Use this
      to sanity-check the pipeline before a real publish, or to verify a
      misconfigured release.
 
@@ -160,6 +197,26 @@ In the repo's _Settings → Environments → New environment_:
 The required-reviewer rule means every publish requires explicit human
 approval, even if the workflow somehow ran without authorization.
 
+#### CDN deployment secrets
+
+The CDN deploy identity and destination are **environment secrets** on
+`npm-web`, not values in the workflow file. They are identifiers rather than
+credentials (authentication is OIDC, minted per run), but keeping them out of
+the public repository and masked in logs limits what a reader learns about the
+deployment. The workflow fails early, without printing values, if any is
+missing.
+
+| Secret | Contents |
+| --- | --- |
+| `CDN_GCP_PROJECT_ID` | Google Cloud project that owns the deployment bucket and identity |
+| `CDN_GCP_WORKLOAD_IDENTITY_PROVIDER` | Full resource name of the GitHub Actions workload identity provider |
+| `CDN_GCP_SERVICE_ACCOUNT` | Email of the deploy service account |
+| `CDN_BUCKET` | Name of the CDN deployment bucket |
+
+The values live in the internal infrastructure configuration for Checkout Kit;
+ask a maintainer rather than reconstructing them. Because they are secrets,
+GitHub masks them in logs; the workflow additionally avoids echoing them.
+
 ## Troubleshooting
 
 ### "Tag implies version X but package.json has Y"
@@ -180,6 +237,13 @@ causes:
 
 Confirm the npm Trusted Publisher settings match the workflow's
 `environment: name:` and the workflow's filename exactly.
+
+### "Missing npm-web environment secrets"
+
+The CDN deployment secrets above are not set on the `npm-web` environment, or
+the job is not running with that environment. Add them in _Settings →
+Environments → npm-web → Environment secrets_. Dry runs need them too, since
+the pre-flight exercises the deploy identity.
 
 ### Publish failed mid-way; some files showed up on npm
 
@@ -208,11 +272,11 @@ LICENSE
 README.md
 package.json
 dist/                       (built JS, .d.ts, custom-elements.json, source map)
-src/                        (TypeScript source for consumers who want to read it)
 ```
 
-Test files (`*.test.ts`), the playground (`sample/`), the `consumer-test`
-harness, dev configs, and lockfiles are all excluded.
+The separate CDN output (`dist-cdn/`), TypeScript source, test files, the
+playground (`sample/`), dev configs, and lockfiles are all excluded. `prepack`
+runs `pnpm build:npm` only; `pnpm build` builds both npm and CDN artifacts.
 
 You can preview exactly what will be published before tagging a release:
 

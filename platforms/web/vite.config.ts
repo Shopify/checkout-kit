@@ -24,7 +24,7 @@ export default defineConfig({
     dts({
       entryRoot: fromRoot('src'),
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts'],
+      exclude: ['src/**/*.test.ts', 'src/cdn-loader.ts'],
       outDir: fromRoot('dist'),
       tsconfigPath: fromRoot('tsconfig.json'),
       insertTypesEntry: true,
@@ -83,7 +83,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
-    // Package tests run against the build via pnpm verify.
+    // Artifact tests need both builds; see vitest.package.config.ts.
     exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
     coverage: {
       provider: 'v8',

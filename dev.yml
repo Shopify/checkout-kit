@@ -1023,8 +1023,15 @@ commands:
     desc: "Web Checkout Kit commands"
     subcommands:
       build:
-        desc: Build the @shopify/checkout-kit package
+        desc: Build the @shopify/checkout-kit npm package and CDN assets
         run: cd platforms/web && pnpm build
+        subcommands:
+          npm:
+            desc: Build the npm package into dist/
+            run: cd platforms/web && pnpm build:npm
+          cdn:
+            desc: Build the CDN loader and component chunks into dist-cdn/
+            run: cd platforms/web && pnpm build:cdn
 
       test:
         desc: Run unit tests with coverage
@@ -1059,7 +1066,7 @@ commands:
           /opt/dev/bin/dev web sample build
 
       clean:
-        desc: Remove dist and coverage directories
+        desc: Remove npm and CDN build outputs and coverage
         run: cd platforms/web && pnpm clean
 
       start:
@@ -1079,7 +1086,7 @@ commands:
             run: cd platforms/web && pnpm sample:preview
 
       verify:
-        desc: Run Web package verification
+        desc: Verify the Web npm package and CDN assets
         run: cd platforms/web && pnpm verify
 
       e2e:
