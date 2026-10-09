@@ -138,9 +138,6 @@ dependencies {
     testImplementation libs.assertj.core
     testImplementation libs.awaitility
 
-    androidTestImplementation libs.androidx.test.core.ktx
-    androidTestImplementation libs.androidx.test.ext.junit.ktx
-
     // Keep the published stdlib dependency aligned with the Kotlin API/language
     // consumer floor, not the newer compiler used to build the AAR.
     implementation libs.kotlin.stdlib
