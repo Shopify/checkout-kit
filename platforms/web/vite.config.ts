@@ -19,20 +19,18 @@ export default defineConfig({
   },
   plugins: [
     // Bundles declarations with Rolldown. Unlike API Extractor it keeps
-    // `declare global` augmentations (microsoft/rushstack#1709), so the
-    // component entries' HTMLElementTagNameMap entries ship as written.
-    // Build only: Vitest shares this config and the plugin needs Rolldown input.
-    ...dts({
-      // Keep side-effect-only modules (component registration) and their
-      // global augmentations in the bundled declarations.
-      sideEffects: true,
-    }).map((plugin) => ({...plugin, apply: 'build' as const})),
+    // `declare global` augmentations (microsoft/rushstack#1709), so each
+    // component's HTMLElementTagNameMap entry ships as written in its types
+    // module. Default options; `apply: 'build'` because Vitest shares this
+    // config and the plugin needs Rolldown build input.
+    ...dts().map((plugin) => ({...plugin, apply: 'build' as const})),
     {
+      // `dist/<component>.d.ts` is the declaration file for the component
+      // entry (`@shopify/checkout-kit/shopify-checkout`). The entry has no
+      // exports of its own, so load the root declarations: a component import
+      // alone then brings the tag-name typing.
       name: 'checkout-kit:component-entry-declarations',
-      apply: 'build',
       async closeBundle() {
-        // Component entries have no exports of their own. Load the root
-        // declarations so a component import alone brings the tag-name typing.
         await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
       },
     },
