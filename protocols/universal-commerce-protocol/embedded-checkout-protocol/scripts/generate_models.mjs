@@ -1112,6 +1112,7 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
   await run("node", [
     tscBin,
     "--declaration",
+    "--isolatedDeclarations",
     "--emitDeclarationOnly",
     "--noEmit",
     "false",

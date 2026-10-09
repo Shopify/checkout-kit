@@ -79,7 +79,12 @@ export type CheckoutProtocolCatalogPayloadDecoder<
   K extends keyof CheckoutProtocolCatalogPayloads,
 > = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 
-export const checkoutProtocolCatalogPayloadDecoders = {
+export type CheckoutProtocolCatalogPayloadDecoders = {
+  [K in keyof CheckoutProtocolCatalogPayloads]:
+    CheckoutProtocolCatalogPayloadDecoder<K>;
+};
+
+export const checkoutProtocolCatalogPayloadDecoders: CheckoutProtocolCatalogPayloadDecoders = {
   [checkoutProtocolCatalog.error]: decodeErrorResponse,
   [checkoutProtocolCatalog.start]: decodeCheckout,
   [checkoutProtocolCatalog.complete]: decodeCheckout,
@@ -89,12 +94,18 @@ export const checkoutProtocolCatalogPayloadDecoders = {
   [checkoutProtocolCatalog.totalsChange]: decodeCheckout,
   [checkoutProtocolCatalog.paymentChange]: decodeCheckout,
   [checkoutProtocolCatalog.fulfillmentChange]: decodeCheckout,
-} satisfies {
-  [K in keyof CheckoutProtocolCatalogPayloads]:
-    CheckoutProtocolCatalogPayloadDecoder<K>;
 };
 
-export const notificationDescriptors = {
+export type NotificationDescriptors = {
+  [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
+    NotificationMessage<
+      (typeof checkoutProtocolCatalog)[K],
+      CheckoutProtocolCatalogParams[(typeof checkoutProtocolCatalog)[K]]
+    >
+  >;
+};
+
+export const notificationDescriptors: NotificationDescriptors = {
   error: notificationDescriptor(
     checkoutProtocolCatalog.error,
     params => ({error: decodeErrorResponse((params as {error: unknown}).error)}),
@@ -131,13 +142,6 @@ export const notificationDescriptors = {
     checkoutProtocolCatalog.fulfillmentChange,
     params => ({checkout: decodeCheckout((params as {checkout: unknown}).checkout)}),
   ),
-} satisfies {
-  [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
-    NotificationMessage<
-      (typeof checkoutProtocolCatalog)[K],
-      CheckoutProtocolCatalogParams[(typeof checkoutProtocolCatalog)[K]]
-    >
-  >;
 };
 
 export const checkoutProtocolRequestCatalog = {
@@ -186,7 +190,17 @@ export type CheckoutProtocolRequestMessage = {
   >;
 }[keyof CheckoutProtocolRequestParams];
 
-export const requestDescriptors = {
+export type RequestDescriptors = {
+  [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
+    RequestMessage<
+      (typeof checkoutProtocolRequestCatalog)[K],
+      CheckoutProtocolRequestParams[(typeof checkoutProtocolRequestCatalog)[K]]
+    >,
+    CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]
+  >;
+};
+
+export const requestDescriptors: RequestDescriptors = {
   ready: requestDescriptor(
     checkoutProtocolRequestCatalog.ready,
     null,
@@ -223,14 +237,6 @@ export const requestDescriptors = {
     params => ({checkout: decodeCheckout((params as {checkout: unknown}).checkout)}),
     (result: AddressChangeResult) => encodeAddressChangeResult(result),
   ),
-} satisfies {
-  [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
-    RequestMessage<
-      (typeof checkoutProtocolRequestCatalog)[K],
-      CheckoutProtocolRequestParams[(typeof checkoutProtocolRequestCatalog)[K]]
-    >,
-    CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]
-  >;
 };
 
 export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
