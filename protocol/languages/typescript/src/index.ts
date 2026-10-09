@@ -40,3 +40,4 @@ export {
   ProtocolValidationError,
   type ProtocolValidationReason,
 } from './protocol_codec_runtime';
+export {decodeCheckoutSnapshot} from './protocol_codec_runtime';

@@ -7,3 +7,4 @@ export { Client, type DecodeErrorContext } from './client';
 export { windowOpenSuccess, windowOpenRejected } from './window_open';
 export { EmbeddedCheckoutProtocol } from './embedded_checkout_protocol';
 export { ProtocolValidationError, type ProtocolValidationReason, } from './protocol_codec_runtime';
+export { decodeCheckoutSnapshot } from './protocol_codec_runtime';
