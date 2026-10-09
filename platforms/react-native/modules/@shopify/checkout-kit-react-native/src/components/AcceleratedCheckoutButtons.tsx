@@ -80,14 +80,16 @@ interface CommonAcceleratedCheckoutButtonsProps {
   applePayStyle?: ApplePayStyle;
 
   /**
-   * Called when checkout fails
+   * Called when checkout cannot continue. If the failure closes the
+   * presentation, `onDismiss` follows after closure.
    */
   onFail?: (error: CheckoutException) => void;
 
   /**
-   * Called when checkout is cancelled
+   * Called after the accelerated checkout presentation closes, independently
+   * of checkout outcome.
    */
-  onCancel?: () => void;
+  onDismiss?: () => void;
 
   /**
    * Called when the render state changes
@@ -169,7 +171,7 @@ export const AcceleratedCheckoutButtons: React.FC<
   cornerRadius,
   wallets,
   onFail,
-  onCancel,
+  onDismiss,
   onRenderStateChange,
   onClickLink,
   events,
@@ -188,9 +190,9 @@ export const AcceleratedCheckoutButtons: React.FC<
     [onFail],
   );
 
-  const handleCancel = useCallback(() => {
-    onCancel?.();
-  }, [onCancel]);
+  const handleDismiss = useCallback(() => {
+    onDismiss?.();
+  }, [onDismiss]);
 
   const handleRenderStateChange = useCallback(
     (event: {nativeEvent: unknown}) => {
@@ -292,7 +294,7 @@ export const AcceleratedCheckoutButtons: React.FC<
       cornerRadius={cornerRadius}
       wallets={wallets}
       onFail={handleFail}
-      onCancel={handleCancel}
+      onDismiss={handleDismiss}
       onRenderStateChange={handleRenderStateChange}
       onClickLink={handleClickLink}
       onDispatch={handleDispatch}

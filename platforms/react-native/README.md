@@ -780,30 +780,37 @@ Should you wish to manually clear the preload cache, call `invalidate()` on your
 ## Checkout lifecycle
 
 Lifecycle callbacks are passed per-call to `present()`. The bridge holds the
-handles for the duration of that one presentation and releases them on
-terminal events; nothing needs to be subscribed or torn down explicitly.
+handles for the duration of that presentation and releases them after the
+presentation closes; nothing needs to be subscribed or torn down explicitly.
 
 ### SDK callbacks on `present()`
 
 ```tsx
 shopify.present(checkoutUrl, {
-  onClose: () => {
-    // The sheet was dismissed without a terminal error
+  onDismiss: () => {
+    // The checkout presentation has closed
   },
   onFail: (error: CheckoutException) => {
-    // A terminal error occurred — inspect `error.code`, `error.message`, etc.
+    // Checkout cannot continue — inspect `error.code`, `error.message`, etc.
   },
 });
 ```
 
 | Name                   | Callback                                   | Fires                                                                                                            |
 | ---------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `onClose`              | `() => void`                               | Once, when the buyer dismisses the sheet without a terminal error.                                               |
-| `onFail`               | `(error: CheckoutException) => void`       | Once, when the checkout terminates with an error.                                                                |
+| `onDismiss`            | `() => void`                               | Once, after the checkout presentation closes, independently of checkout outcome.                                 |
+| `onFail`               | `(error: CheckoutException) => void`       | Once, when checkout cannot continue. When the failure closes checkout, `onDismiss` follows after closure.        |
 | `onGeolocationRequest` | `(event: GeolocationRequestEvent) => void` | Android only. Fired each time the webview requests geolocation permissions. See [Opting out of the default behavior](#opting-out-of-the-default-behavior). |
 
-`onClose` and `onFail` are mutually exclusive — exactly one of them fires
-per `present(...)` call, after which both handles are released.
+`onDismiss` and `onFail` are not mutually exclusive. A terminal failure emits
+`onFail`, closes the native presentation, and then emits `onDismiss`. The bridge
+retains the per-presentation callbacks through failure and releases them after
+dismissal. Calling `dismiss()` programmatically releases the callbacks without
+invoking either one.
+
+Completion and dismissal are also separate events: `CheckoutProtocol.complete`
+fires when the order completes, while `onDismiss` fires after the presentation
+later closes, including from the confirmation page.
 
 ## Identity & customer accounts
 
@@ -1126,20 +1133,25 @@ The `cornerRadius` prop lets you match the buttons to other calls-to-action in y
 
 ### Handle loading, errors, and lifecycle events
 
-Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an error.
+Attach lifecycle and protocol handlers to respond when buyers complete,
+dismiss, or encounter an error.
 
 ```tsx
+import {CheckoutProtocol} from '@shopify/checkout-kit-react-native';
+
 <AcceleratedCheckoutButtons
   cartId={cartId}
-  onComplete={(event) => {
-    // Clear cart after successful checkout
-    clearCart();
+  events={{
+    [CheckoutProtocol.complete]: () => {
+      // Clear cart after successful checkout
+      clearCart();
+    },
   }}
   onFail={(error) => {
     console.error('Accelerated checkout failed:', error);
   }}
-  onCancel={() => {
-    analytics.track('accelerated_checkout_cancelled');
+  onDismiss={() => {
+    analytics.track('accelerated_checkout_dismissed');
   }}
   onRenderStateChange={(event) => {
     // event.state: 'loading' | 'rendered' | 'error'
@@ -1150,6 +1162,11 @@ Attach lifecycle handlers to respond when buyers finish, cancel, or encounter an
   }}
 />
 ```
+
+`onDismiss` runs after the accelerated checkout presentation closes,
+independently of checkout outcome. A terminal failure invokes `onFail` first and
+`onDismiss` after closure. Completion is also separate: use
+`CheckoutProtocol.complete` to observe when the order completes.
 
 ---
 

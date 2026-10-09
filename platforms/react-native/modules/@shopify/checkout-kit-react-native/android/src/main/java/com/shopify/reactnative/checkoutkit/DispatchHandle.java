@@ -5,9 +5,8 @@ import androidx.annotation.NonNull;
 /**
  * Shared per-presentation dispatch handle.
  *
- * SDK lifecycle events and protocol events both invoke the same handle. Terminal
- * lifecycle events release it so subsequent protocol emissions are dropped,
- * matching the iOS pendingDispatchCallback lifecycle.
+ * SDK lifecycle events and protocol events both invoke the same handle. Presentation
+ * dismissal or explicit teardown releases it so subsequent emissions are dropped.
  */
 public class DispatchHandle implements DispatchCallback {
   private final DispatchCallback downstream;

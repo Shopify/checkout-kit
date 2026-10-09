@@ -2,6 +2,7 @@ package com.shopify.reactnative.checkoutkit;
 
 import android.app.Activity;
 import androidx.activity.ComponentActivity;
+import androidx.annotation.VisibleForTesting;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Arguments;
@@ -30,9 +31,11 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   public static Configuration checkoutConfig = new Configuration();
 
-  private CheckoutHandle checkoutSheet;
+  @VisibleForTesting
+  CheckoutHandle checkoutSheet;
 
-  private CustomCheckoutListener checkoutListener;
+  @VisibleForTesting
+  CustomCheckoutListener checkoutListener;
 
   private CheckoutPreload checkoutPreload;
 
@@ -79,7 +82,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
       DispatchHandle dispatch = new DispatchHandle(json -> emitOnDispatch(json));
-      CustomCheckoutListener listener = new CustomCheckoutListener(dispatch);
+      CustomCheckoutListener listener = new CustomCheckoutListener(dispatch, this::clearCheckoutPresentation);
       checkoutListener = listener;
 
       List<String> methods = new ArrayList<>();
@@ -95,8 +98,11 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         if (checkoutListener != listener) {
           return;
         }
-        checkoutSheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity,
-            listener, client);
+        CheckoutHandle presentedCheckout = ShopifyCheckoutKit.present(checkoutURL,
+            (ComponentActivity) currentActivity, listener, client);
+        if (checkoutListener == listener) {
+          checkoutSheet = presentedCheckout;
+        }
       });
     }
   }
@@ -178,6 +184,14 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   protected void emitPreloadStateEvent(String event) {
     emitOnPreloadStateChange(event);
+  }
+
+  @VisibleForTesting
+  void clearCheckoutPresentation(CustomCheckoutListener dismissedListener) {
+    if (checkoutListener == dismissedListener) {
+      checkoutListener = null;
+      checkoutSheet = null;
+    }
   }
 
   private void releaseCheckoutListener() {

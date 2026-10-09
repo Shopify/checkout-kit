@@ -73,14 +73,35 @@ class CustomCheckoutListenerTest {
     }
 
     @Test
-    fun `a terminal event releases the dispatcher`() {
+    fun `dismissal clears native presentation before emitting close`() {
+        val lifecycleEvents = mutableListOf<String>()
+        lateinit var listener: CustomCheckoutListener
+        listener = CustomCheckoutListener(
+            DispatchHandle(DispatchCallback { json ->
+                lifecycleEvents += Json.parseToJsonElement(json).jsonObject["type"]?.jsonPrimitive?.content.orEmpty()
+            }),
+            CustomCheckoutListener.CheckoutDismissedCallback { dismissedListener ->
+                assertThat(dismissedListener === listener).isTrue()
+                lifecycleEvents += "clear"
+            },
+        )
+
+        listener.onCheckoutDismissed()
+
+        assertThat(lifecycleEvents).containsExactly("clear", "close")
+    }
+
+    @Test
+    fun `failure remains active until dismissal emits both lifecycle envelopes`() {
         val captured = mutableListOf<String>()
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
+        listener.onCheckoutFailed(CheckoutException(CheckoutErrorCode.SDK_ERROR, "failed"))
         listener.onCheckoutDismissed()
         listener.onCheckoutFailed(CheckoutException(CheckoutErrorCode.SDK_ERROR, "late"))
 
-        assertThat(captured).hasSize(1)
+        assertThat(captured.map { Json.parseToJsonElement(it).jsonObject["type"]?.jsonPrimitive?.content })
+            .containsExactly("fail", "close")
     }
 
     private fun payloadOf(envelope: JsonObject): JsonObject =

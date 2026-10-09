@@ -190,16 +190,16 @@ function routeSdkLifecycleEvent(
 ): PresentDispatchResult {
   switch (type) {
     case 'close':
-      callbacks?.onClose?.();
+      callbacks?.onDismiss?.();
       return {terminal: true};
     case 'fail': {
       const failPayload = validateFailPayload(payload);
       if (failPayload == null) {
         logParseError('`fail` envelope payload is malformed', envelopeJson);
-        return {terminal: true};
+        return {terminal: false};
       }
       callbacks?.onFail?.(parseCheckoutError(failPayload));
-      return {terminal: true};
+      return {terminal: false};
     }
     case 'geolocationRequest': {
       const geoPayload = validateGeolocationRequestPayload(payload);
