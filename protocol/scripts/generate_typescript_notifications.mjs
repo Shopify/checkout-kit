@@ -203,19 +203,30 @@ export type CheckoutProtocolCatalogPayloadDecoder<
   K extends keyof CheckoutProtocolCatalogPayloads,
 > = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
 
-export const checkoutProtocolCatalogPayloadDecoders = {
+export type CheckoutProtocolCatalogPayloadDecoders = {
+  [K in keyof CheckoutProtocolCatalogPayloads]:
+    CheckoutProtocolCatalogPayloadDecoder<K>;
+};
+
+export const checkoutProtocolCatalogPayloadDecoders: CheckoutProtocolCatalogPayloadDecoders = {
 ${notifications
   .map(
     notification =>
       `  [checkoutProtocolCatalog.${notification.identifier}]: decode${notification.typeName},`,
   )
   .join('\n')}
-} satisfies {
-  [K in keyof CheckoutProtocolCatalogPayloads]:
-    CheckoutProtocolCatalogPayloadDecoder<K>;
 };
 
-export const notificationDescriptors = {
+export type NotificationDescriptors = {
+  [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
+    NotificationMessage<
+      (typeof checkoutProtocolCatalog)[K],
+      CheckoutProtocolCatalogParams[(typeof checkoutProtocolCatalog)[K]]
+    >
+  >;
+};
+
+export const notificationDescriptors: NotificationDescriptors = {
 ${notifications
   .map(
     notification =>
@@ -225,13 +236,6 @@ ${notifications
   ),`,
   )
   .join('\n')}
-} satisfies {
-  [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<
-    NotificationMessage<
-      (typeof checkoutProtocolCatalog)[K],
-      CheckoutProtocolCatalogParams[(typeof checkoutProtocolCatalog)[K]]
-    >
-  >;
 };
 
 export const checkoutProtocolRequestCatalog = {
@@ -260,7 +264,17 @@ export type CheckoutProtocolRequestMessage = {
   >;
 }[keyof CheckoutProtocolRequestParams];
 
-export const requestDescriptors = {
+export type RequestDescriptors = {
+  [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
+    RequestMessage<
+      (typeof checkoutProtocolRequestCatalog)[K],
+      CheckoutProtocolRequestParams[(typeof checkoutProtocolRequestCatalog)[K]]
+    >,
+    CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]
+  >;
+};
+
+export const requestDescriptors: RequestDescriptors = {
 ${requests
   .map(
     request =>
@@ -272,14 +286,6 @@ ${requests
   ),`,
   )
   .join('\n')}
-} satisfies {
-  [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<
-    RequestMessage<
-      (typeof checkoutProtocolRequestCatalog)[K],
-      CheckoutProtocolRequestParams[(typeof checkoutProtocolRequestCatalog)[K]]
-    >,
-    CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]
-  >;
 };
 
 export const embeddedCheckoutMethods: ReadonlySet<string> = new Set([
