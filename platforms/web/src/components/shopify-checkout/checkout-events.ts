@@ -27,7 +27,7 @@ export class ShopifyCheckoutStartEvent extends CustomEvent<ShopifyCheckoutStartE
   declare type: "start";
 
   constructor(detail: ShopifyCheckoutStartEventDetail) {
-    super("start", { detail, bubbles: true });
+    super("start", { detail, bubbles: false });
   }
 }
 
@@ -35,7 +35,7 @@ export class ShopifyCheckoutUpdateEvent extends CustomEvent<ShopifyCheckoutUpdat
   declare type: "update";
 
   constructor(detail: ShopifyCheckoutUpdateEventDetail) {
-    super("update", { detail, bubbles: true });
+    super("update", { detail, bubbles: false });
   }
 }
 
@@ -43,7 +43,7 @@ export class ShopifyCheckoutCompleteEvent extends CustomEvent<ShopifyCheckoutCom
   declare type: "complete";
 
   constructor(detail: ShopifyCheckoutCompleteEventDetail) {
-    super("complete", { detail, bubbles: true });
+    super("complete", { detail, bubbles: false });
   }
 }
 
@@ -51,7 +51,7 @@ export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
   declare type: "close";
 
   constructor() {
-    super("close", { bubbles: true });
+    super("close", { bubbles: false });
   }
 }
 
@@ -59,7 +59,7 @@ export class ShopifyCheckoutBlockedEvent extends CustomEvent<ShopifyCheckoutBloc
   declare type: "blocked";
 
   constructor(detail: ShopifyCheckoutBlockedEventDetail) {
-    super("blocked", { detail, bubbles: true });
+    super("blocked", { detail, bubbles: false });
   }
 }
 

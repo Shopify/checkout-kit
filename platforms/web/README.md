@@ -555,10 +555,8 @@ shopify-checkout::part(overlay) {
 ## Checkout lifecycle
 
 The element dispatches typed `CustomEvent`s at every meaningful moment of the
-checkout session. The `start`, `update`, `complete`, `close`, and `blocked`
-events bubble, so you can listen anywhere in your DOM, including a single
-delegated listener at `document` if you have many elements on the page. The
-`error` event does not bubble; attach its listener directly to the checkout
+checkout session. The `start`, `update`, `complete`, `close`, `blocked`, and
+`error` events do not bubble; attach listeners directly to the checkout
 element. Event payloads are available in `event.detail`.
 
 | Event      | `event.detail` | When it fires |

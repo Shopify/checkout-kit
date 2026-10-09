@@ -409,18 +409,21 @@ describe("<shopify-checkout>", () => {
           });
         });
 
-        it("dispatches blocked to document listeners", () => {
+        it("dispatches blocked to the checkout without bubbling to document listeners", () => {
           POPUP_TARGETS.forEach((target) => {
             const checkout = renderCheckout({ target });
             vi.spyOn(window, "open").mockReturnValue(null);
             vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+            const blockedEventSpy = vi.fn();
+            checkout.addEventListener("blocked", blockedEventSpy);
             const documentBlockedSpy = vi.fn();
             document.addEventListener("blocked", documentBlockedSpy);
 
             try {
               checkout.open();
 
-              expect(documentBlockedSpy).toHaveBeenCalledTimes(1);
+              expect(blockedEventSpy).toHaveBeenCalledTimes(1);
+              expect(documentBlockedSpy).not.toHaveBeenCalled();
             } finally {
               document.removeEventListener("blocked", documentBlockedSpy);
             }
