@@ -183,3 +183,70 @@ test("artifact text cannot inject saved acceptance state into the report", () =>
   assert.deepEqual(policy.readState(body), state);
   assert.match(body, /Acceptance required/);
 });
+
+test("budgets per-package bundle bytes, with acceptance scoped to the package", () => {
+  const protocol = "@shopify/checkout-kit-protocol";
+  const input = {
+    budgets: {
+      web: {
+        protocol: { measurement: "bundlePackage", package: protocol, softKiB: 16, hardKiB: 20 },
+        telemetry: {
+          measurement: "bundlePackage",
+          package: "@shopify/checkout-kit-telemetry",
+          softKiB: 5,
+          hardKiB: 8,
+        },
+      },
+    },
+    base: policy.measurements(
+      `Web\tJavaScript package ${protocol}\t14690\nWeb\tJavaScript package @shopify/checkout-kit-telemetry\t4272\n`,
+    ),
+    head: policy.measurements(
+      `Web\tJavaScript package ${protocol}\t${17 * KiB}\nWeb\tJavaScript package @shopify/checkout-kit-telemetry\t4272\n`,
+    ),
+    measuredPlatforms: ["web"],
+  };
+  assert.deepEqual(
+    policy
+      .evaluate(input)
+      .map(({ metric, before, after, status }) => [metric, before, after, status]),
+    [
+      ["protocol", 14690, 17 * KiB, "soft"],
+      ["telemetry", 4272, 4272, "within"],
+    ],
+  );
+  const { accepted } = policy.accept(
+    policy.evaluate(input),
+    [{ platform: "web", reason: "Adopt the new UCP version" }],
+    "writer",
+    comment,
+  );
+  assert.equal(accepted["web.protocol"].package, protocol);
+  assert.equal(policy.evaluate(input, accepted)[0].status, "accepted");
+  // Acceptance for one package does not carry over to another package's budget.
+  input.budgets.web.protocol.package = "@shopify/checkout-kit";
+  input.head["Web\tJavaScript package @shopify/checkout-kit"] = 17 * KiB;
+  assert.equal(policy.evaluate(input, accepted)[0].status, "soft");
+  // A package that no longer contributes bytes is missing, not within budget.
+  delete input.head["Web\tJavaScript package @shopify/checkout-kit"];
+  assert.equal(policy.evaluate(input, accepted)[0].status, "missing");
+  const body = policy.render(policy.evaluate(input, accepted), { version: 1 }, "");
+  assert.match(body, /Web JavaScript from @shopify\/checkout-kit \(uncompressed\)/);
+});
+
+test("per-package budgets require a valid package name, and only per-package budgets accept one", () => {
+  const budget = (fields) => ({ web: { entry: { softKiB: 1, hardKiB: 2, ...fields } } });
+  assert.doesNotThrow(() =>
+    policy.validateBudgets(budget({ measurement: "bundlePackage", package: "@scope/name" })),
+  );
+  for (const budgets of [
+    budget({ measurement: "bundlePackage" }),
+    budget({ measurement: "bundlePackage", package: "" }),
+    budget({ measurement: "bundlePackage", package: "Uppercase" }),
+    budget({ measurement: "bundlePackage", package: "@scope/name\tfile" }),
+    budget({ measurement: "bundlePackage", package: "@scope/name", file: "dist/index.js" }),
+    budget({ measurement: "bundle", package: "@scope/name" }),
+    { android: { aar: { measurement: "package", package: "lib", softKiB: 1, hardKiB: 2 } } },
+  ])
+    assert.throws(() => policy.validateBudgets(budgets), JSON.stringify(budgets));
+});

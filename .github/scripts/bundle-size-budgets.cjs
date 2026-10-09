@@ -9,8 +9,11 @@ const platforms = {
     measurements: {
       bundle: "JavaScript",
       bundleGzip: "JavaScript (gzip)",
+      // Uncompressed bundle bytes owned by one source package (see bundle-size-attribution.cjs).
+      bundlePackage: "JavaScript package",
       package: "npm tarball",
     },
+    packageMeasurements: ["bundlePackage"],
   },
   "react-native": {
     label: "React Native",
@@ -28,6 +31,15 @@ const statePattern = /<!-- bundle-size-state:([A-Za-z0-9+/=]+) -->/;
 
 function object(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+const npmName = /^(?:@[a-z0-9][a-z0-9._~-]*\/)?[a-z0-9][a-z0-9._~-]*$/;
+
+function measurementKey(platform, budget) {
+  const { label, measurements: artifacts } = platforms[platform];
+  const artifact = artifacts[budget.measurement];
+  if (budget.package) return `${label}\t${artifact} ${budget.package}`;
+  return `${label}\t${artifact}${budget.file ? `\t${budget.file}` : ""}`;
 }
 
 function validateBudgets(budgets) {
@@ -53,9 +65,19 @@ function validateBudgets(budgets) {
           budget.file.split("/").some((part) => !part || part === "." || part === ".."))
       )
         throw new Error(`File must be an exact package-relative path for ${platform}.${metric}`);
+      const byPackage = (platforms[platform].packageMeasurements ?? []).includes(
+        budget.measurement,
+      );
+      if (
+        byPackage !== Object.hasOwn(budget, "package") ||
+        (byPackage && (typeof budget.package !== "string" || !npmName.test(budget.package)))
+      )
+        throw new Error(
+          `Package must name the npm package measured by ${platform}.${metric}, and only for per-package measurements`,
+        );
       if (
         Object.keys(budget).some(
-          (key) => !["measurement", "file", "softKiB", "hardKiB"].includes(key),
+          (key) => !["measurement", "file", "package", "softKiB", "hardKiB"].includes(key),
         ) ||
         !Number.isFinite(budget.softKiB) ||
         !Number.isFinite(budget.hardKiB) ||
@@ -103,9 +125,8 @@ function evaluate({ budgets, base, head, measuredPlatforms }, acceptances = {}) 
     if (!measuredPlatforms.includes(platform)) continue;
     for (const [metric, budget] of Object.entries(metrics)) {
       const key = `${platform}.${metric}`;
-      const measurementKey = `${platforms[platform].label}\t${platforms[platform].measurements[budget.measurement]}${budget.file ? `\t${budget.file}` : ""}`;
-      const before = base[measurementKey];
-      const after = head[measurementKey];
+      const before = base[measurementKey(platform, budget)];
+      const after = head[measurementKey(platform, budget)];
       const acceptance = acceptances[key];
       let status;
       if (!Number.isSafeInteger(after) || after < 0 || (after === 0 && !budget.file))
@@ -117,6 +138,7 @@ function evaluate({ budgets, base, head, measuredPlatforms }, acceptances = {}) 
         acceptance &&
         acceptance.measurement === budget.measurement &&
         acceptance.file === budget.file &&
+        acceptance.package === budget.package &&
         after <= acceptance.bytes
       )
         status = "accepted";
@@ -150,6 +172,7 @@ function accept(rows, commands, actor, comment, previous = {}) {
         bytes: row.after,
         measurement: row.measurement,
         ...(row.file ? { file: row.file } : {}),
+        ...(row.package ? { package: row.package } : {}),
         actor,
         reason,
         commentId: comment.id,
@@ -227,16 +250,19 @@ function render(rows, state, packageComment, notes = []) {
         : `${kib(row.after)} (${delta === "unavailable" ? "change unavailable" : delta})`;
     const scope = row.file
       ? `${escape(row.file)} (uncompressed)`
-      : {
-          bundle: "JavaScript (uncompressed)",
-          bundleGzip: "JavaScript (gzip)",
-          package: platforms[row.platform].packageLabel,
-        }[row.measurement];
+      : row.package
+        ? `JavaScript from ${escape(row.package)} (uncompressed)`
+        : {
+            bundle: "JavaScript (uncompressed)",
+            bundleGzip: "JavaScript (gzip)",
+            package: platforms[row.platform].packageLabel,
+          }[row.measurement];
     const named = rows.some(
       (other) =>
         other.platform === row.platform &&
         other.measurement === row.measurement &&
         other.file === row.file &&
+        other.package === row.package &&
         other.metric !== row.metric,
     );
     const budget = `${platforms[row.platform].label} ${scope}${named ? ` / ${escape(row.metric)}` : ""}`;
@@ -281,6 +307,7 @@ function conclusion(rows) {
 module.exports = {
   platforms,
   marker,
+  measurementKey,
   validateBudgets,
   measurements,
   evaluate,
