@@ -6,8 +6,8 @@ import browserslistToEsbuild from 'browserslist-to-esbuild';
 import {defineConfig} from 'vitest/config';
 import dts from 'vite-plugin-dts';
 
-import packageJson from './package.json';
-import {appendTagNameMap, createTagNameCollector} from './scripts/tag-name-map';
+import packageJson from './package.json' with {type: 'json'};
+import {appendTagNameMap, createTagNameCollector} from './scripts/tag-name-map.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
