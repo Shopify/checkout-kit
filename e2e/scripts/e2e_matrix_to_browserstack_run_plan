@@ -7,7 +7,8 @@ require_relative "../lib/e2e_matrix_to_browserstack_run_plan"
 require_relative "../../scripts/lib/cli_output"
 
 options = {
-  config: File.expand_path("../config/matrix.yml", __dir__)
+  config: File.expand_path("../config/matrix.yml", __dir__),
+  pipeline: "e2e-browserstack"
 }
 
 parser = OptionParser.new do |opts|
@@ -17,6 +18,7 @@ parser = OptionParser.new do |opts|
   opts.on("--application ID") { |application| options[:application] = application }
   opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
   opts.on("--changed-file PATH") { |path| (options[:changed_files] ||= []) << path }
+  opts.on("--pipeline NAME") { |name| options[:pipeline] = name }
   opts.on("--pipeline-config PATH") { |path| options[:pipeline_config] = path }
 end
 
@@ -78,7 +80,7 @@ when "bitrise-env"
 when "assert-pipeline-coverage"
   pipeline_config_path = options.fetch(:pipeline_config) { CliOutput.die("--pipeline-config PATH is required") }
   pipeline_config = YAML.safe_load_file(pipeline_config_path, aliases: true) || {}
-  available_workflows = (pipeline_config.dig("pipelines", "e2e-browserstack", "workflows") || {}).keys
+  available_workflows = (pipeline_config.dig("pipelines", options.fetch(:pipeline), "workflows") || {}).keys
   errors = run_plan.missing_build_workflow_errors(available_workflows)
   unless errors.empty?
     CliOutput.die(errors.join("\n"), hint: E2EMatrixToBrowserStackRunPlan::MISSING_BUILD_WORKFLOW_HINT)
