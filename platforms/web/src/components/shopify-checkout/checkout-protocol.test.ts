@@ -6,9 +6,9 @@ import {
 } from "@shopify/checkout-kit-protocol";
 
 import type { CheckoutProtocolMessageMap } from "./checkout.types";
-import "./checkout-web-component";
-import type { ShopifyCheckout } from "./checkout";
-import { mockTelemetry } from "./telemetry.test-helpers";
+import "./register";
+import type { ShopifyCheckout } from "./shopify-checkout";
+import { mockTelemetry } from "../../telemetry.test-helpers";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 const CHECKOUT_CHANGE_METHODS = [

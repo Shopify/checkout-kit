@@ -1,7 +1,8 @@
-// Registers `<shopify-checkout>` (side effect).
-import "./checkout-web-component";
+// The package root has no side effects: it exports classes, events, and types.
+// Register elements by importing a component entry such as
+// `@shopify/checkout-kit/shopify-checkout`, or by calling `ShopifyCheckout.register()`.
 
-export { ShopifyCheckout } from "./checkout";
+export { ShopifyCheckout } from "./components/shopify-checkout/shopify-checkout";
 
 export {
   ShopifyCheckoutStartEvent,
@@ -10,7 +11,7 @@ export {
   ShopifyCheckoutErrorEvent,
   ShopifyCheckoutCloseEvent,
   ShopifyCheckoutBlockedEvent,
-} from "./checkout-events";
+} from "./components/shopify-checkout/checkout-events";
 
 export type {
   ShopifyCheckoutStartEventDetail,
@@ -20,7 +21,7 @@ export type {
   ShopifyCheckoutBlockedEventDetail,
   CheckoutBlockedCode,
   ShopifyCheckoutEventMap,
-} from "./checkout-events";
+} from "./components/shopify-checkout/checkout-events";
 
 export type {
   CheckoutAppearance,
@@ -30,7 +31,13 @@ export type {
   CheckoutErrorCode,
   LogLevel,
   MessageRejectedDetail,
-} from "./checkout.types";
+} from "./components/shopify-checkout/checkout.types";
 
 // Shared domain types used by the Kit-owned checkout snapshot.
-export type { Buyer, LineItem, Message, OrderConfirmation, CheckoutTotal } from "./checkout.types";
+export type {
+  Buyer,
+  LineItem,
+  Message,
+  OrderConfirmation,
+  CheckoutTotal,
+} from "./components/shopify-checkout/checkout.types";

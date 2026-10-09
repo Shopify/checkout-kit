@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
 
-import "./checkout-web-component";
-import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT } from "./checkout";
-import type { ShopifyCheckout } from "./checkout";
-import { mockTelemetry } from "./telemetry.test-helpers";
+import "./register";
+import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT } from "./shopify-checkout";
+import type { ShopifyCheckout } from "./shopify-checkout";
+import { mockTelemetry } from "../../telemetry.test-helpers";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 

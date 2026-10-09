@@ -1,8 +1,12 @@
 [
+  "dist/chunks/shopify-checkout.js",
+  "dist/chunks/shopify-checkout.js.map",
   "dist/custom-elements.json",
   "dist/index.d.ts",
   "dist/index.js",
-  "dist/index.js.map",
+  "dist/shopify-checkout.d.ts",
+  "dist/shopify-checkout.js",
+  "dist/shopify-checkout.js.map",
   "LICENSE",
   "package.json",
   "README.md"

@@ -28,13 +28,17 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./shopify-checkout": {
+      "types": "./dist/shopify-checkout.d.ts",
+      "import": "./dist/shopify-checkout.js",
+      "default": "./dist/shopify-checkout.js"
+    },
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
   "sideEffects": [
-    "./src/index.ts",
-    "./src/checkout-web-component.ts",
-    "./dist/index.js"
+    "./src/components/shopify-checkout/register.ts",
+    "./dist/shopify-checkout.js"
   ],
   "files": [
     "LICENSE",
@@ -57,22 +61,23 @@
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
+    "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run scripts:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
     "lint:compat": "eslint --config eslint.compat.config.mjs src",
     "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src",
-    "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src sample && pnpm --dir test/e2e lint",
-    "lint:js:fix": "oxlint --fix src sample && pnpm --dir test/e2e lint:fix",
-    "format": "oxfmt src sample dependency-cruiser.config.mjs '!sample/dist/**' && pnpm --dir test/e2e format",
-    "format:check": "oxfmt --check src sample dependency-cruiser.config.mjs '!sample/dist/**' && pnpm --dir test/e2e format:check",
+    "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src sample scripts && pnpm --dir test/e2e lint",
+    "lint:js:fix": "oxlint --fix src sample scripts && pnpm --dir test/e2e lint:fix",
+    "format": "oxfmt src sample scripts dependency-cruiser.config.mjs '!sample/dist/**' && pnpm --dir test/e2e format",
+    "format:check": "oxfmt --check src sample scripts dependency-cruiser.config.mjs '!sample/dist/**' && pnpm --dir test/e2e format:check",
     "typecheck": "tsc --noEmit",
     "sample": "vite --config sample/vite.config.ts",
     "sample:build": "vite build --config sample/vite.config.ts",
     "sample:preview": "vite preview --config sample/vite.config.ts",
     "sample:typecheck": "tsc --noEmit -p sample/tsconfig.json",
-    "verify": "publint",
+    "verify": "publint && vitest run --config vitest.package.config.ts",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",

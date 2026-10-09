@@ -13,15 +13,18 @@ export default {
     {
       name: "all-runtime-source-is-reachable-from-public-entrypoint",
       comment:
-        "Production source must be reachable from src/index.ts so it is either shipped or deleted.",
+        "Production source must be reachable from a package entry (src/index.ts or a component's register.ts) so it is either shipped or deleted.",
       severity: "error",
-      from: { path: "^src/index\\.ts$" },
+      from: { path: "^src/(index|components/[^/]+/register)\\.ts$" },
       to: {
         reachable: false,
         pathNot: [
           "(^|/)node_modules/",
           "^package\\.json$",
-          "^src/checkout\\.types\\.ts$",
+          // The entries themselves; a module doesn't count as reachable from itself.
+          "^src/(index|components/[^/]+/register)\\.ts$",
+          // Type-only modules are erased at compile time, so nothing reaches them at runtime.
+          "\\.types\\.ts$",
           "\\.d\\.ts$",
           "\\.test\\.ts$",
           "\\.test-helpers\\.ts$",

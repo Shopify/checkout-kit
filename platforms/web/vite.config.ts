@@ -36,6 +36,9 @@ export default defineConfig({
       async afterBuild() {
         const entry = fromRoot('dist/index.d.ts');
         await writeFile(entry, appendTagNameMap(await readFile(entry, 'utf8'), tagNames.tags));
+        // Component entries have no exports of their own and roll up to `export {}`. Load the root
+        // declarations so a component import alone brings the tag-name typing.
+        await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
       },
     }),
   ],
@@ -46,14 +49,18 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: fromRoot('dist'),
     lib: {
-      entry: fromRoot('src/index.ts'),
+      entry: {
+        index: fromRoot('src/index.ts'),
+        'shopify-checkout': fromRoot('src/components/shopify-checkout/register.ts'),
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
+      fileName: (_, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
-      // Zero runtime deps — bundle everything reachable from src/index.ts.
+      // Zero runtime dependencies — bundle the npm entries and their dependencies.
       external: [],
       output: {
+        chunkFileNames: 'chunks/[name].js',
         minify: {
           compress: true,
           mangle: true,
@@ -76,6 +83,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
+    // Package tests run against the build via pnpm verify.
+    exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html', 'lcov'],

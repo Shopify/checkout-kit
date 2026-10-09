@@ -14,10 +14,13 @@ export default defineConfig({
   // Treat `sample/` as the project root so vite serves `index.html` from here.
   root: here,
   resolve: {
-    alias: {
-      // Same entry consumers use from npm (`import '@shopify/checkout-kit'`).
-      "@shopify/checkout-kit": resolve(here, "../src/index.ts"),
-    },
+    alias: [
+      {
+        find: "@shopify/checkout-kit/shopify-checkout",
+        replacement: resolve(here, "../src/components/shopify-checkout/register.ts"),
+      },
+      { find: /^@shopify\/checkout-kit$/, replacement: resolve(here, "../src/index.ts") },
+    ],
   },
   build: {
     outDir: resolve(here, "dist"),
