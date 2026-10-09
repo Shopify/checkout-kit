@@ -19,5 +19,12 @@ class AccessibilityIdentifiersTest {
     @Test
     fun `tab markers match the maestro flows`() {
         assertThat(AccessibilityIdentifiers.Tabs.CART).isEqualTo("cart-tab")
+        assertThat(AccessibilityIdentifiers.Tabs.SETTINGS).isEqualTo("settings-tab")
+    }
+
+    @Test
+    fun `settings markers match the maestro flows`() {
+        assertThat(AccessibilityIdentifiers.Settings.CHECKOUT_PRELOADING_TOGGLE)
+            .isEqualTo("checkout-preloading-toggle")
     }
 }
