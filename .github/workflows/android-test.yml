@@ -11,6 +11,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
     defaults:
       run:
         working-directory: platforms/android
@@ -28,12 +32,33 @@ jobs:
           java-version: 17
           cache: 'gradle'
 
-      - name: Run Tests
-        run: ./gradlew test --console=plain
+      - name: Run tests and generate library coverage
+        id: coverage_tests
+        run: ./gradlew test :lib:createDebugUnitTestCoverageReport --console=plain
 
-      - name: Run Protocol Unit Tests
+      - name: Record coverage
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/report-coverage
+        with:
+          platform: android
+          report-path: platforms/android/lib/build/reports/coverage/test/debug/report.xml
+          report-directory: platforms/android/lib/build/reports/coverage/test/debug/
+          outcome: ${{ steps.coverage_tests.outcome }}
+
+      - name: Run Embedded Checkout Protocol tests with coverage
+        id: protocol_coverage_tests
+        if: ${{ !cancelled() }}
         working-directory: protocol/languages/kotlin
-        run: ./gradlew test --console=plain
+        run: ./gradlew test jacocoTestReport --console=plain
+
+      - name: Record Embedded Checkout Protocol coverage
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/report-coverage
+        with:
+          platform: protocol-kotlin
+          report-path: protocol/languages/kotlin/embedded-checkout-protocol/build/reports/jacoco/test/jacocoTestReport.xml
+          report-directory: protocol/languages/kotlin/embedded-checkout-protocol/build/reports/jacoco/test/
+          outcome: ${{ steps.protocol_coverage_tests.outcome }}
 
       - name: Setup sample app environment
         id: sample_env

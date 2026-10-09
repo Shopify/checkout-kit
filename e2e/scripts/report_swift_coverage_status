@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "../lib/bitrise_pipeline_stages"
+require_relative "../lib/github_token"
+require_relative "../lib/swift_coverage_status"
+require_relative "../../scripts/lib/coverage_report"
+
+pr = ENV["BITRISE_PULL_REQUEST"].to_s
+token = GitHubToken.resolve
+if !pr.match?(/\A[1-9]\d*\z/) || token.nil?
+  puts "No pull request or GitHub token; skipping Swift coverage status."
+  exit
+end
+
+stages = BitrisePipelineStages.from_json(ENV["BITRISEIO_FINISHED_WORKFLOWS"])
+selected = ENV["CI_IOS_SELECTED_JOBS"].to_s.split(",").map(&:strip)
+state = SwiftCoverageStatus.state(stages, selected)
+
+# Preserve the package job's measured result. If that job never published, record
+# why coverage is missing instead of leaving the combined comment pending forever.
+publisher = CoverageResultPublisher.new(
+  repository: ENV.fetch("GITHUB_REPOSITORY", "Shopify/checkout-kit"),
+  pr_number: pr,
+  sha: ENV.fetch("BITRISE_GIT_COMMIT"),
+  token: token,
+  source: {"provider" => "bitrise", "pipelineUrl" => ENV.fetch("BITRISEIO_PIPELINE_BUILD_URL")}
+)
+%w[swift protocol-swift].each do |platform|
+  puts publisher.publish(platform: platform, state: state, preserve_existing: true)
+end

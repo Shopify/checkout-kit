@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+package_path="$repo_root/protocol/languages/swift"
+report_dir="$package_path/.build/coverage"
+mkdir -p "$report_dir"
+rm -f "$report_dir/coverage.json"
+swift test --package-path "$package_path" --enable-code-coverage
+coverage_path="$(swift test --package-path "$package_path" --show-codecov-path)"
+cp "$coverage_path" "$report_dir/coverage.json"

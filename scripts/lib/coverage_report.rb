@@ -4,14 +4,19 @@ require "json"
 require_relative "json_http_client"
 
 class CoverageReport
+  SWIFT_TARGETS = %w[ShopifyCheckoutKit ShopifyAcceleratedCheckouts].freeze
+  ANDROID_METRICS = {"LINE" => "Lines", "INSTRUCTION" => "Instructions", "BRANCH" => "Branches", "METHOD" => "Methods"}.freeze
   JAVASCRIPT_METRICS = {"lines" => "Lines", "statements" => "Statements", "branches" => "Branches", "functions" => "Functions"}.freeze
-  TITLES = {"web" => "Web", "react-native" => "React Native", "protocol" => "Embedded Checkout Protocol (TypeScript)"}.freeze
+  TITLES = {"swift" => "Swift", "android" => "Android", "web" => "Web", "react-native" => "React Native", "protocol" => "Embedded Checkout Protocol (TypeScript)", "protocol-swift" => "Embedded Checkout Protocol (Swift)", "protocol-kotlin" => "Embedded Checkout Protocol (Kotlin)"}.freeze
 
   attr_reader :platform, :rows
 
   def initialize(platform, contents)
     @platform = platform
     @rows = case platform
+    when "swift" then swift_rows(contents)
+    when "android", "protocol-kotlin" then android_rows(contents)
+    when "protocol-swift" then swift_protocol_rows(contents)
     when "web", "react-native", "protocol" then javascript_rows(contents)
     else raise ArgumentError, "Unknown coverage platform: #{platform}"
     end
@@ -24,11 +29,18 @@ class CoverageReport
   def markdown(report_url: nil)
     label = TITLES.fetch(platform)
     lines = [marker, "# #{label} — Coverage Report", ""]
-    lines.concat(["| #{@rows.map(&:first).join(' | ')} |", "| #{@rows.map { "---" }.join(" | ")} |"])
-    cells = @rows.map do |name, covered, total|
-      metric(covered, total, badge: name == "Lines", report_url: report_url)
+    if platform == "swift"
+      lines.concat(["| Target | Lines |", "| --- | --- |"])
+      @rows.each do |name, covered, total|
+        lines << "| #{name} | #{metric(covered, total, badge: true, report_url: report_url)} |"
+      end
+    else
+      lines.concat(["| #{@rows.map(&:first).join(' | ')} |", "| #{@rows.map { "---" }.join(" | ")} |"])
+      cells = @rows.map do |name, covered, total|
+        metric(covered, total, badge: name == "Lines", report_url: report_url)
+      end
+      lines << "| #{cells.join(' | ')} |"
     end
-    lines << "| #{cells.join(' | ')} |"
     lines.concat(["", "[Full coverage reports](#{report_url})"]) unless report_url.to_s.empty?
     lines.join("\n") + "\n"
   end
@@ -66,6 +78,49 @@ class CoverageReport
     image
   end
 
+  def swift_rows(contents)
+    targets = JSON.parse(contents).fetch("targets")
+    SWIFT_TARGETS.map do |name|
+      target = targets.find { |entry| entry.fetch("name") == name }
+      raise "Missing Swift coverage target: #{name}" unless target
+
+      row(name, target.fetch("coveredLines"), target.fetch("executableLines"))
+    end
+  end
+
+  def swift_protocol_rows(contents)
+    files = JSON.parse(contents).fetch("data").flat_map { |data| data.fetch("files") }
+      .select { |file| file.fetch("filename").include?("/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/") }
+    raise "Missing Swift protocol coverage files" if files.empty?
+    raise "Duplicate Swift protocol coverage files" unless files.map { |file| file.fetch("filename") }.uniq.length == files.length
+
+    {"lines" => "Lines", "functions" => "Functions"}.map do |key, label|
+      counts = files.map do |file|
+        metric = file.fetch("summary").fetch(key)
+        row(label, metric.fetch("covered"), metric.fetch("count"))
+      end
+      row(label, counts.sum { |entry| entry[1] }, counts.sum { |entry| entry[2] })
+    end
+  end
+
+  def android_rows(contents)
+    # Bitrise's Swift runner only needs JSON and does not install the XML gem.
+    require "rexml/document"
+
+    document = REXML::Document.new(contents)
+    ANDROID_METRICS.map do |type, label|
+      # Nested package/class counters duplicate the report totals.
+      counter = document.elements["report/counter[@type='#{type}']"]
+      raise "Missing Android coverage counter: #{type}" unless counter
+
+      covered = Integer(counter.attributes["covered"])
+      missed = Integer(counter.attributes["missed"])
+      raise "Invalid Android coverage counter: #{type}" if missed.negative?
+
+      row(label, covered, covered + missed)
+    end
+  end
+
   def row(label, covered, total)
     unless covered.is_a?(Integer) && total.is_a?(Integer) && covered >= 0 && total >= covered
       raise "Invalid coverage counts for #{label}"
@@ -96,6 +151,16 @@ class CoverageResultPublisher
     return "Skipped coverage result: pull request base changed." if revision == "base" && pr.dig("base", "sha") != base_sha
 
     checks = check_runs
+    if @source.fetch("provider") == "bitrise"
+      pipeline = checks.select do |check|
+        check.dig("app", "slug") == "bitrise" && check["name"] == "ci/bitrise/ci-ios/pr" &&
+          check["details_url"] == @source.fetch("pipelineUrl")
+      end.max_by { |check| check.fetch("id") }
+      raise "Could not identify the Bitrise pipeline check" unless pipeline
+
+      @source["runId"] = pipeline.fetch("id")
+      @source["runAttempt"] = pipeline.fetch("external_id", 1)
+    end
     prefix = revision == "base" ? "coverage-base" : "coverage"
     external_id = "#{prefix}:#{platform}:#{@source.fetch('runId')}:#{@source.fetch('runAttempt', 1)}"
     existing = checks.find { |check| check["external_id"] == external_id && check.dig("app", "slug") == @source.fetch("provider") }
@@ -117,6 +182,11 @@ class CoverageResultPublisher
       else
         @client.post_json("/repos/#{@repository}/check-runs", payload.merge(head_sha: @sha))
       end
+    end
+    # Persist before notifying. The serialized publisher reloads all results, so
+    # coalesced notifications cannot lose a platform that finished concurrently.
+    if @source.fetch("provider") == "bitrise"
+      @client.post_json("/repos/#{@repository}/dispatches", {event_type: "coverage-updated", client_payload: {pr: @pr_number.to_i, sha: @sha}})
     end
     "Published #{platform} coverage result."
   end
