@@ -136,8 +136,22 @@ review; a breaking change requires a new CDN major URL.
 
 ## Publishing
 
-The Web release workflow builds, tests, and validates both distributions before it
-selects one CDN destination:
+npm and the CDN are published in two steps:
+
+1. **`Web — Publish to npm`** in this repository runs on a `web/X.Y.Z` GitHub
+   Release. It builds and verifies both the npm package (`dist/`) and the CDN
+   output (`dist-cdn/`), then publishes to npm. It does not upload to the CDN.
+2. **The CDN deploy** runs from Shopify's internal release tooling, which
+   maintainers trigger with the same release tag once npm publication has
+   succeeded. It checks out that tag of this repository, rebuilds `dist-cdn/`,
+   confirms the version is on npm (the CDN never ships a version npm does not
+   have), reads the npm dist-tag back, runs `scripts/cdn-release-policy.mjs`
+   from the tag to select the channel, verifies the deploy identity's bucket
+   permissions, and uploads content-hashed chunks before the loader. A dry run
+   stops before uploading.
+
+The channel policy is this repository's own script, so it is the same wherever
+it runs:
 
 | Release | CDN loader |
 | --- | --- |
@@ -148,47 +162,20 @@ selects one CDN destination:
 A manual `latest` override cannot promote a prerelease to the stable CDN URL.
 All preview npm channels share the same unstable CDN destination for that major;
 each deployment replaces the previous preview. Stable releases do not update
-the unstable URL. Dry runs report the selected channel and destination.
+the unstable URL.
 
-For a non-dry-run release the workflow:
-
-1. derives the numeric major from `platforms/web/package.json`;
-2. uploads the loader's content-hashed chunks and source maps from `dist-cdn/`
-   into the selected channel's `assets/` directory;
-3. uploads that channel's `web-components.js` only after its implementation chunks
-   are available.
-
-Before publishing to npm, the workflow obtains a short-lived token for the
-CDN deploy identity and asks GCS to confirm it holds the `create`, `delete`,
-and `list` object permissions the upload steps need on the
-CDN deployment bucket, so a broken or under-privileged identity
-fails the run before anything irreversible happens. That pre-flight writes no credentials file and exports no environment
-variables; full authentication happens only after npm publication, immediately
-before the upload steps, so package code never runs with CDN credentials
-available. npm publication uses `--ignore-scripts` so the tarball contains the
-`dist/` that was built and verified earlier in the job. Dry runs exercise the
-pre-flight without uploading.
-
-Re-running a release's workflow run for an already-published npm version
-skips npm publication and redeploys that release's CDN assets to the channel
-selected by the same rules; the checkout is the release tag, so the deployed
-code matches the published tarball. Re-running an older release intentionally
-replaces that channel's loader with the selected release, allowing a rollback.
-A fresh manual `workflow_dispatch` builds `main`, so it fails if the version is
-already published rather than deploying code to the CDN that never shipped to
-npm. Re-running an existing workflow run (release or manual) is allowed, since
-it rebuilds the same commit; use that to repair a run whose CDN upload failed
-after npm publication.
-The workflow does not require versions to increase on each deployment.
+Re-dispatching the deploy with an older release tag redeploys that release,
+which is the rollback mechanism; a superseded version resolves to the channel
+it originally shipped to. The deploy does not require versions to increase.
 Rollbacks are subject to the same cache window as deployments (see below).
 
 ### Limitations
 
-- Releases run from `main`, so the workflow does not currently support
+- The npm workflow runs from `main`, so it does not currently support
   patching an older major after a new major has shipped. Doing so would need a
-  maintenance branch and a CDN channel override, because the stable gate
-  requires the npm `latest` tag and npm has only one `latest` across majors.
-  This is a known gap; revisit before the first `5.0.0`.
+  maintenance branch, and the stable CDN gate would need to stop depending on
+  the npm `latest` tag (npm has only one `latest` across majors). This is a
+  known gap; revisit before the first `5.0.0`.
 - The stable URL for a major returns 404 until that major's first stable
   release has been deployed.
 

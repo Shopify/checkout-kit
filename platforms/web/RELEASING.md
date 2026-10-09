@@ -99,11 +99,9 @@ the deployed loader, and confirm the build with its `version` export:
 A bad stable deploy stays live for up to ~40 minutes (30 at the edge, then 10
 in browsers) unless purged. To roll back:
 
-1. Re-run the workflow run of the release you want to restore (Actions → the
-   release's run → "Re-run all jobs"). It skips the already-published npm
-   version and redeploys that release's CDN assets. A *fresh* manual dispatch
-   refuses to deploy an already-published version, because `main` may no
-   longer match the published tarball; re-running an existing run is fine.
+1. Trigger the CDN deploy again with the tag of the release you want to
+   restore. It rebuilds from that tag and redeploys it to the channel it
+   originally shipped to.
 2. Purge the loader URL (`/checkout-kit/v<major>/web-components.js`) from the CDN
    edge using the internal CDN purge process. Only the loader needs purging;
    chunks are content-hashed. Browser caches cannot be purged and expire within
@@ -197,26 +195,6 @@ In the repo's _Settings → Environments → New environment_:
 The required-reviewer rule means every publish requires explicit human
 approval, even if the workflow somehow ran without authorization.
 
-#### CDN deployment secrets
-
-The CDN deploy identity and destination are **environment secrets** on
-`npm-web`, not values in the workflow file. They are identifiers rather than
-credentials (authentication is OIDC, minted per run), but keeping them out of
-the public repository and masked in logs limits what a reader learns about the
-deployment. The workflow fails early, without printing values, if any is
-missing.
-
-| Secret | Contents |
-| --- | --- |
-| `CDN_GCP_PROJECT_ID` | Google Cloud project that owns the deployment bucket and identity |
-| `CDN_GCP_WORKLOAD_IDENTITY_PROVIDER` | Full resource name of the GitHub Actions workload identity provider |
-| `CDN_GCP_SERVICE_ACCOUNT` | Email of the deploy service account |
-| `CDN_BUCKET` | Name of the CDN deployment bucket |
-
-The values live in the internal infrastructure configuration for Checkout Kit;
-ask a maintainer rather than reconstructing them. Because they are secrets,
-GitHub masks them in logs; the workflow additionally avoids echoing them.
-
 ## Troubleshooting
 
 ### "Tag implies version X but package.json has Y"
@@ -237,13 +215,6 @@ causes:
 
 Confirm the npm Trusted Publisher settings match the workflow's
 `environment: name:` and the workflow's filename exactly.
-
-### "Missing npm-web environment secrets"
-
-The CDN deployment secrets above are not set on the `npm-web` environment, or
-the job is not running with that environment. Add them in _Settings →
-Environments → npm-web → Environment secrets_. Dry runs need them too, since
-the pre-flight exercises the deploy identity.
 
 ### Publish failed mid-way; some files showed up on npm
 
