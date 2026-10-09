@@ -301,14 +301,27 @@ For pull request builds, the `e2e-report` workflow creates the `Checkout Kit E2E
 
 The Bitrise project has **Project settings > Repository > Extend GitHub App permissions to builds** enabled. Bitrise exposes the build-scoped GitHub App token as `GIT_HTTP_PASSWORD`. GitHub API scripts prefer an explicit `OVERRIDE_GITHUB_TOKEN` for local runs and otherwise use `GIT_HTTP_PASSWORD`; they intentionally ignore the shared `GITHUB_TOKEN` because it is not authenticated as the GitHub App required to create Check Runs.
 
-The sticky PR comment includes a **Bitrise builds** section with links to the
+The sticky PR comment ends with a **Bitrise** footer linking to the
 `e2e` and `ci-ios` pipelines. The E2E link comes from the reporting pipeline's
 `BITRISEIO_PIPELINE_BUILD_URL`; other links are read from native Bitrise GitHub
 checks on the reported commit. Queued and running builds can be linked without
 waiting for them to finish. If a check has not appeared or the lookup fails, the
 comment still publishes with the available links.
 
-Every run maintains a single sticky PR comment (create-or-update via a marker). The comment includes an "Install with Tophat" link per selected SDK target and a table linking each workflow’s **Tests** tab and build log. The existing `e2e-build-*` workflows remain available for Tophat to build signed device artifacts on demand; direct simulator runs do not produce signed IPAs. The install links and Quick Launch entries are driven by `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
+Every run maintains a single sticky PR comment (create-or-update via a marker).
+The comment starts with the overall result and the number of selected targets
+that passed, followed by one table with readable target names, outcomes, **Tests**
+and build links, and platform-specific Tophat links under **Install from branch**.
+Failed or missing selected workflows appear before passing and skipped targets.
+An empty selection is reported as **E2E not needed**; invalid selection metadata
+is reported as a failure without install links. The commit SHA is not displayed.
+
+The existing `e2e-build-*` workflows remain available for Tophat to build signed
+device artifacts on demand; direct simulator runs do not produce signed IPAs.
+Install links resolve the branch rather than a fixed tested build. iOS rows
+offer both device and simulator recipes, while Android rows offer only Android
+recipes. The install links and Quick Launch entries are driven by
+`scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
 
 ## Caching
 
