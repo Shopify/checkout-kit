@@ -127,6 +127,10 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         return copy
     }
 
+    /// Registers a handler called after the presented checkout closes.
+    ///
+    /// Dismissal describes presentation lifecycle independently of checkout outcome. When a
+    /// terminal failure closes checkout, the `onFail` handler runs before this handler.
     @discardableResult public func onDismiss(_ action: @escaping () -> Void) -> Self {
         var copy = self
         copy.onDismissAction = action

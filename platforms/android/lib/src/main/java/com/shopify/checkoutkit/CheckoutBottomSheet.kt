@@ -34,6 +34,7 @@ internal class CheckoutBottomSheet(
     private var dismissNotified = false
     private var dismissing = false
     private var dismissFinalized = false
+    private var notifyDismissalOnFinalize = false
 
     /**
      * Invoked once when this sheet reaches its terminal dismissal state, before the dialog window
@@ -56,6 +57,7 @@ internal class CheckoutBottomSheet(
         dismissNotified = false
         dismissing = false
         dismissFinalized = false
+        notifyDismissalOnFinalize = false
 
         setContentView(R.layout.checkout_sheet_content)
         val appearance = ShopifyCheckoutKit.configuration.appearance
@@ -147,14 +149,13 @@ internal class CheckoutBottomSheet(
     }
 
     /**
-     * Dismisses checkout in response to a buyer action, notifies the listener once, and uses the
-     * normal sheet animation.
+     * Dismisses checkout in response to a buyer action, then notifies the listener once the sheet
+     * has closed.
      */
     private fun dismissedByBuyer() {
         if (dismissing) return
 
-        notifyCheckoutDismissed()
-        dismiss(animate = true)
+        dismiss(animate = true, notifyOnFinalize = true)
     }
 
     /**
@@ -167,7 +168,14 @@ internal class CheckoutBottomSheet(
     /**
      * Dismisses the sheet, optionally skipping animation for lifecycle teardown.
      */
-    internal fun dismiss(animate: Boolean) {
+    internal fun dismiss(animate: Boolean, notifyOnFinalize: Boolean = false) {
+        if (notifyOnFinalize) {
+            notifyDismissalOnFinalize = true
+            if (dismissFinalized) {
+                notifyCheckoutDismissed()
+            }
+        }
+
         val sheet = findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)
         if (dismissing) {
             if (!animate && !dismissFinalized) {
@@ -196,8 +204,8 @@ internal class CheckoutBottomSheet(
     private fun dismissAfterSheetDismissAnimation() {
         if (dismissing) return
 
-        notifyCheckoutDismissed()
         dismissing = true
+        notifyDismissalOnFinalize = true
         finishDismiss()
     }
 
@@ -212,17 +220,20 @@ internal class CheckoutBottomSheet(
         onDismissFinalized = null
         destroyPresentedCheckoutView()
         findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)?.onDismissRequested = null
-        if (!isShowing) return
-
-        try {
-            super.dismiss()
-        } catch (_: IllegalArgumentException) {
-            log.w(LOG_TAG, "Window was already detached before dismissal completed.")
+        if (isShowing) {
+            try {
+                super.dismiss()
+            } catch (_: IllegalArgumentException) {
+                log.w(LOG_TAG, "Window was already detached before dismissal completed.")
+            }
+        }
+        if (notifyDismissalOnFinalize) {
+            notifyCheckoutDismissed()
         }
     }
 
     /**
-     * Sends the dismissal callback once across close button, back, outside touch, and gesture paths.
+     * Sends the dismissal callback once across all Checkout Kit-managed dismissal paths.
      */
     private fun notifyCheckoutDismissed() {
         if (!dismissNotified) {
@@ -262,7 +273,7 @@ internal class CheckoutBottomSheet(
     internal fun closeCheckoutWithError(exception: CheckoutException) {
         log.d(LOG_TAG, "Closing with error, calling onCheckoutFailed.")
         checkoutListener.onCheckoutFailed(CheckoutFailureEvent(exception))
-        dismiss()
+        dismiss(animate = true, notifyOnFinalize = true)
     }
 }
 
