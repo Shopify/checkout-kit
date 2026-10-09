@@ -98,9 +98,8 @@ as an ES module and register the component you need:
 ```
 
 The URL is evergreen within a major version: compatible updates are delivered
-automatically, and a breaking change ships under a new major path (for example
-`/checkout-kit/v5/`). The loader also exports `version`, the Checkout Kit
-release it was built from.
+automatically, and a breaking change ships under a new major path. The loader
+also exports `version`, the Checkout Kit release it was built from.
 
 The CDN entrypoint becomes available with the first stable `4.0.0` release.
 

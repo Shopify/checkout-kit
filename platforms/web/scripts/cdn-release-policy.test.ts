@@ -149,8 +149,6 @@ describe("CDN release policy", () => {
   );
 
   it("rejects versions without a numeric SemVer major", async () => {
-    await expect(runPolicy("invalid.0.0", "latest", "")).rejects.toThrow(
-      /does not have a numeric SemVer major/,
-    );
+    await expect(runPolicy("invalid.0.0", "latest", "")).rejects.toThrow(/is not valid SemVer/);
   });
 });

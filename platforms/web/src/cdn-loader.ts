@@ -36,7 +36,7 @@ const componentSources: Record<CheckoutKitComponent, ComponentSource> = {
 };
 
 const MAX_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 250;
+const RETRY_BASE_DELAY_MS = 100;
 
 const loaded = new Set<CheckoutKitComponent>();
 const pending = new Map<CheckoutKitComponent, Promise<void>>();
@@ -62,8 +62,9 @@ let retrySequence = 0;
  * the chunk URL, which the browser treats as a fresh module.
  */
 export async function loadComponents(components: readonly string[]): Promise<void> {
-  const names = components.map(toComponentName);
-  await Promise.all(names.map(loadOne));
+  // Validate everything first, then load each distinct component once.
+  const names = new Set(components.map(toComponentName));
+  await Promise.all([...names].map(loadOne));
 }
 
 function toComponentName(component: string): CheckoutKitComponent {

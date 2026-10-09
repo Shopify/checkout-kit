@@ -28,25 +28,14 @@ The CDN major is the Checkout Kit library major; it is not a protocol version.
 > not reference it in consumer-facing documentation, samples, support replies,
 > or production code.
 
-Each major has a moving, maintainer-only URL:
-
-```text
-https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js
-```
-
-It may change incompatibly on any deployment. Retest reported issues against
-its current build; historical builds are not preserved at exact-version URLs.
-The default npm prerelease tag remains `next`; the CDN name `unstable` describes
-the compatibility contract.
-
-A new deployment reaches the channel within the CDN's cache window (see
-[Caching](#caching-and-asset-retention)), typically under 30 minutes. Check the
-loader's `version` export to confirm which build a page received:
-
-```js
-const {version} = await import("https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js");
-console.log(version); // e.g. "4.1.0-beta.1"
-```
+Each major has a moving, maintainer-only loader under `v<major>/unstable/`. It
+may change incompatibly on any deployment. Retest reported issues against its
+current build; historical builds are not preserved at exact-version URLs. The
+default npm prerelease tag remains `next`; the CDN name `unstable` describes the
+compatibility contract. A new deployment reaches the channel within the CDN's
+cache window (see [Caching](#caching-and-asset-retention)), typically under 30
+minutes; check the loader's `version` export to confirm which build a page
+received.
 
 The directory form keeps the loader's relative imports within
 `v4/unstable/assets/`, separate from stable `v4/assets/`. A filename such as
@@ -72,21 +61,6 @@ A breaking public change to one loader-managed component requires a new Checkout
 Kit major URL for every component, even when the other components have no
 breaking change. This is intentionally conservative, but it can create
 unnecessary coordinated upgrades as the set of components grows.
-
-### Alternative not adopted yet
-
-Components could instead have independent major-versioned URLs, for example:
-
-```text
-/checkout-kit/shopify-checkout/v4/...
-/checkout-kit/shopify-accelerated-checkout/v1/...
-```
-
-That would allow a component to evolve independently, but the loader would need
-to define and maintain compatibility between its own version, each component
-version, and any shared runtime. We are not taking on that compatibility matrix
-in the initial CDN release. This remains a deliberate design question for a
-future component with genuinely independent release needs.
 
 ## Module loader
 
