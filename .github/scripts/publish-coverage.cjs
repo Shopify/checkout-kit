@@ -139,6 +139,11 @@ async function publish({github, context, core, prNumber}) {
   const body = render(results);
   const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: pr.number, per_page: 100});
   const existing = comments.find(isComment);
+  // Wait for change detection before opening a comment for an affected platform.
+  // Existing comments still refresh so skipped runs replace stale measurements.
+  const plan = latest(jobs.filter((item) => item.name === "Detect Changed Areas"));
+  const inScope = Object.values(results).some((result) => result.state !== "skipped");
+  if (!existing && (plan?.status !== "completed" || !inScope)) return;
   const {data: current} = await github.rest.pulls.get({...repo, pull_number: pr.number});
   if (current.state !== "open" || current.draft || current.head.sha !== pr.head.sha || current.base.sha !== pr.base.sha) return;
   if (sourceKey(await sources(github, repo, current)) !== sourceKey(snapshot)) return;

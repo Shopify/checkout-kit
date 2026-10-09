@@ -15,6 +15,7 @@ function fixture() {
       ({id: 300 + i, name: platform.job, run_attempt: 1, status: "completed", conclusion: "success"})),
     comments: [], writes: [], warnings: [],
   };
+  f.jobs.unshift({id: 250, name: "Detect Changed Areas", run_attempt: 1, status: "completed", conclusion: "success"});
   const rest = {
     pulls: {get: async () => ({data: structuredClone(f.pr)})},
     actions: {listWorkflowRuns: "runs", listJobsForWorkflowRun: "jobs"},
@@ -79,6 +80,44 @@ test("updates only the shared Actions comment and ignores human lookalikes", asy
   assert.equal(f.writes.length, 1, "identical refreshes do not edit the comment");
 });
 
+test("waits for change detection before creating a comment", async () => {
+  for (const status of [null, "queued", "in_progress"]) {
+    const f = fixture();
+    f.runs[0].status = "in_progress";
+    if (status) f.jobs[0].status = status;
+    else f.jobs.shift();
+    await f.publish();
+    assert.equal(f.writes.length, 0, String(status));
+  }
+
+  const f = fixture();
+  f.runs[0].status = "in_progress";
+  f.jobs.find((job) => job.name.startsWith("Web")).status = "in_progress";
+  await f.publish();
+  assert.equal(f.writes[0].method, "create");
+  assert.ok(row(f.writes[0].body, "Web").includes("Waiting for coverage"));
+});
+
+test("skips a new comment when every reported platform is skipped but clears existing measurements", async () => {
+  const f = fixture();
+  for (const platform of reporter.platforms) f.add(platform.id);
+  await f.publish();
+  const previous = f.writes[0].body;
+  f.writes = [];
+  for (const job of f.jobs.filter((job) => job.name !== "Detect Changed Areas")) job.conclusion = "skipped";
+  for (const platform of reporter.platforms)
+    f.add(platform.id, {state: "skipped", rows: []});
+  await f.publish();
+  assert.equal(f.writes.length, 0);
+
+  f.comments = [{id: 51, user: {login: "github-actions[bot]", type: "Bot"}, body: previous}];
+  await f.publish();
+  assert.equal(f.writes[0].method, "update");
+  assert.equal(f.writes[0].comment_id, 51);
+  assert.ok(!f.writes[0].body.includes("70%"));
+  assert.ok(row(f.writes[0].body, "Web").includes("Not run for this change"));
+});
+
 test("renders pending, skipped, failed and missing reports without old values", async () => {
   const f = fixture();
   f.jobs.find((job) => job.name.startsWith("Web")).conclusion = "skipped";
@@ -118,6 +157,9 @@ test("newer CI runs supersede older results even at the same commit", async () =
   const f = fixture();
   f.add("web");
   f.add("protocol");
+  await f.publish();
+  f.comments = [{id: 51, user: {login: "github-actions[bot]", type: "Bot"}, body: f.writes[0].body}];
+  f.writes = [];
   f.runs.push({...f.runs[0], id: 101, status: "in_progress"});
   f.jobs = [];
   await f.publish();
