@@ -1,6 +1,7 @@
 package com.shopify.reactnative.checkoutkit
 
 import com.shopify.checkoutkit.CheckoutErrorCode
+import com.shopify.checkoutkit.CheckoutFailureEvent
 import com.shopify.checkoutkit.CheckoutException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -16,11 +17,11 @@ import org.robolectric.RobolectricTestRunner
 class CustomCheckoutListenerTest {
 
     @Test
-    fun `fail envelope carries the flattened error fields`() {
+    fun `fail envelope carries an error event`() {
         val captured = mutableListOf<String>()
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
-        listener.onCheckoutFailed(CheckoutException(CheckoutErrorCode.CART_EXPIRED, "expired"))
+        listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.CART_EXPIRED, "expired")))
 
         val envelope = Json.parseToJsonElement(captured.single()).jsonObject
         assertThat(envelope["type"]?.jsonPrimitive?.content).isEqualTo("fail")
@@ -38,7 +39,7 @@ class CustomCheckoutListenerTest {
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
         listener.onCheckoutFailed(
-            CheckoutException(CheckoutErrorCode.HTTP_ERROR, "unprocessable entity", 422),
+            CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.HTTP_ERROR, "unprocessable entity", 422)),
         )
 
         val payload = payloadOf(Json.parseToJsonElement(captured.single()).jsonObject)
@@ -52,7 +53,7 @@ class CustomCheckoutListenerTest {
             val captured = mutableListOf<String>()
             val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
-            listener.onCheckoutFailed(CheckoutException(code, "boom"))
+            listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(code, "boom")))
 
             val payload = payloadOf(Json.parseToJsonElement(captured.single()).jsonObject)
             assertThat(payload["code"]?.jsonPrimitive?.content)
@@ -61,14 +62,14 @@ class CustomCheckoutListenerTest {
     }
 
     @Test
-    fun `dismiss emits a close envelope without a payload`() {
+    fun `dismiss emits a dismiss envelope without a payload`() {
         val captured = mutableListOf<String>()
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
         listener.onCheckoutDismissed()
 
         val envelope = Json.parseToJsonElement(captured.single()).jsonObject
-        assertThat(envelope["type"]?.jsonPrimitive?.content).isEqualTo("close")
+        assertThat(envelope["type"]?.jsonPrimitive?.content).isEqualTo("dismiss")
         assertThat(envelope).doesNotContainKey("payload")
     }
 
@@ -78,11 +79,26 @@ class CustomCheckoutListenerTest {
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
         listener.onCheckoutDismissed()
-        listener.onCheckoutFailed(CheckoutException(CheckoutErrorCode.SDK_ERROR, "late"))
+        listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.SDK_ERROR, "late")))
 
         assertThat(captured).hasSize(1)
     }
 
+    @Test
+    fun `terminal cleanup denies pending geolocation exactly once`() {
+        val listener = CustomCheckoutListener(DispatchCallback {})
+        val decisions = mutableListOf<Triple<String, Boolean, Boolean>>()
+        listener.onGeolocationPermissionsShowPrompt("https://example.test") { origin, allow, retain ->
+            decisions.add(Triple(origin, allow, retain))
+        }
+
+        listener.onCheckoutDismissed()
+        listener.invokeGeolocationCallback(true)
+        listener.release()
+
+        assertThat(decisions).containsExactly(Triple("https://example.test", false, false))
+    }
+
     private fun payloadOf(envelope: JsonObject): JsonObject =
-        envelope["payload"]?.jsonObject ?: JsonObject(emptyMap())
+        envelope["payload"]?.jsonObject?.get("error")?.jsonObject ?: JsonObject(emptyMap())
 }

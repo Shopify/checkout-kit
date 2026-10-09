@@ -487,7 +487,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func testFailedPresentDoesNotRetainCheckoutSheet() {
         let presentAttemptCompleted = expectation(description: "present attempt completed")
 
-        shopifyCheckoutKit.present("", subscribedMethods: [])
+        shopifyCheckoutKit.present("", onResult: { _ in })
 
         DispatchQueue.main.async {
             XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
@@ -502,7 +502,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let checkoutSheet = DismissTrackingViewController()
         shopifyCheckoutKit.checkoutSheet = checkoutSheet
 
-        shopifyCheckoutKit.checkoutDidDismiss()
+        shopifyCheckoutKit.dismiss()
 
         DispatchQueue.main.async {
             XCTAssertTrue(checkoutSheet.dismissCalled)
@@ -523,5 +523,144 @@ private final class DismissTrackingViewController: UIViewController {
         dismissCalled = true
         dismissAnimated = flag
         completion?()
+    }
+}
+
+extension ShopifyCheckoutKitTests {
+    @MainActor
+    func testPresentDuringProgrammaticDismissIsIgnored() async {
+        let module = PresentationTrackingModule()
+        module.attemptPresentation("https://example.test/first")
+        await flushPresentationQueue()
+        let oldSheet = module.sheets[0]
+        let oldEvents = module.delegates[0]
+        module.dismiss()
+        module.attemptPresentation("https://example.test/second")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.results, [true, false])
+        XCTAssertTrue(module.events.isEmpty)
+
+        oldSheet.finishDismissal()
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.events.count, 1)
+        module.attemptPresentation("https://example.test/third")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/third")
+        XCTAssertEqual(module.results, [true, false, true])
+        oldEvents.checkoutDidDismiss()
+        XCTAssertEqual(module.events.count, 1)
+    }
+
+    @MainActor
+    func testPresentFromNativeDismissIsIgnoredWhileClosing() async {
+        await assertPresentFromTerminalIsIgnored(fail: false)
+    }
+
+    @MainActor
+    func testPresentFromNativeFailureIsIgnoredWhileClosing() async {
+        await assertPresentFromTerminalIsIgnored(fail: true)
+    }
+
+    @MainActor
+    private func assertPresentFromTerminalIsIgnored(fail: Bool) async {
+        let module = PresentationTrackingModule()
+        module.attemptPresentation("https://example.test/first")
+        await flushPresentationQueue()
+        let oldSheet = module.sheets[0]
+        module.onEvent = {
+            module.onEvent = nil
+            module.attemptPresentation("https://example.test/second")
+        }
+        if fail {
+            module.delegates[0].checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
+        } else {
+            module.delegates[0].checkoutDidDismiss()
+        }
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.results, [true, false])
+        XCTAssertEqual(module.events.count, 1)
+        oldSheet.finishDismissal()
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        module.attemptPresentation("https://example.test/third")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.last?.absoluteString, "https://example.test/third")
+        XCTAssertEqual(module.results, [true, false, true])
+    }
+
+    @MainActor
+    func testPresentWhileActivePreservesOriginalDelegate() async {
+        let module = PresentationTrackingModule()
+        module.attemptPresentation("https://example.test/first")
+        await flushPresentationQueue()
+        let originalDelegate = module.delegates[0]
+        module.attemptPresentation("https://example.test/second")
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.results, [true, false])
+        XCTAssertTrue(module.delegates[0] === originalDelegate)
+        originalDelegate.checkoutDidDismiss()
+        XCTAssertEqual(module.events.count, 1)
+    }
+
+    @MainActor
+    private func flushPresentationQueue() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+}
+
+private final class PresentationTrackingModule: RCTShopifyCheckoutKit {
+    var urls: [URL] = []
+    var delegates: [CheckoutEventBridge] = []
+    var sheets: [DeferredDismissViewController] = []
+    var events: [String] = []
+    var results: [Bool?] = []
+    var onEvent: (() -> Void)?
+
+    func attemptPresentation(_ url: String) {
+        present(url, onResult: { self.results.append($0?.first as? Bool) })
+    }
+
+    override func getCurrentViewController(_: UIViewController? = nil) -> UIViewController? {
+        UIViewController()
+    }
+
+    override func presentCheckout(_ url: URL, from _: UIViewController, delegate: CheckoutEventBridge) -> UIViewController {
+        let sheet = DeferredDismissViewController()
+        urls.append(url)
+        delegates.append(delegate)
+        sheets.append(sheet)
+        return sheet
+    }
+
+    override func emitDispatchEvent(_ json: String) {
+        events.append(json)
+        onEvent?()
+    }
+}
+
+private final class DeferredDismissViewController: UIViewController {
+    private let presenter = UIViewController()
+    private var attached = true
+    private var completion: (() -> Void)?
+
+    override var presentingViewController: UIViewController? {
+        attached ? presenter : nil
+    }
+
+    override func dismiss(animated _: Bool, completion: (() -> Void)? = nil) {
+        self.completion = completion
+    }
+
+    func finishDismissal() {
+        attached = false
+        let callback = completion
+        completion = nil
+        callback?()
     }
 }

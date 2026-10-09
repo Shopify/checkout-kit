@@ -1,10 +1,5 @@
-import type {CheckoutException} from './errors';
-import type {ProtocolHandlers} from './protocol';
-import type {
-  ApplePayContactField,
-  ColorScheme,
-  LogLevel,
-} from './enums';
+import type {CheckoutEventHandlers} from './checkout';
+import type {ApplePayContactField, ColorScheme, LogLevel} from './enums';
 export {
   AcceleratedCheckoutWallet,
   ApplePayContactField,
@@ -13,10 +8,12 @@ export {
 } from './enums';
 export type {
   Checkout,
-  CheckoutProtocolPayloads,
-  ErrorResponse,
-  ProtocolHandlers,
-} from './protocol';
+  CheckoutStartEvent,
+  CheckoutUpdateEvent,
+  CheckoutCompleteEvent,
+  CheckoutFailureEvent,
+  CheckoutEventHandlers,
+} from './checkout';
 
 export type Maybe<T> = T | undefined;
 
@@ -187,28 +184,8 @@ export interface GeolocationRequestEvent {
   respond: (allow: boolean) => void;
 }
 
-/**
- * Per-call SDK callbacks for `present(url, callbacks, protocol)`.
- *
- * Exactly one of `onClose` or `onFail` fires per `present(...)` invocation,
- * after which the callbacks are released.
- *
- * `onGeolocationRequest` may fire any number of times during a single
- * `present(...)` call while the checkout sheet is open.
- */
-export interface PresentCallbacks {
-  /**
-   * Fires when the checkout sheet is dismissed without a terminal error.
-   * Mirrors `CheckoutListener.onCheckoutDismissed` on Android
-   * and `CheckoutDelegate.checkoutDidDismiss` on iOS.
-   */
-  onClose?: () => void;
-  /**
-   * Fires when the checkout sheet terminates with an error.
-   * Mirrors `CheckoutListener.onCheckoutFailed` on Android
-   * and `CheckoutDelegate.checkoutDidFail` on iOS.
-   */
-  onFail?: (error: CheckoutException) => void;
+/** Lifecycle callbacks for a checkout presentation. */
+export interface PresentCallbacks extends CheckoutEventHandlers {
   /**
    * Fires when the checkout sheet requests geolocation permissions.
    * Only Android currently delivers this callback; on iOS the
@@ -335,16 +312,12 @@ export interface ShopifyCheckoutKit {
    * Present the checkout.
    *
    * @param checkoutURL The URL of the checkout to display.
-   * @param callbacks Optional per-call SDK callbacks. Exactly one of
-   * `onClose` or `onFail` fires per call, after which the callbacks are
-   * released.
-   * @param protocol Optional per-call Checkout Protocol event handlers.
+   * @param callbacks Lifecycle callbacks. Callbacks remain
+   * active until dismissal or failure, including after completion. Repeated calls
+   * while checkout is active or closing are ignored, including across instances.
+   * Ignored attempts do not fire callbacks.
    */
-  present(
-    checkoutURL: string,
-    callbacks?: PresentCallbacks,
-    protocol?: ProtocolHandlers,
-  ): void;
+  present(checkoutURL: string, callbacks?: PresentCallbacks): void;
   /**
    * Preload the checkout for faster presentation.
    *
@@ -368,7 +341,8 @@ export interface ShopifyCheckoutKit {
    */
   getConfig(): Configuration;
   /**
-   * Cleans up any event callbacks to prevent memory leaks.
+   * Stops consumer callbacks and cancels pending geolocation responses.
+   * The native checkout remains open and tracked until its session ends.
    */
   teardown(): void;
 

@@ -20,6 +20,13 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
+  private Runnable onTerminal = () -> {};
+
+  public void setOnTerminal(Runnable onTerminal) {
+    this.onTerminal = onTerminal;
+  }
+
+  public boolean isReleased() { return dispatch.isReleased(); }
 
   // Geolocation-specific variables
 
@@ -46,6 +53,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
 
   public void release() {
     dispatch.release();
+    invokeGeolocationCallback(false);
     geolocationCallback = null;
     geolocationOrigin = null;
   }
@@ -95,12 +103,15 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   }
 
   @Override
-  public void onCheckoutFailed(CheckoutException checkoutError) {
+  public void onCheckoutFailed(CheckoutFailureEvent event) {
     if (dispatch.isReleased()) {
       return;
     }
     try {
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, populateErrorDetails(checkoutError)));
+      onTerminal.run();
+      Map<String, Object> payload = new HashMap<>();
+      payload.put("error", populateErrorDetails(event.getError()));
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, payload));
     } catch (IOException e) {
       Log.e(TAG, "Error processing checkout failed event", e);
     } finally {
@@ -114,11 +125,36 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
       return;
     }
     try {
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.CLOSE, null));
+      onTerminal.run();
+      dispatch.invoke(buildEnvelope(DispatchEventTypes.DISMISS, null));
     } catch (IOException e) {
       Log.e(TAG, "Error processing checkout dismissed event", e);
     } finally {
       release();
+    }
+  }
+
+  @Override
+  public void onCheckoutStarted(CheckoutStartEvent event) {
+    emitCheckout(DispatchEventTypes.START, event.getCheckout());
+  }
+
+  @Override
+  public void onCheckoutUpdated(CheckoutUpdateEvent event) {
+    emitCheckout(DispatchEventTypes.UPDATE, event.getCheckout());
+  }
+
+  @Override
+  public void onCheckoutCompleted(CheckoutCompleteEvent event) {
+    emitCheckout(DispatchEventTypes.COMPLETE, event.getCheckout());
+  }
+
+  private void emitCheckout(String type, Checkout checkout) {
+    if (dispatch.isReleased()) return;
+    try {
+      dispatch.invoke(CheckoutEventSerialization.checkout(type, checkout));
+    } catch (Exception e) {
+      Log.e(TAG, "Error serializing checkout event");
     }
   }
 

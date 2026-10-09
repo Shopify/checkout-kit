@@ -2,13 +2,7 @@ package com.shopify.reactnative.checkoutkit;
 
 import androidx.annotation.NonNull;
 
-/**
- * Shared per-presentation dispatch handle.
- *
- * SDK lifecycle events and protocol events both invoke the same handle. Terminal
- * lifecycle events release it so subsequent protocol emissions are dropped,
- * matching the iOS pendingDispatchCallback lifecycle.
- */
+/** Gates events after a checkout presentation ends. */
 public class DispatchHandle implements DispatchCallback {
   private final DispatchCallback downstream;
   private boolean released = false;

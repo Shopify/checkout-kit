@@ -1,62 +1,44 @@
+import {useRef} from 'react';
 import {createDebugLogger} from '../utils';
-
-import {
-  CheckoutProtocol,
-  type CheckoutException,
-  type ProtocolHandlers,
-  type RenderStateChangeEvent,
+import type {
+  CheckoutEventHandlers,
+  RenderStateChangeEvent,
 } from '@shopify/checkout-kit-react-native';
-import {Linking} from 'react-native';
 
-interface EventHandlers {
-  onFail?: (error: CheckoutException) => void;
-  onCancel?: () => void;
+type EventHandlers = CheckoutEventHandlers & {
   onRenderStateChange?: (event: RenderStateChangeEvent) => void;
-  onClickLink?: (url: string) => void;
-}
+};
 
-export function useShopifyProtocolEventHandlers(
+export function useShopifyEventHandlers(
   name?: string,
-  additionalHandlers: Partial<ProtocolHandlers> = {},
-): ProtocolHandlers {
+  onCompletedCheckout?: () => void,
+): EventHandlers {
   const log = createDebugLogger(name ?? '');
-
-  // Keep the sample subscribed to every public protocol event automatically.
-  // When CheckoutProtocol grows, Object.values(...) includes the new method and
-  // the sample starts logging it without needing a hand-written handler update.
-  return Object.values(CheckoutProtocol).reduce<
-    Record<string, (payload: unknown) => void>
-  >((handlers, method) => {
-    handlers[method] = payload => {
-      log(method, payload);
-      (
-        additionalHandlers[method as keyof ProtocolHandlers] as
-          | ((payload: unknown) => void)
-          | undefined
-      )?.(payload);
-    };
-    return handlers;
-  }, {}) as ProtocolHandlers;
-}
-
-export function useShopifyEventHandlers(name?: string): EventHandlers {
-  const log = createDebugLogger(name ?? '');
+  const completed = useRef(false);
+  const finishCheckout = () => {
+    if (completed.current) {
+      completed.current = false;
+      onCompletedCheckout?.();
+    }
+  };
   return {
-    onFail: error => {
+    onStart: () => {
+      completed.current = false;
+      log('onStart');
+    },
+    onUpdate: () => log('onUpdate'),
+    onComplete: () => {
+      completed.current = true;
+      log('onComplete');
+    },
+    onFail: ({error}) => {
       log('onFail', error);
+      finishCheckout();
     },
-    onCancel: () => {
-      log('onCancel');
+    onDismiss: () => {
+      log('onDismiss');
+      finishCheckout();
     },
-    onRenderStateChange: event => {
-      log('onRenderStateChange', event);
-    },
-    onClickLink: async url => {
-      log('onClickLink', url);
-
-      if (await Linking.canOpenURL(url)) {
-        await Linking.openURL(url);
-      }
-    },
+    onRenderStateChange: event => log('onRenderStateChange', event),
   };
 }
