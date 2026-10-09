@@ -6,7 +6,12 @@ import {
   type ProtocolHandlers,
   type RenderStateChangeEvent,
 } from '@shopify/checkout-kit-react-native';
-import {Linking} from 'react-native';
+import {Alert, Linking} from 'react-native';
+import {useCart} from '../context/Cart';
+import {
+  checkoutErrorMessage,
+  shouldReplaceCart,
+} from '../checkout/checkoutErrorMessage';
 
 interface EventHandlers {
   onFail?: (error: CheckoutException) => void;
@@ -41,9 +46,20 @@ export function useShopifyProtocolEventHandlers(
 
 export function useShopifyEventHandlers(name?: string): EventHandlers {
   const log = createDebugLogger(name ?? '');
+  const {clearCart} = useCart();
+
   return {
     onFail: error => {
       log('onFail', error);
+
+      // Checkout Kit has ended its presentation. The host owns recovery: only
+      // cart-terminal failures discard local cart state; other failures retain
+      // it so the buyer can retry.
+      if (shouldReplaceCart(error.code)) {
+        clearCart();
+      }
+
+      Alert.alert('Checkout error', checkoutErrorMessage(error));
     },
     onCancel: () => {
       log('onCancel');
