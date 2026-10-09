@@ -9,13 +9,15 @@ class CoverageReport
   JAVASCRIPT_METRICS = {"lines" => "Lines", "statements" => "Statements", "branches" => "Branches", "functions" => "Functions"}.freeze
   TITLES = {"swift" => "Swift", "android" => "Android", "web" => "Web", "react-native" => "React Native", "protocol" => "Embedded Checkout Protocol (TypeScript)", "protocol-swift" => "Embedded Checkout Protocol (Swift)", "protocol-kotlin" => "Embedded Checkout Protocol (Kotlin)"}.freeze
 
-  attr_reader :platform, :rows
+  attr_reader :platform, :rows, :groups
 
   def initialize(platform, contents)
     @platform = platform
+    @groups = {}
     @rows = case platform
     when "swift" then swift_rows(contents)
-    when "android", "protocol-kotlin" then android_rows(contents)
+    when "android" then android_rows(contents)
+    when "protocol-kotlin" then kotlin_protocol_rows(contents)
     when "protocol-swift" then swift_protocol_rows(contents)
     when "web", "react-native", "protocol" then javascript_rows(contents)
     else raise ArgumentError, "Unknown coverage platform: #{platform}"
@@ -29,7 +31,13 @@ class CoverageReport
   def markdown(report_url: nil)
     label = TITLES.fetch(platform)
     lines = [marker, "# #{label} — Coverage Report", ""]
-    if platform == "swift"
+    if groups.any?
+      lines.concat(["| Scope | #{@rows.map(&:first).join(' | ')} |", "| --- | #{@rows.map { "---" }.join(" | ")} |"])
+      groups.merge("Total" => rows).each do |scope, metrics|
+        cells = metrics.map { |name, covered, total| metric(covered, total, badge: name == "Lines", report_url: report_url) }
+        lines << "| #{scope} | #{cells.join(' | ')} |"
+      end
+    elsif platform == "swift"
       lines.concat(["| Target | Lines |", "| --- | --- |"])
       @rows.each do |name, covered, total|
         lines << "| #{name} | #{metric(covered, total, badge: true, report_url: report_url)} |"
@@ -94,12 +102,42 @@ class CoverageReport
     raise "Missing Swift protocol coverage files" if files.empty?
     raise "Duplicate Swift protocol coverage files" unless files.map { |file| file.fetch("filename") }.uniq.length == files.length
 
-    {"lines" => "Lines", "functions" => "Functions"}.map do |key, label|
-      counts = files.map do |file|
-        metric = file.fetch("summary").fetch(key)
-        row(label, metric.fetch("covered"), metric.fetch("count"))
+    metrics = {"lines" => "Lines", "functions" => "Functions"}
+    @groups = {"Runtime" => [], "Generated" => []}
+    files.each do |file|
+      scope = file.fetch("filename").include?("/EmbeddedCheckoutProtocol/Generated/") ? "Generated" : "Runtime"
+      @groups.fetch(scope) << metrics.map do |key, label|
+        counts = file.fetch("summary").fetch(key)
+        row(label, counts.fetch("covered"), counts.fetch("count"))
       end
-      row(label, counts.sum { |entry| entry[1] }, counts.sum { |entry| entry[2] })
+    end
+    @groups.transform_values! { |entries| sum_rows(entries, metrics.values) }
+    sum_rows(groups.values, metrics.values)
+  end
+
+  def kotlin_protocol_rows(contents)
+    totals = android_rows(contents)
+    document = REXML::Document.new(contents)
+    files = document.get_elements("report/package/sourcefile")
+    raise "Missing Kotlin protocol coverage files" if files.empty?
+    paths = files.map { |file| "#{file.parent.attributes['name']}/#{file.attributes['name']}" }
+    raise "Duplicate Kotlin protocol coverage files" unless paths.uniq.length == paths.length
+
+    generated = %w[Models.kt EmbeddedCheckoutProtocol.kt].map { |name| "com/shopify/ucp/embedded/checkout/#{name}" }
+    @groups = {"Runtime" => [], "Generated" => []}
+    files.zip(paths).each do |file, path|
+      scope = generated.include?(path) ? "Generated" : "Runtime"
+      @groups.fetch(scope) << android_counters(file, allow_missing: true)
+    end
+    @groups.transform_values! { |entries| sum_rows(entries, ANDROID_METRICS.values) }
+    raise "Kotlin coverage scopes do not match report totals" unless sum_rows(groups.values, ANDROID_METRICS.values) == totals
+
+    totals
+  end
+
+  def sum_rows(entries, labels)
+    labels.each_with_index.map do |label, index|
+      row(label, entries.sum { |entry| entry.fetch(index)[1] }, entries.sum { |entry| entry.fetch(index)[2] })
     end
   end
 
@@ -108,9 +146,15 @@ class CoverageReport
     require "rexml/document"
 
     document = REXML::Document.new(contents)
+    # Nested package/class counters duplicate the report totals.
+    android_counters(document.elements["report"])
+  end
+
+  def android_counters(element, allow_missing: false)
     ANDROID_METRICS.map do |type, label|
-      # Nested package/class counters duplicate the report totals.
-      counter = document.elements["report/counter[@type='#{type}']"]
+      counter = element&.elements&.[]("counter[@type='#{type}']")
+      # JaCoCo omits source-level counters when a file has no such instructions.
+      next row(label, 0, 0) if !counter && allow_missing
       raise "Missing Android coverage counter: #{type}" unless counter
 
       covered = Integer(counter.attributes["covered"])
@@ -166,6 +210,7 @@ class CoverageResultPublisher
     existing = checks.find { |check| check["external_id"] == external_id && check.dig("app", "slug") == @source.fetch("provider") }
     unless existing && preserve_existing
       result = {version: 1, platform: platform, pr: @pr_number.to_i, headSha: @sha, baseSha: base_sha, revision: revision, source: @source, state: state, rows: report&.rows || [], reportUrl: report_url}
+      result[:groups] = report.groups if report && report.groups.any?
       payload = {
         name: "Coverage#{revision == 'base' ? ' base' : ''} — #{CoverageReport::TITLES.fetch(platform)}",
         external_id: external_id,
