@@ -27,38 +27,107 @@ class BitriseE2EReporter < E2EGitHubReporter
     }
   end
 
+  def comment_body
+    [COMMENT_MARKER, markdown_summary].join("\n\n")
+  end
+
   def markdown_summary
-    lines = ["## Checkout Kit E2E results", ""]
+    lines = ["**#{result_heading}**", ""]
     errors = plan_errors + problem_stages.map { |stage| "`#{stage.name}` #{stage_outcome(stage)}." }
     unless errors.empty?
       lines.concat(["> [!CAUTION]", *errors.map { |error| "> #{error}" }, ""])
     end
-    lines.concat(["| Target | Outcome | Results |", "|---|---|---|"])
-    @applications.each do |application|
-      id = application.fetch("id")
-      stage = @stages.stage("e2e-maestro-#{id}")
-      outcome = if !plan_errors.empty?
-        "selection unavailable"
-      elsif !@selected_ids.include?(id)
-        "skipped — not needed for this change"
-      else
-        stage_outcome(stage)
-      end
-      links = if stage && !blank?(stage.build_url)
-        "[Tests](#{stage.build_url}?tab=tests) · [Build](#{stage.build_url})"
-      else
-        "—"
-      end
-      lines << "| `#{id}` | #{outcome} | #{links} |"
+    lines.concat(["| Target | Result | Details | Install from branch |", "|---|---|---|---|"])
+    applications_by_outcome.each do |application|
+      stage = application_stage(application)
+      lines << "| #{application_label(application)} | #{application_outcome(application)} | #{stage_links(stage)} | #{application_install_link(application)} |"
     end
     if plan_errors.empty? && @selected_ids.empty?
       lines.concat(["", "No E2E application was selected for this change."])
     end
-    lines.concat(["", "[Pipeline build](#{@pipeline_url})"]) unless blank?(@pipeline_url)
+    if @applications.any? { |application| application_install_link(application) != "—" }
+      lines.concat(["", "To install, open Tophat on your Mac, select a device or simulator, then use the corresponding link."])
+    end
+    links = pipeline_links
+    lines.concat(["", "**Bitrise:** #{links.join(" · ")}"]) unless links.empty?
     lines.join("\n")
   end
 
   private
+
+  def result_heading
+    return "❌ E2E failed · selection unavailable" unless plan_errors.empty?
+    if @selected_ids.empty?
+      return conclusion == "success" ? "✅ E2E not needed" : "❌ E2E failed · no targets selected"
+    end
+
+    passed = @selected_ids.count { |id| stage_outcome(@stages.stage("e2e-maestro-#{id}")) == "passed" }
+    count = "#{passed}/#{@selected_ids.length} targets"
+    conclusion == "success" ? "✅ E2E passed · #{count}" : "❌ E2E failed · #{count} passed"
+  end
+
+  def applications_by_outcome
+    @applications.sort_by do |application|
+      if !selected?(application)
+        2
+      elsif stage_outcome(application_stage(application)) == "passed"
+        1
+      else
+        0
+      end
+    end
+  end
+
+  def selected?(application)
+    plan_errors.empty? && @selected_ids.include?(application.fetch("id"))
+  end
+
+  def application_stage(application)
+    @stages.stage("e2e-maestro-#{application.fetch("id")}")
+  end
+
+  def application_target(application)
+    @targets.find { |target| target.fetch("id") == application.fetch("target") }
+  end
+
+  def application_label(application)
+    label = application_target(application)&.fetch("label") || application.fetch("target")
+    platform = application.fetch("platform")
+    platform_label = {"ios" => "iOS", "android" => "Android"}.fetch(platform, platform)
+    "#{label} · #{platform_label}"
+  end
+
+  def application_outcome(application)
+    return "⚠️ Selection unavailable" unless plan_errors.empty?
+    return "⏭️ Skipped · not needed for this change" unless selected?(application)
+
+    stage = application_stage(application)
+    case stage_outcome(stage)
+    when "passed" then "✅ Passed"
+    when "did not run" then "❌ Did not run"
+    else
+      stage.status == "failed" ? "❌ Failed" : "❌ Failed (#{stage.status || "unknown status"})"
+    end
+  end
+
+  def stage_links(stage)
+    return "—" if stage.nil? || blank?(stage.build_url)
+
+    "[Tests](#{stage.build_url}?tab=tests) · [Build](#{stage.build_url})"
+  end
+
+  # Tophat starts the retained artifact workflows on demand for this branch.
+  def application_install_link(application)
+    return "—" unless selected?(application) && !blank?(@branch) && !blank?(@app_slug)
+
+    target = application_target(application)
+    return "—" unless target
+
+    recipes = target.fetch("recipes").select { |recipe| recipe.fetch("platform") == application.fetch("platform") }
+    return "—" if recipes.empty?
+
+    "[Tophat](#{tophat_install_url(target.merge("recipes" => recipes))})"
+  end
 
   def plan_errors
     errors = []
@@ -88,14 +157,5 @@ class BitriseE2EReporter < E2EGitHubReporter
     return "passed" if stage.status == "succeeded"
 
     "failed (#{stage.status || "unknown status"})"
-  end
-
-  # The retained artifact workflows are started on demand by Tophat.
-  def produced_targets
-    return [] unless plan_errors.empty?
-
-    ids = @applications.select { |application| @selected_ids.include?(application.fetch("id")) }
-      .map { |application| application.fetch("target") }
-    @targets.select { |target| ids.include?(target.fetch("id")) }
   end
 end
