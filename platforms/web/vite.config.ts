@@ -27,6 +27,9 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts'],
       outDir: fromRoot('dist'),
       tsconfigPath: fromRoot('tsconfig.json'),
+      // TypeScript 6 defaults rootDir to the tsconfig directory; keep declarations rooted at src
+      // so the rolled-up dist/index.d.ts entry resolves.
+      compilerOptions: { rootDir: fromRoot('src') },
       insertTypesEntry: true,
       rollupTypes: true,
       bundledPackages: ['@shopify/checkout-kit-protocol'],
