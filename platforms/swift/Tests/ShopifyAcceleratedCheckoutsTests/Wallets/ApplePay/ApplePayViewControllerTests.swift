@@ -176,6 +176,37 @@ class ApplePayViewControllerTests: XCTestCase {
         XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [.completed])
     }
 
+    func test_checkoutDidDismiss_whenPresentedCheckoutDismisses_invokesOnDismissCallback() async throws {
+        let dismissCallbackExpectation = expectation(description: "Dismiss callback should be invoked")
+        viewController.eventHandlers.checkoutDidDismiss = { dismissCallbackExpectation.fulfill() }
+        viewController.mockTopViewController = UIViewController()
+
+        let checkoutURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
+        try await viewController.present(url: checkoutURL)
+
+        let checkoutViewController = try XCTUnwrap(viewController.checkoutViewController)
+        let webViewController = try XCTUnwrap(
+            checkoutViewController.viewControllers.first as? CheckoutWebViewController
+        )
+        webViewController.close()
+
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
+    func test_checkoutDidDismiss_afterCompletionFinishedApplePay_forwardsDismissalWithoutTransitioning() async {
+        var dismissalCount = 0
+        viewController.eventHandlers.checkoutDidDismiss = { dismissalCount += 1 }
+        XCTAssertEqual(mockAuthorizationDelegate.state, .idle)
+
+        viewController.checkoutDidDismiss()
+        for _ in 0 ..< 10 {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(dismissalCount, 1)
+        XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [])
+    }
+
     // MARK: - WalletController Inheritance
 
     func test_configuration_whenInitialized_usesCorrectStorefront() {
