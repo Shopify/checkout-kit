@@ -25,6 +25,7 @@ Check out our blog to
 - [Platform Requirements](#platform-requirements)
 - [Getting Started](#getting-started)
   - [Installation](#installation)
+  - [CDN](#cdn)
 - [Basic Usage](#basic-usage)
 - [Programmatic Usage](#programmatic-usage)
 - [Usage with other frameworks](#usage-with-other-frameworks)
@@ -83,6 +84,24 @@ npm install @shopify/checkout-kit@next
 
 Once the first stable `4.0.0` ships, the standard `pnpm add @shopify/checkout-kit`
 (no version specifier) will work and pull from the `latest` dist-tag.
+
+### CDN
+
+If you'd rather not use a package manager, load Checkout Kit from Shopify's CDN
+as an ES module and register the component you need:
+
+```html
+<script type="module">
+  import {loadComponents} from 'https://cdn.shopify.com/checkout-kit/v4/web-components.js';
+  await loadComponents(['shopify-checkout']);
+</script>
+```
+
+The URL is evergreen within a major version: compatible updates are delivered
+automatically, and a breaking change ships under a new major path. The loader
+also exports `version`, the Checkout Kit release it was built from.
+
+The CDN entrypoint becomes available with the first stable `4.0.0` release.
 
 ## Basic Usage
 

@@ -55,9 +55,11 @@
     "ecommerce"
   ],
   "scripts": {
-    "clean": "rm -rf dist sample/dist coverage",
-    "build": "vite build && pnpm run build:manifest",
-    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' --outdir dist",
+    "clean": "rm -rf dist dist-cdn sample/dist coverage",
+    "build": "pnpm run build:npm && pnpm run build:cdn",
+    "build:npm": "vite build && pnpm run build:manifest",
+    "build:cdn": "vite build --config vite.cdn.config.ts",
+    "build:manifest": "cem analyze --globs 'src/**/*.ts' --exclude 'src/**/*.test.ts' 'src/cdn-loader.ts' --outdir dist",
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -73,17 +75,18 @@
     "sample:build": "vite build --config sample/vite.config.ts",
     "sample:preview": "vite preview --config sample/vite.config.ts",
     "sample:typecheck": "tsc --noEmit -p sample/tsconfig.json",
+    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
     "verify": "publint && vitest run --config vitest.package.config.ts",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "prepack": "pnpm run build",
-    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json"
+    "prepack": "pnpm run build:npm"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
     "@shopify/checkout-kit-protocol": "workspace:*",
     "@shopify/checkout-kit-telemetry": "workspace:*",
     "@types/node": "^22.10.0",
+    "@types/semver": "^7.8.0",
     "@typescript-eslint/parser": "^8.70.1",
     "@vitest/coverage-v8": "^4.1.0",
     "browserslist-to-esbuild": "^2.1.1",
@@ -94,6 +97,7 @@
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",
     "publint": "^0.3.12",
+    "semver": "^7.8.5",
     "typescript": "5.9.3",
     "vite": "^8.3.4",
     "vite-plugin-dts": "^4.5.4",

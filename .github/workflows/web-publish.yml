@@ -1,4 +1,4 @@
-name: Web — Publish to npm
+name: Web — Publish to npm and CDN
 
 on:
   release:
@@ -10,7 +10,7 @@ on:
         required: false
         type: string
       dry-run:
-        description: "Run the full pipeline + pack but skip the actual publish. Defaults to true for manual safety; uncheck to actually publish."
+        description: "Run the full pipeline + pack but skip npm and CDN publishing. Defaults to true for manual safety; uncheck to publish."
         required: false
         type: boolean
         default: true
@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish @shopify/checkout-kit to npm
+    name: Publish @shopify/checkout-kit to npm and CDN
     # Only run when either:
     #   - A GitHub Release tagged `web/X.Y.Z` is published (auto trigger), OR
     #   - The workflow is manually dispatched from the `main` branch. The
@@ -75,17 +75,20 @@ jobs:
           fi
           echo "✓ Tag '$TAG_NAME' matches package.json version '$VERSION_FROM_PKG'."
 
-      - name: Verify version is not already published
+      - name: Check whether version is already published
+        id: npm-version
         run: |
           set -euo pipefail
           NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
           URL="https://registry.npmjs.org/${NAME}/${VERSION}"
           if curl -fs "$URL" > /dev/null; then
-            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/web/package.json before re-running."
-            exit 1
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${NAME}@${VERSION} is already published — skipping npm publish."
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
           fi
-          echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
 
       - name: Lint (typecheck + oxlint + format)
         run: pnpm lint
@@ -93,15 +96,18 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build
-        run: pnpm build
+      - name: Build npm package
+        run: pnpm build:npm
 
-      - name: Verify package (publint)
+      - name: Build CDN assets
+        run: pnpm build:cdn
+
+      - name: Verify npm package and CDN assets
         run: pnpm verify
 
       - name: Pack and inspect contents
         run: |
-          pnpm pack --pack-destination /tmp/web-publish
+          pnpm pack --config.ignore-scripts=true --pack-destination /tmp/web-publish
           echo "Tarball contents:"
           tar -tzf /tmp/web-publish/*.tgz | sort
 
@@ -129,22 +135,167 @@ jobs:
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Select CDN channel
+        id: cdn-policy
+        run: node scripts/cdn-release-policy.mjs
+        env:
+          DIST_TAG: ${{ steps.tag.outputs.tag }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+
+      # The deploy identity and bucket are configured as `npm-web` environment
+      # secrets rather than committed, so they are masked in logs and only
+      # available to jobs that declare the environment. Fail early and clearly
+      # if any are missing; never print their values.
+      - name: Check CDN deployment configuration
+        env:
+          HAS_PROJECT: ${{ secrets.CDN_GCP_PROJECT_ID != '' }}
+          HAS_PROVIDER: ${{ secrets.CDN_GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
+          HAS_SERVICE_ACCOUNT: ${{ secrets.CDN_GCP_SERVICE_ACCOUNT != '' }}
+          HAS_BUCKET: ${{ secrets.CDN_BUCKET != '' }}
+        run: |
+          set -euo pipefail
+          MISSING=""
+          [ "$HAS_PROJECT" = "true" ] || MISSING="$MISSING CDN_GCP_PROJECT_ID"
+          [ "$HAS_PROVIDER" = "true" ] || MISSING="$MISSING CDN_GCP_WORKLOAD_IDENTITY_PROVIDER"
+          [ "$HAS_SERVICE_ACCOUNT" = "true" ] || MISSING="$MISSING CDN_GCP_SERVICE_ACCOUNT"
+          [ "$HAS_BUCKET" = "true" ] || MISSING="$MISSING CDN_BUCKET"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing npm-web environment secrets:${MISSING}. See platforms/web/RELEASING.md."
+            exit 1
+          fi
+
+      # Pre-flight: prove the CDN identity works before publishing to npm so a
+      # broken binding fails the run before anything irreversible happens.
+      # Runs on dry runs too. Deliberately does NOT write a credentials file or
+      # export env vars — only a short-lived token held in a step output — so
+      # no package code that runs later can pick up CDN credentials.
+      - name: Pre-flight CDN identity
+        id: gcp-preflight
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
+        with:
+          project_id: ${{ secrets.CDN_GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.CDN_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.CDN_GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+          export_environment_variables: false
+
+      - name: Verify CDN bucket access
+        env:
+          GCP_ACCESS_TOKEN: ${{ steps.gcp-preflight.outputs.access_token }}
+          CDN_BUCKET: ${{ secrets.CDN_BUCKET }}
+          CDN_PREFIX: ${{ steps.cdn-policy.outputs.prefix }}
+        run: |
+          set -euo pipefail
+          # Ask GCS which of the permissions the upload steps need the identity
+          # actually holds. Side-effect free, so safe on dry runs. Overwriting
+          # an existing loader requires delete as well as create.
+          REQUIRED="storage.objects.create storage.objects.delete storage.objects.list"
+          QUERY=""
+          for PERM in $REQUIRED; do QUERY="${QUERY}permissions=${PERM}&"; done
+          STATUS=$(curl -sS -o /tmp/iam-test.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${GCP_ACCESS_TOKEN}" \
+            "https://storage.googleapis.com/storage/v1/b/${CDN_BUCKET}/iam/testPermissions?${QUERY%&}")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Cannot query IAM on the CDN deployment bucket (HTTP ${STATUS}). Check the workload identity binding and environment secrets."
+            cat /tmp/iam-test.json
+            exit 1
+          fi
+          GRANTED=$(node -p "(JSON.parse(require('fs').readFileSync('/tmp/iam-test.json','utf8')).permissions ?? []).join(' ')")
+          MISSING=""
+          for PERM in $REQUIRED; do
+            case " $GRANTED " in *" $PERM "*) ;; *) MISSING="$MISSING $PERM" ;; esac
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::CDN deploy identity is missing permissions on the deployment bucket:${MISSING}"
+            exit 1
+          fi
+          echo "::notice::CDN deploy identity holds ${REQUIRED} on the deployment bucket (deploying to ${CDN_PREFIX}/)"
+
       # `DIST_TAG` is passed via `env:` (not direct ${{ }} interpolation) so
       # that a workflow_dispatch input like `latest$(whoami)` is treated as a
       # literal string by bash rather than command substitution.
+      # `--ignore-scripts` skips `prepack`, so the tarball contains the dist/
+      # that was built and verified above rather than a fresh, unverified build.
       - name: Publish to npm
-        if: ${{ !inputs.dry-run }}
-        run: pnpm dlx npm@11.5.1 publish --no-git-checks --tag "$DIST_TAG" --access public --provenance
+        if: ${{ !inputs.dry-run && steps.npm-version.outputs.already_published != 'true' }}
+        run: pnpm dlx npm@11.5.1 publish --no-git-checks --ignore-scripts --tag "$DIST_TAG" --access public --provenance
         env:
           DIST_TAG: ${{ steps.tag.outputs.tag }}
           NPM_CONFIG_PROVENANCE: "true"
           NPM_TOKEN: ""
           NODE_AUTH_TOKEN: ""
 
+      # Redeploying an already-published version to the CDN is only safe when
+      # the checkout matches what was published: a release tag, or a re-run
+      # (run_attempt > 1, same SHA) of the manual run that published it, e.g.
+      # to repair a failed CDN upload. A *fresh* manual dispatch runs from
+      # `main`, which may have moved on without a version bump; deploying that
+      # would put code on the CDN that was never published to npm, labelled
+      # with the old version.
+      - name: Guard against deploying unpublished code
+        if: ${{ github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && steps.npm-version.outputs.already_published == 'true' }}
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          MESSAGE="${VERSION} is already on npm. A fresh manual run cannot redeploy it to the CDN because main may not match the published tarball. Re-run the workflow run that published it (release or manual) instead, or bump the version."
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "::warning::${MESSAGE}"
+          else
+            echo "::error::${MESSAGE}"
+            exit 1
+          fi
+
+      - name: Prepare CDN release
+        id: cdn
+        if: ${{ !inputs.dry-run }}
+        env:
+          CDN_PREFIX: ${{ steps.cdn-policy.outputs.prefix }}
+        run: |
+          set -euo pipefail
+          RELEASE_DIR="/tmp/checkout-kit-cdn/${CDN_PREFIX}"
+          mkdir -p "$RELEASE_DIR/assets" "$RELEASE_DIR/loader"
+          cp dist-cdn/web-components.js dist-cdn/web-components.js.map "$RELEASE_DIR/loader"
+          cp -R dist-cdn/assets/. "$RELEASE_DIR/assets"
+
+      # Full authentication (credentials file) only now, after all package
+      # code has run, and only for the upload steps that need it.
+      - name: Authenticate to Google Cloud
+        if: ${{ steps.cdn.outcome == 'success' }}
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f # v2.1.7
+        with:
+          project_id: ${{ secrets.CDN_GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.CDN_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.CDN_GCP_SERVICE_ACCOUNT }}
+
+      # Upload content-addressed chunks before the loader references them.
+      # Cache-Control is not set per object: the CDN applies one caching policy
+      # to every /checkout-kit/ path. See platforms/web/CDN-PUBLISHING.md.
+      - name: Upload CDN implementation chunks
+        if: ${{ steps.cdn.outcome == 'success' }}
+        uses: google-github-actions/upload-cloud-storage@386ab77f37fdf51c0e38b3d229fad286861cc0d0 # v2.2.1
+        with:
+          path: /tmp/checkout-kit-cdn/${{ steps.cdn-policy.outputs.prefix }}/assets
+          destination: ${{ secrets.CDN_BUCKET }}/${{ steps.cdn-policy.outputs.prefix }}/assets
+          parent: false
+
+      - name: Upload CDN loader
+        if: ${{ steps.cdn.outcome == 'success' }}
+        uses: google-github-actions/upload-cloud-storage@386ab77f37fdf51c0e38b3d229fad286861cc0d0 # v2.2.1
+        with:
+          path: /tmp/checkout-kit-cdn/${{ steps.cdn-policy.outputs.prefix }}/loader
+          destination: ${{ secrets.CDN_BUCKET }}/${{ steps.cdn-policy.outputs.prefix }}
+          parent: false
+
       - name: Dry-run summary
         if: ${{ inputs.dry-run }}
         env:
           DIST_TAG: ${{ steps.tag.outputs.tag }}
+          CDN_CHANNEL: ${{ steps.cdn-policy.outputs.channel }}
+          CDN_PREFIX: ${{ steps.cdn-policy.outputs.prefix }}
         run: |
-          echo "::notice::Dry-run requested — skipped npm publish."
-          echo "Would have published with: --tag $DIST_TAG --access public --provenance"
+          echo "::notice::Dry-run requested — skipped npm and CDN publishing."
+          echo "Would have published to npm with: --tag $DIST_TAG --access public --provenance"
+          echo "Would have uploaded the ${CDN_CHANNEL} CDN loader to: /checkout-kit/${CDN_PREFIX}/web-components.js"
