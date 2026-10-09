@@ -11,7 +11,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
+      checks: write
+      pull-requests: read
     defaults:
       run:
         working-directory: platforms/web
@@ -30,16 +31,17 @@ jobs:
         run: pnpm lint
 
       - name: Test
+        id: coverage_tests
         run: pnpm test
 
-      - name: Coverage comment
-        if: github.event_name == 'pull_request'
-        uses: MishaKav/jest-coverage-comment@642ef024cc554a34b7082cea12c7bf63575ae151 # main
+      - name: Record coverage
+        if: ${{ !cancelled() }}
+        uses: ./.github/actions/report-coverage
         with:
-          coverage-summary-path: platforms/web/coverage/coverage-summary.json
-          title: 'Web — Coverage Report'
-          unique-id-for-comment: web
-          create-new-comment: false
+          platform: web
+          report-path: platforms/web/coverage/coverage-summary.json
+          report-directory: platforms/web/coverage
+          outcome: ${{ steps.coverage_tests.outcome }}
 
       - name: Build
         run: pnpm build

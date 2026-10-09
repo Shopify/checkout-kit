@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "lib/coverage_report"
+
+abort "Usage: ruby scripts/report_coverage <platform> <report-path>" unless ARGV.length == 2
+platform = ARGV[0]
+outcome = ENV.fetch("COVERAGE_TEST_OUTCOME", "success")
+state = outcome == "success" ? "success" : "failed"
+report = CoverageReport.new(platform, File.read(ARGV[1])) if File.file?(ARGV[1]) && %w[success failure].include?(outcome)
+state = "unavailable" if state == "success" && report.nil?
+sha = ENV["COVERAGE_SHA"]
+body = report ? report.markdown(report_url: ENV["COVERAGE_REPORT_URL"]) : "#{CoverageReport::TITLES.fetch(platform)} coverage #{state}."
+puts body
+summary_path = ENV["GITHUB_STEP_SUMMARY"]
+File.open(summary_path, "a") { |file| file.puts(body) } unless summary_path.to_s.empty?
+
+pr_number = ENV["COVERAGE_PR"]
+token = ENV["COVERAGE_TOKEN"]
+if pr_number.to_s.empty? || token.to_s.empty?
+  puts "Skipped coverage result: no pull request or GitHub write token."
+  exit
+end
+abort "COVERAGE_PR must be a pull request number" unless pr_number.match?(/\A[1-9]\d*\z/)
+abort "COVERAGE_SHA is required to publish coverage" if sha.to_s.empty?
+
+source = {"provider" => "github-actions", "runId" => Integer(ENV.fetch("GITHUB_RUN_ID")), "runAttempt" => Integer(ENV.fetch("GITHUB_RUN_ATTEMPT", "1"))}
+publisher = CoverageResultPublisher.new(
+  repository: ENV.fetch("COVERAGE_REPOSITORY"),
+  pr_number: pr_number,
+  sha: sha,
+  token: token,
+  source: source
+)
+puts publisher.publish(platform: platform, state: state, report: report, report_url: ENV["COVERAGE_REPORT_URL"])

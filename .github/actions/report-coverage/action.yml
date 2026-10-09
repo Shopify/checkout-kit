@@ -1,0 +1,38 @@
+name: Record coverage
+description: Save a platform result for the shared coverage comment publisher
+inputs:
+  platform:
+    required: true
+    description: Coverage platform key
+  report-path:
+    required: true
+    description: Coverage summary JSON, relative to the repository root
+  report-directory:
+    required: true
+    description: Directory containing the downloadable reports
+  outcome:
+    required: true
+    description: Outcome of the coverage test step
+runs:
+  using: composite
+  steps:
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      id: artifact
+      if: ${{ hashFiles(inputs.report-path) != '' }}
+      with:
+        name: ${{ inputs.platform }}-coverage-${{ github.run_attempt }}
+        path: ${{ inputs.report-directory }}
+        retention-days: 7
+    - name: Record coverage result
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        COVERAGE_PLATFORM: ${{ inputs.platform }}
+        COVERAGE_PATH: ${{ inputs.report-path }}
+        COVERAGE_TEST_OUTCOME: ${{ inputs.outcome }}
+        COVERAGE_REPOSITORY: ${{ github.repository }}
+        COVERAGE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        COVERAGE_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
+        COVERAGE_TOKEN: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.token || '' }}
+        COVERAGE_REPORT_URL: ${{ steps.artifact.outputs.artifact-url }}
+      run: ruby scripts/report_coverage "$COVERAGE_PLATFORM" "$COVERAGE_PATH"

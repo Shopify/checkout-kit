@@ -99,6 +99,25 @@ uncovered behavior instead of lowering the threshold. The thresholds live in
 `protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
 not yet enforce coverage thresholds.
 
+CI updates one **Coverage Report** comment on same-repository pull requests for
+Web, React Native JavaScript, and Embedded Checkout Protocol (TS). The table
+shows status emojis, line, branch, and function coverage percentages, and links
+to the full reports. Jobs that are pending, skipped, failed, or missing a report
+show their status instead of coverage from an older run. GitHub Actions jobs also
+write their coverage tables to the job summary. Fork builds and builds without a
+write token keep their artifacts and log summaries without posting a comment.
+
+Platform jobs store numeric results in GitHub checks. The `Coverage Report`
+workflow is the only comment writer and serializes updates per PR. It refreshes
+on CI workflow events, reading all current results so simultaneous completions
+do not lose data. A manual run of `Coverage Report` with the PR number refreshes
+interrupted reporting.
+
+The publisher executes trusted default-branch code and validates the numeric
+results; it never executes PR-provided reporting code. This workflow begins
+publishing once it exists on `main`. Coverage thresholds remain in the test
+runners; combining the comments does not change their enforcement.
+
 ### Testing PR builds with Tophat
 
 [Tophat](https://github.com/Shopify/tophat) is a macOS menu-bar app that
