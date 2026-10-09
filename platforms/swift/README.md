@@ -227,10 +227,7 @@ Clear unused preloaded checkout work with `invalidate`:
 ShopifyCheckoutKit.invalidate()
 ```
 
-Updating configuration through `ShopifyCheckoutKit.configure {}` triggers
-`ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a
-stale checkout. If a preload may already have run when configuration changes,
-call `preload` again.
+Updating configuration through `ShopifyCheckoutKit.configure {}` triggers `ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a stale checkout. If a preload may already have run when configuration changes, call `preload` again.
 
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
@@ -317,6 +314,8 @@ body is untrusted and is not logged.
 ```swift
 let configuration = ShopifyCheckoutKit.configuration
 ```
+
+`ShopifyCheckoutKit.configuration` returns a copy. Changing that copy does not change the configuration; use `ShopifyCheckoutKit.configure {}` instead.
 
 ## Checkout lifecycle
 
