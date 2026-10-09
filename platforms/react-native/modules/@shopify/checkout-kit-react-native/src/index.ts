@@ -2,7 +2,12 @@ import {PermissionsAndroid, Platform} from 'react-native';
 import type {PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from './context';
-import {ApplePayContactField, ColorScheme, LogLevel} from './enums';
+import {
+  ApplePayContactField,
+  CheckoutAppearanceType,
+  ColorScheme,
+  LogLevel,
+} from './enums';
 import {
   DispatchEventParityError,
   verifyDispatchEventParity,
@@ -17,10 +22,15 @@ import type {
   AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
+  AutomaticColors,
+  CheckoutAppearance,
+  Colors,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosAutomaticColors,
   IosColors,
+  PlatformColors,
   PresentCallbacks,
   PreloadFailureReason,
   PreloadOptions,
@@ -417,6 +427,7 @@ export {
   ApplePayContactField,
   ApplePayLabel,
   ApplePayStyle,
+  CheckoutAppearanceType,
   ColorScheme,
   DispatchEventParityError,
   LifecycleEventParseError,
@@ -437,10 +448,15 @@ export type {
   AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
+  AutomaticColors,
+  CheckoutAppearance,
+  Colors,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosAutomaticColors,
   IosColors,
+  PlatformColors,
   PresentCallbacks,
   PreloadFailureReason,
   PreloadOptions,

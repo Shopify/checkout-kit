@@ -1,4 +1,4 @@
-import type {ColorScheme, LogLevel} from './enums';
+import type {CheckoutAppearanceType, ColorScheme, LogLevel} from './enums';
 import type {Configuration} from './index.d';
 import type RNShopifyCheckoutKit from './specs/NativeShopifyCheckoutKit';
 
@@ -12,8 +12,8 @@ type NativeConfigurationResult = ReturnType<
  *
  * The TurboModule codegen spec can only express primitive types — string
  * literal unions and TypeScript enums collapse to plain `string` at the
- * bridge boundary. On the JS side consumers expect the typed `ColorScheme`
- * and `LogLevel` enums, so we narrow those two fields here.
+ * bridge boundary. On the JS side consumers expect the typed appearance
+ * enums and `LogLevel`, so we narrow those fields here.
  *
  * The native SDK owns the defaults, so the value is reported as native gave
  * it. A newer native SDK that adds a level or a scheme is reported truthfully
@@ -26,6 +26,9 @@ export function coerceConfigurationResult(
   return {
     ...raw,
     logLevel: raw.logLevel as LogLevel,
-    colorScheme: raw.colorScheme as ColorScheme,
+    appearance: raw.appearance as {
+      type: CheckoutAppearanceType;
+      colorScheme?: ColorScheme;
+    },
   } as Configuration;
 }

@@ -36,7 +36,7 @@ experiences.
 - [Programmatic Usage](#programmatic-usage)
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
 - [Configuration](#configuration)
-  - [Colors](#colors)
+  - [Appearance](#appearance)
   - [Localization](#localization)
     - [Checkout Sheet title](#checkout-sheet-title)
       - [iOS - Localization](#ios---localization)
@@ -343,10 +343,9 @@ instance of the `ShopifyCheckout` class.
 | Name          | Required | Default     | Description                                                                                                                                                    |
 | ------------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `title`       |          | `Checkout`  | Sets the title of the checkout sheet at runtime on both iOS and Android. For per-locale localization, use the platform resource files. See [Localization](#localization). |
-| `colorScheme` |          | `automatic` | Sets the color scheme for the checkout.                                                                                                                        |
+| `appearance`  |          | `{type: 'storefront'}` | Sets the checkout appearance: the storefront's branding, or the Checkout Kit style with a `light`, `dark`, or `automatic` color scheme. Each appearance owns its native colors. See [Appearance](#appearance). |
 | `preloading`  |          | `true`      | Enable/disable [preloading](#preloading).                                                                                                                      |
 | `telemetry`   |          | `true`      | Sends anonymous diagnostic metrics to Shopify on iOS and Android. Set to `false` to opt out.                                                                   |
-| `colors`      |          | `{}`        | An object with `ios` and `android` properties to override the colors for iOS and Android platforms individually. See [`colors`](#colors) for more information. |
 | `logLevel`    |          | `error`     | Sets the log level for the native SDK. Use `LogLevel.debug` for verbose logging during development, or `LogLevel.error` for production.                        |
 | `allowedMessageOrigins` |          | `[]`        | Extra origins trusted to send incoming checkout messages. See [Incoming message origin validation](#incoming-message-origin-validation).                       |
 
@@ -361,26 +360,30 @@ Here's an example of how a fully customized configuration object might look:
 
 ```tsx
 import {
-  ColorScheme,
+  CheckoutAppearanceType,
   Configuration,
   LogLevel,
   ShopifyCheckoutProvider,
 } from '@shopify/checkout-kit-react-native';
 
 const config: Configuration = {
-  colorScheme: ColorScheme.storefront,
   preloading: true,
   logLevel: LogLevel.error,
-  colors: {
-    ios: {
-      backgroundColor: '#f0f0e8',
-      tintColor: '#2d2a38',
-    },
-    android: {
-      backgroundColor: '#f0f0e8',
-      progressIndicator: '#2d2a38',
-      headerBackgroundColor: '#f0f0e8',
-      headerTextColor: '#2d2a38',
+  appearance: {
+    type: CheckoutAppearanceType.storefront,
+    colors: {
+      ios: {
+        webViewBackground: '#f0f0e8',
+        headerBackground: '#f0f0e8',
+        headerFont: '#2d2a38',
+        progressIndicator: '#2d2a38',
+      },
+      android: {
+        webViewBackground: '#f0f0e8',
+        headerBackground: '#f0f0e8',
+        headerFont: '#2d2a38',
+        progressIndicator: '#2d2a38',
+      },
     },
   },
 };
@@ -398,84 +401,172 @@ function AppWithContext() {
 const shopifyCheckout = new ShopifyCheckout(config);
 ```
 
-### Colors
+### Appearance
 
-The SDK defaults to the `automatic` color scheme option, will switches between
-idiomatic `light` and `dark` themes depending on the users preference. This
-behavior can be customized via the `colorScheme` property:
+`appearance` mirrors the native `CheckoutAppearance` on iOS and Android. It
+owns the native color palette: there is no separate colors setting.
 
-| Name        | Default | Description                                                                                      |
-| ----------- | ------- | ------------------------------------------------------------------------------------------------ |
-| `automatic` | ✔      | Alternates between an idiomatic light and dark theme - depending on the users device preference. |
-| `light`     |         | Force the idomatic light theme.                                                                  |
-| `dark`      |         | Force the idomatic dark theme.                                                                   |
-| `storefront` |        | Force your storefront web checkout branding.                                                     |
-
-The `colors` configuration property can be used to provide overrides for iOS and
-Android applications separately.
-
-```tsx
-const config: Configuration = {
-  colorScheme: ColorScheme.light,
-  colors: {
-    ios: {
-      backgroundColor: '#ffffff',
-      tintColor: '#000000',
-      closeButtonColor: '#333333',
-    },
-    android: {
-      backgroundColor: '#ffffff',
-      progressIndicator: '#2d2a38',
-      headerBackgroundColor: '#ffffff',
-      headerTextColor: '#000000',
-      closeButtonColor: '#333333',
-    },
-  },
-};
-```
-
-Note that when using the `automatic` option, the `colors.android` interface is
-slightly different, as you can specify different overrides for `light` and
-`dark` modes:
+| `type` | Description |
+| --- | --- |
+| `storefront` | Uses the merchant's web checkout branding, with a light native sheet. The native SDK default. |
+| `app` | Uses the Checkout Kit style with a `ColorScheme`: `automatic` (follows the device's light or dark preference; the default when `colorScheme` is omitted), `light`, or `dark`. |
 
 ```tsx
 import {
+  CheckoutAppearanceType,
   ColorScheme,
-  Configuration,
-  ShopifyCheckoutProvider,
 } from '@shopify/checkout-kit-react-native';
+import type {Configuration} from '@shopify/checkout-kit-react-native';
+
+const storefront: Configuration = {
+  appearance: {type: CheckoutAppearanceType.storefront},
+};
+const automatic: Configuration = {
+  appearance: {type: CheckoutAppearanceType.app},
+};
+const dark: Configuration = {
+  appearance: {type: CheckoutAppearanceType.app, colorScheme: ColorScheme.dark},
+};
+```
+
+React Native preserves the host application's native appearance until a
+configuration update explicitly sets `appearance`. Configure appearance before
+presenting checkout. Color overrides customize the surrounding native UI, not
+the merchant's web checkout branding.
+
+The default palettes differ per platform. iOS uses a transparent navigation
+bar with no separator over `systemBackground`. Android uses an opaque header
+(`#ffffff` in light, `#1d1d1f` in dark) with a visible separator.
+
+#### Shared color names
+
+`appearance.colors.ios` and `appearance.colors.android` use the same native SDK
+terminology. Every field is optional, and omitted fields use the native
+palette's defaults. iOS retains UIKit dynamic colors, transparency, and system
+close controls; Android retains its native palette and sheet defaults.
+
+| Field | iOS | Android |
+| --- | --- | --- |
+| `webViewBackground` | WebView background and overscroll | WebView background |
+| `headerBackground` | Navigation bar background | Sheet header background |
+| `headerFont` | Navigation title color | Header title color |
+| `progressIndicator` | Progress indicator color | Progress indicator color |
+| `closeIconTint` | Close icon tint; `null` restores the system control | Close icon tint; `null` restores the native default |
+| `headerBorderColor` | Navigation bar separator; `null` restores the native default | Header border; `null` restores the native default |
+| `dragHandleColor` | Not supported | Drag handle tint; `null` restores the native default |
+
+Colors accept six-digit RGB or eight-digit **AARRGGBB** hex strings, with an
+optional leading `#`. Surrounding whitespace is ignored. Malformed fields are
+ignored individually without discarding valid overrides.
+
+```tsx
+import {
+  CheckoutAppearanceType,
+  ColorScheme,
+} from '@shopify/checkout-kit-react-native';
+import type {Colors, Configuration} from '@shopify/checkout-kit-react-native';
+
+const colors: Colors = {
+  webViewBackground: '#ffffff',
+  headerBackground: '#ffffff',
+  headerFont: '#000000',
+  progressIndicator: '#2d2a38',
+  closeIconTint: '#333333',
+};
 
 const config: Configuration = {
-  colorScheme: ColorScheme.automatic,
-  colors: {
-    // Custom light/dark overrides for Android
-    android: {
-      light: {
-        backgroundColor: '#ffffff',
-        progressIndicator: '#2d2a38',
-        headerBackgroundColor: '#ffffff',
-        headerTextColor: '#000000',
-        closeButtonColor: '#000000',
-      },
-      dark: {
-        backgroundColor: '#000000',
-        progressIndicator: '#0087ff',
-        headerBackgroundColor: '#000000',
-        headerTextColor: '#ffffff',
-        closeButtonColor: '#ffffff',
-      },
-    },
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: ColorScheme.light,
+    colors: {ios: colors, android: colors},
+  },
+};
+```
+
+#### Automatic palettes
+
+With `colorScheme: ColorScheme.automatic` (or omitted), both platforms accept
+shared overrides and independent `light` and `dark` palettes, switching
+natively when the system appearance changes. Shared overrides apply to both
+palettes; a palette's own overrides then take precedence. Either palette can be
+omitted. Within a palette, set `closeIconTint`, `headerBorderColor`, or
+Android's `dragHandleColor` to `null` to clear a shared override and restore
+that palette's native default.
+
+```tsx
+import {CheckoutAppearanceType} from '@shopify/checkout-kit-react-native';
+import type {AutomaticColors, Configuration} from '@shopify/checkout-kit-react-native';
+
+const colors: AutomaticColors = {
+  progressIndicator: '#0087ff',
+  closeIconTint: '#333333',
+  light: {
+    webViewBackground: '#ffffff',
+    closeIconTint: null,
+  },
+  dark: {
+    webViewBackground: '#1d1d1f',
+    headerBackground: '#1d1d1f',
+    headerFont: '#ffffff',
+    closeIconTint: '#ffffff',
   },
 };
 
-function AppWithContext() {
-  return (
-    <ShopifyCheckoutProvider configuration={config}>
-      <App />
-    </ShopifyCheckoutProvider>
-  );
-}
+const config: Configuration = {
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colors: {ios: colors, android: colors},
+  },
+};
 ```
+
+Use `IosColors` / `AndroidColors` for platform-specific palettes of `light`,
+`dark`, and `storefront` appearances, and `IosAutomaticColors` /
+`AndroidAutomaticColors` for automatic palettes. `dragHandleColor` is available
+only in the Android types.
+
+#### Updates and resets
+
+Setting `appearance` replaces it wholesale, like assigning
+`configuration.appearance` natively.
+
+| Update | iOS and Android behavior |
+| --- | --- |
+| No `appearance` key, e.g. only `title`, `logLevel`, or `preloading` | Preserve the current appearance and all color overrides. |
+| Valid `appearance`, with no `colors` | Replace the appearance with fresh native defaults for it. |
+| Valid `appearance` with `colors` | Build fresh native palettes for that appearance, then apply the supplied overrides. Previous overrides are not merged. |
+| Valid `appearance` with `colors: null`, `colors: {}`, or colors only for the other platform | Use fresh native defaults for that appearance. |
+| `appearance: null`, a missing or unknown `type`, or an unknown or non-string `colorScheme` | Preserve the current appearance, even if colors accompany it. |
+
+A reset restores SDK defaults, not colors captured from the host at module
+initialization. `getConfig()` returns JSON-compatible settings, including
+`appearance` as `{type: 'app', colorScheme}` or `{type: 'storefront'}`; it does
+not serialize native color objects or return the configured palettes.
+
+#### Migrating previous appearance settings
+
+The previous names are removed rather than retained as aliases.
+
+| Previous configuration | Current configuration |
+| --- | --- |
+| `colorScheme: ColorScheme.storefront` | `appearance: {type: CheckoutAppearanceType.storefront}` |
+| `colorScheme: ColorScheme.automatic` | `appearance: {type: CheckoutAppearanceType.app}` |
+| `colorScheme: ColorScheme.light` or `ColorScheme.dark` | `appearance: {type: CheckoutAppearanceType.app, colorScheme: ColorScheme.light}` (or `dark`) |
+| `colorScheme` plus top-level `colors` | `appearance: {type, colorScheme, colors}` |
+| `getConfig().colorScheme` | `getConfig().appearance` |
+
+| Current color name | Previous iOS name | Previous Android name |
+| --- | --- | --- |
+| `webViewBackground` | `backgroundColor` | `backgroundColor` |
+| `headerBackground` | Not exposed | `headerBackgroundColor` |
+| `headerFont` | Not exposed | `headerTextColor` |
+| `progressIndicator` | `tintColor` | `progressIndicator` |
+| `closeIconTint` | `closeButtonColor` | `closeButtonColor` |
+| `headerBorderColor` | Not exposed | Not exposed |
+| `dragHandleColor` | Not supported | Not exposed |
+
+Android palettes no longer require every color, and automatic palettes have
+the same shape on iOS and Android.
 
 ### Incoming message origin validation
 

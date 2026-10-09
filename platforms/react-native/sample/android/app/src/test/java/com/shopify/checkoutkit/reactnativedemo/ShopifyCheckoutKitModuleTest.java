@@ -12,6 +12,7 @@ import com.facebook.react.bridge.JavaOnlyArray;
 import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.shopify.checkoutkit.CheckoutAppearance;
 import com.shopify.checkoutkit.CheckoutErrorCode;
@@ -35,6 +36,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.junit.After;
@@ -79,18 +81,6 @@ public class ShopifyCheckoutKitModuleTest {
 
   // Mock for Arguments.createMap() to avoid native library loading
   private MockedStatic<Arguments> mockedArguments;
-
-  // Test constants for color configuration
-  private static final String BACKGROUND_COLOR = "#FFFFFF";
-  private static final String PROGRESS_INDICATOR = "#000000";
-  private static final String HEADER_BACKGROUND_COLOR = "#FFFFFF";
-  private static final String HEADER_TEXT_COLOR = "#000000";
-
-  // Dark theme colors
-  private static final String DARK_BACKGROUND_COLOR = "#000000";
-  private static final String DARK_PROGRESS_INDICATOR = "#FFFFFF";
-  private static final String DARK_HEADER_BACKGROUND_COLOR = "#000000";
-  private static final String DARK_HEADER_TEXT_COLOR = "#FFFFFF";
 
   private static final class TestShopifyCheckoutKitModule extends ShopifyCheckoutKitModule {
     private String preloadStateEvent;
@@ -578,9 +568,8 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testCanSetDarkColorScheme() {
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "dark");
+  public void testCanSetDarkAppAppearance() {
+    JavaOnlyMap config = JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", "dark"));
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -590,12 +579,10 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testUnknownColorSchemeKeepsTheCurrentAppearance() {
-    JavaOnlyMap darkConfig = new JavaOnlyMap();
-    darkConfig.putString("colorScheme", "dark");
+    JavaOnlyMap darkConfig = JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", "dark"));
     shopifyCheckoutKitModule.setConfig(darkConfig);
 
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "sepia");
+    JavaOnlyMap config = JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", "sepia"));
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -605,8 +592,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testUnknownColorSchemeKeepsTheNativeDefaultAppearance() {
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "sepia");
+    JavaOnlyMap config = JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", "sepia"));
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -631,120 +617,25 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testCanConfigureLightColorSchemeWithValidColors() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
+  public void testGetConfigReturnsOnlyCommonSettingsAndTheAppearanceWithoutColors() {
+    for (String scheme : new String[] {"light", "dark", "automatic", "storefront"}) {
+      JavaOnlyMap appearance = scheme.equals("storefront")
+          ? JavaOnlyMap.of("type", "storefront")
+          : JavaOnlyMap.of("type", "app", "colorScheme", scheme);
+      appearance.putMap("colors", JavaOnlyMap.of(
+          "android", JavaOnlyMap.of("progressIndicator", "#112233")));
 
-    shopifyCheckoutKitModule.setConfig(config);
+      shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("appearance", appearance));
 
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
+      ReadableMap result = shopifyCheckoutKitModule.getConfig();
 
-  @Test
-  public void testCanConfigureDarkColorSchemeWithValidColors() {
-    JavaOnlyMap androidColors = createValidDarkColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("dark", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("dark");
-  }
-
-  @Test
-  public void testCanConfigureAutomaticColorSchemeWithLightAndDarkColors() {
-    JavaOnlyMap lightColors = createValidLightColors();
-    JavaOnlyMap darkColors = createValidDarkColors();
-
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putMap("light", lightColors);
-    androidColors.putMap("dark", darkColors);
-
-    JavaOnlyMap colorsConfig = new JavaOnlyMap();
-    colorsConfig.putMap("android", androidColors);
-
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "automatic");
-    config.putMap("colors", colorsConfig);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("automatic");
-  }
-
-  @Test
-  public void testInvalidColorConfigurationFallsBackToBasicScheme() {
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putString("backgroundColor", "invalid-color");
-    androidColors.putString("progressIndicator", PROGRESS_INDICATOR);
-    androidColors.putString("headerBackgroundColor", HEADER_BACKGROUND_COLOR);
-    androidColors.putString("headerTextColor", HEADER_TEXT_COLOR);
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    // Should not throw exception
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Should fall back to basic light scheme without custom colors
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testPartialColorConfigurationIsRejected() {
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putString("backgroundColor", BACKGROUND_COLOR);
-    // Missing other required colors
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Should fall back to basic scheme since colors are incomplete
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithCloseButtonColor() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    androidColors.putString("closeButtonColor", "#FF0000");
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithMissingCloseButtonColor() {
-    // Missing closeButtonColor - should not crash
-    JavaOnlyMap androidColors = createValidLightColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithInvalidCloseButtonColor() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    androidColors.putString("closeButtonColor", "invalid-color");
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    // The method should not throw an exception when given invalid close button
-    // color
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Verify the color scheme was set correctly despite invalid close button color
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
+      assertThat(result.toHashMap()).containsOnlyKeys(
+          "appearance", "preloading", "telemetry", "title", "logLevel", "allowedMessageOrigins");
+      Map<String, Object> expectedAppearance = scheme.equals("storefront")
+          ? Map.of("type", "storefront")
+          : Map.of("type", "app", "colorScheme", scheme);
+      assertThat(result.getMap("appearance").toHashMap()).isEqualTo(expectedAppearance);
+    }
   }
 
   /**
@@ -1077,8 +968,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testCompleteConfigurationAndEventFlow() {
     // Set up configuration
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "dark");
+    JavaOnlyMap config = JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", "dark"));
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -1100,34 +990,6 @@ public class ShopifyCheckoutKitModuleTest {
       return ((CheckoutAppearance.App) appearance).getColorScheme().getId();
     }
     return "storefront";
-  }
-
-  private JavaOnlyMap createValidLightColors() {
-    JavaOnlyMap colors = new JavaOnlyMap();
-    colors.putString("backgroundColor", BACKGROUND_COLOR);
-    colors.putString("progressIndicator", PROGRESS_INDICATOR);
-    colors.putString("headerBackgroundColor", HEADER_BACKGROUND_COLOR);
-    colors.putString("headerTextColor", HEADER_TEXT_COLOR);
-    return colors;
-  }
-
-  private JavaOnlyMap createValidDarkColors() {
-    JavaOnlyMap colors = new JavaOnlyMap();
-    colors.putString("backgroundColor", DARK_BACKGROUND_COLOR);
-    colors.putString("progressIndicator", DARK_PROGRESS_INDICATOR);
-    colors.putString("headerBackgroundColor", DARK_HEADER_BACKGROUND_COLOR);
-    colors.putString("headerTextColor", DARK_HEADER_TEXT_COLOR);
-    return colors;
-  }
-
-  private JavaOnlyMap createConfigWithAndroidColors(String colorScheme, JavaOnlyMap androidColors) {
-    JavaOnlyMap colorsConfig = new JavaOnlyMap();
-    colorsConfig.putMap("android", androidColors);
-
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", colorScheme);
-    config.putMap("colors", colorsConfig);
-    return config;
   }
 
   private static class PromiseMock implements Promise {

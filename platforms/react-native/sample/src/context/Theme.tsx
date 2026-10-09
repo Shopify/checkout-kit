@@ -4,14 +4,25 @@ import type {ColorSchemeName} from 'react-native';
 import {Appearance, useColorScheme} from 'react-native';
 import type {Theme} from '@react-navigation/native';
 import {DarkTheme, DefaultTheme} from '@react-navigation/native';
-import {ColorScheme} from '@shopify/checkout-kit-react-native';
+import type {CheckoutAppearance} from '@shopify/checkout-kit-react-native';
+import {
+  CheckoutAppearanceType,
+  ColorScheme,
+} from '@shopify/checkout-kit-react-native';
+
+export enum AppearanceOption {
+  storefront = 'storefront',
+  appAutomatic = 'appAutomatic',
+  appLight = 'appLight',
+  appDark = 'appDark',
+}
 
 interface Context {
   cornerRadius: number;
   colors: Colors;
-  colorScheme: ColorScheme;
+  appearance: AppearanceOption;
   preference: ColorSchemeName;
-  setColorScheme: (colorScheme: ColorScheme) => void;
+  setAppearance: (appearance: AppearanceOption) => void;
 }
 
 export const darkColors: Colors = {
@@ -25,11 +36,11 @@ export const darkColors: Colors = {
   secondary: '#0087ff',
   secondaryText: '#fff',
 
-  webviewBackgroundColor: '#1D1D1F',
-  webViewProgressIndicator: '#0B96F1',
-  webviewHeaderBackgroundColor: '#1D1D1F',
-  webviewHeaderTextColor: '#ffffff',
-  webviewCloseButtonColor: '#ffffff',
+  webViewBackground: '#1D1D1F',
+  progressIndicator: '#0B96F1',
+  headerBackground: '#1D1D1F',
+  headerFont: '#ffffff',
+  closeIconTint: '#ffffff',
 };
 
 export const lightColors: Colors = {
@@ -43,11 +54,11 @@ export const lightColors: Colors = {
   secondary: '#000',
   secondaryText: '#fff',
 
-  webviewBackgroundColor: '#ffffff',
-  webViewProgressIndicator: '#0087ff',
-  webviewHeaderBackgroundColor: '#ffffff',
-  webviewHeaderTextColor: '#000000',
-  webviewCloseButtonColor: '#000000',
+  webViewBackground: '#ffffff',
+  progressIndicator: '#0087ff',
+  headerBackground: '#ffffff',
+  headerFont: '#000000',
+  closeIconTint: '#000000',
 };
 
 export const webColors: Colors = {
@@ -61,19 +72,19 @@ export const webColors: Colors = {
   secondary: '#2d2a38',
   secondaryText: '#fff',
 
-  webviewBackgroundColor: '#f0f0e8',
-  webViewProgressIndicator: '#2c2a38',
-  webviewHeaderBackgroundColor: '#f0f0e8',
-  webviewHeaderTextColor: '#2c2a38',
-  webviewCloseButtonColor: '#2c2a38',
+  webViewBackground: '#f0f0e8',
+  progressIndicator: '#2c2a38',
+  headerBackground: '#f0f0e8',
+  headerFont: '#2c2a38',
+  closeIconTint: '#2c2a38',
 };
 
 const ThemeContext = createContext<Context>({
   cornerRadius: 35,
-  colorScheme: ColorScheme.automatic,
+  appearance: AppearanceOption.appAutomatic,
   colors: lightColors,
   preference: Appearance.getColorScheme(),
-  setColorScheme() {},
+  setAppearance() {},
 });
 
 export interface Colors {
@@ -86,18 +97,18 @@ export interface Colors {
   primaryText: string;
   secondary: string;
   secondaryText: string;
-  webviewBackgroundColor: string;
-  webViewProgressIndicator: string;
-  webviewHeaderBackgroundColor: string;
-  webviewHeaderTextColor: string;
-  webviewCloseButtonColor: string;
+  webViewBackground: string;
+  progressIndicator: string;
+  headerBackground: string;
+  headerFont: string;
+  closeIconTint: string;
 }
 
 export function getNavigationTheme(
-  colorScheme: ColorScheme,
+  appearance: AppearanceOption,
   preference: ColorSchemeName,
 ): Theme {
-  const colors = getColors(colorScheme, preference);
+  const colors = getColors(appearance, preference);
   const primary = '#0087ff';
 
   const light = {
@@ -142,12 +153,12 @@ export function getNavigationTheme(
     },
   };
 
-  switch (colorScheme) {
-    case ColorScheme.automatic:
+  switch (appearance) {
+    case AppearanceOption.appAutomatic:
       return preference === 'dark' ? dark : light;
-    case ColorScheme.dark:
+    case AppearanceOption.appDark:
       return dark;
-    case ColorScheme.storefront:
+    case AppearanceOption.storefront:
       return web;
     default:
       return light;
@@ -155,48 +166,86 @@ export function getNavigationTheme(
 }
 
 export function getColors(
-  colorScheme: ColorScheme,
-  preference: ColorSchemeName,
+  appearance: AppearanceOption,
+  preference: ColorSchemeName = null,
 ): Colors {
-  switch (colorScheme) {
-    case ColorScheme.automatic:
+  switch (appearance) {
+    case AppearanceOption.appAutomatic:
       return preference === 'dark' ? darkColors : lightColors;
-    case ColorScheme.dark:
+    case AppearanceOption.appDark:
       return darkColors;
-    case ColorScheme.storefront:
+    case AppearanceOption.storefront:
       return webColors;
     default:
       return lightColors;
   }
 }
 
-export const ThemeProvider: React.FC<
-  PropsWithChildren<{defaultValue: ColorScheme; cornerRadius: number}>
-> = ({children, defaultValue = ColorScheme.automatic, cornerRadius}) => {
-  const preference = useColorScheme();
-  const [colorScheme, setColorSchemeInternal] =
-    useState<ColorScheme>(defaultValue);
+export function getCheckoutAppearance(
+  appearance: AppearanceOption,
+): CheckoutAppearance {
+  if (appearance === AppearanceOption.appAutomatic) {
+    return {
+      type: CheckoutAppearanceType.app,
+      colorScheme: ColorScheme.automatic,
+    };
+  }
 
-  const setColorScheme = useCallback((colorScheme: ColorScheme) => {
-    if (colorScheme === ColorScheme.automatic) {
+  const palette = getColors(appearance);
+  const checkoutColors = {
+    webViewBackground: palette.webViewBackground,
+    headerBackground: palette.headerBackground,
+    headerFont: palette.headerFont,
+    progressIndicator: palette.progressIndicator,
+    closeIconTint: palette.closeIconTint,
+  };
+  const colors = {ios: checkoutColors, android: checkoutColors};
+
+  if (appearance === AppearanceOption.storefront) {
+    return {type: CheckoutAppearanceType.storefront, colors};
+  }
+
+  return {
+    type: CheckoutAppearanceType.app,
+    colorScheme:
+      appearance === AppearanceOption.appDark
+        ? ColorScheme.dark
+        : ColorScheme.light,
+    colors,
+  };
+}
+
+export const ThemeProvider: React.FC<
+  PropsWithChildren<{defaultValue: AppearanceOption; cornerRadius: number}>
+> = ({
+  children,
+  defaultValue = AppearanceOption.appAutomatic,
+  cornerRadius,
+}) => {
+  const preference = useColorScheme();
+  const [appearance, setAppearanceInternal] =
+    useState<AppearanceOption>(defaultValue);
+
+  const setAppearance = useCallback((appearance: AppearanceOption) => {
+    if (appearance === AppearanceOption.appAutomatic) {
       Appearance.setColorScheme(null);
     } else {
       Appearance.setColorScheme(
-        colorScheme === ColorScheme.dark ? 'dark' : 'light',
+        appearance === AppearanceOption.appDark ? 'dark' : 'light',
       );
     }
-    setColorSchemeInternal(colorScheme);
+    setAppearanceInternal(appearance);
   }, []);
 
   const value = useMemo(
     () => ({
       cornerRadius,
-      colors: getColors(colorScheme, preference),
+      colors: getColors(appearance, preference),
       preference,
-      colorScheme,
-      setColorScheme,
+      appearance,
+      setAppearance,
     }),
-    [preference, colorScheme, setColorScheme, cornerRadius],
+    [preference, appearance, setAppearance, cornerRadius],
   );
 
   return (

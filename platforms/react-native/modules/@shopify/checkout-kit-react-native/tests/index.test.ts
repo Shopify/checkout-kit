@@ -10,6 +10,7 @@ import {
   AcceleratedCheckoutWallet,
   RenderState,
   LogLevel,
+  CheckoutAppearanceType,
   ColorScheme,
   type Configuration,
   type AcceleratedCheckoutConfiguration,
@@ -26,7 +27,10 @@ const NativeModule = TurboModuleRegistry.getEnforcing(
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
-  colorScheme: ColorScheme.automatic,
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: ColorScheme.automatic,
+  },
 };
 
 jest.mock('react-native');
@@ -148,6 +152,14 @@ describe('Exports', () => {
         'automatic',
         'light',
         'dark',
+      ]);
+    });
+  });
+
+  describe('CheckoutAppearanceType enum', () => {
+    it('exports every appearance type both native bridges accept', () => {
+      expect(Object.values(CheckoutAppearanceType)).toStrictEqual([
+        'app',
         'storefront',
       ]);
     });
@@ -239,7 +251,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with logLevel configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithLogLevel: Configuration = {
-        colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
@@ -249,7 +260,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with preloading configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithPreloading: Configuration = {
-        colorScheme: ColorScheme.automatic,
         preloading: false,
       };
       instance.setConfig(configWithPreloading);
@@ -259,7 +269,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with title configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithTitle: Configuration = {
-        colorScheme: ColorScheme.automatic,
         title: 'Custom Checkout',
       };
       instance.setConfig(configWithTitle);
@@ -269,7 +278,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with allowedMessageOrigins configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithAllowedOrigins: Configuration = {
-        colorScheme: ColorScheme.automatic,
         allowedMessageOrigins: ['https://example.com', 'https://*.example.com'],
       };
       instance.setConfig(configWithAllowedOrigins);
@@ -706,7 +714,10 @@ describe('ShopifyCheckoutKit', () => {
     it('returns the parsed config from the Native Module', () => {
       const instance = new ShopifyCheckout();
       expect(instance.getConfig()).toStrictEqual({
-        colorScheme: ColorScheme.automatic,
+        appearance: {
+          type: CheckoutAppearanceType.app,
+          colorScheme: ColorScheme.automatic,
+        },
         logLevel: LogLevel.error,
         preloading: true,
         telemetry: true,
@@ -716,7 +727,7 @@ describe('ShopifyCheckoutKit', () => {
 
     it('reports the native log level rather than a local default', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'storefront',
+        appearance: {type: 'storefront'},
         logLevel: 'warn',
         preloading: true,
       });
@@ -726,9 +737,23 @@ describe('ShopifyCheckoutKit', () => {
       expect(instance.getConfig().logLevel).toBe(LogLevel.warn);
     });
 
+    it('reports a storefront appearance without a color scheme', () => {
+      NativeModule.getConfig.mockReturnValueOnce({
+        appearance: {type: 'storefront'},
+        logLevel: 'error',
+        preloading: true,
+      });
+
+      const instance = new ShopifyCheckout();
+
+      expect(instance.getConfig().appearance).toStrictEqual({
+        type: CheckoutAppearanceType.storefront,
+      });
+    });
+
     it('passes an unrecognised native value through untouched', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'sepia',
+        appearance: {type: 'app', colorScheme: 'sepia'},
         logLevel: 'trace',
         preloading: true,
       });
@@ -737,12 +762,15 @@ describe('ShopifyCheckoutKit', () => {
       const result = instance.getConfig();
 
       expect(result.logLevel).toBe('trace');
-      expect(result.colorScheme).toBe('sepia');
+      expect(result.appearance).toStrictEqual({
+        type: CheckoutAppearanceType.app,
+        colorScheme: 'sepia',
+      });
     });
 
     it('returns configured allowed message origins', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'automatic',
+        appearance: {type: 'app', colorScheme: 'automatic'},
         logLevel: 'error',
         preloading: true,
         allowedMessageOrigins: ['https://example.com'],
@@ -751,7 +779,10 @@ describe('ShopifyCheckoutKit', () => {
       const instance = new ShopifyCheckout();
 
       expect(instance.getConfig()).toStrictEqual({
-        colorScheme: ColorScheme.automatic,
+        appearance: {
+          type: CheckoutAppearanceType.app,
+          colorScheme: ColorScheme.automatic,
+        },
         logLevel: LogLevel.error,
         preloading: true,
         allowedMessageOrigins: ['https://example.com'],

@@ -60,18 +60,12 @@ export enum AcceleratedCheckoutWallet {
 }
 
 // @public (undocumented)
-export interface AndroidAutomaticColors {
-    dark: AndroidColors;
-    light: AndroidColors;
-}
+export type AndroidAutomaticColors = AutomaticColors<AndroidColors>;
 
 // @public (undocumented)
-export interface AndroidColors {
-    backgroundColor: string;
-    closeButtonColor?: string;
-    headerBackgroundColor: string;
-    headerTextColor: string;
-    progressIndicator: string;
+export interface AndroidColors extends Colors {
+    // (undocumented)
+    dragHandleColor?: string | null;
 }
 
 // @public (undocumented)
@@ -132,6 +126,12 @@ export enum ApplePayStyle {
     whiteOutline = "whiteOutline"
 }
 
+// @public (undocumented)
+export type AutomaticColors<Palette extends Colors = Colors> = Palette & {
+    light?: Palette | null;
+    dark?: Palette | null;
+};
+
 // @public
 export interface Checkout {
     [key: string]: unknown;
@@ -173,6 +173,29 @@ export interface Checkout {
     status: CheckoutStatus;
     // (undocumented)
     totals: CheckoutTotal[];
+}
+
+// @public
+export type CheckoutAppearance =
+| {
+    type: CheckoutAppearanceType.app;
+    colorScheme: ColorScheme.light | ColorScheme.dark;
+    colors?: PlatformColors<IosColors, AndroidColors> | null;
+}
+| {
+    type: CheckoutAppearanceType.app;
+    colorScheme?: ColorScheme.automatic;
+    colors?: PlatformColors<IosAutomaticColors, AndroidAutomaticColors> | null;
+}
+| {
+    type: CheckoutAppearanceType.storefront;
+    colors?: PlatformColors<IosColors, AndroidColors> | null;
+};
+
+// @public
+export enum CheckoutAppearanceType {
+    app = "app",
+    storefront = "storefront"
 }
 
 // @public (undocumented)
@@ -265,15 +288,29 @@ export interface CheckoutUpdateEvent {
 }
 
 // @public (undocumented)
+export interface Colors {
+    // (undocumented)
+    closeIconTint?: string | null;
+    // (undocumented)
+    headerBackground?: string;
+    // (undocumented)
+    headerBorderColor?: string | null;
+    // (undocumented)
+    headerFont?: string;
+    // (undocumented)
+    progressIndicator?: string;
+    // (undocumented)
+    webViewBackground?: string;
+}
+
+// @public
 export enum ColorScheme {
     // (undocumented)
     automatic = "automatic",
     // (undocumented)
     dark = "dark",
     // (undocumented)
-    light = "light",
-    // (undocumented)
-    storefront = "storefront"
+    light = "light"
 }
 
 // Warning: (ae-forgotten-export) The symbol "CommonConfiguration" needs to be exported by the entry point index.d.ts
@@ -281,25 +318,8 @@ export enum ColorScheme {
 // @public (undocumented)
 export type Configuration = CommonConfiguration & {
     acceleratedCheckouts?: AcceleratedCheckoutConfiguration;
-} & (
-| {
-    colorScheme?:
-    | ColorScheme.storefront
-    | ColorScheme.light
-    | ColorScheme.dark;
-    colors?: {
-        ios?: IosColors;
-        android?: AndroidColors;
-    };
-}
-| {
-    colorScheme?: ColorScheme.automatic;
-    colors?: {
-        ios?: IosColors;
-        android?: AndroidAutomaticColors;
-    };
-}
-);
+    appearance?: CheckoutAppearance;
+};
 
 // @public
 export class DispatchEventParityError extends Error {
@@ -318,11 +338,10 @@ export interface GeolocationRequestEvent {
 }
 
 // @public (undocumented)
-export interface IosColors {
-    backgroundColor?: string;
-    closeButtonColor?: string;
-    tintColor?: string;
-}
+export type IosAutomaticColors = AutomaticColors<IosColors>;
+
+// @public (undocumented)
+export type IosColors = Colors;
 
 // @public (undocumented)
 export class LifecycleEventParseError extends Error {
@@ -335,6 +354,14 @@ export enum LogLevel {
     error = "error",
     none = "none",
     warn = "warn"
+}
+
+// @public (undocumented)
+export interface PlatformColors<Ios, Android> {
+    // (undocumented)
+    android?: Android | null;
+    // (undocumented)
+    ios?: Ios | null;
 }
 
 // @public

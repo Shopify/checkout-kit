@@ -24,9 +24,6 @@ enum DispatchEventType: String, CaseIterable {
 
 @objc(RCTShopifyCheckoutKit)
 class RCTShopifyCheckoutKit: NSObject {
-    /// The JavaScript name for `Configuration.Appearance.storefront`, which has no native raw value.
-    private static let storefrontColorScheme = "storefront"
-
     internal var checkoutSheet: UIViewController?
     private var checkoutEvents: CheckoutEventBridge?
     private weak var closingCheckoutSheet: UIViewController?
@@ -43,11 +40,25 @@ class RCTShopifyCheckoutKit: NSObject {
     }
 
     override init() {
-        configure {
-            $0.platform = Platform.reactNative
+        // The new architecture can create modules off the main thread.
+        Self.performOnMainActor {
+            configure {
+                $0.platform = Platform.reactNative
+            }
         }
 
         super.init()
+    }
+
+    /// Runs `work` immediately on the main thread, otherwise enqueues it on the main queue so calls keep their order.
+    private static func performOnMainActor(_ work: @escaping @MainActor () -> Void) {
+        if Thread.isMainThread {
+            MainActor.assumeIsolated(work)
+        } else {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated(work)
+            }
+        }
     }
 
     @objc func constantsToExport() -> [AnyHashable: Any]! {
@@ -180,83 +191,48 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    private func appearanceFor(_ colorScheme: String) -> Configuration.Appearance? {
-        if colorScheme == Self.storefrontColorScheme {
-            return .storefront
-        }
-
-        guard let scheme = Configuration.ColorScheme(rawValue: colorScheme) else {
-            return nil
-        }
-
-        return .app(scheme)
-    }
-
-    private func colorSchemeStringFor(_ appearance: Configuration.Appearance) -> String {
-        switch appearance {
-        case let .app(colorScheme):
-            return colorScheme.rawValue
-        case .storefront:
-            return Self.storefrontColorScheme
-        }
-    }
-
     @objc func setConfig(_ configuration: [AnyHashable: Any]) {
-        let colorConfig = configuration["colors"] as? [AnyHashable: Any]
-        let iosConfig = colorConfig?["ios"] as? [String: String]
-
-        if let title = configuration["title"] as? String {
-            ShopifyCheckoutKit.configuration.title = title
+        Self.performOnMainActor { [self] in
+            applyConfiguration(configuration)
+            NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
         }
+    }
 
-        if let preloading = configuration["preloading"] as? Bool {
-            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
+    @MainActor
+    private func applyConfiguration(_ configuration: [AnyHashable: Any]) {
+        ShopifyCheckoutKit.configure { config in
+            if let title = configuration["title"] as? String {
+                config.title = title
+            }
+
+            if let preloading = configuration["preloading"] as? Bool {
+                config.preloading.enabled = preloading
+            }
+
+            if let allowedMessageOrigins = configuration["allowedMessageOrigins"] as? [String] {
+                config.allowedMessageOrigins = allowedMessageOrigins
+            }
+
+            if let telemetry = configuration["telemetry"] as? Bool {
+                config.telemetry.enabled = telemetry
+            }
+
+            if let logLevel = configuration["logLevel"] as? String,
+               let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
+            {
+                config.logLevel = parsedLogLevel
+            }
+
+            config.appearance = CheckoutAppearanceConfiguration.update(config.appearance, configuration: configuration)
         }
-
-        if let allowedMessageOrigins = configuration["allowedMessageOrigins"] as? [String] {
-            ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
-        }
-
-        if let telemetry = configuration["telemetry"] as? Bool {
-            ShopifyCheckoutKit.configuration.telemetry.enabled = telemetry
-        }
-
-        if let colorScheme = configuration["colorScheme"] as? String,
-           let appearance = appearanceFor(colorScheme)
-        {
-            ShopifyCheckoutKit.configuration.appearance = appearance
-        }
-
-        if let tintColorHex = iosConfig?["tintColor"] as? String {
-            ShopifyCheckoutKit.configuration.tintColor = UIColor(hex: tintColorHex)
-        }
-
-        if let backgroundColorHex = iosConfig?["backgroundColor"] as? String {
-            ShopifyCheckoutKit.configuration.backgroundColor = UIColor(hex: backgroundColorHex)
-        }
-
-        if let closeButtonColorHex = iosConfig?["closeButtonColor"] as? String {
-            ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
-        }
-
-        if let logLevel = configuration["logLevel"] as? String,
-           let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
-        {
-            ShopifyCheckoutKit.configuration.logLevel = parsedLogLevel
-        }
-
-        NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
     }
 
     @objc func getConfig() -> NSDictionary {
         return [
             "title": ShopifyCheckoutKit.configuration.title,
-            "colorScheme": colorSchemeStringFor(ShopifyCheckoutKit.configuration.appearance),
+            "appearance": CheckoutAppearanceConfiguration.appearanceResultFor(ShopifyCheckoutKit.configuration.appearance),
             "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
             "telemetry": ShopifyCheckoutKit.configuration.telemetry.enabled,
-            "tintColor": ShopifyCheckoutKit.configuration.tintColor,
-            "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
-            "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,
             "allowedMessageOrigins": ShopifyCheckoutKit.configuration.allowedMessageOrigins,
             "logLevel": logLevelToString(ShopifyCheckoutKit.configuration.logLevel)
         ]

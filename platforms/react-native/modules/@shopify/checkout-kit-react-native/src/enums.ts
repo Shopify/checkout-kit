@@ -1,7 +1,23 @@
+/**
+ * Color scheme for the app appearance. Mirrors the native `ColorScheme`.
+ */
 export enum ColorScheme {
   automatic = 'automatic',
   light = 'light',
   dark = 'dark',
+}
+
+/**
+ * Kind of checkout appearance. Mirrors the native `CheckoutAppearance` cases.
+ */
+export enum CheckoutAppearanceType {
+  /**
+   * Checkout uses the app's color scheme and colors.
+   */
+  app = 'app',
+  /**
+   * Checkout uses the storefront's branding.
+   */
   storefront = 'storefront',
 }
 

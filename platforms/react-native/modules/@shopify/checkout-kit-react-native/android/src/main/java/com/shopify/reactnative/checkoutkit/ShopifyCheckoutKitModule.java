@@ -20,16 +20,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
-
-  /** The JavaScript name for {@link CheckoutAppearance.Storefront}, which has no native id. */
-  private static final String STOREFRONT_COLOR_SCHEME = "storefront";
 
   public static Configuration checkoutConfig = new Configuration();
 
@@ -232,7 +228,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     WritableMap resultConfig = Arguments.createMap();
 
     resultConfig.putString("title", checkoutConfig.getTitle());
-    resultConfig.putString("colorScheme", colorSchemeStringFor(checkoutConfig.getAppearance()));
+    resultConfig.putMap("appearance", CheckoutAppearanceConfiguration.appearanceResultFor(checkoutConfig.getAppearance()));
     resultConfig.putString("logLevel", logLevelStringFor(checkoutConfig.getLogLevel()));
     resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
     resultConfig.putBoolean("telemetry", checkoutConfig.getTelemetry().getEnabled());
@@ -269,22 +265,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         }
       }
 
-      if (config.hasKey("colorScheme")) {
-        String colorScheme = Objects.requireNonNull(config.getString("colorScheme"));
-        ReadableMap colorsConfig = config.hasKey("colors") ? config.getMap("colors") : null;
-        ReadableMap androidConfig = null;
-
-        if (colorsConfig != null && colorsConfig.hasKey("android")) {
-          androidConfig = colorsConfig.getMap("android");
-        }
-
-        CheckoutAppearance appearance = appearanceFor(colorScheme, androidConfig);
-
-        if (appearance != null) {
-          configuration.setAppearance(appearance);
-        }
-      }
-
+      configuration.setAppearance(CheckoutAppearanceConfiguration.update(configuration.getAppearance(), config));
       checkoutConfig = configuration;
     });
   }
@@ -340,78 +321,6 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   // Private
 
-  static CheckoutAppearance appearanceFor(String colorScheme, ReadableMap androidConfig) {
-    if (STOREFRONT_COLOR_SCHEME.equals(colorScheme)) {
-      return getStorefrontAppearance(androidConfig);
-    }
-
-    ColorScheme scheme = colorSchemeFor(colorScheme);
-
-    if (scheme == null) {
-      return null;
-    }
-
-    if (isValidColorConfig(androidConfig)) {
-      ColorScheme schemeWithOverrides = getColors(scheme, androidConfig);
-      if (schemeWithOverrides != null) {
-        return new CheckoutAppearance.App(schemeWithOverrides);
-      }
-    }
-
-    return new CheckoutAppearance.App(scheme);
-  }
-
-  private static CheckoutAppearance getStorefrontAppearance(ReadableMap androidConfig) {
-    CheckoutAppearance.Storefront storefront = new CheckoutAppearance.Storefront();
-
-    Colors colors = createColorsFromConfig(androidConfig);
-    if (colors == null) {
-      return storefront;
-    }
-
-    return storefront.customize(builder -> {
-      builder.withWebViewBackground(colors.getWebViewBackground());
-      builder.withHeaderBackground(colors.getHeaderBackground());
-      builder.withHeaderFont(colors.getHeaderFont());
-      builder.withProgressIndicator(colors.getProgressIndicator());
-      Color closeButtonColor = colors.getCloseIconTint();
-      if (closeButtonColor != null) {
-        builder.withCloseIconTint(closeButtonColor);
-      }
-    });
-  }
-
-  private static ColorScheme colorSchemeFor(String colorScheme) {
-    if (colorScheme == null) {
-      return null;
-    }
-
-    ColorScheme light = new ColorScheme.Light();
-    ColorScheme dark = new ColorScheme.Dark();
-    ColorScheme automatic = new ColorScheme.Automatic();
-
-    if (colorScheme.equals(light.getId())) {
-      return light;
-    }
-
-    if (colorScheme.equals(dark.getId())) {
-      return dark;
-    }
-
-    if (colorScheme.equals(automatic.getId())) {
-      return automatic;
-    }
-
-    return null;
-  }
-
-  static String colorSchemeStringFor(CheckoutAppearance appearance) {
-    if (appearance instanceof CheckoutAppearance.App) {
-      return ((CheckoutAppearance.App) appearance).getColorScheme().getId();
-    }
-    return STOREFRONT_COLOR_SCHEME;
-  }
-
   static LogLevel logLevelFor(String logLevel) {
     if (logLevel == null) {
       return null;
@@ -428,132 +337,4 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
     return logLevel.name().toLowerCase(Locale.ROOT);
   }
 
-  private static boolean isValidColorConfig(ReadableMap config) {
-    if (config == null) {
-      return false;
-    }
-
-    String[] requiredColorKeys = { "backgroundColor", "progressIndicator", "headerTextColor", "headerBackgroundColor" };
-
-    for (String key : requiredColorKeys) {
-      if (!config.hasKey(key) || config.getString(key) == null || parseColor(config.getString(key)) == null) {
-        return false;
-      }
-    }
-
-    // closeButtonColor is optional, so we only validate it if it's present
-    if (config.hasKey("closeButtonColor") && config.getString("closeButtonColor") != null) {
-      if (parseColor(config.getString("closeButtonColor")) == null) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  private static boolean isValidColorScheme(ColorScheme colorScheme, ReadableMap colorConfig) {
-    if (colorConfig == null) {
-      return false;
-    }
-
-    if (colorScheme instanceof ColorScheme.Automatic) {
-      if (!colorConfig.hasKey("light") || !colorConfig.hasKey("dark")) {
-        return false;
-      }
-
-      boolean validLight = isValidColorConfig(colorConfig.getMap("light"));
-      boolean validDark = isValidColorConfig(colorConfig.getMap("dark"));
-
-      return validLight && validDark;
-    }
-
-    return isValidColorConfig(colorConfig);
-  }
-
-  private static Color parseColorFromConfig(ReadableMap config, String colorKey) {
-    if (config.hasKey(colorKey)) {
-      String colorStr = config.getString(colorKey);
-      return parseColor(colorStr);
-    }
-
-    return null;
-  }
-
-  private static Colors createColorsFromConfig(ReadableMap config) {
-    if (config == null) {
-      return null;
-    }
-
-    Color webViewBackground = parseColorFromConfig(config, "backgroundColor");
-    Color headerBackground = parseColorFromConfig(config, "headerBackgroundColor");
-    Color headerFont = parseColorFromConfig(config, "headerTextColor");
-    Color progressIndicator = parseColorFromConfig(config, "progressIndicator");
-    Color closeButtonColor = parseColorFromConfig(config, "closeButtonColor");
-
-    if (webViewBackground != null && progressIndicator != null && headerFont != null && headerBackground != null) {
-      return new Colors(
-          webViewBackground,
-          headerBackground,
-          headerFont,
-          progressIndicator,
-          // Parameter allows passing a custom drawable, we'll just support custom color
-          // for now
-          null,
-          closeButtonColor,
-          null,
-          null);
-    }
-
-    return null;
-  }
-
-  private static ColorScheme getColors(ColorScheme colorScheme, ReadableMap config) {
-    if (!isValidColorScheme(colorScheme, config)) {
-      return null;
-    }
-
-    if (colorScheme instanceof ColorScheme.Automatic && isValidColorScheme(colorScheme, config)) {
-      Colors lightColors = createColorsFromConfig(config.getMap("light"));
-      Colors darkColors = createColorsFromConfig(config.getMap("dark"));
-
-      if (lightColors != null && darkColors != null) {
-        ColorScheme.Automatic automaticColorScheme = (ColorScheme.Automatic) colorScheme;
-        automaticColorScheme.setLightColors(lightColors);
-        automaticColorScheme.setDarkColors(darkColors);
-        return automaticColorScheme;
-      }
-    }
-
-    Colors colors = createColorsFromConfig(config);
-
-    if (colors != null) {
-      if (colorScheme instanceof ColorScheme.Light) {
-        ((ColorScheme.Light) colorScheme).setColors(colors);
-      } else if (colorScheme instanceof ColorScheme.Dark) {
-        ((ColorScheme.Dark) colorScheme).setColors(colors);
-      }
-      return colorScheme;
-    }
-
-    return null;
-  }
-
-  private static Color parseColor(String colorStr) {
-    try {
-      colorStr = colorStr.replace("#", "");
-
-      long color = Long.parseLong(colorStr, 16);
-
-      if (colorStr.length() == 6) {
-        // If alpha is not included, assume full opacity
-        // "L" is not needed here on the end of the hex value
-        color = color | 0xFF000000;
-      }
-
-      return new Color.SRGB((int) color);
-    } catch (NumberFormatException e) {
-      System.out.println("Warning: Invalid color string. Default color will be used.");
-      return null;
-    }
-  }
 }

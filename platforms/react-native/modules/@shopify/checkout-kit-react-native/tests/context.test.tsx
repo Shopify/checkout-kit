@@ -2,12 +2,20 @@ import React from 'react';
 import {render, act} from '@testing-library/react-native';
 import {NativeModules, Platform} from 'react-native';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from '../src/context';
-import {ApplePayContactField, ColorScheme, type Configuration} from '../src';
+import {
+  ApplePayContactField,
+  CheckoutAppearanceType,
+  ColorScheme,
+  type Configuration,
+} from '../src';
 import {__resetPreloadForTests} from '../src/preload';
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
-  colorScheme: ColorScheme.automatic,
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: ColorScheme.automatic,
+  },
 };
 
 jest.mock('react-native');
@@ -348,7 +356,12 @@ describe('useShopifyCheckout', () => {
       hookValue = value;
     };
 
-    const newConfig = {colorScheme: ColorScheme.light};
+    const newConfig: Configuration = {
+      appearance: {
+        type: CheckoutAppearanceType.app,
+        colorScheme: ColorScheme.light,
+      },
+    };
 
     render(
       <Wrapper>
@@ -379,7 +392,7 @@ describe('useShopifyCheckout', () => {
 
     const config = hookValue.getConfig();
     expect(config).toEqual({
-      colorScheme: 'automatic',
+      appearance: {type: 'app', colorScheme: 'automatic'},
       logLevel: 'error',
       preloading: true,
       telemetry: true,
