@@ -107,6 +107,12 @@ show their status instead of coverage from an older run. GitHub Actions jobs als
 write their coverage tables to the job summary. Fork builds and builds without a
 write token keep their artifacts and log summaries without posting a comment.
 
+For affected JavaScript packages, separate baseline jobs measure the PR's exact
+base commit. The comment shows changes in percentage points beside each metric,
+for example `91.42% (+1.27)`. Deltas require successful measurements for the same
+base commit; missing or failed baselines leave the current percentage visible
+without a delta. Baseline jobs do not gate the PR or replace its test results.
+
 Platform jobs store numeric results in GitHub checks. The `Coverage Report`
 workflow is the only comment writer and serializes updates per PR. It refreshes
 on CI workflow events, reading all current results so simultaneous completions
