@@ -69,6 +69,14 @@ flows enabled for React Native. It builds `assembleE2e` with bundled JavaScript
 and x86_64 native libraries, so no Metro server is needed. Published native SDKs
 remain the default. Physical-device APK builds still default to arm64-v8a.
 
+## Direct Maestro React Native iOS workflow
+
+The manual `e2e-maestro-react-native-ios` workflow runs all four enabled React
+Native flows on the same iOS simulator as Swift. It reuses the Node, Ruby, and
+CocoaPods caches and builds the Release simulator app with bundled JavaScript.
+`E2E_IOS_SIMULATOR_ONLY=1` skips the device IPA archive and signing; existing
+BrowserStack and distribution builds retain their device build behavior.
+
 ## Pipeline
 
 The `e2e-browserstack` pipeline is defined in `e2e/bitrise.yml`, and the Bitrise app reads its configuration directly from that repository path:
