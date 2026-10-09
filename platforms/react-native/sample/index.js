@@ -2,7 +2,6 @@ import {install} from 'react-native-quick-crypto';
 install();
 
 import 'setimmediate';
-import 'react-native-gesture-handler';
 
 import SampleApp from './src/App';
 import {name} from './app.json';
