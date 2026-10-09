@@ -101,20 +101,9 @@ class CheckoutConfigurableTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testBackgroundColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.backgroundColor
-        let color = UIColor.red
-
-        let sheet = shopifyCheckout.backgroundColor(color)
-
-        XCTAssertEqual(sheet.configuration.backgroundColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.backgroundColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, globalColor)
-    }
-
     func testAppearanceIsCapturedWithoutChangingGlobalConfiguration() {
         let globalAppearance = ShopifyCheckoutKit.configuration.appearance
-        let appearance = ShopifyCheckoutKit.Configuration.Appearance.app(.light)
+        let appearance = CheckoutAppearance.app(.light())
 
         let sheet = shopifyCheckout.appearance(appearance)
 
@@ -124,22 +113,21 @@ class CheckoutConfigurableTests: XCTestCase {
     }
 
     func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
-        let sheet = shopifyCheckout.appearance(.app(.dark))
+        let sheet = shopifyCheckout.appearance(.app(.dark()))
         let items = try XCTUnwrap(URLComponents(url: sheet.decoratedCheckoutURL, resolvingAgainstBaseURL: false)?.queryItems)
 
         XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "dark")
         XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "app")
     }
 
-    func testTintColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.tintColor
-        let color = UIColor.blue
+    func testAppearanceColorsAreCapturedWithoutChangingGlobalConfiguration() {
+        let globalAppearance = ShopifyCheckoutKit.configuration.appearance
+        let colors = Colors(webViewBackground: .red, progressIndicator: .blue, closeIconTint: .green)
 
-        let sheet = shopifyCheckout.tintColor(color)
+        let sheet = shopifyCheckout.appearance(.app(.light(colors: colors)))
 
-        XCTAssertEqual(sheet.configuration.tintColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.tintColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, globalColor)
+        XCTAssertEqual(sheet.configuration.appearance.effectiveColorScheme.colors(isDark: false), colors)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
     }
 
     func testTitleIsCapturedWithoutChangingGlobalConfiguration() {
@@ -153,36 +141,13 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.title, globalTitle)
     }
 
-    func testCloseButtonTintColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.closeButtonTintColor
-        let color = UIColor.green
-
-        let sheet = shopifyCheckout.closeButtonTintColor(color)
-
-        XCTAssertEqual(sheet.configuration.closeButtonTintColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.closeButtonTintColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, globalColor)
-    }
-
-    func testCloseButtonTintColorCanBeClearedOnInstance() {
-        let sheet = shopifyCheckout
-            .closeButtonTintColor(.green)
-            .closeButtonTintColor(nil)
-
-        XCTAssertNil(sheet.configuration.closeButtonTintColor)
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-    }
-
     func testModifiersDoNotInvalidatePreload() {
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
         _ = shopifyCheckout
-            .backgroundColor(.red)
-            .appearance(.app(.dark))
-            .tintColor(.blue)
+            .appearance(.app(.dark(colors: Colors(webViewBackground: .red))))
             .title("Instance checkout")
-            .closeButtonTintColor(.green)
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }

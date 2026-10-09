@@ -31,14 +31,9 @@ enum CheckoutURLDecorator {
     private static let brandingQueryItemName = "ck_branding"
 }
 
-extension Configuration.Appearance {
+extension CheckoutAppearance {
     fileprivate var colorSchemeValue: String {
-        switch self {
-        case let .app(colorScheme):
-            return colorScheme.rawValue
-        case .storefront:
-            return Configuration.ColorScheme.light.rawValue
-        }
+        effectiveColorScheme.id
     }
 
     fileprivate var brandingValue: String {

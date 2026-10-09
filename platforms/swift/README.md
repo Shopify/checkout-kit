@@ -142,10 +142,7 @@ struct CartView: View {
     .sheet(isPresented: $isPresented) {
       ShopifyCheckout(checkout: checkoutURL)
         .title("Checkout")
-        .appearance(.storefront)
-        .tintColor(.systemBlue)
-        .backgroundColor(.systemBackground)
-        .closeButtonTintColor(nil)
+        .appearance(.storefront(colors: Colors(progressIndicator: .systemBlue)))
         .onDismiss {
           isPresented = false
         }
@@ -245,24 +242,18 @@ Configure global presentation defaults before presenting checkout. `ShopifyCheck
 import ShopifyCheckoutKit
 
 ShopifyCheckoutKit.configure {
-  $0.appearance = .storefront
-  $0.tintColor = .systemBlue
-  $0.backgroundColor = .systemBackground
-  $0.closeButtonTintColor = nil
+  $0.appearance = .storefront(colors: Colors(progressIndicator: .systemBlue))
   $0.logLevel = .debug
   $0.telemetry.enabled = false
 }
 ```
 
-`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
+`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)` and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `appearance` | `.storefront` | Match the storefront's web checkout branding with a light color scheme, or use the Checkout Kit style with `.app(.automatic)`, `.app(.light)`, or `.app(.dark)`. |
-| `tintColor` | Shopify blue | Progress indicator color while checkout initializes. |
-| `backgroundColor` | `.systemBackground` | Background behind the web view while checkout initializes. |
+| `appearance` | `.storefront()` | Match the storefront's web checkout branding with a light color scheme, or use the Checkout Kit style with `.app(.automatic())`, `.app(.light())`, or `.app(.dark())`. Each appearance owns its native colors. |
 | `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |
-| `closeButtonTintColor` | `nil` | Optional tint for the close button. |
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 | `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
@@ -276,6 +267,52 @@ collection and discards measurements that have not already been handed to the
 operating system for delivery.
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
+
+### Appearance and native colors
+
+`CheckoutAppearance` owns the native palette. Use `.storefront(colors:)` to customize the surrounding native UI without changing the merchant's web checkout branding, or `.app(...)` with a `ColorScheme` to use Checkout Kit branding.
+
+`Colors` uses native `UIColor` and `UIImage` values. Dynamic colors, accessibility contrast, and transparency remain supported. The default navigation bar remains transparent and the default close button remains the iOS system control.
+
+| `Colors` property | Default | Purpose |
+| --- | --- | --- |
+| `webViewBackground` | `.systemBackground` | Background behind the WebView and its overscroll area. |
+| `headerBackground` | `.clear` | Navigation-bar background. |
+| `headerFont` | `.label` | Navigation-title color. |
+| `progressIndicator` | Shopify blue | Progress indicator while checkout loads. |
+| `closeIcon` | `nil` | Optional native image for the close button. |
+| `closeIconTint` | `nil` | Optional close-button tint. With no icon or tint override, iOS supplies the system close button. |
+| `headerBorderColor` | `nil` | Optional navigation-bar shadow color. |
+
+Light and dark schemes each own one palette. Automatic appearance owns independent `lightColors` and `darkColors`, and switches natively when the system appearance changes:
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.appearance = .app(.automatic(
+    lightColors: Colors(progressIndicator: .systemBlue, closeIconTint: .systemBlue),
+    darkColors: Colors(progressIndicator: .systemTeal, closeIconTint: .systemTeal)
+  ))
+}
+```
+
+Use `customize` to derive a modified copy without changing the original palette or scheme. A single customization applies to both automatic palettes; use `customize(light:dark:)` for separate automatic overrides:
+
+```swift
+let appearance = CheckoutAppearance.app(
+  .automatic().customize(
+    light: { $0.progressIndicator = .systemBlue },
+    dark: { $0.progressIndicator = .systemTeal }
+  )
+)
+
+ShopifyCheckoutKit.configure {
+  $0.appearance = appearance
+}
+```
+
+Set appearance before presenting checkout. Replacing it with `.storefront()`, `.app(.light())`, `.app(.dark())`, or `.app(.automatic())` restores that appearance's default colors. Updating unrelated settings such as logging, preloading, or the checkout title preserves the configured palette. A presented checkout uses the native colors of the configuration it was created with, including a reused preloaded WebView.
+
+The previous configuration-level `backgroundColor`, `tintColor`, `spinnerColor`, and `closeButtonTintColor` properties, and the corresponding SwiftUI color modifiers, have been removed. Use `Colors.webViewBackground`, `Colors.progressIndicator`, and `Colors.closeIconTint` through `appearance` instead. `CheckoutAppearance` replaces `Configuration.Appearance`, and `ShopifyCheckoutKit.ColorScheme` replaces `Configuration.ColorScheme`; qualify the latter when also importing `SwiftUI`.
 
 ### Incoming message origin validation
 

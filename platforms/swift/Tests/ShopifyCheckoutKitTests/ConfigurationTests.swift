@@ -19,23 +19,27 @@ class ConfigurationTests: XCTestCase {
         CheckoutWebView.invalidate()
     }
 
-    func testCloseButtonTintColorDefaultsToNil() {
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    func testCloseIconTintDefaultsToNil() {
+        XCTAssertNil(checkoutColors().closeIconTint)
     }
 
-    func testCloseButtonTintColorCanBeSet() {
-        let customColor = UIColor.red
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = customColor }
+    func testCloseIconTintCanBeSetOnTheAppearance() {
+        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: Colors(closeIconTint: .red)) }
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, customColor)
+        XCTAssertEqual(checkoutColors().closeIconTint, .red)
     }
 
-    func testCloseButtonTintColorCanBeReset() {
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = .blue }
-        XCTAssertNotNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+    func testReplacingAppearanceRestoresDefaultColors() {
+        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark(colors: Colors(
+            webViewBackground: .red,
+            progressIndicator: .green,
+            closeIconTint: .blue
+        ))) }
 
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = nil }
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
+        ShopifyCheckoutKit.configure { $0.appearance = .app(.automatic()) }
+
+        XCTAssertEqual(checkoutColors(isDark: false), Colors())
+        XCTAssertEqual(checkoutColors(isDark: true), Colors())
     }
 
     func testPreloadingDefaultsToEnabled() {
@@ -43,7 +47,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testAppearanceDefaultsToStorefront() {
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
     }
 
     func testAllowedMessageOriginsDefaultsToEmpty() {
@@ -95,13 +99,50 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testConfigureCanBatchConfigurationChanges() {
+        let appearance = CheckoutAppearance.app(.dark(colors: Colors(closeIconTint: .blue)))
+
         ShopifyCheckoutKit.configure {
-            $0.appearance = .app(.dark)
-            $0.closeButtonTintColor = .blue
+            $0.appearance = appearance
+            $0.title = "Complete your order"
         }
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, "Complete your order")
+    }
+
+    func testUnrelatedConfigurationUpdatesPreserveAppearanceAndColors() {
+        let appearance = CheckoutAppearance.app(.dark(colors: Colors(
+            webViewBackground: .red,
+            progressIndicator: .green,
+            closeIconTint: .blue
+        )))
+        ShopifyCheckoutKit.configure { $0.appearance = appearance }
+
+        ShopifyCheckoutKit.configure {
+            $0.title = "Complete your order"
+            $0.logLevel = .debug
+            $0.preloading.enabled = false
+        }
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
+    }
+
+    func testAppearanceUpdatesPreserveIosSpecificConfiguration() {
+        ShopifyCheckoutKit.configure {
+            $0.title = "Complete your order"
+            $0.confetti.enabled = true
+        }
+
+        ShopifyCheckoutKit.configure {
+            $0.appearance = .storefront(colors: Colors(closeIconTint: .red))
+        }
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, "Complete your order")
+        XCTAssertTrue(ShopifyCheckoutKit.configuration.confetti.enabled)
+    }
+
+    private func checkoutColors(isDark: Bool = false) -> Colors {
+        ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme.colors(isDark: isDark)
     }
 
     func testConfigureUpdatesLogger() {

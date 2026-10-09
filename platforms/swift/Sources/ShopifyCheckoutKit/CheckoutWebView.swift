@@ -523,8 +523,23 @@ class CheckoutWebView: WKWebView {
         translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentInsetAdjustmentBehavior = .never
 
-        setBackgroundColor()
+        applyColorScheme(ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme)
         connectBridge()
+
+        if #available(iOS 17.0, *) {
+            registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (view: CheckoutWebView, _) in
+                view.setUnderPageBackgroundColor()
+            }
+        }
+    }
+
+    @available(iOS, deprecated: 17.0)
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if #unavailable(iOS 17.0), traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            setUnderPageBackgroundColor()
+        }
     }
 
     deinit {
@@ -567,10 +582,15 @@ class CheckoutWebView: WKWebView {
         detachBridge()
     }
 
-    private func setBackgroundColor() {
+    func applyColorScheme(_ colorScheme: ColorScheme) {
+        overrideUserInterfaceStyle = colorScheme.userInterfaceStyle
         isOpaque = false
-        backgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
-        underPageBackgroundColor = ShopifyCheckoutKit.configuration.backgroundColor
+        backgroundColor = colorScheme.color { $0.webViewBackground }
+        setUnderPageBackgroundColor()
+    }
+
+    private func setUnderPageBackgroundColor() {
+        underPageBackgroundColor = backgroundColor?.resolvedColor(with: traitCollection)
     }
 
     // MARK: -
