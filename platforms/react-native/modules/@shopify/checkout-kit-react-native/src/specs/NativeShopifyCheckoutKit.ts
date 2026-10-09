@@ -1,54 +1,79 @@
 import type {CodegenTypes, TurboModule} from 'react-native';
 import {TurboModuleRegistry} from 'react-native';
 
+type IosColorsBaseSpec = {
+  webViewBackground?: string;
+  headerBackground?: string;
+  headerFont?: string;
+  progressIndicator?: string;
+  closeIconTint?: string | null;
+  headerBorderColor?: string | null;
+};
+
 type IosColorsSpec = {
-  tintColor?: string;
-  backgroundColor?: string;
-  closeButtonColor?: string;
+  webViewBackground?: string;
+  headerBackground?: string;
+  headerFont?: string;
+  progressIndicator?: string;
+  closeIconTint?: string | null;
+  headerBorderColor?: string | null;
+  light?: IosColorsBaseSpec | null;
+  dark?: IosColorsBaseSpec | null;
 };
 
 type AndroidColorsBaseSpec = {
+  webViewBackground?: string;
+  headerBackground?: string;
+  headerFont?: string;
   progressIndicator?: string;
-  backgroundColor?: string;
-  headerBackgroundColor?: string;
-  headerTextColor?: string;
-  closeButtonColor?: string;
+  closeIconTint?: string | null;
+  headerBorderColor?: string | null;
+  dragHandleColor?: string | null;
 };
 
 type AndroidColorsSpec = {
+  webViewBackground?: string;
+  headerBackground?: string;
+  headerFont?: string;
   progressIndicator?: string;
-  backgroundColor?: string;
-  headerBackgroundColor?: string;
-  headerTextColor?: string;
-  closeButtonColor?: string;
-  light?: AndroidColorsBaseSpec;
-  dark?: AndroidColorsBaseSpec;
+  closeIconTint?: string | null;
+  headerBorderColor?: string | null;
+  dragHandleColor?: string | null;
+  light?: AndroidColorsBaseSpec | null;
+  dark?: AndroidColorsBaseSpec | null;
 };
 
 type ColorsSpec = {
-  ios?: IosColorsSpec;
-  android?: AndroidColorsSpec;
+  ios?: IosColorsSpec | null;
+  android?: AndroidColorsSpec | null;
+};
+
+type AppearanceSpec = {
+  type: string;
+  colorScheme?: string;
+  colors?: ColorsSpec | null;
+};
+
+type AppearanceResultSpec = {
+  type: string;
+  colorScheme?: string;
 };
 
 type ConfigurationSpec = {
   title?: string;
-  colorScheme?: string;
+  appearance?: AppearanceSpec | null;
   logLevel?: string;
   preloading?: boolean;
   allowedMessageOrigins?: string[];
   telemetry?: boolean;
-  colors?: ColorsSpec;
 };
 
 type ConfigurationResultSpec = {
-  colorScheme: string;
+  appearance: AppearanceResultSpec;
   logLevel: string;
   preloading: boolean;
   telemetry: boolean;
   title?: string;
-  tintColor?: string;
-  backgroundColor?: string;
-  closeButtonColor?: string;
   allowedMessageOrigins: string[];
 };
 

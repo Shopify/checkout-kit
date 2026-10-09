@@ -34,8 +34,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     }
 
     private func resetCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.appearance = .storefront
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
+        MainActor.assumeIsolated { ShopifyCheckoutKit.configure { $0.appearance = .storefront() } }
     }
 
     @discardableResult

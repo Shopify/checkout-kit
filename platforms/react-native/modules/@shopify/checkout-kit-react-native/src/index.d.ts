@@ -1,8 +1,14 @@
 import type {CheckoutEventHandlers} from './checkout';
-import type {ApplePayContactField, ColorScheme, LogLevel} from './enums';
+import type {
+  ApplePayContactField,
+  CheckoutAppearanceType,
+  ColorScheme,
+  LogLevel,
+} from './enums';
 export {
   AcceleratedCheckoutWallet,
   ApplePayContactField,
+  CheckoutAppearanceType,
   ColorScheme,
   LogLevel,
 } from './enums';
@@ -31,54 +37,64 @@ export interface Features {
   handleGeolocationRequests: boolean;
 }
 
-export interface IosColors {
-  /**
-   * A HEX color value for customizing the color of the progress bar.
-   */
-  tintColor?: string;
-  /**
-   * A HEX color value for customizing the background color of the webview.
-   */
-  backgroundColor?: string;
-  /**
-   * A HEX color value for customizing the color of the close button.
-   */
-  closeButtonColor?: string;
+export interface Colors {
+  webViewBackground?: string;
+  headerBackground?: string;
+  headerFont?: string;
+  progressIndicator?: string;
+  closeIconTint?: string | null;
+  headerBorderColor?: string | null;
 }
 
-export interface AndroidColors {
-  /**
-   * A HEX color value for customizing the color of the progress bar.
-   */
-  progressIndicator: string;
-  /**
-   * A HEX color value for customizing the background color of the webview.
-   */
-  backgroundColor: string;
-  /**
-   * A HEX color value for customizing the background color of the webview header.
-   */
-  headerBackgroundColor: string;
-  /**
-   * A HEX color value for customizing the text color of the webview header.
-   */
-  headerTextColor: string;
-  /**
-   * A HEX color value for customizing the color of the close button.
-   */
-  closeButtonColor?: string;
+export type IosColors = Colors;
+
+export interface AndroidColors extends Colors {
+  dragHandleColor?: string | null;
 }
 
-export interface AndroidAutomaticColors {
-  /**
-   * Color overrides when the theme preference is 'light'.
-   */
-  light: AndroidColors;
-  /**
-   * Color overrides when the theme preference is 'dark'.
-   */
-  dark: AndroidColors;
+export type AutomaticColors<Palette extends Colors = Colors> = Palette & {
+  light?: Palette | null;
+  dark?: Palette | null;
+};
+
+export type IosAutomaticColors = AutomaticColors<IosColors>;
+
+export type AndroidAutomaticColors = AutomaticColors<AndroidColors>;
+
+export interface PlatformColors<Ios, Android> {
+  ios?: Ios | null;
+  android?: Android | null;
 }
+
+/**
+ * How checkout is styled. Mirrors the native `CheckoutAppearance`.
+ *
+ * - `app`: uses the given `colorScheme` (defaults to `automatic`) with
+ *   optional per-platform color overrides.
+ * - `storefront`: uses the storefront's branding with optional per-platform
+ *   color overrides.
+ *
+ * Setting `appearance` replaces it wholesale: omitted colors revert to the
+ * native defaults for that appearance. See README.md for more details.
+ */
+export type CheckoutAppearance =
+  | {
+      type: CheckoutAppearanceType.app;
+      colorScheme: ColorScheme.light | ColorScheme.dark;
+      colors?: PlatformColors<IosColors, AndroidColors> | null;
+    }
+  | {
+      type: CheckoutAppearanceType.app;
+      /**
+       * @default ColorScheme.automatic
+       */
+      colorScheme?: ColorScheme.automatic;
+      colors?: PlatformColors<IosAutomaticColors, AndroidAutomaticColors> | null;
+    }
+  | {
+      type: CheckoutAppearanceType.storefront;
+      colors?: PlatformColors<IosColors, AndroidColors> | null;
+    };
 
 interface CommonConfiguration {
   /**
@@ -139,37 +155,12 @@ interface CommonConfiguration {
 
 export type Configuration = CommonConfiguration & {
   acceleratedCheckouts?: AcceleratedCheckoutConfiguration;
-} & (
-    | {
-        /**
-         * The selected color scheme for the checkout. See README.md for more details.
-         */
-        colorScheme?:
-          | ColorScheme.storefront
-          | ColorScheme.light
-          | ColorScheme.dark;
-        /**
-         * Platform-specific color overrides
-         */
-        colors?: {
-          ios?: IosColors;
-          android?: AndroidColors;
-        };
-      }
-    | {
-        /**
-         * The selected color scheme for the checkout. See README.md for more details.
-         */
-        colorScheme?: ColorScheme.automatic;
-        /**
-         * Platform-specific color overrides
-         */
-        colors?: {
-          ios?: IosColors;
-          android?: AndroidAutomaticColors;
-        };
-      }
-  );
+  /**
+   * The checkout appearance. Omit to keep the current appearance.
+   * See README.md for more details.
+   */
+  appearance?: CheckoutAppearance;
+};
 
 export interface GeolocationRequestEvent {
   /**

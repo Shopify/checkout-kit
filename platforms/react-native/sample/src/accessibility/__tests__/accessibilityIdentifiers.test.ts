@@ -23,9 +23,9 @@ describe('AccessibilityIdentifiers', () => {
     expect(
       AccessibilityIdentifiers.settings.buyerIdentityOption('customerAccount'),
     ).toBe('settings-buyer-identity-option-customer-account');
-    expect(AccessibilityIdentifiers.settings.themeOption('storefront')).toBe(
-      'settings-theme-option-storefront',
-    );
+    expect(
+      AccessibilityIdentifiers.settings.appearanceOption('appAutomatic'),
+    ).toBe('settings-appearance-option-app-automatic');
     expect(
       AccessibilityIdentifiers.settings.applePayStyleOption('whiteOutline'),
     ).toBe('settings-apple-pay-style-option-white-outline');

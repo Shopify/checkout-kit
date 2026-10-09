@@ -6,13 +6,13 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import {ColorScheme, ApplePayStyle} from '@shopify/checkout-kit-react-native';
+import {ApplePayStyle} from '@shopify/checkout-kit-react-native';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import {useTheme} from './Theme';
+import {AppearanceOption, useTheme} from './Theme';
 import {BuyerIdentityMode} from '../auth/types';
 
 export interface AppConfig {
-  colorScheme: ColorScheme;
+  appearance: AppearanceOption;
   buyerIdentityMode: BuyerIdentityMode;
   applePayStyle?: ApplePayStyle;
   checkoutPreloadingEnabled: boolean;
@@ -26,7 +26,7 @@ interface Context {
 const CONFIG_STORAGE_KEY = 'app_config';
 
 const defaultAppConfig: AppConfig = {
-  colorScheme: ColorScheme.automatic,
+  appearance: AppearanceOption.appAutomatic,
   buyerIdentityMode: BuyerIdentityMode.Guest,
   applePayStyle: ApplePayStyle.automatic,
   checkoutPreloadingEnabled: true,
@@ -42,7 +42,7 @@ export const ConfigProvider: React.FC<
 > = ({children, config}) => {
   const [appConfig, setInternalAppConfig] =
     useState<AppConfig>(defaultAppConfig);
-  const {setColorScheme} = useTheme();
+  const {setAppearance} = useTheme();
 
   useEffect(() => {
     async function restoreConfig() {
@@ -56,14 +56,16 @@ export const ConfigProvider: React.FC<
             ...saved,
           };
           setInternalAppConfig(restored);
-          setColorScheme(restored.colorScheme);
+          setAppearance(restored.appearance);
           return;
         }
       } catch {}
-      setColorScheme(config?.colorScheme ?? ColorScheme.automatic);
+      const seeded: AppConfig = {...defaultAppConfig, ...config};
+      setInternalAppConfig(seeded);
+      setAppearance(seeded.appearance);
     }
     restoreConfig();
-  }, [config, setColorScheme]);
+  }, [config, setAppearance]);
 
   const setAppConfig = useCallback((newConfig: AppConfig) => {
     console.groupCollapsed('APP CONFIG UPDATE');

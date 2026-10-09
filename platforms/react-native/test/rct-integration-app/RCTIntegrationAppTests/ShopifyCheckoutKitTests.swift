@@ -18,12 +18,15 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.appearance = .storefront
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.warn
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
-        ShopifyCheckoutKit.configuration.telemetry.enabled = true
+        MainActor.assumeIsolated {
+            ShopifyCheckoutKit.configure {
+                $0.appearance = .storefront()
+                $0.logLevel = LogLevel.warn
+                $0.preloading.enabled = true
+                $0.allowedMessageOrigins = []
+                $0.telemetry.enabled = true
+            }
+        }
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -36,48 +39,8 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         // Verify that getConfig returned the expected result
-        XCTAssertEqual(result?["colorScheme"] as? String, "storefront")
+        XCTAssertEqual(result?["appearance"] as? [String: String], ["type": "storefront"])
         XCTAssertEqual(result?["preloading"] as? Bool, true)
-    }
-
-    /// configure
-    func testConfigure() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "dark",
-            "colors": [
-                "ios": [
-                    "tintColor": "#FF0000",
-                    "backgroundColor": "#0000FF"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, UIColor(hex: "#FF0000"))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
-    }
-
-    func testConfigureWithWebDefaultUsesStorefrontAppearance() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "storefront"
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
-    }
-
-    func testGetConfigReturnsColorSchemeIdForAppAppearance() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "light"
-        ]
-        shopifyCheckoutKit.setConfig(configuration)
-
-        let result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-        XCTAssertEqual(result?["colorScheme"] as? String, "light")
     }
 
     func testConfigureSetsTitle() {
@@ -114,86 +77,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
             result?["allowedMessageOrigins"] as? [String],
             ["https://example.com", "https://*.example.com"]
         )
-    }
-
-    func testConfigureWithInvalidColors() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "tintColor": "invalid"
-                ]
-            ]
-        ]
-
-        let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, defaultColorFallback)
-    }
-
-    func testConfigureWithCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "#FF0000"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, UIColor(hex: "#FF0000"))
-    }
-
-    func testConfigureWithInvalidCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "invalid"
-                ]
-            ]
-        ]
-
-        let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, defaultColorFallback)
-    }
-
-    func testConfigureWithoutCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "tintColor": "#FF0000"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        // closeButtonTintColor should remain nil when not specified (uses system default)
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-    }
-
-    func testGetConfigIncludesCloseButtonColor() {
-        // Set a close button color
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "#00FF00"
-                ]
-            ]
-        ]
-        shopifyCheckoutKit.setConfig(configuration)
-
-        // Call getConfig and capture the result
-        var result: [String: Any]?
-        result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-        // Verify that getConfig returned the close button color
-        XCTAssertNotNil(result?["closeButtonColor"])
-        let returnedColor = result?["closeButtonColor"] as? UIColor
-        XCTAssertEqual(returnedColor, UIColor(hex: "#00FF00"))
     }
 
     func testConfigureWithLogLevelDebug() {
@@ -237,7 +120,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func testConfigureWithInvalidLogLevelKeepsTheCurrentLevel() {
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.debug
+        MainActor.assumeIsolated { ShopifyCheckoutKit.configure { $0.logLevel = LogLevel.debug } }
 
         let configuration: [AnyHashable: Any] = [
             "logLevel": "invalid"
@@ -279,7 +162,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func testSetConfigWithoutLogLevelKeepsTheNativeLevel() {
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.debug
+        MainActor.assumeIsolated { ShopifyCheckoutKit.configure { $0.logLevel = LogLevel.debug } }
 
         let configuration: [AnyHashable: Any] = [:]
 
@@ -421,45 +304,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
         result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         XCTAssertEqual(result?["logLevel"] as? String, "none")
-    }
-
-    func testGetConfigReportsEveryNativeColorScheme() {
-        for colorScheme in Configuration.ColorScheme.allCases {
-            shopifyCheckoutKit.setConfig(["colorScheme": colorScheme.rawValue])
-
-            let result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-            XCTAssertEqual(result?["colorScheme"] as? String, colorScheme.rawValue)
-        }
-    }
-
-    func testEveryColorSchemeMapsToTheAppearanceTheUrlDecoratorReads() {
-        let expectedAppearances: [(String, Configuration.Appearance)] = [
-            ("light", .app(.light)),
-            ("dark", .app(.dark)),
-            ("automatic", .app(.automatic)),
-            ("storefront", .storefront)
-        ]
-
-        for (colorScheme, expected) in expectedAppearances {
-            shopifyCheckoutKit.setConfig(["colorScheme": colorScheme])
-
-            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, expected)
-        }
-    }
-
-    func testConfigureWithUnknownColorSchemeKeepsTheCurrentAppearance() {
-        shopifyCheckoutKit.setConfig(["colorScheme": "dark"])
-
-        shopifyCheckoutKit.setConfig(["colorScheme": "sepia"])
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-    }
-
-    func testConfigureWithUnknownColorSchemeKeepsTheStorefrontAppearance() {
-        shopifyCheckoutKit.setConfig(["colorScheme": "sepia"])
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
     }
 
     func testGetConfigReportsEveryNativeLogLevel() {
