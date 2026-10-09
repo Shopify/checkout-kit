@@ -39,6 +39,14 @@ Budget one package with `"measurement": "bundlePackage"` and its npm name:
 }
 ```
 
+Configured Web package budgets (uncompressed, minified bytes):
+
+| Package | Soft limit | Hard limit |
+| --- | --- | --- |
+| `@shopify/checkout-kit` | 18 KiB | 24 KiB |
+| `@shopify/checkout-kit-protocol` | 16 KiB | 20 KiB |
+| `@shopify/checkout-kit-telemetry` | 5 KiB | 8 KiB |
+
 A budgeted package that no longer contributes bytes reports a missing
 measurement. Remove or rename its budget in the same change. Accepting a
 per-package breach records that package, so the acceptance cannot satisfy
