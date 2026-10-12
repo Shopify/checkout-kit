@@ -8,7 +8,8 @@ jobs:
   ci:
     name: Lint, test, build, verify
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # A cache miss downloads Chromium; leave enough time for a cold runner to populate the cache.
+    timeout-minutes: 20
     permissions:
       contents: read
       checks: write
@@ -48,6 +49,16 @@ jobs:
 
       - name: Typecheck web E2E tests
         run: pnpm --dir test/e2e typecheck
+
+      - name: Restore Playwright Chromium
+        id: playwright-chromium-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Playwright's default Linux browser cache. The lockfile determines the required browser revision.
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('platforms/web/pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-chromium-${{ runner.os }}-
 
       - name: Install Playwright Chromium
         run: pnpm --dir test/e2e exec playwright install --with-deps chromium
