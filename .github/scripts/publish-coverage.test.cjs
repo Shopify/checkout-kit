@@ -36,10 +36,11 @@ function fixture() {
   f.add = (id, overrides = {}) => {
     const platform = reporter.platforms.find((platform) => platform.id === id);
     const source = {provider: "github-actions", runId: 100, runAttempt: 1};
-    const result = {version: 1, platform: id, pr: 12, headSha: "head", source, state: "success", rows: platform.metrics.map((name) => [name, 7, 10]), ...overrides};
+    const result = {version: 1, platform: id, pr: 12, headSha: "head", baseSha: "base", source, state: "success", rows: platform.metrics.map((name) => [name, 7, 10]), ...overrides};
+    const baseline = result.revision === "base";
     const check = {
-      id: 400 + f.checks.length, name: `Coverage — ${platform.title}`, head_sha: "head",
-      app: {slug: source.provider}, external_id: `coverage:${id}:${source.runId}:${source.runAttempt}`,
+      id: 400 + f.checks.length, name: `Coverage${baseline ? " base" : ""} — ${platform.title}`, head_sha: "head",
+      app: {slug: source.provider}, external_id: `coverage${baseline ? "-base" : ""}:${id}:${result.source.runId}:${result.source.runAttempt}`,
       output: {text: JSON.stringify(result)},
     };
     f.checks.push(check);
@@ -47,6 +48,80 @@ function fixture() {
   };
   return f;
 }
+
+function addBaseline(f, overrides = {}) {
+  f.jobs.push({id: 600 + f.jobs.length, name: "Coverage baseline (web) / Test", run_attempt: 1, status: "completed", conclusion: "success"});
+  return f.add("web", {revision: "base", ...overrides});
+}
+
+test("shows signed percentage-point deltas from exact base counts beside each metric", async () => {
+  const f = fixture();
+  f.add("web");
+  addBaseline(f, {rows: [["Lines", 6, 10], ["Statements", 7, 10], ["Branches", 8, 10], ["Functions", 14, 20]]});
+  await f.publish();
+  assert.ok(row(f.writes[0].body, "Web").includes("70% **(+10)** | 70% **(-10)** | 70% **(0)**"));
+  assert.ok(f.writes[0].body.includes("percentage points versus the PR’s base commit"));
+});
+
+test("rounds the difference once and does not display negative zero", async () => {
+  const f = fixture();
+  f.add("web", {rows: [["Lines", 667, 1000], ["Statements", 7, 10], ["Branches", 699999, 1000000], ["Functions", 0, 0]]});
+  addBaseline(f, {rows: [["Lines", 2, 3], ["Statements", 7, 10], ["Branches", 7, 10], ["Functions", 7, 10]]});
+  await f.publish();
+  assert.ok(row(f.writes[0].body, "Web").includes("66.7% **(+0.03)** | 70% **(0)** | N/A"));
+});
+
+test("never presents missing, failed, stale, or empty baselines as zero change", async () => {
+  for (const overrides of [
+    {baseSha: "old-base"}, {state: "failed"}, {state: "unavailable", rows: []},
+    {rows: reporter.platforms[0].metrics.map((name) => [name, 0, 0])},
+    {source: {provider: "github-actions", runId: 99, runAttempt: 1}},
+  ]) {
+    const f = fixture();
+    f.add("web");
+    addBaseline(f, overrides);
+    await f.publish();
+    assert.ok(row(f.writes[0].body, "Web").includes("70% | 70% | 70% |"));
+  }
+});
+
+test("legacy, stale-base and failed head reports retain percentages without deltas", async () => {
+  for (const overrides of [{baseSha: undefined}, {baseSha: "old-base"}, {state: "failed"}]) {
+    const f = fixture();
+    f.add("web", overrides);
+    addBaseline(f);
+    await f.publish();
+    assert.ok(row(f.writes[0].body, "Web").includes("70% | 70% | 70% |"));
+  }
+});
+
+test("baseline reruns cannot reuse an earlier attempt but preserve the head report", async () => {
+  const f = fixture();
+  f.add("web");
+  addBaseline(f);
+  f.runs[0].run_attempt = 2;
+  f.jobs.push({id: 999, name: "Coverage baseline (web) / Test", run_attempt: 2, status: "in_progress"});
+  await f.publish();
+  assert.ok(row(f.writes[0].body, "Web").includes("70% | 70% | 70% |"));
+  f.add("web", {revision: "base", source: {provider: "github-actions", runId: 100, runAttempt: 2}});
+  await f.publish();
+  assert.ok(row(f.writes[1].body, "Web").includes("70% **(0)**"));
+});
+
+test("malformed and untrusted baselines cannot hide valid head coverage", async () => {
+  for (const mutate of [
+    (check) => { check.app.slug = "untrusted-app"; },
+    (check) => { check.output.text = "x".repeat(32769); },
+    (check) => { const result = JSON.parse(check.output.text); result.rows[0][1] = 11; check.output.text = JSON.stringify(result); },
+    (check) => { const result = JSON.parse(check.output.text); result.revision = "head"; check.output.text = JSON.stringify(result); },
+  ]) {
+    const f = fixture();
+    f.add("web");
+    mutate(addBaseline(f));
+    await f.publish();
+    assert.ok(row(f.writes[0].body, "Web").includes("70% | 70% | 70% |"));
+  }
+});
 
 test("one comment combines the existing JavaScript reports without native coverage rows", async () => {
   const f = fixture();
