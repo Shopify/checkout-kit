@@ -1,0 +1,64 @@
+diff --git a/lib-commonjs/providers/CommandLineParameterProvider.js b/lib-commonjs/providers/CommandLineParameterProvider.js
+index 53cd5828d6e14075df1bada3a7c7b0f9d0236925..bb9718bb0c6a12961c702a36708e988a85276226 100644
+--- a/lib-commonjs/providers/CommandLineParameterProvider.js
++++ b/lib-commonjs/providers/CommandLineParameterProvider.js
+@@ -574,6 +574,12 @@ class CommandLineParameterProvider {
+             action,
+             type
+         };
++        // argparse 2 rejects undefined options that do not apply to the action.
++        for (const key of Object.keys(argparseOptions)) {
++            if (argparseOptions[key] === undefined) {
++                delete argparseOptions[key];
++            }
++        }
+         const argumentParser = this._getArgumentParser();
+         let argumentGroup;
+         if (parameterGroup) {
+diff --git a/lib-commonjs/providers/CommandLineParser.js b/lib-commonjs/providers/CommandLineParser.js
+index 46ba008662522bf8f00d3e3e64ca07300e57d525..d5f1dfaeb9e5a91e18c666398cf85ba43fe5fe41 100644
+--- a/lib-commonjs/providers/CommandLineParser.js
++++ b/lib-commonjs/providers/CommandLineParser.js
+@@ -186,8 +186,8 @@ class CommandLineParser extends CommandLineParameterProvider_1.CommandLineParame
+                 }
+             };
+             function patchFormatUsageForArgumentParser(argumentParser) {
+-                const originalFormatUsage = argumentParser.formatUsage.bind(argumentParser);
+-                argumentParser.formatUsage = () => {
++                const originalFormatUsage = argumentParser.format_usage.bind(argumentParser);
++                argumentParser.format_usage = () => {
+                     postParse();
+                     return originalFormatUsage();
+                 };
+diff --git a/lib-esm/providers/CommandLineParameterProvider.js b/lib-esm/providers/CommandLineParameterProvider.js
+index 2df6413e0bb6b9a263aa29b41faffef70753f515..a303b787cd430d843522320eb8e278b3d4c3c4c1 100644
+--- a/lib-esm/providers/CommandLineParameterProvider.js
++++ b/lib-esm/providers/CommandLineParameterProvider.js
+@@ -538,6 +538,12 @@ export class CommandLineParameterProvider {
+             action,
+             type
+         };
++        // argparse 2 rejects undefined options that do not apply to the action.
++        for (const key of Object.keys(argparseOptions)) {
++            if (argparseOptions[key] === undefined) {
++                delete argparseOptions[key];
++            }
++        }
+         const argumentParser = this._getArgumentParser();
+         let argumentGroup;
+         if (parameterGroup) {
+diff --git a/lib-esm/providers/CommandLineParser.js b/lib-esm/providers/CommandLineParser.js
+index 29d0dd022602d78d494916e2322fc4aa950bed81..82308295796b1aca77904360bd9653701373047a 100644
+--- a/lib-esm/providers/CommandLineParser.js
++++ b/lib-esm/providers/CommandLineParser.js
+@@ -183,8 +183,8 @@ export class CommandLineParser extends CommandLineParameterProvider {
+                 }
+             };
+             function patchFormatUsageForArgumentParser(argumentParser) {
+-                const originalFormatUsage = argumentParser.formatUsage.bind(argumentParser);
+-                argumentParser.formatUsage = () => {
++                const originalFormatUsage = argumentParser.format_usage.bind(argumentParser);
++                argumentParser.format_usage = () => {
+                     postParse();
+                     return originalFormatUsage();
+                 };
