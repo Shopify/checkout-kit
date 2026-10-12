@@ -31,6 +31,15 @@ class CoverageThresholdsTest < Minitest::Test
     assert_equal ["Second: 70.00% (70/100) is below 85%"], result
   end
 
+  def test_swift_targets_use_individual_thresholds_from_the_committed_configuration
+    configuration = JSON.parse(File.read(File.expand_path("../../.ci/coverage-thresholds.json", __dir__)))
+    checker = CoverageThresholds.new(configuration)
+    report = Report.new("swift", [["ShopifyCheckoutKit", 99, 100], ["ShopifyAcceleratedCheckouts", 84, 100]])
+    assert_equal ["ShopifyAcceleratedCheckouts: 84.00% (84/100) is below 85%"], checker.failures(report)
+    report.rows[1][1] = 85
+    assert_empty checker.failures(report)
+  end
+
   def test_invalid_configuration_fails_closed
     assert_raises(KeyError) { threshold_failures([], {}) }
     [-1, 101, "85", Float::NAN].each do |minimum|

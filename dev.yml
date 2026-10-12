@@ -676,7 +676,10 @@ commands:
         subcommands:
           coverage:
             desc: Run Swift package tests and export Xcode coverage reports
-            run: cd platforms/swift && ./Scripts/test_coverage
+            run: |
+              set -e
+              platforms/swift/Scripts/test_coverage
+              ruby scripts/check_coverage swift .xcresults/coverage/coverage.json
           sample:
             desc: Run the sample app test target
             syntax: "[test_class_name]"
