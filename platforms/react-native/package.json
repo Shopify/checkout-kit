@@ -39,12 +39,7 @@
       "compression@1": "1.8.2",
       "joi@17": "17.13.8",
       "browserslist@4": "4.29.3",
-      "baseline-browser-mapping@2": "2.11.28",
-      "argparse@1": "2.0.1"
-    },
-    "patchedDependencies": {
-      "@rushstack/ts-command-line@5.3.9": "../../patches/@rushstack__ts-command-line@5.3.9.patch",
-      "js-yaml@3.15.2": "patches/js-yaml@3.15.2.patch"
+      "baseline-browser-mapping@2": "2.11.28"
     }
   },
   "scripts": {
@@ -54,7 +49,7 @@
     "pod-install": "bash ./scripts/pod_install",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "test": "node --test ../../scripts/argparse_compatibility.test.cjs && jest"
+    "test": "jest"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

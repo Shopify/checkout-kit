@@ -29,15 +29,6 @@ overrides:
   joi@17: 17.13.8
   browserslist@4: 4.29.3
   baseline-browser-mapping@2: 2.11.28
-  argparse@1: 2.0.1
-
-patchedDependencies:
-  '@rushstack/ts-command-line@5.3.9':
-    hash: cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c
-    path: ../../patches/@rushstack__ts-command-line@5.3.9.patch
-  js-yaml@3.15.2:
-    hash: 9cf81456cb674bc7f95f82505e8ae2e058896a41ad9ef9b1b6b0190bcf0c1e15
-    path: patches/js-yaml@3.15.2.patch
 
 importers:
 
@@ -1941,6 +1932,9 @@ packages:
 
   appdirsjs@1.2.7:
     resolution: {integrity: sha512-Quji6+8kLBC3NnBeo14nPDq0+2jUs5s3/xEye+udFHumHhRk4M7aAMXp/PBJqkKYGuuyR9M/6Dq7d2AViiGmhw==, tarball: https://registry.npmjs.org/appdirsjs/-/appdirsjs-1.2.7.tgz}
+
+  argparse@1.0.10:
+    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==, tarball: https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz}
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==, tarball: https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz}
@@ -4341,6 +4335,9 @@ packages:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
 
+  sprintf-js@1.0.3:
+    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==, tarball: https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz}
+
   stack-utils@2.0.6:
     resolution: {integrity: sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==}
     engines: {node: '>=10'}
@@ -5847,7 +5844,7 @@ snapshots:
       camelcase: 5.3.1
       find-up: 4.1.0
       get-package-type: 0.1.0
-      js-yaml: 3.15.2(patch_hash=9cf81456cb674bc7f95f82505e8ae2e058896a41ad9ef9b1b6b0190bcf0c1e15)
+      js-yaml: 3.15.2
       resolve-from: 5.0.0
 
   '@istanbuljs/schema@0.1.3': {}
@@ -6136,7 +6133,7 @@ snapshots:
       '@rushstack/node-core-library': 5.23.1(@types/node@20.9.3)
       '@rushstack/rig-package': 0.7.3
       '@rushstack/terminal': 0.24.0(@types/node@20.9.3)
-      '@rushstack/ts-command-line': 5.3.9(patch_hash=cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c)(@types/node@20.9.3)
+      '@rushstack/ts-command-line': 5.3.9(@types/node@20.9.3)
       diff: 8.0.4
       minimatch: 10.2.3
       resolve: 1.22.10
@@ -6590,11 +6587,11 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.9.3
 
-  '@rushstack/ts-command-line@5.3.9(patch_hash=cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c)(@types/node@20.9.3)':
+  '@rushstack/ts-command-line@5.3.9(@types/node@20.9.3)':
     dependencies:
       '@rushstack/terminal': 0.24.0(@types/node@20.9.3)
       '@types/argparse': 1.0.38
-      argparse: 2.0.1
+      argparse: 1.0.10
       string-argv: 0.3.2
     transitivePeerDependencies:
       - '@types/node'
@@ -7020,6 +7017,10 @@ snapshots:
   anynum@1.0.0: {}
 
   appdirsjs@1.2.7: {}
+
+  argparse@1.0.10:
+    dependencies:
+      sprintf-js: 1.0.3
 
   argparse@2.0.1: {}
 
@@ -7468,7 +7469,7 @@ snapshots:
     dependencies:
       import-fresh: 2.0.0
       is-directory: 0.3.1
-      js-yaml: 3.15.2(patch_hash=9cf81456cb674bc7f95f82505e8ae2e058896a41ad9ef9b1b6b0190bcf0c1e15)
+      js-yaml: 3.15.2
       parse-json: 4.0.0
 
   cosmiconfig@7.1.0:
@@ -8874,9 +8875,9 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@3.15.2(patch_hash=9cf81456cb674bc7f95f82505e8ae2e058896a41ad9ef9b1b6b0190bcf0c1e15):
+  js-yaml@3.15.2:
     dependencies:
-      argparse: 2.0.1
+      argparse: 1.0.10
       esprima: 4.0.1
 
   js-yaml@4.3.2:
@@ -9950,6 +9951,8 @@ snapshots:
   source-map@0.5.7: {}
 
   source-map@0.6.1: {}
+
+  sprintf-js@1.0.3: {}
 
   stack-utils@2.0.6:
     dependencies:

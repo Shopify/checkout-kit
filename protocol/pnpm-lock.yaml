@@ -10,12 +10,6 @@ overrides:
   brace-expansion@5: 5.0.12
   source-map-js@1: 1.2.2
   moment@2: 2.31.0
-  quicktype>stream-json: 3.7.0
-
-patchedDependencies:
-  quicktype@23.2.6:
-    hash: 10e205b01b1e9158551e40b48ef853393b8880b1282cb552909858fe6b1f6a86
-    path: patches/quicktype@23.2.6.patch
 
 importers:
 
@@ -29,7 +23,7 @@ importers:
         version: 10.6.0
       quicktype:
         specifier: 23.2.6
-        version: 23.2.6(patch_hash=10e205b01b1e9158551e40b48ef853393b8880b1282cb552909858fe6b1f6a86)
+        version: 23.2.6
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1021,11 +1015,11 @@ packages:
   std-env@4.2.0:
     resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
 
-  stream-chain@4.2.6:
-    resolution: {integrity: sha512-1zeJ8CrtJfmiba26ui8jXkq/xLRFvhzkdH02D5QLO9Cnovgeb28IJxg88DdraWnjnkbOol/++uIAybJbJhk7ig==}
+  stream-chain@2.2.5:
+    resolution: {integrity: sha512-1TJmBx6aSWqZ4tx7aTpBDXK0/e2hhcNSTV8+CbFJtDjbb+I1mZ8lHit0Grw9GRT+6JbIrrDd8esncgBi8aBXGA==, tarball: https://registry.npmjs.org/stream-chain/-/stream-chain-2.2.5.tgz}
 
-  stream-json@3.7.0:
-    resolution: {integrity: sha512-rCSBdcBP/bPk6T8QFcxAj1MSzAuc5i49cYW6IE7sYObNEPccBJIUiL6fU9c9BWt40aJK0siVynLX7lWaW8alXw==}
+  stream-json@1.8.0:
+    resolution: {integrity: sha512-HZfXngYHUAr1exT4fxlbc1IOce1RYxp2ldeaf97LYCOPSoOqY/1Psp7iGvpb+6JIOgkra9zDYnPX01hGAHzEPw==, tarball: https://registry.npmjs.org/stream-json/-/stream-json-1.8.0.tgz}
 
   string-to-stream@3.0.1:
     resolution: {integrity: sha512-Hl092MV3USJuUCC6mfl9sPzGloA3K5VwdIeJjYIkXY/8K+mUvaeEabWJgArp+xXrsWxCajeT2pc4axbVhIZJyg==}
@@ -2172,7 +2166,7 @@ snapshots:
       - '@swc/wasm'
       - encoding
 
-  quicktype@23.2.6(patch_hash=10e205b01b1e9158551e40b48ef853393b8880b1282cb552909858fe6b1f6a86):
+  quicktype@23.2.6:
     dependencies:
       '@glideapps/ts-necessities': 2.4.0
       chalk: 4.1.2
@@ -2187,7 +2181,7 @@ snapshots:
       quicktype-graphql-input: 23.2.6
       quicktype-typescript-input: 23.2.6
       readable-stream: 4.7.0
-      stream-json: 3.7.0
+      stream-json: 1.8.0
       string-to-stream: 3.0.1
       typescript: 5.8.3
     transitivePeerDependencies:
@@ -2260,11 +2254,11 @@ snapshots:
 
   std-env@4.2.0: {}
 
-  stream-chain@4.2.6: {}
+  stream-chain@2.2.5: {}
 
-  stream-json@3.7.0:
+  stream-json@1.8.0:
     dependencies:
-      stream-chain: 4.2.6
+      stream-chain: 2.2.5
 
   string-to-stream@3.0.1:
     dependencies:

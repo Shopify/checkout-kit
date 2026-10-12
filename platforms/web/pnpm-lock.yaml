@@ -13,12 +13,6 @@ overrides:
   tinypool@2: 2.2.0
   source-map-js@1: 1.2.2
   picomatch@4: 4.0.7
-  argparse@1: 2.0.1
-
-patchedDependencies:
-  '@rushstack/ts-command-line@5.3.9':
-    hash: cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c
-    path: ../../patches/@rushstack__ts-command-line@5.3.9.patch
 
 importers:
 
@@ -1215,8 +1209,8 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  argparse@2.0.1:
-    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+  argparse@1.0.10:
+    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==, tarball: https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz}
 
   array-back@3.1.0:
     resolution: {integrity: sha512-TkuxA4UCOvxuDK6NZYXCalszEzj+TLszyASooky+i742l9TqsOdYCMJJupxRic61hwquNtppB3hgcuq9SVSH1Q==}
@@ -2031,6 +2025,9 @@ packages:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
 
+  sprintf-js@1.0.3:
+    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==, tarball: https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz}
+
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
@@ -2481,7 +2478,7 @@ snapshots:
       '@rushstack/node-core-library': 5.23.1(@types/node@22.19.18)
       '@rushstack/rig-package': 0.7.3
       '@rushstack/terminal': 0.24.0(@types/node@22.19.18)
-      '@rushstack/ts-command-line': 5.3.9(patch_hash=cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c)(@types/node@22.19.18)
+      '@rushstack/ts-command-line': 5.3.9(@types/node@22.19.18)
       diff: 8.0.4
       minimatch: 10.2.3
       resolve: 1.22.12
@@ -2796,11 +2793,11 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.19.18
 
-  '@rushstack/ts-command-line@5.3.9(patch_hash=cad246d45277aecfd066ee771d57d9d34ec3183980df5155b93dac09bda0fd2c)(@types/node@22.19.18)':
+  '@rushstack/ts-command-line@5.3.9(@types/node@22.19.18)':
     dependencies:
       '@rushstack/terminal': 0.24.0(@types/node@22.19.18)
       '@types/argparse': 1.0.38
-      argparse: 2.0.1
+      argparse: 1.0.10
       string-argv: 0.3.2
     transitivePeerDependencies:
       - '@types/node'
@@ -3068,7 +3065,9 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.2
 
-  argparse@2.0.1: {}
+  argparse@1.0.10:
+    dependencies:
+      sprintf-js: 1.0.3
 
   array-back@3.1.0: {}
 
@@ -3921,6 +3920,8 @@ snapshots:
   source-map-js@1.2.2: {}
 
   source-map@0.6.1: {}
+
+  sprintf-js@1.0.3: {}
 
   stackback@0.0.2: {}
 
