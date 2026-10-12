@@ -34,7 +34,9 @@ jobs:
 
       - name: Run tests and generate library coverage
         id: coverage_tests
-        run: ./gradlew test :lib:createDebugUnitTestCoverageReport --console=plain
+        run: |
+          ./gradlew test :lib:createDebugUnitTestCoverageReport --console=plain
+          ruby ../../scripts/check_coverage android lib/build/reports/coverage/test/debug/report.xml
 
       - name: Record coverage
         if: ${{ !cancelled() }}

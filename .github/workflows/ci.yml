@@ -51,6 +51,9 @@ jobs:
         with:
           filters: |
             android:
+              - '.ci/coverage-thresholds.json'
+              - 'scripts/check_coverage'
+              - 'scripts/lib/coverage_thresholds.rb'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/lib/coverage_report.rb'
@@ -117,6 +120,8 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             scripts:
+              - '.ci/coverage-thresholds.json'
+              - 'scripts/check_coverage'
               - '.github/scripts/*coverage*'
               - '.github/workflows/coverage-report.yml'
               - '.github/workflows/coverage-baseline.yml'

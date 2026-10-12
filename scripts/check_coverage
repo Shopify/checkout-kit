@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "lib/coverage_report"
+require_relative "lib/coverage_thresholds"
+
+abort "Usage: ruby scripts/check_coverage <platform> <report-path>" unless ARGV.length == 2
+report = CoverageReport.new(ARGV[0], File.read(ARGV[1]))
+configuration = JSON.parse(File.read(File.expand_path("../.ci/coverage-thresholds.json", __dir__)))
+failures = CoverageThresholds.new(configuration).failures(report)
+abort "Coverage threshold failed for #{CoverageReport::TITLES.fetch(report.platform)}:\n#{failures.join("\n")}" unless failures.empty?
+puts "Coverage thresholds passed for #{CoverageReport::TITLES.fetch(report.platform)}."
