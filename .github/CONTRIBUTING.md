@@ -96,12 +96,19 @@ pnpm --dir protocol test --coverage
 A failing threshold fails the test command and its CI job. Add tests for the
 uncovered behavior instead of lowering the threshold. The thresholds live in
 `platforms/web/vite.config.ts`, `platforms/react-native/jest.config.js`, and
-`protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
-not yet enforce coverage thresholds.
+`protocol/vitest.config.ts`.
+
+Swift and Android generate coverage reports without enforcing a minimum yet:
+
+| Platform | Local command | Reports | CI artifact |
+| --- | --- | --- | --- |
+| Android | `dev android test coverage` | `platforms/android/lib/build/reports/coverage/test/debug/` (HTML and XML) | `android-coverage-<attempt>` in the GitHub Actions Android test job |
+| Swift | `dev swift test coverage` | `.xcresults/coverage/` (JSON and text) | Coverage reports in the Bitrise Swift package test job |
 
 CI updates one **Coverage Report** comment on same-repository pull requests for
-Web, React Native JavaScript, and Embedded Checkout Protocol (TS). The table
-shows status emojis, line, branch, and function coverage percentages, and links
+Web, React Native JavaScript, Android, both Swift SDK targets, and Embedded
+Checkout Protocol (TS, Kotlin, and Swift). The table shows status emojis, line,
+branch, and function/method coverage percentages where available, and links
 to the full reports. Jobs that are pending, skipped, failed, or missing a report
 show their status instead of coverage from an older run. GitHub Actions jobs also
 write their coverage tables to the job summary. Fork builds and builds without a
@@ -115,14 +122,26 @@ without a delta. Baseline jobs do not gate the PR or replace its test results.
 
 Platform jobs store numeric results in GitHub checks. The `Coverage Report`
 workflow is the only comment writer and serializes updates per PR. It refreshes
-on CI workflow events, reading all current results so simultaneous completions
-do not lose data. A manual run of `Coverage Report` with the PR number refreshes
-interrupted reporting.
+on CI workflow events and Bitrise's `coverage-updated` repository dispatch,
+reading all current results so simultaneous completions do not lose data.
+Bitrise uses its existing GitHub App token (checks and contents write permissions)
+and records skipped/failed Swift jobs when the iOS pipeline finishes. A manual
+run of `Coverage Report` with the PR number refreshes interrupted reporting.
 
 The publisher executes trusted default-branch code and validates the numeric
 results; it never executes PR-provided reporting code. This workflow begins
 publishing once it exists on `main`. Coverage thresholds remain in the test
 runners; combining the comments does not change their enforcement.
+
+Android reports cover the library's debug unit tests, including Robolectric
+tests and the library's telemetry code. Swift reports contain per-target and
+per-file line coverage from the package tests; inspect `ShopifyCheckoutKit` and
+`ShopifyAcceleratedCheckouts` for the SDK coverage. Xcode also lists test and
+dependency targets, sometimes with no executable lines; compare the named
+production targets rather than the overall total. The full Swift result bundle
+is available locally at `.xcresults/ShopifyCheckoutKit-Package-coverage.xcresult`.
+Neither report includes sample app or end-to-end tests. Standalone TypeScript
+telemetry tests do not yet collect coverage.
 
 ### Testing PR builds with Tophat
 

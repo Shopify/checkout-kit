@@ -61,10 +61,14 @@ ciFilters:
 # decide which macOS jobs run, so a change to one has to rerun them all, while a Maestro
 # flow edit under e2e/ must not.
 iosCiConfig:
+  - 'scripts/report_coverage'
+  - 'scripts/lib/coverage_report.rb'
   - 'e2e/bitrise.yml'
   - 'e2e/config/ios_ci.yml'
   - 'e2e/lib/ios_ci_run_plan.rb'
   - 'e2e/lib/ios_ci_reporter.rb'
+  - 'e2e/lib/swift_coverage_status.rb'
   - 'e2e/scripts/ios_ci_run_plan'
   - 'e2e/scripts/report_ios_ci_results'
+  - 'e2e/scripts/report_swift_coverage_status'
   - 'e2e/scripts/bitrise_ci_helpers'

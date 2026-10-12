@@ -42,15 +42,21 @@ xcodebuild_cmd="xcodebuild $ACTION -scheme $SCHEME -sdk iphonesimulator -destina
 # Retry failed tests up to three total attempts, including the initial run.
 if [[ "$ACTION" == *"test"* ]]; then
     xcodebuild_cmd="$xcodebuild_cmd -retry-tests-on-failure -test-iterations 3"
+    if [[ "${ENABLE_CODE_COVERAGE:-0}" == "1" ]]; then
+        xcodebuild_cmd="$xcodebuild_cmd -enableCodeCoverage YES"
+    fi
 fi
 
 if [[ "$SCHEME" == "ShopifyCheckoutKit-Package" && "$ACTION" == *"build"* && "$ACTION" != *"test"* ]]; then
     xcodebuild_cmd="$xcodebuild_cmd SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
 fi
 
-if [[ "$CI" == "true" && ( "$ACTION" == *"build"* || "$ACTION" == *"test"* ) ]]; then
+if [[ ( "$CI" == "true" || "${ENABLE_CODE_COVERAGE:-0}" == "1" ) && ( "$ACTION" == *"build"* || "$ACTION" == *"test"* ) ]]; then
     result_bundle_dir="$(cd "$SCRIPT_DIR/../../.." && pwd)/.xcresults"
     result_bundle_path="$result_bundle_dir/$SCHEME.xcresult"
+    if [[ "${ENABLE_CODE_COVERAGE:-0}" == "1" ]]; then
+        result_bundle_path="$result_bundle_dir/$SCHEME-coverage.xcresult"
+    fi
     rm -rf "$result_bundle_path"
     mkdir -p "$result_bundle_dir"
     xcodebuild_cmd="$xcodebuild_cmd -resultBundlePath \"$result_bundle_path\""

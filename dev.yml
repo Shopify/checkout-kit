@@ -237,6 +237,16 @@ commands:
             *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
           esac
 
+      coverage:
+        desc: "Run native protocol tests with coverage. Usage: dev protocol coverage <swift|kotlin>"
+        syntax: "<swift|kotlin>"
+        run: |
+          case "$1" in
+            swift) ./protocol/scripts/test_swift_coverage ;;
+            kotlin) protocol/languages/kotlin/gradlew -p protocol/languages/kotlin :embedded-checkout-protocol:jacocoTestReport --console=plain ;;
+            *) echo "Usage: dev protocol coverage <swift|kotlin>"; exit 1 ;;
+          esac
+
       lint:
         desc: "Lint Kotlin protocol source and TypeScript test files"
         run: |
@@ -377,6 +387,14 @@ commands:
           platforms/android/gradlew -p platforms/android clean test --console=plain
           platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
         subcommands:
+          coverage:
+            desc: Run Android library unit tests and generate HTML/XML coverage reports
+            syntax:
+              optional: --local
+            run: |
+              source platforms/android/scripts/parse_local_protocol_flag
+              parse_local_protocol_flag "$@"
+              platforms/android/gradlew -p platforms/android :lib:createDebugUnitTestCoverageReport --console=plain
           samples:
             desc: Run JVM tests for the Checkout Kit Android sample app
             syntax:
@@ -654,6 +672,9 @@ commands:
             ./Scripts/test_samples
           fi
         subcommands:
+          coverage:
+            desc: Run Swift package tests and export Xcode coverage reports
+            run: cd platforms/swift && ./Scripts/test_coverage
           sample:
             desc: Run the sample app test target
             syntax: "[test_class_name]"

@@ -342,14 +342,61 @@ workflows:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
       - script@1:
-          title: Run Swift package tests
+          title: Run Swift package tests with coverage
           timeout: 3600
           no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
                 cd platforms/swift
-                ./Scripts/xcode_run test ShopifyCheckoutKit-Package
+                ./Scripts/test_coverage
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+          inputs:
+            - deploy_path: "$BITRISE_SOURCE_DIR/.xcresults/coverage"
+      - script@1:
+          title: Record Swift coverage for the combined report
+          is_always_run: true
+          inputs:
+            - content: |-
+                set -euo pipefail
+                export COVERAGE_REPOSITORY="Shopify/checkout-kit"
+                export COVERAGE_PR="${BITRISE_PULL_REQUEST:-}"
+                export COVERAGE_SHA="${BITRISE_GIT_COMMIT:-}"
+                export COVERAGE_REPORT_URL="${BITRISE_BUILD_URL:-}"
+                export COVERAGE_TOKEN="${OVERRIDE_GITHUB_TOKEN:-${GIT_HTTP_PASSWORD:-}}"
+                export COVERAGE_TEST_OUTCOME=success
+                if [ "${BITRISE_BUILD_STATUS:-0}" != "0" ]; then
+                  export COVERAGE_TEST_OUTCOME=failure
+                fi
+                ruby scripts/report_coverage swift .xcresults/coverage/coverage.json
+
+      - script@1:
+          title: Run Embedded Checkout Protocol Swift coverage
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./protocol/scripts/test_swift_coverage
+      - deploy-to-bitrise-io@2:
+          is_always_run: false
+          inputs:
+            - deploy_path: "$BITRISE_SOURCE_DIR/protocol/languages/swift/.build/coverage"
+      - script@1:
+          title: Record Embedded Checkout Protocol Swift coverage
+          is_always_run: true
+          inputs:
+            - content: |-
+                set -euo pipefail
+                export COVERAGE_REPOSITORY="Shopify/checkout-kit"
+                export COVERAGE_PR="${BITRISE_PULL_REQUEST:-}"
+                export COVERAGE_SHA="${BITRISE_GIT_COMMIT:-}"
+                export COVERAGE_REPORT_URL="${BITRISE_BUILD_URL:-}"
+                export COVERAGE_TOKEN="${OVERRIDE_GITHUB_TOKEN:-${GIT_HTTP_PASSWORD:-}}"
+                export COVERAGE_TEST_OUTCOME=success
+                if [ "${BITRISE_BUILD_STATUS:-0}" != "0" ]; then
+                  export COVERAGE_TEST_OUTCOME=failure
+                fi
+                ruby scripts/report_coverage protocol-swift protocol/languages/swift/.build/coverage/coverage.json
 
   ci-ios-swift-samples:
     meta:
@@ -498,6 +545,13 @@ workflows:
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
                 e2e_log "Reporting iOS CI results to GitHub"
                 ruby e2e/scripts/report_ios_ci_results
+      - script@1:
+          title: Finalize Swift coverage status
+          is_always_run: true
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ruby e2e/scripts/report_swift_coverage_status
 
   e2e-produce-browserstack-run-plan:
     steps:

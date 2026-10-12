@@ -51,6 +51,9 @@ jobs:
         with:
           filters: |
             android:
+              - '.github/actions/report-coverage/**'
+              - 'scripts/report_coverage'
+              - 'scripts/lib/coverage_report.rb'
               - '.github/workflows/android-publish.yml'
               - '.github/workflows/android-protocol-publish.yml'
               - '.github/workflows/android-test.yml'
@@ -144,6 +147,10 @@ jobs:
     name: Android
     needs: changes
     if: needs.changes.outputs.android == 'true'
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
     uses: ./.github/workflows/android-test.yml
 
   swift-lint:

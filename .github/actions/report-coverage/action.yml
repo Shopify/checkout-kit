@@ -6,7 +6,7 @@ inputs:
     description: Coverage platform key
   report-path:
     required: true
-    description: Coverage summary JSON, relative to the repository root
+    description: Coverage summary JSON or JaCoCo XML, relative to the repository root
   report-directory:
     required: true
     description: Directory containing the downloadable reports

@@ -73,6 +73,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
@@ -178,6 +181,17 @@ def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
 
 tasks.withType(Test).configureEach {
     dependsOn verifyPublishedProtocol
+}
+
+plugins.withId('jacoco') {
+    tasks.withType(Test).configureEach {
+        jacoco {
+            // Robolectric loads SDK classes without a source location. Include
+            // those classes, but avoid instrumenting its runtime or JDK internals.
+            includeNoLocationClasses = true
+            includes = ['com.shopify.checkoutkit.*']
+        }
+    }
 }
 
 // Local protocol sources are for joint development only. Maven Local remains

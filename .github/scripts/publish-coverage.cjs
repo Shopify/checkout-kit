@@ -3,16 +3,22 @@ const jsMetrics = ["Lines", "Statements", "Branches", "Functions"];
 const platforms = [
   {id: "web", title: "Web", job: "Web / Lint, test, build, verify", metrics: jsMetrics},
   {id: "react-native", title: "React Native", job: "React Native / Run jest tests", metrics: jsMetrics},
+  {id: "android", title: "Android", job: "Android / test", metrics: ["Lines", "Instructions", "Branches", "Methods"]},
+  {id: "swift", title: "Swift", metrics: ["ShopifyCheckoutKit", "ShopifyAcceleratedCheckouts"]},
   {id: "protocol", title: "Embedded Checkout Protocol (TypeScript)", displayTitle: "Embedded Checkout Protocol (TS)", job: "Protocol / Test", skippedJob: "Protocol", metrics: jsMetrics},
+  {id: "protocol-kotlin", title: "Embedded Checkout Protocol (Kotlin)", job: "Android / test", skippedJob: "Android", metrics: ["Lines", "Instructions", "Branches", "Methods"]},
+  {id: "protocol-swift", title: "Embedded Checkout Protocol (Swift)", metrics: ["Lines", "Functions"]},
 ];
 
 const latest = (items) => [...items].sort((a, b) => b.id - a.id)[0];
 const isComment = (comment) => comment.user?.type === "Bot" &&
   comment.user.login === "github-actions[bot]" && comment.body?.startsWith(marker);
+const pipelineCheck = (checks) => latest(checks.filter((check) =>
+  check.app?.slug === "bitrise" && check.name === "ci/bitrise/ci-ios/pr"));
 
 async function resolvePR({github, context}) {
-  if (context.eventName === "workflow_dispatch") {
-    const pr = Number(context.payload.inputs?.pr);
+  if (context.eventName === "repository_dispatch" || context.eventName === "workflow_dispatch") {
+    const pr = Number(context.payload.client_payload?.pr ?? context.payload.inputs?.pr);
     return Number.isSafeInteger(pr) && pr > 0 ? pr : null;
   }
   const run = context.payload.workflow_run;
@@ -34,14 +40,16 @@ async function sources(github, repo, pr) {
     }),
   ]);
   const run = latest(runs.filter((item) => item.head_sha === pr.head.sha && item.head_repository?.id === pr.head.repo.id && item.head_branch === pr.head.ref));
-  return {run, checks};
+  return {run, checks, pipeline: pipelineCheck(checks.filter((check) => check.head_sha === pr.head.sha))};
 }
 
-function reportURL(value, repo, run) {
+function reportURL(value, repo, platform, run) {
   if (!value) return null;
   const url = new URL(value);
   const artifactPrefix = `/${repo.owner}/${repo.repo}/actions/runs/${run?.id}/artifacts/`;
-  const valid = url.hostname === "github.com" && url.pathname.startsWith(artifactPrefix) && /^[0-9]+$/.test(url.pathname.slice(artifactPrefix.length));
+  const valid = !platform.job
+    ? url.hostname === "app.bitrise.io" && /^\/app\/[\w-]+\/build\/[\w-]+$/.test(url.pathname)
+    : url.hostname === "github.com" && url.pathname.startsWith(artifactPrefix) && /^[0-9]+$/.test(url.pathname.slice(artifactPrefix.length));
   if (!valid || url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
     throw new Error("Invalid coverage report link");
   return url.href;
@@ -69,26 +77,34 @@ function readResult(check, platform, expected, pr, repo, run) {
         throw new Error("Invalid coverage counts");
     });
   }
-  return {...result, reportUrl: reportURL(result.reportUrl, repo, run)};
+  return {...result, reportUrl: reportURL(result.reportUrl, repo, platform, run)};
 }
 
 function platformResult(platform, snapshot, jobs, pr, repo, core, revision = "head") {
-  const {run, checks} = snapshot;
-  let state = "pending";
-  if (!run) return {state};
-  // A failed-jobs rerun reuses successful jobs from an earlier attempt. Match
-  // each result to the attempt that actually ran that platform's test job.
+  const {run, pipeline, checks} = snapshot;
   const baseline = revision === "base";
-  const jobName = baseline ? `Coverage baseline (${platform.id}) / Test` : platform.job;
-  const skippedJob = baseline ? `Coverage baseline (${platform.id})` : platform.skippedJob || platform.title;
-  const job = latest(jobs.filter((item) => item.name === jobName)) ||
-    latest(jobs.filter((item) => item.name === skippedJob));
-  const expected = {provider: "github-actions", runId: run.id, runAttempt: job?.run_attempt ?? run.run_attempt, revision};
-  const plan = latest(jobs.filter((item) => item.name === "Detect Changed Areas"));
-  if (plan?.status === "completed" && plan.conclusion !== "success") return {state: "unavailable"};
-  if (job?.conclusion === "skipped") return {state: "skipped"};
-  if (job?.status === "completed") state = job.conclusion === "success" ? "unavailable" : "failed";
-  else if (!job && run.status === "completed") state = "unavailable";
+  if (baseline && !platform.job) return {state: "unavailable"};
+  let expected, state = "pending";
+  if (!platform.job) {
+    if (!pipeline) return {state};
+    expected = {provider: "bitrise", runId: pipeline.id, runAttempt: pipeline.external_id ?? 1};
+    if (pipeline.status === "completed") state = pipeline.conclusion === "success" ? "unavailable" : "failed";
+  } else {
+    if (!run) return {state};
+    // A failed-jobs rerun reuses successful jobs from an earlier attempt. Match
+    // each result to the attempt that actually ran that platform's test job.
+    const jobName = baseline ? `Coverage baseline (${platform.id}) / Test` : platform.job;
+    const skippedJob = baseline ? `Coverage baseline (${platform.id})` : platform.skippedJob || platform.title;
+    const job = latest(jobs.filter((item) => item.name === jobName)) ||
+      latest(jobs.filter((item) => item.name === skippedJob));
+    expected = {provider: "github-actions", runId: run.id, runAttempt: job?.run_attempt ?? run.run_attempt};
+    const plan = latest(jobs.filter((item) => item.name === "Detect Changed Areas"));
+    if (plan?.status === "completed" && plan.conclusion !== "success") return {state: "unavailable"};
+    if (job?.conclusion === "skipped") return {state: "skipped"};
+    if (job?.status === "completed") state = job.conclusion === "success" ? "unavailable" : "failed";
+    else if (!job && run.status === "completed") state = "unavailable";
+  }
+  expected.revision = revision;
   const externalId = `coverage${baseline ? "-base" : ""}:${platform.id}:${expected.runId}:${expected.runAttempt}`;
   const check = latest(checks.filter((item) => item.app?.slug === expected.provider &&
     item.external_id === externalId && item.name === `Coverage${baseline ? " base" : ""} — ${platform.title}`));
@@ -130,13 +146,18 @@ function render(results, baselines = {}) {
     const comparable = result.state === "success" && baseline?.state === "success" &&
       result.baseSha && result.baseSha === baseline.baseSha;
     const value = (name) => metric(find(name), comparable ? baseline.rows.find((row) => row[0] === name) : undefined);
-    lines.push(`| ${emoji} | ${platform.displayTitle || platform.title} | ${value("Lines")} | ${value("Branches")} | ${value("Functions")} | ${report} |`);
+    if (platform.id === "swift") {
+      for (const target of platform.metrics)
+        lines.push(`| ${emoji} | Swift · ${target} | ${value(target)} | — | — | ${report} |`);
+    } else {
+      lines.push(`| ${emoji} | ${platform.displayTitle || platform.title} | ${value("Lines")} | ${value("Branches")} | ${value(find("Functions") ? "Functions" : "Methods")} | ${report} |`);
+    }
   }
   lines.push("", "Changes in parentheses are **percentage points versus the PR’s base commit**. No delta appears when matching base coverage is unavailable.");
   return lines.join("\n") + "\n";
 }
 
-const sourceKey = ({run}) => `${run?.id}:${run?.run_attempt}`;
+const sourceKey = ({run, pipeline}) => `${run?.id}:${run?.run_attempt}:${pipeline?.id}:${pipeline?.external_id}`;
 
 async function publish({github, context, core, prNumber}) {
   const repo = context.repo;

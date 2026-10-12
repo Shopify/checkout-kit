@@ -24,7 +24,11 @@ end
 abort "COVERAGE_PR must be a pull request number" unless pr_number.match?(/\A[1-9]\d*\z/)
 abort "COVERAGE_SHA is required to publish coverage" if sha.to_s.empty?
 
-source = {"provider" => "github-actions", "runId" => Integer(ENV.fetch("GITHUB_RUN_ID")), "runAttempt" => Integer(ENV.fetch("GITHUB_RUN_ATTEMPT", "1"))}
+source = if ENV["GITHUB_RUN_ID"]
+  {"provider" => "github-actions", "runId" => Integer(ENV.fetch("GITHUB_RUN_ID")), "runAttempt" => Integer(ENV.fetch("GITHUB_RUN_ATTEMPT", "1"))}
+else
+  {"provider" => "bitrise", "pipelineUrl" => ENV.fetch("BITRISEIO_PIPELINE_BUILD_URL")}
+end
 publisher = CoverageResultPublisher.new(
   repository: ENV.fetch("COVERAGE_REPOSITORY"),
   pr_number: pr_number,

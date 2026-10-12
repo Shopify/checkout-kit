@@ -10,8 +10,8 @@ function fixture() {
   const f = {
     pr: {number: 12, state: "open", draft: false, head: {sha: "head", ref: "feature", repo: {id: 1, full_name: "example/sdk"}}, base: {sha: "base"}},
     runs: [{id: 100, run_attempt: 1, head_sha: "head", head_branch: "feature", head_repository: {id: 1}, status: "completed", conclusion: "success"}],
-    checks: [],
-    jobs: reporter.platforms.map((platform, i) =>
+    checks: [{id: 200, head_sha: "head", name: "ci/bitrise/ci-ios/pr", app: {slug: "bitrise"}, status: "in_progress"}],
+    jobs: reporter.platforms.filter((platform, index, all) => platform.job && all.findIndex((other) => other.job === platform.job) === index).map((platform, i) =>
       ({id: 300 + i, name: platform.job, run_attempt: 1, status: "completed", conclusion: "success"})),
     comments: [], writes: [], warnings: [],
   };
@@ -31,11 +31,11 @@ function fixture() {
     if (method === "prs") return [f.pr];
     return structuredClone(f[method]);
   }};
-  f.context = {repo: {owner: "example", repo: "sdk"}, eventName: "workflow_dispatch", payload: {inputs: {pr: "12"}}};
+  f.context = {repo: {owner: "example", repo: "sdk"}, eventName: "repository_dispatch", payload: {client_payload: {pr: 12}}};
   f.publish = () => reporter.publish({github: f.github, context: f.context, core: {warning: (message) => f.warnings.push(message)}, prNumber: 12});
   f.add = (id, overrides = {}) => {
     const platform = reporter.platforms.find((platform) => platform.id === id);
-    const source = {provider: "github-actions", runId: 100, runAttempt: 1};
+    const source = !platform.job ? {provider: "bitrise", runId: 200, runAttempt: 1} : {provider: "github-actions", runId: 100, runAttempt: 1};
     const result = {version: 1, platform: id, pr: 12, headSha: "head", baseSha: "base", source, state: "success", rows: platform.metrics.map((name) => [name, 7, 10]), ...overrides};
     const baseline = result.revision === "base";
     const check = {
@@ -123,7 +123,7 @@ test("malformed and untrusted baselines cannot hide valid head coverage", async 
   }
 });
 
-test("one comment combines the existing JavaScript reports without native coverage rows", async () => {
+test("one comment combines every platform with native metric names and no obsolete boilerplate", async () => {
   const f = fixture();
   for (const platform of reporter.platforms) f.add(platform.id);
   await f.publish();
@@ -131,10 +131,11 @@ test("one comment combines the existing JavaScript reports without native covera
   assert.equal(f.writes.length, 1);
   assert.ok(body.startsWith(reporter.marker));
   assert.ok(body.includes("| Status | Platform / target | Lines | Branches | Functions | Report |"));
-  for (const platform of reporter.platforms.filter((item) => item.id !== "protocol"))
+  for (const platform of reporter.platforms.filter((item) => !["swift", "protocol"].includes(item.id)))
     assert.ok(body.includes(`| ✅ | ${platform.title} | 70% |`));
   assert.ok(body.includes("| ✅ | Embedded Checkout Protocol (TS) | 70% | 70% | 70% |"));
-  assert.ok(!/Android|Swift|Kotlin/.test(body));
+  assert.ok(body.includes("| ✅ | Swift · ShopifyAcceleratedCheckouts | 70% | — | — |"));
+  assert.ok(body.includes("| ✅ | Embedded Checkout Protocol (Swift) | 70% | — | 70% |"));
   assert.ok(!body.includes("shields.io"));
   assert.ok(!body.includes("<details>"));
   assert.ok(!body.includes("PR head:"));
@@ -196,16 +197,13 @@ test("skips a new comment when every reported platform is skipped but clears exi
 test("renders pending, skipped, failed and missing reports without old values", async () => {
   const f = fixture();
   f.jobs.find((job) => job.name.startsWith("Web")).conclusion = "skipped";
-  f.jobs.find((job) => job.name.startsWith("React Native")).conclusion = "failure";
+  f.jobs.find((job) => job.name.startsWith("Android")).conclusion = "failure";
   await f.publish();
   const body = f.writes[0].body;
   assert.match(body, /\| ⏭️ \| Web \| — \| — \| — \| Not run for this change/);
-  assert.match(body, /\| ❌ \| React Native \| — \| — \| — \| Tests or coverage collection failed/);
+  assert.match(body, /\| ❌ \| Android \| — \| — \| — \| Tests or coverage collection failed/);
+  assert.match(body, /\| ⏳ \| Swift · ShopifyCheckoutKit \| — \| — \| — \| Waiting for coverage/);
   assert.ok(body.includes("Coverage report unavailable"));
-  f.jobs.find((job) => job.name.startsWith("Protocol")).status = "in_progress";
-  f.jobs.find((job) => job.name.startsWith("Protocol")).conclusion = null;
-  await f.publish();
-  assert.match(f.writes[1].body, /\| ⏳ \| Embedded Checkout Protocol \(TS\) \| — \| — \| — \| Waiting for coverage/);
   assert.ok(!body.includes("shields.io"));
 });
 
@@ -220,22 +218,23 @@ test("partial reruns reuse successful jobs but reject old results for rerun jobs
   const f = fixture();
   f.runs[0].run_attempt = 2;
   f.add("web");
-  f.add("react-native");
-  f.jobs.push({id: 500, name: "React Native / Run jest tests", run_attempt: 2, status: "completed", conclusion: "failure"});
+  f.add("android");
+  f.jobs.push({id: 500, name: "Android / test", run_attempt: 2, status: "completed", conclusion: "failure"});
   await f.publish();
   const body = f.writes[0].body;
   assert.match(body, /\| ✅ \| Web \| 70%/);
-  assert.ok(!row(body, "React Native").includes("70%"));
+  assert.ok(!row(body, "Android").includes("70%"));
 });
 
-test("newer CI runs supersede older results even at the same commit", async () => {
+test("newer CI and Bitrise runs supersede older results even at the same commit", async () => {
   const f = fixture();
   f.add("web");
-  f.add("protocol");
+  f.add("swift");
   await f.publish();
   f.comments = [{id: 51, user: {login: "github-actions[bot]", type: "Bot"}, body: f.writes[0].body}];
   f.writes = [];
   f.runs.push({...f.runs[0], id: 101, status: "in_progress"});
+  f.checks.push({...f.checks[0], id: 201});
   f.jobs = [];
   await f.publish();
   assert.ok(!f.writes[0].body.includes("70%"));
@@ -243,13 +242,22 @@ test("newer CI runs supersede older results even at the same commit", async () =
 
 test("coalesced notifications rebuild from all durable platform results", async () => {
   const f = fixture();
-  f.add("protocol");
+  f.add("swift");
   f.add("web");
   // The event that happened to survive concurrency queuing is irrelevant.
-  f.context = {...f.context, eventName: "workflow_run", payload: {workflow_run: {head_sha: "an-older-event"}}};
+  f.context.payload.client_payload.sha = "an-older-event";
   await f.publish();
   const body = f.writes[0].body;
-  assert.equal((body.match(/\| ✅ /g) || []).length, 2);
+  assert.equal((body.match(/\| ✅ /g) || []).length, 3);
+});
+
+test("a retried Bitrise attempt cannot reuse the previous attempt's coverage", async () => {
+  const f = fixture();
+  f.add("swift");
+  f.checks[0].external_id = "apps/example/pipelines/current/attempts/retry";
+  await f.publish();
+  assert.ok(!f.writes[0].body.includes("70%"));
+  assert.ok(f.writes[0].body.includes("Waiting for coverage"));
 });
 
 test("rejects malformed, stale, oversized and unsafe results", async () => {
@@ -279,12 +287,12 @@ test("rejects malformed, stale, oversized and unsafe results", async () => {
 test("accepts artifact links only for the matching run and ignores untrusted check apps", async () => {
   const f = fixture();
   f.add("web", {reportUrl: "https://github.com/example/sdk/actions/runs/100/artifacts/123"});
-  f.add("protocol", {reportUrl: "https://github.com/example/sdk/actions/runs/100/artifacts/456"});
-  f.add("react-native").app.slug = "untrusted-app";
+  f.add("swift", {reportUrl: "https://app.bitrise.io/app/example/build/abc-123"});
+  f.add("android").app.slug = "untrusted-app";
   await f.publish();
   assert.equal(f.warnings.length, 0);
-  assert.equal((f.writes[0].body.match(/Full report/g) || []).length, 2);
-  assert.ok(!row(f.writes[0].body, "React Native").includes("70%"));
+  assert.equal((f.writes[0].body.match(/Full report/g) || []).length, 3);
+  assert.ok(!row(f.writes[0].body, "Android").includes("70%"));
 });
 
 test("does not mistake another skipped React Native job for the actual test job", async () => {
@@ -315,7 +323,7 @@ test("head changes during collection and closed, draft or fork PRs cannot be wri
   }
 });
 
-test("resolves CI and manual notifications, rejecting unrelated workflows", async () => {
+test("resolves CI, Bitrise and manual notifications, rejecting unrelated workflows", async () => {
   const f = fixture();
   assert.equal(await reporter.resolvePR(f), 12);
   f.context = {...f.context, eventName: "workflow_dispatch", payload: {inputs: {pr: "12"}}};
@@ -326,4 +334,19 @@ test("resolves CI and manual notifications, rejecting unrelated workflows", asyn
   assert.equal(await reporter.resolvePR(f), 12);
   f.context.payload.workflow_run.path = ".github/workflows/other.yml";
   assert.equal(await reporter.resolvePR(f), null);
+});
+
+test("native protocol results retain their own state while sharing a runner", async () => {
+  const f = fixture();
+  f.add("android", {state: "failed"});
+  f.add("protocol-kotlin");
+  f.add("swift", {state: "failed"});
+  f.add("protocol-swift", {reportUrl: "https://app.bitrise.io/app/example/build/abc-123"});
+  await f.publish();
+  const body = f.writes[0].body;
+  assert.ok(row(body, "Android").startsWith("| ❌"));
+  assert.ok(row(body, "Embedded Checkout Protocol (Kotlin)").startsWith("| ✅"));
+  assert.ok(row(body, "Swift · ShopifyCheckoutKit").startsWith("| ❌"));
+  assert.ok(row(body, "Embedded Checkout Protocol (Swift)").includes("[Full report]"));
+  assert.equal(f.warnings.length, 0);
 });
