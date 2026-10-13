@@ -17,16 +17,44 @@ appId: ${E2E_APP_ID}
       - tapOn:
           text: "${LOCATOR}"
       - waitForAnimationToEnd
-      - extendedWaitUntil:
-          visible:
-            text: "${LOCATOR}"
-            focused: true
-          timeout: 5000
+      - runFlow:
+          when:
+            platform: ios
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  text: "${LOCATOR}"
+                  focused: true
+                timeout: 5000
+      - runFlow:
+          when:
+            platform: android
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  focused: true
+                  childOf:
+                    containsChild:
+                      text: "${LOCATOR}"
+                timeout: 5000
       - eraseText: 100
       - inputText: "${TEXT_TO_INPUT}"
-      - copyTextFrom:
-          text: "${LOCATOR}"
-          focused: true
+      - runFlow:
+          when:
+            platform: ios
+          commands:
+            - copyTextFrom:
+                text: "${LOCATOR}"
+                focused: true
+      - runFlow:
+          when:
+            platform: android
+          commands:
+            - copyTextFrom:
+                focused: true
+                childOf:
+                  containsChild:
+                    text: "${LOCATOR}"
       - evalScript: ${output.checkoutFieldMatches = maestro.copiedText === TEXT_TO_INPUT}
 - assertTrue:
     condition: ${output.checkoutFieldMatches}
