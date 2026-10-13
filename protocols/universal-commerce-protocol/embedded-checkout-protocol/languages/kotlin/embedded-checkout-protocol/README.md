@@ -4,7 +4,7 @@
 
 See the [UCP shopping embedded protocol schema](../../../services/shopping/embedded.openrpc.json) for method and payload definitions.
 
-Most Android apps consume this product through the [Checkout Kit Android package](../../../../platforms/android/README.md), which provides a curated protocol API and manages the WebView transport.
+Most Android apps consume this product through the [Checkout Kit Android package](../../../../../../platforms/android/README.md), which provides a curated protocol API and manages the WebView transport.
 
 ## Requirements
 
@@ -69,7 +69,7 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 }
 ```
 
-See the Android README's [checkout lifecycle](../../../../platforms/android/README.md#checkout-lifecycle) section for the supported Checkout Kit descriptors and presentation callbacks.
+See the Android README's [checkout lifecycle](../../../../../../platforms/android/README.md#checkout-lifecycle) section for the supported Checkout Kit descriptors and presentation callbacks.
 
 ## Protocol notifications
 
