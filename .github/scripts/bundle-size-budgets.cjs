@@ -245,18 +245,41 @@ function render(rows, state, packageComment, notes = []) {
     );
   }
   if (!rows.length) lines.push("| — | — | — | ➖ No configured budgets affected |");
-  if (rows.some(({ status }) => status === "soft" || status === "hard")) {
+  const hardPlatforms = [
+    ...new Set(
+      rows.filter((row) => row.status === "hard").map((row) => platforms[row.platform].label),
+    ),
+  ];
+  if (hardPlatforms.length) {
     lines.push(
       "",
-      "Repository writers, including the PR author, can accept current soft-budget breaches with a reason:",
+      "### Hard limit exceeded",
+      "",
+      `**${hardPlatforms.join(", ")}**: reduce the package or bundle size, or submit a reviewed change to \`.ci/bundle-size-budgets.json\`.`,
+      "",
+      "`/accept-size` cannot override a hard limit.",
+    );
+  }
+  const softPlatforms = [
+    ...new Set(rows.filter((row) => row.status === "soft").map((row) => row.platform)),
+  ];
+  if (softPlatforms.length) {
+    lines.push(
+      "",
+      "### Accept a size increase",
+      "",
+      "Contributors can accept current soft-budget breaches with a reason:",
       "",
       "```text",
-      "/accept-size web Explain why this increase is necessary.",
+      ...softPlatforms.map(
+        (platform) => `/accept-size ${platform} Explain why this increase is necessary.`,
+      ),
       "```",
       "",
-      "Use one command per platform; several lines can share a comment. Post after this report is ready for the current head. Commands in edited comments are not accepted.",
-      "",
-      "Acceptance applies to each currently exceeded metric up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance. Hard-budget increases require a reviewed change to `.ci/bundle-size-budgets.json`.",
+      "- **Permission:** Repository write access is required.",
+      "- **When:** Post a new comment after this report is ready for the latest commit. Edited comments are not accepted.",
+      "- **Platforms:** Use one command per platform. Several commands can share a comment on separate lines.",
+      "- **Scope:** Acceptance covers each current soft-budget breach up to its recorded size. Further growth or a newly exceeded metric needs fresh acceptance.",
     );
   }
   if (notes.length) lines.push("");

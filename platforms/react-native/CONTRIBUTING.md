@@ -59,7 +59,7 @@ pods need to be installed. The underlying
 
 The RN module wraps the Shopify Swift and Android SDKs, which live in this same monorepo at `platforms/swift/` and `platforms/android/`. The sample app builds against the **published** artifacts on CocoaPods / Maven Central — the same path CI takes.
 
-**Most work does not need `--local`.** Before reaching for it, check whether the native API you need already exists in the published version pinned at `checkoutKit.nativeSdkVersions` in `modules/@shopify/checkout-kit-react-native/package.json`. If it does, build normally. Editing `platforms/swift/` or `platforms/android/` does not on its own require the flag.
+**Most work does not need `--local`.** Before reaching for it, check whether the native API you need already exists in the published version pinned at `checkoutKit.nativeSdkVersions` in `package.json`. If it does, build normally. Editing `platforms/swift/` or `platforms/android/` does not on its own require the flag.
 
 `--local` is for one case: you changed the Swift or Kotlin **public API** and want to integrate the RN side against it before that native version ships.
 
@@ -92,7 +92,7 @@ Local mode has to stay an explicit command-line choice. Hardcoding it makes loca
 
 - **iOS**: non-local runs use `pod install`, while `dev rn ios --local` and `dev rn pod-install --local` run a targeted update for the `ShopifyCheckoutKit` pods so CocoaPods re-resolves the local SDK path.
 - **Android (CLI)**: covered automatically by the publish script — every `--local` run re-publishes the local Android and Kotlin protocol artifacts before building.
-- **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/**` or `protocol/languages/kotlin/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
+- **Android (Android Studio)**: when running the sample via Android Studio's Run button after editing `platforms/android/**` or `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/**`, run `platforms/react-native/scripts/publish_android_snapshot` once manually (with `USE_LOCAL_SDK=1`) or run `dev rn android --local` from a terminal to refresh `~/.m2/`.
 - The flag affects **only the RN build**. The standalone Swift and Android SDK builds (`dev android build`, `swift build`, etc.) are unaffected.
 
 ## Optional: Speed up builds with sccache
@@ -117,10 +117,36 @@ SCCACHE=false pnpm sample ios
 SCCACHE=false pnpm sample android
 ```
 
+## Package boundaries
+
+The platform publishes one `@shopify/checkout-kit-react-native` package. Its
+checkout, accelerated checkout and native binding packages are private workspace
+packages with the same version. They share the platform TypeScript configuration,
+Bob build, Jest suite and dependency rules.
+
+```text
+platforms/react-native/
+├── src/                           # Public exports
+├── components/
+│   ├── shopify-checkout/           # Checkout API and React context
+│   └── shopify-accelerated-checkouts/ # AcceleratedCheckoutButtons
+├── internal/core/      # Shared configuration, contracts and native bindings
+├── ios/                           # Production Swift/Objective-C bindings
+├── android/                       # Production Android bindings
+├── sample/                        # Existing consumer application
+└── test/                          # Native integration and package consumers
+```
+
+Components import declared package exports. Native bindings cannot depend on
+components or the public facade; dependency-cruiser checks these relationships.
+`pnpm build` assembles the private sources into one publishable tree, rewrites
+private import specifiers, then runs Bob and checks the built consumer API. Metro
+uses workspace sources while developing the sample. No private package needs to
+be published or installed by SDK consumers.
+
 ## Making changes to the Native Module
 
-If your intentions are to modify the TS code for the Native Module under
-`modules/@shopify/checkout-kit-react-native`, note that you will not need to rebuild to
+If your intentions are to modify the TS code in `src/`, `components/` or `internal/`, note that you will not need to rebuild to
 observe your changes in the sample app. This is because the sample app is
 importing the TS files directly from the module directory (through symlinking).
 
@@ -163,7 +189,7 @@ There are 3 types of tests in this repo: Typescript, Swift and Java - each for
 testing the Native Module.
 
 ```sh
-# Run Jest tests for "modules/@shopify/checkout-kit-react-native/src/**/*.tsx"
+# Run Jest tests for "src/**/*.tsx"
 pnpm test
 
 # Run swift tests for the Native Module

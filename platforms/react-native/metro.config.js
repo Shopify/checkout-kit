@@ -2,8 +2,13 @@ const path = require('path');
 const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 const root = path.resolve(__dirname);
+const resolvePackage = name =>
+  path.dirname(require.resolve(`${name}/package.json`));
 const sample = path.resolve(root, 'sample');
-const protocol = path.resolve(root, '../../protocol/languages/typescript');
+const protocol = path.resolve(
+  root,
+  '../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript',
+);
 
 /**
  * Metro configuration
@@ -22,11 +27,12 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
         moduleName === '@shopify/checkout-kit-react-native' ||
         moduleName.startsWith('@shopify/checkout-kit-react-native/')
       ) {
-        const sub = moduleName.replace('@shopify/checkout-kit-react-native', '');
+        const sub = moduleName.replace(
+          '@shopify/checkout-kit-react-native',
+          '',
+        );
         const target = path.resolve(
           root,
-          'modules',
-          '@shopify/checkout-kit-react-native',
           'src',
           sub ? sub.replace(/^\//, '') : 'index.ts',
         );
@@ -35,20 +41,14 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
       return context.resolveRequest(context, moduleName, platform);
     },
     extraNodeModules: {
-      react: path.resolve(sample, 'node_modules', 'react'),
-      'react-native': path.resolve(sample, 'node_modules', 'react-native'),
-      'react-native-gesture-handler': path.resolve(
-        root,
-        'node_modules',
+      react: resolvePackage('react'),
+      'react-native': resolvePackage('react-native'),
+      'react-native-gesture-handler': resolvePackage(
         'react-native-gesture-handler',
       ),
-      '@shopify/checkout-kit-react-native': path.resolve(
-        root,
-        'modules',
-        '@shopify/checkout-kit-react-native',
-      ),
+      '@shopify/checkout-kit-react-native': root,
       '@shopify/checkout-kit-protocol': protocol,
-      '@babel/runtime': path.resolve(root, 'node_modules', '@babel/runtime'),
+      '@babel/runtime': resolvePackage('@babel/runtime'),
     },
   },
 

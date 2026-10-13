@@ -1,0 +1,403 @@
+{
+  "protocolVersion": "2026-08-25",
+  "upstreamRepository": "Universal-Commerce-Protocol/ucp",
+  "upstreamCommit": "cd78fb38e819de77d9b527d110476eccb876f1bd",
+  "files": [
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/capability.json",
+      "upstream": "source/schemas/capability.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/identity_linking.json",
+      "upstream": "source/schemas/common/identity_linking.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/loyalty.json",
+      "upstream": "source/schemas/common/loyalty.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/payment_ap2_mandate.json",
+      "upstream": "source/schemas/common/payment_ap2_mandate.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/payment_split_payments.json",
+      "upstream": "source/schemas/common/payment_split_payments.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/actions.json",
+      "upstream": "source/schemas/common/types/actions.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/amount.json",
+      "upstream": "source/schemas/common/types/amount.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/available_payment_instrument.json",
+      "upstream": "source/schemas/common/types/available_payment_instrument.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/binding.json",
+      "upstream": "source/schemas/common/types/binding.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/business_split_payments_config.json",
+      "upstream": "source/schemas/common/types/business_split_payments_config.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/card_credential.json",
+      "upstream": "source/schemas/common/types/card_credential.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/card_payment_instrument.json",
+      "upstream": "source/schemas/common/types/card_payment_instrument.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/constraint_expression.json",
+      "upstream": "source/schemas/common/types/constraint_expression.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/context.json",
+      "upstream": "source/schemas/common/types/context.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/description.json",
+      "upstream": "source/schemas/common/types/description.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/error_code.json",
+      "upstream": "source/schemas/common/types/error_code.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/error_response.json",
+      "upstream": "source/schemas/common/types/error_response.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/info_code.json",
+      "upstream": "source/schemas/common/types/info_code.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/instrument_group.json",
+      "upstream": "source/schemas/common/types/instrument_group.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/link.json",
+      "upstream": "source/schemas/common/types/link.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/locality.json",
+      "upstream": "source/schemas/common/types/locality.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/location_summary.json",
+      "upstream": "source/schemas/common/types/location_summary.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/measure.json",
+      "upstream": "source/schemas/common/types/measure.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/media.json",
+      "upstream": "source/schemas/common/types/media.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/message.json",
+      "upstream": "source/schemas/common/types/message.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/message_error.json",
+      "upstream": "source/schemas/common/types/message_error.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/message_info.json",
+      "upstream": "source/schemas/common/types/message_info.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/message_warning.json",
+      "upstream": "source/schemas/common/types/message_warning.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/pagination.json",
+      "upstream": "source/schemas/common/types/pagination.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/payment.json",
+      "upstream": "source/schemas/common/types/payment.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/payment_credential.json",
+      "upstream": "source/schemas/common/types/payment_credential.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/payment_identity.json",
+      "upstream": "source/schemas/common/types/payment_identity.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/payment_instrument.json",
+      "upstream": "source/schemas/common/types/payment_instrument.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/policy.json",
+      "upstream": "source/schemas/common/types/policy.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/postal_address.json",
+      "upstream": "source/schemas/common/types/postal_address.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/price.json",
+      "upstream": "source/schemas/common/types/price.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/price_filter.json",
+      "upstream": "source/schemas/common/types/price_filter.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/price_range.json",
+      "upstream": "source/schemas/common/types/price_range.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/quantity_unit.json",
+      "upstream": "source/schemas/common/types/quantity_unit.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/request_constraints.json",
+      "upstream": "source/schemas/common/types/request_constraints.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/reverse_domain_name.json",
+      "upstream": "source/schemas/common/types/reverse_domain_name.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/signals.json",
+      "upstream": "source/schemas/common/types/signals.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/signed_amount.json",
+      "upstream": "source/schemas/common/types/signed_amount.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/token_credential.json",
+      "upstream": "source/schemas/common/types/token_credential.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/total.json",
+      "upstream": "source/schemas/common/types/total.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/totals.json",
+      "upstream": "source/schemas/common/types/totals.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/unit.json",
+      "upstream": "source/schemas/common/types/unit.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/common/types/warning_code.json",
+      "upstream": "source/schemas/common/types/warning_code.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/payment_handler.json",
+      "upstream": "source/schemas/payment_handler.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/profile.json",
+      "upstream": "source/schemas/profile.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/service.json",
+      "upstream": "source/schemas/service.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/buyer_consent.json",
+      "upstream": "source/schemas/shopping/buyer_consent.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/cart.json",
+      "upstream": "source/schemas/shopping/cart.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/catalog_lookup.json",
+      "upstream": "source/schemas/shopping/catalog_lookup.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/catalog_search.json",
+      "upstream": "source/schemas/shopping/catalog_search.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/checkout.json",
+      "upstream": "source/schemas/shopping/checkout.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/discount.json",
+      "upstream": "source/schemas/shopping/discount.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/fulfillment.json",
+      "upstream": "source/schemas/shopping/fulfillment.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/order.json",
+      "upstream": "source/schemas/shopping/order.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/adjustment.json",
+      "upstream": "source/schemas/shopping/types/adjustment.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/attribution.json",
+      "upstream": "source/schemas/shopping/types/attribution.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/availability.json",
+      "upstream": "source/schemas/shopping/types/availability.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/business_fulfillment_config.json",
+      "upstream": "source/schemas/shopping/types/business_fulfillment_config.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/buyer.json",
+      "upstream": "source/schemas/shopping/types/buyer.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/category.json",
+      "upstream": "source/schemas/shopping/types/category.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/detail_option_value.json",
+      "upstream": "source/schemas/shopping/types/detail_option_value.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/expectation.json",
+      "upstream": "source/schemas/shopping/types/expectation.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment.json",
+      "upstream": "source/schemas/shopping/types/fulfillment.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_available_method.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_available_method.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_destination.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_destination.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_destination_filter.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_destination_filter.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_event.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_event.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_group.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_group.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_method.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_method.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_option.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_option.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/fulfillment_option_base.json",
+      "upstream": "source/schemas/shopping/types/fulfillment_option_base.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/input_correlation.json",
+      "upstream": "source/schemas/shopping/types/input_correlation.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/item.json",
+      "upstream": "source/schemas/shopping/types/item.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/line_item.json",
+      "upstream": "source/schemas/shopping/types/line_item.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/location_destination.json",
+      "upstream": "source/schemas/shopping/types/location_destination.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/option_value.json",
+      "upstream": "source/schemas/shopping/types/option_value.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/order_confirmation.json",
+      "upstream": "source/schemas/shopping/types/order_confirmation.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/order_line_item.json",
+      "upstream": "source/schemas/shopping/types/order_line_item.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/platform_fulfillment_config.json",
+      "upstream": "source/schemas/shopping/types/platform_fulfillment_config.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/product.json",
+      "upstream": "source/schemas/shopping/types/product.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/product_option.json",
+      "upstream": "source/schemas/shopping/types/product_option.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/rating.json",
+      "upstream": "source/schemas/shopping/types/rating.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/search_filters.json",
+      "upstream": "source/schemas/shopping/types/search_filters.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/selected_option.json",
+      "upstream": "source/schemas/shopping/types/selected_option.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/shipping_destination.json",
+      "upstream": "source/schemas/shopping/types/shipping_destination.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/unit_price.json",
+      "upstream": "source/schemas/shopping/types/unit_price.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/shopping/types/variant.json",
+      "upstream": "source/schemas/shopping/types/variant.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/transports/a2a_message.json",
+      "upstream": "source/schemas/transports/a2a_message.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/transports/embedded_config.json",
+      "upstream": "source/schemas/transports/embedded_config.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/transports/embedded_message.json",
+      "upstream": "source/schemas/transports/embedded_message.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/transports/jsonrpc.json",
+      "upstream": "source/schemas/transports/jsonrpc.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/transports/mcp_tool_call.json",
+      "upstream": "source/schemas/transports/mcp_tool_call.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/ucp.json",
+      "upstream": "source/schemas/ucp.json"
+    },
+    {
+      "local": "protocols/universal-commerce-protocol/embedded-checkout-protocol/services/shopping/embedded.openrpc.json",
+      "upstream": "source/services/shopping/embedded.openrpc.json"
+    }
+  ]
+}

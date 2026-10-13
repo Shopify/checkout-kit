@@ -22,14 +22,15 @@ export default defineConfig({
   },
   plugins: [
     dts({
-      entryRoot: fromRoot('src'),
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/cdn-loader.ts'],
+      entryRoot: root,
+      compilerOptions: { rootDir: root },
+      include: ['src/**/*.ts', 'components/*/src/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.test-helpers.ts', 'src/cdn-loader.ts'],
       outDir: fromRoot('dist'),
       tsconfigPath: fromRoot('tsconfig.json'),
       insertTypesEntry: true,
       rollupTypes: true,
-      bundledPackages: ['@shopify/checkout-kit-protocol'],
+      bundledPackages: ['@shopify/checkout-kit-protocol', '@shopify/checkout-kit-component-checkout'],
       beforeWriteFile(filePath, content) {
         tagNames.add(filePath, content);
       },
@@ -51,7 +52,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: fromRoot('src/index.ts'),
-        'shopify-checkout': fromRoot('src/components/shopify-checkout/register.ts'),
+        'shopify-checkout': fromRoot('src/shopify-checkout.ts'),
       },
       formats: ['es'],
       fileName: (_, entryName) => `${entryName}.js`,
@@ -82,14 +83,18 @@ export default defineConfig({
     },
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
-    // Artifact tests need both builds; see vitest.package.config.ts.
+    include: ['src/**/*.test.ts', 'components/*/src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
+    // Package tests run against the build via pnpm verify.
     exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
+    projects: [
+      {extends: true, test: {name: 'web'}},
+      './internal/telemetry/vitest.config.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html', 'lcov'],
-      include: ['src/**/*.ts'],
-      exclude: ['sample/**', 'src/**/*.test.ts', 'src/**/*.test-helpers.ts', 'src/**/*.d.ts'],
+      include: ['src/**/*.ts', 'components/*/src/**/*.ts', 'internal/telemetry/src/**/*.ts'],
+      exclude: ['sample/**', '**/*.test.ts', '**/*.test-helpers.ts', '**/*.d.ts'],
       thresholds: {
         statements: 85,
         branches: 85,

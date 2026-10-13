@@ -32,7 +32,7 @@ jobs:
         run: ./gradlew test --console=plain
 
       - name: Run Protocol Unit Tests
-        working-directory: protocol/languages/kotlin
+        working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
         run: ./gradlew test --console=plain
 
       - name: Setup sample app environment
@@ -64,9 +64,9 @@ jobs:
           end
 
           result_files = Dir[
-            "platforms/android/lib/build/test-results/testDebugUnitTest/TEST-*.xml",
+            "platforms/android/shopify-checkout-kit/build/test-results/testDebugUnitTest/TEST-*.xml",
             "platforms/android/samples/CheckoutKitAndroidDemo/app/build/test-results/testDebugUnitTest/TEST-*.xml",
-            "protocol/languages/kotlin/embedded-checkout-protocol/build/test-results/test/TEST-*.xml",
+            "protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/build/test-results/test/TEST-*.xml",
           ]
 
           result_files.each do |file|
@@ -96,9 +96,9 @@ jobs:
             platforms/android/**/build/reports/problems/
             platforms/android/samples/CheckoutKitAndroidDemo/**/build/reports/tests/
             platforms/android/samples/CheckoutKitAndroidDemo/**/build/test-results/
-            protocol/languages/kotlin/**/build/reports/tests/
-            protocol/languages/kotlin/**/build/test-results/
-            protocol/languages/kotlin/**/build/reports/problems/
+            protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/**/build/reports/tests/
+            protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/**/build/test-results/
+            protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/**/build/reports/problems/
           if-no-files-found: warn
 
   build:
@@ -152,7 +152,7 @@ jobs:
         run: ./gradlew detekt
 
       - name: Protocol Kotlin Lint
-        working-directory: protocol/languages/kotlin
+        working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
         run: ./gradlew detekt
 
       - name: Setup sample app environment

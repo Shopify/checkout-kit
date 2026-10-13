@@ -172,19 +172,19 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_android_change_selects_kotlin_android_application
-    assert_equal ["kotlin-android"], selected_ids(["platforms/android/lib/src/main/java/com/shopify/checkoutkit/Foo.kt"])
+    assert_equal ["kotlin-android"], selected_ids(["platforms/android/shopify-checkout-kit/src/main/java/com/shopify/checkoutkit/Foo.kt"])
   end
 
   def test_kotlin_protocol_change_selects_kotlin_android_application
-    assert_equal ["kotlin-android"], selected_ids(["protocol/languages/kotlin/embedded-checkout-protocol/src/main/Foo.kt"])
+    assert_equal ["kotlin-android"], selected_ids(["protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/Foo.kt"])
   end
 
   def test_swift_change_selects_swift_ios_application
-    assert_equal ["swift-ios"], selected_ids(["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    assert_equal ["swift-ios"], selected_ids(["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
   end
 
   def test_swift_protocol_change_selects_swift_ios_application
-    assert_equal ["swift-ios"], selected_ids(["protocol/languages/swift/embedded-checkout-protocol/Sources/Foo.swift"])
+    assert_equal ["swift-ios"], selected_ids(["protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/embedded-checkout-protocol/Sources/Foo.swift"])
   end
 
   def test_swift_package_change_selects_swift_ios_application
@@ -200,7 +200,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_shared_protocol_change_selects_all_applications
-    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids(["protocol/schemas/ucp.json"])
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], selected_ids(["protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/ucp.json"])
   end
 
   def test_bitrise_env_reports_runs_present_when_applications_selected
@@ -216,7 +216,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_bitrise_env_reports_swift_ios_build_on_swift_change
-    env = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"]).bitrise_env
+    env = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"]).bitrise_env
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
@@ -227,7 +227,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_bitrise_env_reports_kotlin_android_build_on_android_change
-    env = plan(changed_files: ["platforms/android/lib/src/main/java/com/shopify/checkoutkit/Foo.kt"]).bitrise_env
+    env = plan(changed_files: ["platforms/android/shopify-checkout-kit/src/main/java/com/shopify/checkoutkit/Foo.kt"]).bitrise_env
 
     assert_equal "true", env.fetch("E2E_HAS_E2E_RUNS")
     assert_equal "1", env.fetch("E2E_BROWSERSTACK_RUN_PLAN_COUNT")
@@ -383,7 +383,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
 
   def test_missing_build_workflows_flags_selected_target_absent_from_pipeline
     available = ["e2e-build-react-native-ios", "e2e-build-react-native-android"]
-    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_build_workflows(available)
 
     assert_equal ["e2e-build-swift-ios"], missing
@@ -396,7 +396,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
       "e2e-build-kotlin-android",
       "e2e-build-swift-ios"
     ]
-    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_build_workflows(available)
 
     assert_empty missing
@@ -410,7 +410,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_missing_build_workflow_errors_names_the_missing_target
-    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_build_workflow_errors(["e2e-build-react-native-ios"])
 
     assert_equal 1, messages.length
@@ -419,7 +419,7 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
   end
 
   def test_missing_build_workflow_errors_empty_when_all_present
-    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_build_workflow_errors(["e2e-build-swift-ios"])
 
     assert_empty messages

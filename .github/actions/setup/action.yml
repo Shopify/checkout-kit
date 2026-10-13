@@ -3,7 +3,7 @@ description: Setup Node.js and pnpm, then install dependencies
 
 inputs:
   node-version-file:
-    description: Path to the file containing the Node.js version (package.json with engines.node)
+    description: Path to the file containing the Node.js version (.node-version or package.json with engines.node)
     required: false
     default: package.json
   cache-dependency-path:

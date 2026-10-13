@@ -17,7 +17,7 @@ export default defineConfig({
     alias: [
       {
         find: "@shopify/checkout-kit/shopify-checkout",
-        replacement: resolve(here, "../src/components/shopify-checkout/register.ts"),
+        replacement: resolve(here, "../src/shopify-checkout.ts"),
       },
       { find: /^@shopify\/checkout-kit$/, replacement: resolve(here, "../src/index.ts") },
     ],

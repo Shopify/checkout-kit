@@ -91,10 +91,10 @@ test/rct-integration-app/*.xcodeproj/
 test/rct-integration-app/*.xcworkspace/
 
 # Module
-modules/@shopify/checkout-kit-react-native/android/gradle/wrapper/gradle-wrapper.jar
-modules/@shopify/checkout-kit-react-native/android/gradle/wrapper/gradle-wrapper.properties
-modules/@shopify/checkout-kit-react-native/android/gradlew
-modules/@shopify/checkout-kit-react-native/android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+android/gradle/wrapper/gradle-wrapper.properties
+android/gradlew
+android/gradlew.bat
 
 # Sample bundle
 **/index.android.bundle
@@ -107,3 +107,6 @@ sample/**/AndroidManifest.xml
 
 .claude/
 CLAUDE.md
+
+# API extraction output
+/temp/

@@ -46,6 +46,7 @@ jobs:
       contents: read
       actions: read
       checks: write
+      issues: write
       pull-requests: write
     # Serialize report writes and acceptance comments for this PR. Each run
     # processes all pending commands, including events coalesced by concurrency.

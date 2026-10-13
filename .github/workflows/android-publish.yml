@@ -68,11 +68,11 @@ jobs:
           java-version: 17
 
       - name: Test and check API against the published protocol
-        run: ./gradlew :lib:testDebugUnitTest :lib:apiCheck --console=plain
+        run: ./gradlew :shopify-checkout-kit:testDebugUnitTest :shopify-checkout-kit:apiCheck --console=plain
 
       - name: Publish Package
         run: |
-          ./gradlew :lib:publishReleasePublicationToOssrh-staging-apiRepository
+          ./gradlew :shopify-checkout-kit:publishReleasePublicationToOssrh-staging-apiRepository
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

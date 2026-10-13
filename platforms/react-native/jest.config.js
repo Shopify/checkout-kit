@@ -1,15 +1,23 @@
 module.exports = {
   preset: 'react-native',
-  modulePathIgnorePatterns: ['modules/@shopify/checkout-kit-react-native/lib'],
+  modulePathIgnorePatterns: ['<rootDir>/lib/'],
   modulePaths: ['<rootDir>/node_modules', '<rootDir>/sample/node_modules'],
-  // Resolve workspace imports without requiring generated lib files.
   moduleNameMapper: {
-    '^@shopify/checkout-kit-react-native$':
-      '<rootDir>/modules/@shopify/checkout-kit-react-native/src',
+    '^@shopify/checkout-kit-react-native$': '<rootDir>/src',
+    '^@shopify/checkout-kit-react-native-checkout$':
+      '<rootDir>/components/shopify-checkout/src/index.ts',
+    '^@shopify/checkout-kit-react-native-checkout/context$':
+      '<rootDir>/components/shopify-checkout/src/context.tsx',
+    '^@shopify/checkout-kit-react-native-accelerated$':
+      '<rootDir>/components/shopify-accelerated-checkouts/src/index.tsx',
+    '^@shopify/checkout-kit-react-native-core/(.*)$':
+      '<rootDir>/internal/core/src/$1',
   },
   setupFiles: ['<rootDir>/jest.setup.ts'],
   collectCoverageFrom: [
-    'modules/@shopify/checkout-kit-react-native/src/**/*.{ts,tsx}',
+    'src/**/*.{ts,tsx}',
+    'components/**/src/**/*.{ts,tsx}',
+    'internal/**/src/**/*.{ts,tsx}',
     '!**/*.d.ts',
   ],
   coverageThreshold: {

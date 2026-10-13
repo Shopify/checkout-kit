@@ -1,4 +1,5 @@
 packages:
+  - components/*
   - 'test/e2e'
-  - '../../protocol/languages/typescript'
-  - '../../telemetry/languages/typescript'
+  - '../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript'
+  - 'internal/telemetry'

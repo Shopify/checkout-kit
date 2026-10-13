@@ -7,7 +7,11 @@
     "types": ["vite/client"],
     "paths": {
       "@shopify/checkout-kit": ["../src/index.ts"],
-      "@shopify/checkout-kit/shopify-checkout": ["../src/components/shopify-checkout/register.ts"]
+      "@shopify/checkout-kit/shopify-checkout": ["../src/shopify-checkout.ts"],
+      "@shopify/checkout-kit-component-checkout": ["../components/shopify-checkout/src/index.ts"],
+      "@shopify/checkout-kit-component-checkout/register": [
+        "../components/shopify-checkout/src/register.ts"
+      ]
     }
   },
   "include": ["./**/*.ts", "./**/*.d.ts"]

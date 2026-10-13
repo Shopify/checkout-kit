@@ -6,7 +6,7 @@ platforms/
   android/       # Android library and sample apps
   react-native/  # React Native wrapper
   web/           # Web component package and sample app
-protocol/        # cross-platform communication layer and protocol language artifacts based on UCP
+protocols/universal-commerce-protocol/embedded-checkout-protocol/        # cross-platform communication layer and protocol language artifacts based on UCP
 e2e/             # cross-platform end-to-end tests
 .github/         # workflows, issue templates, CODEOWNERS
 ```
@@ -58,7 +58,7 @@ it is what almost all React Native work needs.
 
 Does the native API you need already exist in the published version pinned at
 `checkoutKit.nativeSdkVersions` in
-`platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`?
+`platforms/react-native/package.json`?
 
 - **Yes** — do not use `--local`. Editing files under `platforms/swift/` or
   `platforms/android/` does not on its own require it.
@@ -87,13 +87,13 @@ This is a local development aid for early integration. It is not part of normal 
 
 - `platforms/swift/` — the iOS Swift SDK / CocoaPods sources
 - `platforms/android/` — the Android SDK / Maven artifact sources
-- `protocol/languages/kotlin/` — Kotlin protocol artifacts consumed by the Android SDK
+- `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/` — Kotlin protocol artifacts consumed by the Android SDK
 
 It does **not** concern the React Native wrapper platform folders, which build from source
 either way:
 
-- `platforms/react-native/modules/@shopify/checkout-kit-react-native/ios/`
-- `platforms/react-native/modules/@shopify/checkout-kit-react-native/android/`
+- `platforms/react-native/ios/`
+- `platforms/react-native/android/`
 
 ### What it does
 
@@ -107,7 +107,7 @@ dev rn test android --local
 ```
 
 Re-run the relevant command whenever `platforms/swift/`, `platforms/android/`, or
-`protocol/languages/kotlin/` changes, so the build re-resolves those sources.
+`protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/` changes, so the build re-resolves those sources.
 
 ### Rules
 

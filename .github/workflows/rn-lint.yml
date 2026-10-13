@@ -18,7 +18,7 @@ jobs:
         env:
           WORKING_DIRECTORY: platforms/react-native
         with:
-          args: --strict modules/@shopify/checkout-kit-react-native --config .swiftlint.yml
+          args: --strict ios --config .swiftlint.yml
 
   swiftformat:
     name: SwiftFormat & SwiftLint
@@ -46,7 +46,7 @@ jobs:
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
+          node-version-file: platforms/react-native/.node-version
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native

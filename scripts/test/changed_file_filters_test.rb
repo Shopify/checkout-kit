@@ -19,19 +19,19 @@ class ChangedFileFiltersTest < Minitest::Test
     {
       "web" => [
         "platforms/web/src/components/shopify-checkout/shopify-checkout.ts",
-        "telemetry/languages/typescript/src/types.ts",
-        "telemetry/contract/schema.json"
+        "platforms/web/internal/telemetry/src/types.ts",
+        "platforms/shared/telemetry/contract/schema.json"
       ],
       "swift" => [
         "platforms/swift/Sources/Checkout.swift",
-        "telemetry/languages/swift/Sources/Telemetry.swift"
+        "platforms/swift/Sources/Internal/Telemetry.swift"
       ]
     }.each do |name, paths|
       paths.each { |path| assert @filters.match?(name, [path]), "#{name} should match #{path}" }
       refute @filters.match?(name, ["platforms/android/src/Checkout.kt"])
     end
-    refute @filters.match?("web", ["telemetry/languages/typescript/README.md"])
-    refute @filters.match?("swift", ["telemetry/languages/swift/docs/example.swift"])
+    refute @filters.match?("web", ["platforms/web/internal/telemetry/README.md"])
+    refute @filters.match?("swift", ["platforms/swift/Sources/Internal/Telemetry/docs/example.swift"])
   end
 
   def test_github_actions_share_the_ruby_inclusion_and_exclusion_semantics
@@ -54,16 +54,16 @@ class ChangedFileFiltersTest < Minitest::Test
   end
 
   def test_scopes_protocol_typescript_to_its_own_subtree
-    assert @filters.match?("protocolTypescript", ["protocol/languages/typescript/models.ts"])
-    refute @filters.match?("protocolTypescript", ["protocol/languages/kotlin/Models.kt"])
+    assert @filters.match?("protocolTypescript", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript/models.ts"])
+    refute @filters.match?("protocolTypescript", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/Models.kt"])
   end
 
   def test_matches_shared_protocol_inputs_and_generation_tooling
-    assert @filters.match?("protocolShared", ["protocol/schemas/ucp.json"])
-    assert @filters.match?("protocolShared", ["protocol/package.json"])
-    assert @filters.match?("protocolShared", ["protocol/scripts/codegen_tools.mjs"])
-    refute @filters.match?("protocolShared", ["protocol/languages/typescript/models.ts"])
-    refute @filters.match?("protocolTypescript", ["protocol/package.json"])
+    assert @filters.match?("protocolShared", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/schemas/ucp.json"])
+    assert @filters.match?("protocolShared", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json"])
+    assert @filters.match?("protocolShared", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/scripts/codegen_tools.mjs"])
+    refute @filters.match?("protocolShared", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript/models.ts"])
+    refute @filters.match?("protocolTypescript", ["protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json"])
   end
 
   def test_web_browser_tests_trigger_web_without_triggering_native_e2e

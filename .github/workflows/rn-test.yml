@@ -22,14 +22,14 @@ jobs:
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
+          node-version-file: platforms/react-native/.node-version
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native
 
       - name: Run tests with coverage
         id: coverage_tests
-        run: pnpm test --coverage --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests" --coverageReporters=json-summary
+        run: pnpm test --coverage --testPathPatterns="^tests/" --coverageReporters=json-summary
 
       - name: Record coverage
         if: ${{ !cancelled() }}

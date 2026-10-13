@@ -89,14 +89,14 @@ Run the same coverage checks locally from the repository root:
 
 ```bash
 pnpm --dir platforms/web test
-pnpm --dir platforms/react-native test --coverage --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests"
+pnpm --dir platforms/react-native test --coverage --testPathPatterns="^tests/"
 pnpm --dir protocol test --coverage
 ```
 
 A failing threshold fails the test command and its CI job. Add tests for the
 uncovered behavior instead of lowering the threshold. The thresholds live in
 `platforms/web/vite.config.ts`, `platforms/react-native/jest.config.js`, and
-`protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
+`protocols/universal-commerce-protocol/embedded-checkout-protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
 not yet enforce coverage thresholds.
 
 CI updates one **Coverage Report** comment on same-repository pull requests for
@@ -217,7 +217,7 @@ sequence these three stages.
 
 The version declarations have different jobs. The Android catalog is
 `platforms/android/gradle/libs.versions.toml`; the RN manifest is
-`platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`.
+`platforms/react-native/package.json`.
 
 | Package | Its release version | Dependency it consumes |
 | --- | --- | --- |
@@ -326,8 +326,8 @@ When `dev swift api check` fails, it prints both the unified diff and a `swift-a
 
 Open a pull request with the following changes:
 
-1. Bump the package version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`.
-2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift`.
+1. Bump the package version in `platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`.
+2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckout/MetaData.swift`.
 3. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
 
 All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
@@ -362,14 +362,14 @@ To check for lint issues without auto-correcting:
 
 The Android-facing public APIs are tracked via committed baselines managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin:
 
-- `platforms/android/lib/api/lib.api` for `com.shopify:checkout-kit`.
-- `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
+- `platforms/android/shopify-checkout-kit/api/shopify-checkout-kit.api` for `com.shopify:checkout-kit`.
+- `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
 
-The unified `Breaking Changes` CI workflow runs `./gradlew :lib:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
+The unified `Breaking Changes` CI workflow runs `./gradlew :shopify-checkout-kit:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
 
 If your change intentionally modifies the public API:
 
-1. Run `dev android api dump` from the repo root to regenerate both baselines. For project-scoped updates, run `./gradlew :lib:apiDump` from `platforms/android/` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin/`.
+1. Run `dev android api dump` from the repo root to regenerate both baselines. For project-scoped updates, run `./gradlew :shopify-checkout-kit:apiDump` from `platforms/android/` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/`.
 2. Review the relevant `.api` diff alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 
@@ -380,7 +380,7 @@ If you did _not_ intend to change public API and `apiCheck` is failing, the diff
 Open a pull request with the following changes:
 
 1. Bump `embeddedCheckoutProtocolAndroidRelease` in `platforms/android/gradle/libs.versions.toml`.
-2. Update `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
+2. Update `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public protocol API changed.
 
 Keep `embeddedCheckoutProtocolAndroid` at the existing published version
 until the new protocol artifact is available. This lets the protocol release PR
@@ -407,7 +407,7 @@ Open a pull request with the following changes:
 The Android library and sample compile against the protocol artifact pinned in
 `platforms/android/gradle/libs.versions.toml` from Maven Central. CI uses the same
 dependency, and the publish workflow runs unit tests and API checks before uploading.
-Unit tests and remote publication also run `:lib:verifyPublishedProtocol`, which
+Unit tests and remote publication also run `:shopify-checkout-kit:verifyPublishedProtocol`, which
 checks that the release and unit-test classpaths resolve ECP as an external module
 at exactly the catalog-pinned dependency version. This rejects accidental project
 substitution or version changes introduced by dependency resolution. Explicit local
@@ -441,7 +441,7 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 
 ### Native SDK dependency versions
 
-The React Native package reads its published native SDK dependency versions from `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`:
+The React Native package reads its published native SDK dependency versions from `platforms/react-native/package.json`:
 
 ```json
 "checkoutKit": {
@@ -462,12 +462,12 @@ Keep an unchanged iOS dependency pinned to its existing published release.
 
 ### Public API surface
 
-The library's public API is tracked via a committed report at `platforms/react-native/modules/@shopify/checkout-kit-react-native/api/checkout-kit-react-native.api.md`, generated by [@microsoft/api-extractor](https://api-extractor.com/) from the bob-produced `.d.ts` files. The unified `Breaking Changes` CI workflow runs `dev rn api check` on every PR that touches React Native sources and fails if the regenerated report diverges from the committed one.
+The library's public API is tracked via a committed report at `platforms/react-native/api/checkout-kit-react-native.api.md`, generated by [@microsoft/api-extractor](https://api-extractor.com/) from the bob-produced `.d.ts` files. The unified `Breaking Changes` CI workflow runs `dev rn api check` on every PR that touches React Native sources and fails if the regenerated report diverges from the committed one.
 
 If your change intentionally modifies the public API:
 
 1. Run `dev rn api dump` from the repo root to regenerate the report.
-2. Review the diff in `platforms/react-native/modules/@shopify/checkout-kit-react-native/api/checkout-kit-react-native.api.md` alongside your code changes.
+2. Review the diff in `platforms/react-native/api/checkout-kit-react-native.api.md` alongside your code changes.
 3. Commit the updated `.api.md` file in the same PR.
 
 If you did _not_ intend to change public API and `api:check` is failing, the diff shows what your change inadvertently affected — treat it as a signal that something in your PR has consumer-visible impact.
@@ -476,15 +476,15 @@ If you did _not_ intend to change public API and `api:check` is failing, the dif
 
 Open a pull request with the following changes:
 
-1. Bump the `version` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`.
-2. Update `checkoutKit.nativeSdkVersions.ios` and `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` to the published native SDK versions React Native should consume.
+1. Bump the `version` in `platforms/react-native/package.json`.
+2. Update `checkoutKit.nativeSdkVersions.ios` and `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/package.json` to the published native SDK versions React Native should consume.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
 Once merged, run the [Release package workflow](../../actions/workflows/release.yml):
 
 1. Select `React Native` as the platform.
-2. Enter the expected version. The workflow reads the SDK version from `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` and fails if the typed version does not match.
+2. Enter the expected version. The workflow reads the SDK version from `platforms/react-native/package.json` and fails if the typed version does not match.
 3. Select `Dry run` first to review the release plan without creating a release.
 4. From the dry-run job summary, copy the generated `gh workflow run` command to create a `Draft release` without retyping the validated version. Running it creates a draft GitHub Release with generated release notes and the `react-native/`-prefixed tag (e.g. `react-native/4.0.1`) for human review.
 5. Publish the draft release when ready. Publishing the draft kicks off the [React Native publish workflow](../../actions/workflows/rn-publish.yml), which publishes `@shopify/checkout-kit-react-native` to npm.

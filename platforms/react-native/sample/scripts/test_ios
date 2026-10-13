@@ -42,7 +42,7 @@ fi
 # CheckoutErrorCodeParityTest reads these. Process is unavailable on iOS, so the test
 # cannot run the script itself the way CheckoutErrorCodeParityTest.kt does. xcodebuild
 # forwards TEST_RUNNER_-prefixed variables to the test process with the prefix stripped.
-MODULE_DIR="$REACT_NATIVE_DIR/modules/@shopify/checkout-kit-react-native"
+MODULE_DIR="$REACT_NATIVE_DIR"
 export TEST_RUNNER_JS_CHECKOUT_ERROR_CODES="$(node --experimental-transform-types \
     --no-warnings "$MODULE_DIR/scripts/print-error-codes.mjs")"
 

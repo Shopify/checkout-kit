@@ -3,8 +3,8 @@ import compat from "eslint-plugin-compat";
 
 export default [
   {
-    files: ["src/**/*.ts"],
-    ignores: ["src/**/*.test.ts"],
+    files: ["src/**/*.ts", "components/*/src/**/*.ts"],
+    ignores: ["**/*.test.ts"],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {

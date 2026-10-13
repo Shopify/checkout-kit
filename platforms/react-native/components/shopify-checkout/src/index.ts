@@ -1,0 +1,447 @@
+import {PermissionsAndroid, Platform} from 'react-native';
+import type {PermissionStatus} from 'react-native';
+import RNShopifyCheckoutKit from '@shopify/checkout-kit-react-native-core/specs/NativeShopifyCheckoutKit';
+import {ApplePayContactField, ColorScheme, LogLevel} from '@shopify/checkout-kit-react-native-core/enums';
+import {
+  DispatchEventParityError,
+  verifyDispatchEventParity,
+} from '@shopify/checkout-kit-react-native-core/dispatch-events';
+import {coerceConfigurationResult} from '@shopify/checkout-kit-react-native-core/configuration';
+import {
+  createPresentDispatcher,
+  LifecycleEventParseError,
+} from '@shopify/checkout-kit-react-native-core/present-dispatcher';
+import type {
+  AcceleratedCheckoutConfiguration,
+  AcceleratedCheckoutCustomer,
+  AndroidAutomaticColors,
+  AndroidColors,
+  Configuration,
+  Features,
+  GeolocationRequestEvent,
+  IosColors,
+  PresentCallbacks,
+  PreloadFailureReason,
+  PreloadOptions,
+  PreloadState,
+  CheckoutPreloadSubscription,
+  ShopifyCheckoutKit,
+} from '@shopify/checkout-kit-react-native-core/contracts';
+import {AcceleratedCheckoutWallet} from '@shopify/checkout-kit-react-native-core/enums';
+import {CheckoutException} from '@shopify/checkout-kit-react-native-core/errors';
+import {CheckoutErrorCode} from '@shopify/checkout-kit-react-native-core/errors';
+import {preload as preloadCheckout} from '@shopify/checkout-kit-react-native-core/preload';
+
+const defaultFeatures: Features = {
+  handleGeolocationRequests: true,
+};
+
+class ShopifyCheckout implements ShopifyCheckoutKit {
+  // The native SDK owns one sheet across all ShopifyCheckout instances.
+  private static activePresentation?: ShopifyCheckout;
+
+  private features: Features;
+
+  private dispatchSubscription?: {remove: () => void};
+
+  private presentation?: {
+    callbacks?: PresentCallbacks;
+    cancellation: AbortController;
+  };
+
+  private preloadSubscription?: CheckoutPreloadSubscription;
+
+  private _acceleratedCheckoutsReady = false;
+
+  // TurboModule constants are immutable for the lifetime of the process —
+  // capture once so `version` (and any future constants) can be read without
+  // re-crossing the JSI boundary on every access. Reading them here is also
+  // the moment we verify that the JS and native dispatch contracts agree.
+  private readonly constants = RNShopifyCheckoutKit.getConstants();
+
+  public get acceleratedCheckoutsReady(): boolean {
+    return this._acceleratedCheckoutsReady;
+  }
+
+  public get version(): string {
+    return this.constants.version;
+  }
+
+  /**
+   * Initializes a new ShopifyCheckout instance
+   * @param configuration Optional configuration settings for the checkout
+   * @param features Optional feature flags to customize behavior, defaults to defaultFeatures
+   */
+  constructor(
+    configuration?: Configuration,
+    features: Partial<Features> = defaultFeatures,
+  ) {
+    // Fail fast if the bundled native module disagrees with this JS
+    // package about which SDK lifecycle events exist. Memoised, so this
+    // is a one-time cost per JS process.
+    verifyDispatchEventParity(this.constants.dispatchEventTypes);
+
+    this.features = {...defaultFeatures, ...features};
+
+    if (configuration != null) {
+      this.setConfig(configuration);
+    }
+  }
+
+  /**
+   * Dismisses the currently displayed checkout sheet
+   */
+  public dismiss(): void {
+    ShopifyCheckout.activePresentation?.cancelGeolocationRequest();
+    RNShopifyCheckoutKit.dismiss();
+  }
+
+  /**
+   * Clears any checkout cached by preload calls.
+   */
+  public invalidate(): void {
+    RNShopifyCheckoutKit.invalidateCache();
+  }
+
+  /**
+   * Preloads checkout for a given URL to improve presentation performance.
+   * @param checkoutUrl The URL of the checkout to preload
+   */
+  public preload(
+    checkoutUrl: string,
+    options?: PreloadOptions,
+  ): CheckoutPreloadSubscription {
+    const subscription = preloadCheckout(checkoutUrl, options);
+    this.preloadSubscription = subscription;
+    return subscription;
+  }
+
+  /** Presents checkout with lifecycle callbacks and a native link policy. */
+  public present(checkoutUrl: string, callbacks?: PresentCallbacks): void {
+    if (ShopifyCheckout.activePresentation) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[ShopifyCheckoutKit] Checkout is already presented; ignoring duplicate presentation.',
+      );
+      return;
+    }
+    let subscription: {remove: () => void} | undefined;
+    const cancellation = new AbortController();
+    const presentation = {
+      callbacks,
+      cancellation,
+      geolocationSignal: cancellation.signal,
+      handleDefaultGeolocationRequests: this.featureEnabled(
+        'handleGeolocationRequests',
+      ),
+      handleDefaultGeolocationRequest: async () => {
+        const allowed = await this.requestGeolocation().catch(() => false);
+        if (!cancellation.signal.aborted)
+          this.respondToGeolocationRequest(allowed);
+      },
+      respondToGeolocationRequest: (allow: boolean) => {
+        if (!cancellation.signal.aborted)
+          this.respondToGeolocationRequest(allow);
+      },
+      onTerminal: () => {
+        if (subscription) this.releaseDispatchSubscription(subscription);
+      },
+    };
+    this.presentation = presentation;
+    const {dispatcher} = createPresentDispatcher(presentation);
+    subscription = RNShopifyCheckoutKit.onDispatch(json => {
+      if (subscription && this.dispatchSubscription === subscription)
+        dispatcher(json);
+    });
+    this.dispatchSubscription = subscription;
+    ShopifyCheckout.activePresentation = this;
+    try {
+      RNShopifyCheckoutKit.present(
+        checkoutUrl,
+        callbacks?.linkAction ?? 'open',
+        accepted => {
+          // Native can ignore the attempt while the previous sheet is closing.
+          // Release only this attempt, without reporting a checkout dismissal.
+          if (!accepted && subscription)
+            this.releaseDispatchSubscription(subscription);
+        },
+      );
+    } catch (error) {
+      this.releaseDispatchSubscription(subscription);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves the current checkout configuration
+   * @returns The current Configuration
+   */
+  public getConfig(): Configuration {
+    return coerceConfigurationResult(RNShopifyCheckoutKit.getConfig());
+  }
+
+  /**
+   * Updates the checkout configuration
+   * @param configuration New configuration settings to apply
+   */
+  public setConfig(configuration: Configuration): void {
+    if (configuration.acceleratedCheckouts) {
+      this._acceleratedCheckoutsReady = this.configureAcceleratedCheckouts(
+        configuration.acceleratedCheckouts,
+      );
+    }
+    RNShopifyCheckoutKit.setConfig(configuration);
+  }
+
+  /**
+   * Cleans up resources and event listeners used by the checkout sheet.
+   * Stops callbacks retained by this instance without invalidating preload.
+   */
+  public teardown() {
+    this.cancelGeolocationRequest();
+    if (this.presentation) this.presentation.callbacks = undefined;
+    // Keep the internal subscription until native checkout ends, so another
+    // instance cannot attach callbacks to a sheet that is still open.
+    this.preloadSubscription?.remove();
+    this.preloadSubscription = undefined;
+  }
+
+  /**
+   * Configure AcceleratedCheckouts for Shop Pay and Apple Pay buttons
+   * @param config Configuration for AcceleratedCheckouts
+   */
+  public configureAcceleratedCheckouts(
+    config: AcceleratedCheckoutConfiguration,
+  ): boolean {
+    if (!this.acceleratedCheckoutsSupported) {
+      return false;
+    }
+
+    try {
+      this.validateAcceleratedCheckoutsConfiguration(config);
+
+      return RNShopifyCheckoutKit.configureAcceleratedCheckouts(
+        config.storefrontDomain,
+        config.storefrontAccessToken,
+        config.customer?.email || null,
+        config.customer?.phoneNumber || null,
+        config.customer?.accessToken || null,
+        config.wallets?.applePay?.merchantIdentifier || null,
+        config.wallets?.applePay?.contactFields || [],
+        config.wallets?.applePay?.supportedShippingCountries || [],
+      );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[ShopifyCheckoutKit] Failed to configure accelerated checkouts with',
+        error,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Check if accelerated checkout is available for the given cart or product
+   * @returns boolean indicating availability
+   */
+  public isAcceleratedCheckoutAvailable(): boolean {
+    if (!this.acceleratedCheckoutsSupported) {
+      return false;
+    }
+
+    return RNShopifyCheckoutKit.isAcceleratedCheckoutAvailable();
+  }
+
+  // --- private
+
+  /**
+   * Accelerated Checkouts is only supported from iOS 16.0 onwards
+   */
+  private get acceleratedCheckoutsSupported(): boolean {
+    return Platform.OS === 'ios' && this.majorVersion >= 16;
+  }
+
+  private get majorVersion(): number {
+    return parseInt(String(Platform.Version), 10);
+  }
+
+  private validateAcceleratedCheckoutsConfiguration(
+    acceleratedCheckouts: Configuration['acceleratedCheckouts'],
+  ) {
+    if (!acceleratedCheckouts) {
+      return;
+    }
+
+    const {storefrontDomain, storefrontAccessToken, customer, wallets} =
+      acceleratedCheckouts;
+
+    /**
+     * Required Accelerated Checkouts configuration properties
+     */
+    if (!storefrontDomain) {
+      throw new Error('`storefrontDomain` is required');
+    }
+    if (!storefrontAccessToken) {
+      throw new Error('`storefrontAccessToken` is required');
+    }
+
+    if (customer) {
+      const hasAccessToken = Object.prototype.hasOwnProperty.call(
+        customer,
+        'accessToken',
+      );
+      const hasEmail = Object.prototype.hasOwnProperty.call(customer, 'email');
+      const hasPhoneNumber = Object.prototype.hasOwnProperty.call(
+        customer,
+        'phoneNumber',
+      );
+
+      if (hasAccessToken && (hasEmail || hasPhoneNumber)) {
+        throw new Error(
+          '`customer` must contain either `accessToken` or both `email` and `phoneNumber`, but not both',
+        );
+      }
+    }
+
+    /**
+     * Validate Apple Pay config if available
+     */
+    if (wallets?.applePay) {
+      const {merchantIdentifier, contactFields, supportedShippingCountries} =
+        wallets.applePay;
+
+      if (!merchantIdentifier) {
+        throw new Error('`wallets.applePay.merchantIdentifier` is required');
+      }
+
+      const expectedContactFields = Object.values(ApplePayContactField);
+      const hasInvalidContactFields =
+        Array.isArray(contactFields) &&
+        contactFields.some(
+          value =>
+            !expectedContactFields.includes(
+              value.toLowerCase() as ApplePayContactField,
+            ),
+        );
+
+      if (hasInvalidContactFields) {
+        throw new Error(
+          `'wallets.applePay.contactFields' contains unexpected values. Expected "${expectedContactFields.join(', ')}", received "${contactFields}"`,
+        );
+      }
+
+      if (
+        Array.isArray(supportedShippingCountries) &&
+        supportedShippingCountries?.some(country => typeof country !== 'string')
+      ) {
+        throw new Error(
+          `'wallets.applePay.supportedShippingCountries' contains unexpected values. Expects ISO 3166-1 alpha-2 country codes (e.g., "US", "CA", "GB").`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Checks if a specific feature is enabled in the configuration
+   * @param feature The feature to check
+   * @returns boolean indicating if the feature is enabled
+   */
+  private featureEnabled(feature: keyof Features) {
+    return this.features[feature] ?? true;
+  }
+
+  private releaseDispatchSubscription(only?: {remove: () => void}): void {
+    if (only && this.dispatchSubscription !== only) return;
+    const subscription = this.dispatchSubscription;
+    this.dispatchSubscription = undefined;
+    this.presentation?.cancellation.abort();
+    if (this.presentation) this.presentation.callbacks = undefined;
+    this.presentation = undefined;
+    if (ShopifyCheckout.activePresentation === this)
+      ShopifyCheckout.activePresentation = undefined;
+    subscription?.remove();
+  }
+
+  private cancelGeolocationRequest(): void {
+    const presentation = this.presentation;
+    if (!presentation || presentation.cancellation.signal.aborted) return;
+    presentation.cancellation.abort();
+    this.respondToGeolocationRequest(false);
+  }
+
+  /**
+   * Resolves the pending Android WebView geolocation permission request.
+   * This does not request OS location permissions; callers should check
+   * or request Android permissions before responding.
+   */
+  private respondToGeolocationRequest(allow: boolean): void {
+    if (Platform.OS === 'android') {
+      RNShopifyCheckoutKit.respondToGeolocationRequest?.(allow);
+    }
+  }
+
+  /**
+   * Requests geolocation permissions on Android
+   * @returns Promise<boolean> indicating if permission was granted
+   */
+  private async requestGeolocation(): Promise<boolean> {
+    const coarse = 'android.permission.ACCESS_COARSE_LOCATION';
+    const fine = 'android.permission.ACCESS_FINE_LOCATION';
+    const results = await PermissionsAndroid.requestMultiple([coarse, fine]);
+
+    return [results[coarse], results[fine]].some(this.permissionGranted);
+  }
+
+  /**
+   * Checks if the given permission status indicates that permission was granted
+   * @param status The permission status to check
+   * @returns boolean indicating if the permission was granted
+   */
+  private permissionGranted(status: PermissionStatus): boolean {
+    return status === 'granted';
+  }
+}
+
+// API
+export {
+  AcceleratedCheckoutWallet,
+  ApplePayContactField,
+  ColorScheme,
+  DispatchEventParityError,
+  LifecycleEventParseError,
+  LogLevel,
+  ShopifyCheckout,
+};
+
+// Error classes
+export {CheckoutErrorCode, CheckoutException};
+export type {CheckoutNativeError} from '@shopify/checkout-kit-react-native-core/errors';
+
+// Types
+export type {
+  AcceleratedCheckoutConfiguration,
+  AcceleratedCheckoutCustomer,
+  AndroidAutomaticColors,
+  AndroidColors,
+  Configuration,
+  Features,
+  GeolocationRequestEvent,
+  IosColors,
+  PresentCallbacks,
+  PreloadFailureReason,
+  PreloadOptions,
+  PreloadState,
+  CheckoutPreloadSubscription,
+};
+
+
+export type {
+  Checkout,
+  CheckoutStartEvent,
+  CheckoutUpdateEvent,
+  CheckoutCompleteEvent,
+  CheckoutFailureEvent,
+  CheckoutLink,
+  CheckoutLinkAction,
+  CheckoutEventHandlers,
+} from '@shopify/checkout-kit-react-native-core/checkout';

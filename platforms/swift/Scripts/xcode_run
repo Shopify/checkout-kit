@@ -81,7 +81,7 @@ if [[ "$ACTION" == *"test"* && -n "$TEST_FILTER" ]]; then
         
         # Discover all test targets by looking for *Tests directories
         test_file=""
-        for test_dir in "$project_root/Tests"/*Tests; do
+        for test_dir in "$project_root/Tests"/*Tests "$project_root/Tests/Internal"/*Tests; do
             if [[ -d "$test_dir" ]]; then
                 target_name=$(basename "$test_dir")
                 if [[ "$TEST_FILTER" == "$target_name" ]]; then

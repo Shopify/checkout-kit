@@ -1,0 +1,200 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+
+import {DELEGATIONS, EC_METHODS, MODEL_EXTRACTIONS} from './method_catalog.mjs';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const protocolRoot = path.resolve(scriptDir, '..');
+const {protocolVersion: specVersion} = JSON.parse(
+  fs.readFileSync(path.join(protocolRoot, 'source-lock.json'), 'utf8'),
+);
+
+const outputPath = path.resolve(
+  protocolRoot,
+  'languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated/EmbeddedCheckoutProtocol+Event.swift',
+);
+
+const notifications = EC_METHODS.filter(entry => entry.kind === 'notification');
+const requests = EC_METHODS.filter(entry => entry.kind === 'request');
+
+// The spec-shaped JSON-RPC `params` wrapper each `{checkout}`/`{error}` payload
+// decodes into. These are hand-written in JSONRPCMessage.swift and declare their
+// own `EventPayload` conformance, so they are excluded from generated conformances.
+function paramsWrapper(payloadType) {
+  switch (payloadType) {
+    case 'Checkout':
+      return 'JSONRPCCheckoutParams';
+    case 'ErrorResponse':
+      return 'JSONRPCErrorParams';
+    default:
+      return null;
+  }
+}
+
+// The decoded `params` type a descriptor surfaces. `checkoutUnwrap` methods carry
+// the `{checkout}` wrapper (matching the wire envelope); `whole` methods decode
+// their payload directly.
+function paramsType(entry) {
+  return entry.decode === 'checkoutUnwrap' ? 'JSONRPCCheckoutParams' : entry.payload;
+}
+
+// Notifications surface the spec `params` wrapper.
+function notificationParamsType(entry) {
+  const wrapper = paramsWrapper(entry.payload);
+  if (wrapper === null) {
+    throw new Error(
+      `No Swift notification params wrapper for ${entry.payload} (${entry.method})`,
+    );
+  }
+  return wrapper;
+}
+
+// Conformances are emitted only for model-generated types (notification/request
+// inner payloads and results). The hand-written `params` wrappers conform in
+// JSONRPCMessage.swift. Every bound request result is generated (enforced by the
+// catalog manifest), so no hand-written result type conforms separately.
+const generatedResults = new Set(
+  MODEL_EXTRACTIONS.filter(extraction => extraction.kind === 'result').map(
+    extraction => extraction.rootTitle,
+  ),
+);
+
+const eventPayloadTypes = Array.from(
+  new Set([
+    ...notifications.map(entry => entry.payload),
+    ...requests
+      .filter(entry => entry.decode === 'whole')
+      .map(entry => entry.payload),
+  ]),
+).sort();
+
+const responsePayloadTypes = Array.from(
+  new Set(
+    requests
+      .map(entry => entry.result)
+      .filter(result => generatedResults.has(result)),
+  ),
+).sort();
+
+// Name of an entry's member inside the `Event` enum: notifications use the
+// method identifier; requests use the descriptor identifier (named after the
+// delegation where one applies).
+function eventMemberName(entry) {
+  return entry.kind === 'request' ? entry.descriptorIdentifier : entry.identifier;
+}
+
+function uniqueIdentifiers(entries, key) {
+  const seen = new Set();
+  for (const entry of entries) {
+    const identifier = entry[key];
+    if (seen.has(identifier)) {
+      throw new Error(`Duplicate catalog identifier: ${identifier}`);
+    }
+    seen.add(identifier);
+  }
+}
+
+uniqueIdentifiers(EC_METHODS, 'identifier');
+uniqueIdentifiers(
+  EC_METHODS.map(entry => ({member: eventMemberName(entry)})),
+  'member',
+);
+
+function decodeClosure(entry) {
+  if (entry.decode !== 'whole' && entry.decode !== 'checkoutUnwrap') {
+    throw new Error(`Unknown decode strategy: ${entry.decode}`);
+  }
+  return `{ try newJSONDecoder().decode(${paramsType(entry)}.self, from: $0) }`;
+}
+
+const conformances = [
+  ...eventPayloadTypes.map(type => `extension EmbeddedCheckoutProtocol.${type}: EventPayload {}`),
+  ...responsePayloadTypes.map(type => `extension EmbeddedCheckoutProtocol.${type}: ResponsePayload {}`),
+].join('\n');
+
+const notificationCatalog = notifications
+  .map(
+    entry => `        public static let ${entry.identifier} = NotificationDescriptor(
+            method: "${entry.method}",
+            decode: { try newJSONDecoder().decode(${notificationParamsType(entry)}.self, from: $0) }
+        )`,
+  )
+  .join('\n\n');
+
+const requestDescriptors = requests
+  .map(entry => {
+    const payload = paramsType(entry);
+    return `        public static let ${entry.descriptorIdentifier}: RequestDescriptor<${payload}, RequestMessage<${payload}>, ${entry.result}> = .init(
+            method: "${entry.method}",
+            delegation: ${entry.delegation === null ? 'nil' : `"${entry.delegation}"`},
+            decode: ${decodeClosure(entry)}
+        )`;
+  })
+  .join('\n\n');
+
+const allMethods = EC_METHODS.map(
+  entry => `            ${eventMemberName(entry)}.method,`,
+).join('\n');
+
+const generated = `// This file is generated by protocols/universal-commerce-protocol/embedded-checkout-protocol/scripts/generate_swift_catalog.mjs.
+// Do not edit directly.
+
+import Foundation
+
+${conformances}
+
+extension EmbeddedCheckoutProtocol {
+    /// The UCP spec revision these artifacts were generated from, taken from
+    /// \`protocols/universal-commerce-protocol/embedded-checkout-protocol/source-lock.json\`. Do not edit by hand.
+    public static let specVersion = "${specVersion}"
+
+    /// Every \`ec.*\` method this protocol owns, resolved to a typed descriptor.
+    /// Notifications become \`NotificationDescriptor\`s; requests become
+    /// \`RequestDescriptor\`s.
+    public enum Event {
+        // Protocol dates use RFC 3339 strings, including fractional seconds.
+        // newJSONDecoder() handles them; plain JSONDecoder() expects numeric dates
+        // and can reject checkout updates before Kit invokes onUpdate.
+
+${notificationCatalog}
+
+${requestDescriptors}
+
+        public static let all: [String] = [
+${allMethods}
+        ]
+    }
+}
+
+extension EmbeddedCheckoutProtocol {
+    /// Delegations the host can request from the business, as declared by the
+    /// service in \`x-delegations\`. String-backed and open: a host may advertise
+    /// a delegation this build predates, so unknown values round-trip intact.
+    public struct Delegation: RawRepresentable, Hashable, Sendable, ExpressibleByStringLiteral {
+        public let rawValue: String
+
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        public init(stringLiteral value: String) {
+            self.rawValue = value
+        }
+
+${DELEGATIONS.map(
+  delegation =>
+    `        public static let ${delegation.identifier} = Delegation(rawValue: "${delegation.value}")`,
+).join('\n')}
+
+        public static let all: [Delegation] = [
+${DELEGATIONS.map(delegation => `            .${delegation.identifier},`).join('\n')}
+        ]
+    }
+}
+`;
+
+fs.mkdirSync(path.dirname(outputPath), {recursive: true});
+fs.writeFileSync(outputPath, generated);
+console.log(`Generated ${outputPath}`);

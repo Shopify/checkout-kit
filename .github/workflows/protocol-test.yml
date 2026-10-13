@@ -15,17 +15,17 @@ jobs:
       pull-requests: read
     defaults:
       run:
-        working-directory: protocol
+        working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: protocol/package.json
-          cache-dependency-path: protocol/pnpm-lock.yaml
-          package-json-file: protocol/package.json
-          working-directory: protocol
+          node-version-file: protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json
+          cache-dependency-path: protocols/universal-commerce-protocol/embedded-checkout-protocol/pnpm-lock.yaml
+          package-json-file: protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json
+          working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol
 
       - name: Test with coverage
         id: coverage_tests
@@ -36,6 +36,6 @@ jobs:
         uses: ./.github/actions/report-coverage
         with:
           platform: protocol
-          report-path: protocol/coverage/coverage-summary.json
-          report-directory: protocol/coverage
+          report-path: protocols/universal-commerce-protocol/embedded-checkout-protocol/coverage/coverage-summary.json
+          report-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/coverage
           outcome: ${{ steps.coverage_tests.outcome }}

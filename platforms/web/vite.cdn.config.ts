@@ -52,7 +52,7 @@ export default defineConfig({
         },
         // Registration modules share a filename; name chunks after their component.
         chunkFileNames: (chunk) => {
-          const component = chunk.facadeModuleId?.match(/\/components\/([^/]+)\/register\.ts$/)?.[1];
+          const component = chunk.facadeModuleId?.match(/\/components\/([^/]+)\/src\/register\.ts$/)?.[1];
           return `assets/${component ?? '[name]'}-[hash].js`;
         },
         assetFileNames: 'assets/[name]-[hash][extname]',

@@ -1,0 +1,551 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+
+import { version } from "../../../package.json";
+
+import "./register";
+import { CK_VERSION } from "./shopify-checkout";
+import {
+  createTestTelemetry,
+  installTestTelemetryFactory,
+  mockTelemetry,
+} from "./telemetry.test-helpers";
+import { overrideTelemetryFactoryForTesting } from "./telemetry";
+
+const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
+
+function expectWindowOpenArgs(spy: {
+  mock: { calls: ReadonlyArray<ReadonlyArray<unknown>> };
+}): ReadonlyArray<unknown> {
+  expect(spy).toHaveBeenCalled();
+  const args = spy.mock.calls[0];
+  if (args === undefined) {
+    throw new Error("expected window.open to have been called");
+  }
+  return args;
+}
+
+describe("<shopify-checkout>", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    installTestTelemetryFactory();
+    // Disconnect elements so their global message listeners do not leak
+    // into tests in this file or another concurrently running suite.
+    document.body.innerHTML = "";
+  });
+
+  describe("attributes", () => {
+    describe("src", () => {
+      it("changing the src attribute reflects to the src property", () => {
+        const checkout = renderCheckout();
+        const newSrc = "https://example.com/checkout/456";
+        checkout.setAttribute("src", newSrc);
+
+        expect(checkout.src).toBe(newSrc);
+      });
+    });
+
+    describe("appearance", () => {
+      it("changing the appearance attribute reflects to the appearance property", () => {
+        const checkout = renderCheckout();
+        checkout.setAttribute("appearance", "app:dark");
+
+        expect(checkout.appearance).toBe("app:dark");
+      });
+
+      it("defaults to storefront when the appearance attribute is unset", () => {
+        const checkout = renderCheckout();
+
+        expect(checkout.appearance).toBe("storefront");
+      });
+    });
+  });
+
+  describe("properties", () => {
+    describe("src", () => {
+      it("changing the src property reflects to the src attribute", () => {
+        const checkout = renderCheckout();
+        const newSrc = "https://example.com/checkout/456";
+        checkout.src = newSrc;
+
+        expect(checkout.getAttribute("src")).toBe(newSrc);
+      });
+    });
+
+    describe("target", () => {
+      it("changing the target property reflects to the target attribute", () => {
+        const checkout = renderCheckout();
+        const newTarget = "_blank";
+        checkout.target = newTarget;
+        expect(checkout.getAttribute("target")).toBe(newTarget);
+      });
+    });
+
+    describe("appearance", () => {
+      it("changing the appearance property reflects to the appearance attribute", () => {
+        const checkout = renderCheckout();
+        checkout.appearance = "app:light";
+
+        expect(checkout.getAttribute("appearance")).toBe("app:light");
+      });
+
+      it("removes the appearance attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ appearance: "app:dark" });
+
+        checkout.appearance = undefined;
+
+        expect(checkout.hasAttribute("appearance")).toBe(false);
+        expect(checkout.appearance).toBe("storefront");
+      });
+    });
+
+    describe("allowedOrigins", () => {
+      it("reflects an array of origins to the attribute and back", () => {
+        const checkout = renderCheckout();
+        const origins = ["https://other.example.com", "https://*.example.org"];
+
+        checkout.allowedOrigins = origins;
+
+        expect(checkout.getAttribute("allowed-origins")).toBe(origins.join(" "));
+        expect(checkout.allowedOrigins).toEqual(origins);
+      });
+
+      it("parses comma- and whitespace-separated strings without empty entries", () => {
+        const checkout = renderCheckout();
+        const origins = " https://other.example.com,  https://*.example.org ";
+
+        checkout.allowedOrigins = origins;
+
+        expect(checkout.getAttribute("allowed-origins")).toBe(origins);
+        expect(checkout.allowedOrigins).toEqual([
+          "https://other.example.com",
+          "https://*.example.org",
+        ]);
+      });
+
+      it("removes the attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ "allowed-origins": "https://other.example.com" });
+
+        checkout.allowedOrigins = undefined;
+
+        expect(checkout.hasAttribute("allowed-origins")).toBe(false);
+        expect(checkout.allowedOrigins).toEqual([]);
+      });
+    });
+
+    describe("logLevel", () => {
+      it("defaults to 'error' when the attribute is absent", () => {
+        const checkout = renderCheckout();
+        expect(checkout.hasAttribute("log-level")).toBe(false);
+        expect(checkout.logLevel).toBe("error");
+      });
+
+      it("reflects the log-level attribute to the property", () => {
+        const checkout = renderCheckout({ "log-level": "error" });
+        expect(checkout.logLevel).toBe("error");
+      });
+
+      it("sets the log-level attribute when assigned", () => {
+        const checkout = renderCheckout();
+        checkout.logLevel = "debug";
+        expect(checkout.getAttribute("log-level")).toBe("debug");
+      });
+
+      it("falls back to 'error' when the attribute holds an invalid value", () => {
+        const checkout = renderCheckout({ "log-level": "verbose" });
+        expect(checkout.logLevel).toBe("error");
+      });
+
+      it("removes the log-level attribute when assigned undefined", () => {
+        const checkout = renderCheckout({ "log-level": "warn" });
+        expect(checkout.hasAttribute("log-level")).toBe(true);
+        checkout.logLevel = undefined;
+        expect(checkout.hasAttribute("log-level")).toBe(false);
+      });
+    });
+
+    describe("telemetry", () => {
+      it("defaults to true", () => {
+        const checkout = renderCheckout();
+
+        expect(checkout.telemetry).toBe(true);
+      });
+
+      it("reflects false between the property and attribute", () => {
+        const checkout = renderCheckout();
+
+        checkout.telemetry = false;
+
+        expect(checkout.getAttribute("telemetry")).toBe("false");
+        expect(checkout.telemetry).toBe(false);
+      });
+
+      it("resets to the enabled default when assigned undefined", () => {
+        const checkout = renderCheckout({ telemetry: "false" });
+
+        checkout.telemetry = undefined;
+
+        expect(checkout.hasAttribute("telemetry")).toBe(false);
+        expect(checkout.telemetry).toBe(true);
+      });
+
+      it("normalizes untyped property values to canonical attribute strings", () => {
+        const checkout = renderCheckout();
+
+        // React sets the property, so JSX telemetry="false" arrives as a string.
+        checkout.telemetry = "false" as unknown as boolean;
+        expect(checkout.getAttribute("telemetry")).toBe("false");
+        expect(checkout.telemetry).toBe(false);
+
+        checkout.telemetry = "yes" as unknown as boolean;
+        expect(checkout.getAttribute("telemetry")).toBe("true");
+        expect(checkout.telemetry).toBe(true);
+
+        checkout.telemetry = 0 as unknown as boolean;
+        expect(checkout.getAttribute("telemetry")).toBe("false");
+        expect(checkout.telemetry).toBe(false);
+      });
+    });
+  });
+
+  describe("browser capabilities", () => {
+    it("dispatches an unsupported_browser error without opening checkout", () => {
+      const checkout = renderCheckout();
+      const onError = vi.fn();
+      const openWindow = vi.spyOn(window, "open");
+      vi.stubGlobal("HTMLDialogElement", undefined);
+      checkout.addEventListener("error", onError);
+
+      checkout.open();
+
+      expect(checkout.error).toEqual({
+        code: "unsupported_browser",
+        message: "This browser does not support: native_dialog.",
+      });
+      expect(onError).toHaveBeenCalledOnce();
+      expect((onError.mock.calls[0]![0] as CustomEvent).detail).toEqual({
+        error: checkout.error,
+      });
+      expect(openWindow).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("URL generation", () => {
+    it("preserves existing query parameters when adding ec_* parameters", () => {
+      const originalSrc = "https://example.com/checkout?existing=param&another=value";
+      const checkout = renderCheckout({ src: originalSrc });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const firstCall = expectWindowOpenArgs(windowOpenSpy);
+      const calledUrl = firstCall[0] as string;
+      const url = new URL(calledUrl);
+
+      expect(url.searchParams.get("existing")).toBe("param");
+      expect(url.searchParams.get("another")).toBe("value");
+      expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+    });
+
+    it("replaces caller-supplied ec_* parameters", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_version=caller-supplied&ec_delegate=custom",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.getAll("ec_version")).toEqual([EMBED_PROTOCOL_VERSION]);
+      expect(url.searchParams.getAll("ec_delegate")).toEqual(["window.open"]);
+    });
+
+    it("strips ec_auth from src when the incoming checkout URL includes it", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_auth=should-not-propagate&keep=1",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_auth")).toBeNull();
+      expect(url.searchParams.get("keep")).toBe("1");
+      expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+    });
+
+    it.each([
+      ["app:light", "light", "app"],
+      ["app:dark", "dark", "app"],
+      ["app:automatic", "automatic", "app"],
+      ["storefront", "web_default", "shop"],
+    ] as const)(
+      "sets checkout params for appearance=%s and replaces incoming appearance params",
+      (appearance, colorScheme, branding) => {
+        const checkout = renderCheckout({
+          src: "https://example.com/checkout?ec_color_scheme=light&ck_branding=app&keep=1",
+          appearance,
+        });
+
+        const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+        checkout.open();
+
+        const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+        expect(url.searchParams.getAll("ec_color_scheme")).toEqual([colorScheme]);
+        expect(url.searchParams.getAll("ck_branding")).toEqual([branding]);
+        expect(url.searchParams.get("keep")).toBe("1");
+        expect(url.searchParams.get("ec_version")).toBe(EMBED_PROTOCOL_VERSION);
+      },
+    );
+
+    it("sets storefront appearance query params when appearance is unset", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBe("web_default");
+      expect(url.searchParams.get("ck_branding")).toBe("shop");
+      expect(url.searchParams.get("keep")).toBe("1");
+    });
+
+    it("omits invalid appearance values and does not warn when log-level is error", () => {
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+        appearance: "sepia",
+        "log-level": "error",
+      });
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBeNull();
+      expect(url.searchParams.get("ck_branding")).toBeNull();
+      expect(url.searchParams.get("keep")).toBe("1");
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+
+    it("omits invalid appearance values and warns when log-level is warn", () => {
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const checkout = renderCheckout({
+        src: "https://example.com/checkout?ec_color_scheme=dark&ck_branding=shop&keep=1",
+        appearance: "sepia",
+        "log-level": "warn",
+      });
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_color_scheme")).toBeNull();
+      expect(url.searchParams.get("ck_branding")).toBeNull();
+      expect(url.searchParams.get("keep")).toBe("1");
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('appearance="sepia" is not supported and will be ignored'),
+      );
+    });
+
+    it("handles invalid src URL gracefully", () => {
+      const checkout = renderCheckout({ "log-level": "warn" });
+      checkout.src = "invalid-url";
+
+      const windowOpenSpy = vi.spyOn(window, "open");
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      checkout.open();
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "<shopify-checkout>: src property is empty or invalid, cannot open checkout",
+      );
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not interpret HTML metacharacters in src as markup", () => {
+      const src = 'https://shop.example.com/"><script>window.__xssed=true</script>';
+      // The URL constructor accepts this (the `"` becomes part of the
+      // pathname); the value is rendered via DOM APIs rather than string
+      // interpolation, so no markup is parsed into the shadow root.
+      const checkout = renderCheckout({ src });
+
+      expect(checkout.shadowRoot!.querySelector("script")).toBeNull();
+      expect((window as unknown as { __xssed?: boolean }).__xssed).toBeUndefined();
+    });
+  });
+
+  describe("ec_delegate parameter", () => {
+    it("declares window.open delegation in popup URL", () => {
+      const checkout = renderCheckout({ target: "popup" });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ec_delegate")).toBe("window.open");
+    });
+  });
+
+  describe("ck_version parameter", () => {
+    it("appends ck_version to the opened URL", () => {
+      const checkout = renderCheckout({ target: "popup" });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.get("ck_version")).toBe(CK_VERSION);
+    });
+
+    it("uses the package version", () => {
+      expect(CK_VERSION).toBe(version);
+    });
+
+    it("preserves caller-provided ck_version rather than appending a duplicate", () => {
+      const checkout = renderCheckout({
+        src: "https://shop.example.com/checkout?ck_version=old",
+      });
+
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(createMockWindow());
+
+      checkout.open();
+
+      const url = new URL(expectWindowOpenArgs(windowOpenSpy)[0] as string);
+      expect(url.searchParams.getAll("ck_version")).toEqual([CK_VERSION]);
+    });
+  });
+
+  describe("overlay focus control", () => {
+    it("is a button without navigation attributes", () => {
+      const checkout = renderCheckout();
+      const button = checkout.shadowRoot!.querySelector<HTMLButtonElement>("#overlay-link");
+      expect(button!.type).toBe("button");
+      expect(button!.hasAttribute("href")).toBe(false);
+      expect(button!.hasAttribute("target")).toBe(false);
+    });
+  });
+
+  describe("lifecycle", () => {
+    it("does not start telemetry when disabled before connection", () => {
+      const startSpy = vi.spyOn(mockTelemetry(), "start");
+
+      renderCheckout({ telemetry: "false" });
+
+      expect(startSpy).not.toHaveBeenCalled();
+    });
+
+    it("uses a separate telemetry client for each connected element", () => {
+      const clients = new Set();
+      overrideTelemetryFactoryForTesting(() => {
+        const client = createTestTelemetry();
+        clients.add(client);
+        return client;
+      });
+
+      renderCheckout();
+      renderCheckout();
+
+      expect(clients.size).toBe(2);
+    });
+
+    it("discards buffered telemetry when disabled at runtime", () => {
+      const shutdownSpy = vi.spyOn(mockTelemetry(), "shutdown").mockResolvedValue(true);
+      const checkout = renderCheckout();
+
+      checkout.telemetry = false;
+
+      expect(shutdownSpy).toHaveBeenCalledWith({ discardPending: true });
+    });
+
+    it("flushes and shuts down telemetry when disconnected", () => {
+      const shutdownSpy = vi.spyOn(mockTelemetry(), "shutdown").mockResolvedValue(true);
+      const checkout = renderCheckout();
+
+      checkout.remove();
+
+      expect(shutdownSpy).toHaveBeenCalledWith({ keepalive: true });
+    });
+
+    it("flushes the existing telemetry client on pagehide", () => {
+      const flushSpy = vi.spyOn(mockTelemetry(), "flush").mockResolvedValue(true);
+      renderCheckout();
+
+      window.dispatchEvent(new Event("pagehide"));
+
+      expect(flushSpy).toHaveBeenCalledWith({ keepalive: true });
+    });
+
+    it("replaces the protocol message listener on reconnect and aborts it on disconnect", () => {
+      const addEventListener = vi.spyOn(window, "addEventListener");
+      const checkout = renderCheckout();
+      const firstOptions = addEventListener.mock.calls.find(
+        ([type]) => type === "message",
+      )?.[2] as AddEventListenerOptions;
+
+      checkout.connectedCallback();
+      const messageListenerOptions = addEventListener.mock.calls.filter(
+        ([type]) => type === "message",
+      );
+      const secondOptions = messageListenerOptions[1]?.[2] as AddEventListenerOptions;
+
+      expect(firstOptions.signal?.aborted).toBe(true);
+      expect(secondOptions.signal?.aborted).toBe(false);
+
+      checkout.disconnectedCallback();
+
+      expect(secondOptions.signal?.aborted).toBe(true);
+    });
+
+    it("preserves the shadow tree across element moves", () => {
+      const checkout = renderCheckout();
+      const wrapper = checkout.shadowRoot!.querySelector("#shopify-element-wrapper");
+
+      const newParent = document.createElement("div");
+      document.body.appendChild(newParent);
+      newParent.appendChild(checkout);
+
+      expect(checkout.shadowRoot!.querySelector("#shopify-element-wrapper")).toBe(wrapper);
+      expect(checkout.shadowRoot!.querySelector("iframe")).toBeNull();
+    });
+  });
+});
+
+// Test utilities
+
+function renderCheckout(attributes: Record<string, string | undefined> = {}) {
+  const defaultSrc = "https://demostore.mock.shop/cart/43696905224214:1";
+  const checkout = document.createElement("shopify-checkout");
+
+  if (!attributes.src) {
+    checkout.setAttribute("src", defaultSrc);
+  }
+
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value != null) {
+      checkout.setAttribute(key, value);
+    }
+  }
+  document.body.appendChild(checkout);
+  return checkout;
+}
+
+function createMockWindow() {
+  return {
+    addEventListener: vi.fn(),
+    close: vi.fn(),
+    closed: false,
+    focus: vi.fn(),
+    postMessage: vi.fn(),
+  } as unknown as Window;
+}

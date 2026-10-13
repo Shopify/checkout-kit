@@ -56,7 +56,7 @@ class IOSCIRunPlanTest < Minitest::Test
   def test_swift_change_selects_only_the_swift_jobs
     assert_equal(
       ["swift-package-tests", "swift-samples"],
-      selected_ids(["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+      selected_ids(["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
     )
   end
 
@@ -106,7 +106,7 @@ class IOSCIRunPlanTest < Minitest::Test
   end
 
   def test_bitrise_env_publishes_one_flag_per_job
-    env = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"]).bitrise_env
+    env = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"]).bitrise_env
 
     assert_equal "true", env.fetch("CI_IOS_HAS_JOBS")
     assert_equal "swift-package-tests,swift-samples", env.fetch("CI_IOS_SELECTED_JOBS")
@@ -125,14 +125,14 @@ class IOSCIRunPlanTest < Minitest::Test
   end
 
   def test_missing_workflows_names_a_selected_job_absent_from_the_pipeline
-    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    missing = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_workflows(["ci-ios-swift-package-tests"])
 
     assert_equal ["ci-ios-swift-samples"], missing
   end
 
   def test_missing_workflow_errors_name_the_missing_job
-    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    messages = plan(changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
       .missing_workflow_errors(["ci-ios-swift-package-tests"])
 
     assert_equal 1, messages.length
@@ -197,7 +197,7 @@ class IOSCIRunPlanTest < Minitest::Test
   end
 
   def test_load_reads_configuration_from_disk
-    loaded = IOSCIRunPlan.load(CONFIG_PATH, changed_files: ["platforms/swift/Sources/ShopifyCheckoutKit/Foo.swift"])
+    loaded = IOSCIRunPlan.load(CONFIG_PATH, changed_files: ["platforms/swift/Sources/ShopifyCheckout/Foo.swift"])
 
     assert_includes loaded.selected_job_ids, "swift-package-tests"
   end

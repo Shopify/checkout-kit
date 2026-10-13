@@ -113,7 +113,7 @@ jobs:
         if: needs.changes.outputs.reactNative == 'true'
         uses: ./.github/actions/setup
         with:
-          node-version-file: .package-size-base/platforms/react-native/package.json
+          node-version-file: .package-size-base/platforms/react-native/${{ hashFiles('.package-size-base/platforms/react-native/.node-version') != '' && '.node-version' || 'package.json' }}
           cache-dependency-path: .package-size-base/platforms/react-native/pnpm-lock.yaml
           package-json-file: .package-size-base/platforms/react-native/package.json
           working-directory: .package-size-base/platforms/react-native
@@ -122,7 +122,7 @@ jobs:
         if: needs.changes.outputs.reactNative == 'true'
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
+          node-version-file: platforms/react-native/.node-version
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native

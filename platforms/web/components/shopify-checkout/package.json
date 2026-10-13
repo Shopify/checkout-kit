@@ -1,0 +1,17 @@
+{
+  "name": "@shopify/checkout-kit-component-checkout",
+  "version": "4.0.0-alpha.5",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./src/register.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./register": "./src/register.ts"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*",
+    "@shopify/checkout-kit-telemetry": "workspace:*"
+  }
+}

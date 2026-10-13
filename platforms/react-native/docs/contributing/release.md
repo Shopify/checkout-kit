@@ -32,7 +32,7 @@ The tradeoff is waiting for upstream releases and rerunning downstream CI.
 
 1. After the required native artifacts are published, update the relevant
    `checkoutKit.nativeSdkVersions.android` and/or `.ios` entry in
-   `modules/@shopify/checkout-kit-react-native/package.json`. These are dependency
+   `package.json`. These are dependency
    versions; they do not have to match the RN package version.
 2. Make the wrapper changes, bump the manifest's own `version`, and update the
    public API report with `dev rn api dump` if the API changed.
@@ -51,7 +51,7 @@ Supported release versions are:
 - Prerelease: `X.Y.Z-{alpha|beta|rc}.N`
 
 The release workflow reads the version from
-`modules/@shopify/checkout-kit-react-native/package.json`, validates it, and
+`package.json`, validates it, and
 creates the correctly namespaced `react-native/` tag (for example,
 `react-native/4.0.1`). The manually entered workflow version is only a safety
 check; it must match the package version exactly.

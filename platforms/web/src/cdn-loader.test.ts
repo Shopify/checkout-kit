@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { loadComponents, supportedComponents, version } from "./cdn-loader";
-import { CK_VERSION } from "./version";
+import packageJson from "../package.json";
 
 describe("Checkout Kit CDN loader", () => {
   it("exposes the package version it was built from", () => {
-    expect(version).toBe(CK_VERSION);
+    expect(version).toBe(packageJson.version);
     expect(version).toMatch(/^\d+\.\d+\.\d+/);
   });
 

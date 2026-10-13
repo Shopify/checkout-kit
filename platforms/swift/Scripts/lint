@@ -177,7 +177,7 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	echo "🔍 Running CocoaPods lint..."
 
 	# Podspec lives at the repo root so it can glob source files in both
-	# platforms/swift/ and protocol/languages/swift/. Run lint from the
+	# platforms/swift/ and protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/. Run lint from the
 	# repo root.
 	REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 	export BUNDLE_GEMFILE="${BUNDLE_GEMFILE:-$REPO_ROOT/platforms/swift/Gemfile}"

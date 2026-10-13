@@ -19,7 +19,7 @@ target 'RCTIntegrationApp' do
     pod "ShopifyCheckoutKit/AcceleratedCheckouts",  :path => shopify_kit_path
   end
 
-  pod 'RNShopifyCheckoutKit', :path => '../../modules/@shopify/checkout-kit-react-native'
+  pod 'RNShopifyCheckoutKit', :path => '../..'
 
   config = use_native_modules!
 

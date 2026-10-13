@@ -71,10 +71,10 @@ jobs:
           cache: 'gradle'
 
       - name: Check public Android API baseline
-        run: ./gradlew :lib:apiCheck --console=plain
+        run: ./gradlew :shopify-checkout-kit:apiCheck --console=plain
 
       - name: Check public Kotlin protocol API baseline
-        run: ../../protocol/languages/kotlin/gradlew -p ../../protocol/languages/kotlin :embedded-checkout-protocol:apiCheck --console=plain
+        run: ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiCheck --console=plain
 
   react-native:
     name: React Native
@@ -91,7 +91,7 @@ jobs:
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
+          node-version-file: platforms/react-native/.node-version
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native

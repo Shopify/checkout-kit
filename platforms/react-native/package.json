@@ -1,10 +1,13 @@
 {
-  "name": "checkout-kit-react-native",
+  "name": "@shopify/checkout-kit-react-native",
   "description": "A React Native library for Shopify's Checkout Kit.",
-  "private": true,
-  "version": "0.0.1",
-  "repository": "https://github.com/Shopify/checkout-kit",
-  "author": "Shopify (https://github.com/Shopify/checkout-kit)",
+  "version": "4.0.0-alpha.5",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shopify/checkout-kit.git",
+    "directory": "platforms/react-native"
+  },
+  "author": "Shopify",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Shopify/checkout-kit/issues"
@@ -43,18 +46,26 @@
     }
   },
   "scripts": {
-    "clean": "rm -rf node_modules; watchman watch-del . || true",
+    "clean": "rm -rf lib",
     "sample": "pnpm --filter sample",
     "module": "pnpm --filter @shopify/checkout-kit-react-native",
     "pod-install": "bash ./scripts/pod_install",
     "snapshot": "./scripts/create_snapshot",
     "compare-snapshot": "./scripts/compare_snapshot",
-    "test": "jest"
+    "test": "jest",
+    "build": "vite build && pnpm verify",
+    "lint": "pnpm typecheck && eslint src components internal && pnpm lint:dependencies",
+    "typecheck": "tsc --noEmit",
+    "api:check": "pnpm build && api-extractor run --verbose",
+    "api:dump": "pnpm build && api-extractor run --local --verbose",
+    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal",
+    "verify": "node scripts/verify-package.mjs && tsc -p test/package-consumer/tsconfig.json && node --test scripts/verify-packed-package.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
+    "@microsoft/api-extractor": "^7.58.7",
     "@react-native-community/cli": "19.1.2",
     "@react-native-community/cli-platform-android": "19.1.2",
     "@react-native-community/cli-platform-ios": "19.1.2",
@@ -62,6 +73,7 @@
     "@react-native/eslint-config": "0.80.2",
     "@react-native/metro-config": "0.80.2",
     "@react-native/typescript-config": "0.80.2",
+    "@shopify/checkout-kit-protocol": "workspace:*",
     "@testing-library/react-native": "^13.3.1",
     "@tsconfig/react-native": "^3.0.6",
     "@types/jest": "^29.5.13",
@@ -79,10 +91,19 @@
     "react-native-gradle-plugin": "^0.71.19",
     "react-test-renderer": "19.1.0",
     "ts-jest": "^29.4.1",
-    "typescript": "^5.9.2"
-  },
-  "engines": {
-    "node": "22.14.0"
+    "typescript": "^5.9.2",
+    "@shopify/checkout-kit-react-native-core": "workspace:*",
+    "@shopify/checkout-kit-react-native-checkout": "workspace:*",
+    "@shopify/checkout-kit-react-native-accelerated": "workspace:*",
+    "dependency-cruiser": "17.3.9",
+    "vite": "^8.3.4",
+    "vite-plugin-dts": "^4.5.4",
+    "@types/node": "^22.12.0",
+    "metro": "0.82.5",
+    "@react-native/codegen": "0.80.2",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@types/babel__core": "^7.20.5",
+    "rolldown": "~1.2.13"
   },
   "prettier": {
     "arrowParens": "avoid",
@@ -98,5 +119,64 @@
     "react-native",
     "shopify",
     "checkout"
-  ]
+  ],
+  "main": "lib/index.cjs",
+  "types": "lib/index.d.ts",
+  "module": "lib/index.js",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "checkoutKit": {
+    "nativeSdkVersions": {
+      "ios": "4.0.0-alpha.8",
+      "android": "4.0.0-alpha.8"
+    }
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "package.json",
+    "ios",
+    "android",
+    "lib",
+    "*.podspec",
+    "!ios/Package.swift",
+    "!ios/Tests",
+    "!ios/build",
+    "!android/src/test",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/*.spec.*",
+    "!**/*.test.*",
+    "!**/.*",
+    "internal/core/src/specs"
+  ],
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "dependencies": {},
+  "bundledDependencies": [
+    "@shopify/checkout-kit-protocol"
+  ],
+  "codegenConfig": {
+    "name": "RNShopifyCheckoutKitSpec",
+    "type": "all",
+    "jsSrcsDir": "internal/core/src/specs",
+    "android": {
+      "javaPackageName": "com.shopify.checkoutkit"
+    },
+    "ios": {
+      "modulesProvider": {
+        "ShopifyCheckoutKit": "RCTShopifyCheckoutKit"
+      },
+      "componentProvider": {
+        "RCTAcceleratedCheckoutButtons": "RCTAcceleratedCheckoutButtonsManager"
+      }
+    }
+  },
+  "react-native": "lib/index.js"
 }

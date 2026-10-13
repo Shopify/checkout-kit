@@ -53,7 +53,7 @@ updates:
     cooldown:
       default-days: 7
     ignore:
-      # The sample includes the Android library as :lib, so library dependencies can
+      # The sample includes the Android library as :shopify-checkout-kit, so library dependencies can
       # appear in this Dependabot scan too.
       # Keep Kotlin compiler/plugin updates on 2.x unless the consumer floor is
       # deliberately re-evaluated.
@@ -80,22 +80,9 @@ updates:
         patterns:
           - "com.apollographql.apollo*"
 
-  # React Native — root pnpm workspace
+  # React Native — platform pnpm workspace
   - package-ecosystem: npm
     directory: "/platforms/react-native"
-    schedule:
-      interval: weekly
-    cooldown:
-      default-days: 7
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-          - "version-update:semver-minor"
-
-  # React Native — Checkout Kit module
-  - package-ecosystem: npm
-    directory: "/platforms/react-native/modules/@shopify/checkout-kit-react-native"
     schedule:
       interval: weekly
     cooldown:
@@ -133,7 +120,7 @@ updates:
 
   # Protocol tooling
   - package-ecosystem: npm
-    directory: "/protocol"
+    directory: "/protocols/universal-commerce-protocol/embedded-checkout-protocol"
     schedule:
       interval: weekly
     cooldown:

@@ -83,8 +83,8 @@ Package names link to their integration guides. These are the versions tracked b
 
 These internal/supporting clients handle Embedded Checkout Protocol messages.
 
-- **[Swift](protocol/languages/swift/README.md):** `EmbeddedCheckoutProtocol` is a source package installed through Swift Package Manager.
-- **[Kotlin](protocol/languages/kotlin/embedded-checkout-protocol/README.md):** `com.shopify:embedded-checkout-protocol` version `2026.08.25.1-alpha.1` is distributed through Maven Central.
+- **[Swift](protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/README.md):** `EmbeddedCheckoutProtocol` is a source package installed through Swift Package Manager.
+- **[Kotlin](protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/README.md):** `com.shopify:embedded-checkout-protocol` version `2026.08.25.1-alpha.1` is distributed through Maven Central.
 
 </details>
 
