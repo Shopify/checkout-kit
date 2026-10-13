@@ -54,7 +54,7 @@ A manually started pipeline has no pull request file list, so it selects every a
 
 ## The `ci-ios` pipeline
 
-`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs the four macOS jobs that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, the React Native iOS sample build, and the React Native iOS tests. Bitrise reports one status per pipeline, so keeping it separate from `e2e` gives macOS CI and BrowserStack E2E their own results.
+`ci-ios` is the second pipeline in `e2e/bitrise.yml`. It runs every macOS job that used to run on GitHub Actions: the Swift package tests, the Swift sample build and test, SwiftLint and SwiftFormat, the CocoaPods podspec lint, the public Swift API baseline check, the React Native iOS sample build, the React Native iOS tests, and SwiftLint and SwiftFormat for the React Native Swift bridge. Bitrise reports one status per pipeline, so keeping it separate from `e2e` gives macOS CI and BrowserStack E2E their own results.
 
 ### Its trigger carries no `changed_files`
 
@@ -64,7 +64,7 @@ Selection happens inside the pipeline instead. The Linux `ci-ios-plan` workflow 
 
 Both required pipelines start on every non-draft pull request and select their work at runtime.
 
-A manually started `ci-ios` pipeline selects all four macOS jobs. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e`, `ci-ios` has no push trigger and does not run automatically after a merge to `main`.
+A manually started `ci-ios` pipeline selects every macOS job. Choose the branch and `ci-ios` pipeline from the Bitrise **Start build** page to verify the complete iOS build and test suite. Like `e2e`, `ci-ios` has no push trigger and does not run automatically after a merge to `main`.
 
 ### The check is self-posted
 
