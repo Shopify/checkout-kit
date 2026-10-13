@@ -1,6 +1,6 @@
 {
   "name": "@shopify/checkout-kit-component-checkout",
-  "version": "4.0.0-alpha.5",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "sideEffects": [

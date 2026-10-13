@@ -115,6 +115,9 @@ jobs:
               - '.github/workflows/coverage-report.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
+              - 'scripts/check-sdk-packages*'
+              - 'platforms/**/package.json'
+              - 'platforms/*/pnpm-workspace.yaml'
               - '.github/scripts/measure-package-size'
               - '.github/scripts/*bundle-size*'
               - '.github/workflows/package-size.yml'
@@ -232,6 +235,8 @@ jobs:
         with:
           ruby-version: .ruby-version
       - run: node --test .github/scripts/*bundle-size*.test.cjs .github/scripts/*coverage*.test.cjs
+      - run: node --test scripts/check-sdk-packages.test.mjs
+      - run: node scripts/check-sdk-packages.mjs
       - run: ./scripts/test_ruby
       - run: ./e2e/scripts/check_hide_keyboard_usage
 

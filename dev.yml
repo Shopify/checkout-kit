@@ -151,6 +151,7 @@ commands:
     aliases: [style]
     run: |
       set -e
+      node scripts/check-sdk-packages.mjs
       /opt/dev/bin/dev android lint
       /opt/dev/bin/dev swift lint
       /opt/dev/bin/dev react-native lint
