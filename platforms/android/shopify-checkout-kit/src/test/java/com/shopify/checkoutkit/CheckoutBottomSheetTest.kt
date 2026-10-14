@@ -788,6 +788,31 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `failure during animated programmatic dismissal reports failure without dismissal`() {
+        val lifecycleEvents = mutableListOf<String>()
+        val checkoutListener = object : DefaultCheckoutListener() {
+            override fun onCheckoutFailed(event: CheckoutFailureEvent) {
+                lifecycleEvents += "fail"
+            }
+
+            override fun onCheckoutDismissed() {
+                lifecycleEvents += "dismiss"
+            }
+        }
+        val sheet = presentBottomSheet(checkoutListener = checkoutListener)
+        sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)!!
+            .layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
+
+        sheet.dismiss()
+        assertThat(sheet.isShowing).isTrue()
+        sheet.closeCheckoutWithError(checkoutException())
+        runDismissAnimation()
+
+        assertThat(sheet.isShowing).isFalse()
+        assertThat(lifecycleEvents).containsExactly("fail")
+    }
+
+    @Test
     fun `closeCheckoutWithError invokes failure then dismissal after closing the bottom sheet`() {
         val lifecycleEvents = mutableListOf<String>()
         var sheetWasShowingWhenDismissed: Boolean? = null

@@ -167,12 +167,11 @@ internal class CheckoutBottomSheet(
 
     /**
      * Dismisses the sheet, optionally skipping animation for lifecycle teardown.
+     *
+     * [notifyOnFinalize] only applies when this call starts the dismissal; a later call, such as a
+     * failure that arrives while a programmatic dismissal animates out, cannot change it.
      */
     internal fun dismiss(animate: Boolean, notifyOnFinalize: Boolean = false) {
-        if (notifyOnFinalize) {
-            notifyDismissalOnFinalize = true
-        }
-
         val sheet = findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)
         if (dismissing) {
             if (!animate && !dismissFinalized) {
@@ -185,6 +184,7 @@ internal class CheckoutBottomSheet(
 
         log.d(LOG_TAG, "Dismiss invoked.")
         dismissing = true
+        notifyDismissalOnFinalize = notifyOnFinalize
         sheet?.onDismissRequested = null
         if (!animate || !isShowing || sheet == null) {
             sheet?.animate()?.cancel()
