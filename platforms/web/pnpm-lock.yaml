@@ -30,6 +30,9 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.18
+      '@types/semver':
+        specifier: ^7.8.0
+        version: 7.8.0
       '@typescript-eslint/parser':
         specifier: ^8.70.1
         version: 8.71.0(eslint@10.11.0)(typescript@5.9.3)
@@ -63,6 +66,9 @@ importers:
       rolldown-plugin-dts:
         specifier: ^0.28.6
         version: 0.28.6(@volar/typescript@2.4.28)(rolldown@1.2.13)(typescript@5.9.3)
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -782,6 +788,9 @@ packages:
 
   '@types/node@22.19.18':
     resolution: {integrity: sha512-9v00a+dn2yWVsYDEunWC4g/TcRKVq3r8N5FuZp7u0SGrPvdN9c2yXI9bBuf5Fl0hNCb+QTIePTn5pJs2pwBOQQ==}
+
+  '@types/semver@7.8.0':
+    resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==, tarball: https://registry.npmjs.org/@types/semver/-/semver-7.8.0.tgz}
 
   '@types/whatwg-mimetype@3.0.2':
     resolution: {integrity: sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA==}
@@ -2504,6 +2513,8 @@ snapshots:
   '@types/node@22.19.18':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/semver@7.8.0': {}
 
   '@types/whatwg-mimetype@3.0.2': {}
 
