@@ -24,7 +24,7 @@ If a direct URL does not resolve in the current Bitrise UI, open the app overvie
 
 ## Direct Maestro Swift workflow
 
-The `e2e-maestro-swift-ios` workflow builds the Swift sample for the
+The `e2e-maestro-swift-ios` workflow builds the Swift sample in Release for the
 Bitrise iOS simulator and runs every flow enabled for `swift-ios` in
 `e2e/config/matrix.yml` using the pinned Maestro CLI and existing local E2E
 runner. This covers launch, checkout presentation and dismissal, guest checkout,

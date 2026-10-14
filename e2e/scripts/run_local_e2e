@@ -525,6 +525,7 @@ build_and_install() {
       xcodebuild build \
         -project "$APP_NAME/$APP_NAME.xcodeproj" \
         -scheme "$APP_NAME" \
+        -configuration Release \
         -sdk iphonesimulator \
         -destination "id=$DEVICE_ID" \
         -derivedDataPath "$DERIVED_DATA" \
@@ -532,9 +533,9 @@ build_and_install() {
         -disableAutomaticPackageResolution \
         CODE_SIGNING_ALLOWED=NO | xcbeautify
 
-      APP_PATH="$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "${APP_NAME}.app" -print -quit)"
-      if [ -z "$APP_PATH" ]; then
-        echo "The build created no ${APP_NAME}.app bundle." >&2
+      APP_PATH="$DERIVED_DATA/Build/Products/Release-iphonesimulator/${APP_NAME}.app"
+      if [ ! -d "$APP_PATH" ]; then
+        echo "The build created no Release ${APP_NAME}.app bundle." >&2
         return 1
       fi
 
