@@ -7,6 +7,7 @@ import SwiftUI
 protocol PayController: AnyObject {
     var cart: StorefrontAPI.Types.Cart? { get set }
     var storefront: StorefrontAPIProtocol { get set }
+    var onCheckoutDismiss: (() -> Void)? { get }
 
     /// Opens ShopifyCheckoutKit
     func present(url: URL) async throws
@@ -149,5 +150,14 @@ class ApplePayViewController: WalletController, PayController {
             try? await authorizationDelegate.transition(to: .completed)
         }
         super.checkoutDidComplete(event)
+    }
+
+    override func checkoutDidDismiss() {
+        Task { @MainActor in
+            // Completion may already have finished the Apple Pay flow before the buyer closes checkout.
+            guard case .presentingCheckoutKit = authorizationDelegate.state else { return }
+            try? await authorizationDelegate.transition(to: .completed)
+        }
+        super.checkoutDidDismiss()
     }
 }

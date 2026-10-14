@@ -1,3 +1,4 @@
+import PassKit
 #if !COCOAPODS
     import EmbeddedCheckoutProtocol
 #endif
@@ -132,6 +133,64 @@ class ApplePayViewControllerTests: XCTestCase {
         }
     }
 
+    /// Drives the real Apple Pay state machine without network access or real-time retry delays.
+    class StatefulApplePayViewController: ApplePayViewController {
+        let mockTopViewController = UIViewController()
+        private var observingAuthorizationDelegate: ObservingApplePayAuthorizationDelegate!
+
+        init(
+            identifier: CheckoutIdentifier,
+            configuration: ApplePayConfigurationWrapper,
+            storefront: StorefrontAPIProtocol
+        ) {
+            super.init(identifier: identifier, configuration: configuration)
+            self.storefront = storefront
+            observingAuthorizationDelegate = ObservingApplePayAuthorizationDelegate(
+                configuration: configuration,
+                controller: self,
+                clock: MockClock()
+            )
+        }
+
+        override var authorizationDelegate: ApplePayAuthorizationDelegate {
+            observingAuthorizationDelegate
+        }
+
+        var onTransition: ((ApplePayState) -> Void)? {
+            get { observingAuthorizationDelegate.onTransition }
+            set { observingAuthorizationDelegate.onTransition = newValue }
+        }
+
+        override func getTopViewController() -> UIViewController? {
+            mockTopViewController
+        }
+    }
+
+    final class ObservingApplePayAuthorizationDelegate: ApplePayAuthorizationDelegate {
+        var onTransition: ((ApplePayState) -> Void)?
+
+        override func transition(to nextState: ApplePayState) async throws {
+            try await super.transition(to: nextState)
+            onTransition?(nextState)
+        }
+    }
+
+    final class PersonalDataStorefrontAPI: MockStorefrontAPI, @unchecked Sendable {
+        override func cartRemovePersonalData(id _: GraphQLScalars.ID) async throws {}
+    }
+
+    final class SuccessfulPaymentAuthorizationController: PaymentAuthorizationController {
+        var delegate: (any PKPaymentAuthorizationControllerDelegate)?
+
+        func present() async -> Bool {
+            true
+        }
+
+        func dismiss(completion: (@Sendable () -> Void)?) {
+            completion?()
+        }
+    }
+
     // MARK: - Callback Properties
 
     // MARK: - Delegate
@@ -174,6 +233,73 @@ class ApplePayViewControllerTests: XCTestCase {
 
         await fulfillment(of: [forwarded, finished], timeout: 1)
         XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [.completed])
+    }
+
+    func test_checkoutDidDismiss_whenPresentedCheckoutDismisses_invokesOnDismissCallback() async throws {
+        let dismissCallbackExpectation = expectation(description: "Dismiss callback should be invoked")
+        viewController.eventHandlers.checkoutDidDismiss = { dismissCallbackExpectation.fulfill() }
+        viewController.mockTopViewController = UIViewController()
+
+        let checkoutURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
+        try await viewController.present(url: checkoutURL)
+
+        let checkoutViewController = try XCTUnwrap(viewController.checkoutViewController)
+        let webViewController = try XCTUnwrap(
+            checkoutViewController.viewControllers.first as? CheckoutWebViewController
+        )
+        webViewController.close()
+
+        await fulfillment(of: [dismissCallbackExpectation], timeout: 1.0)
+    }
+
+    func test_checkoutDidDismiss_whenApplePayAlreadyIdle_forwardsDismissalWithoutTransitioning() async {
+        var dismissalCount = 0
+        viewController.eventHandlers.checkoutDidDismiss = { dismissalCount += 1 }
+        XCTAssertEqual(mockAuthorizationDelegate.state, .idle)
+
+        viewController.checkoutDidDismiss()
+        for _ in 0 ..< 10 {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(dismissalCount, 1)
+        XCTAssertEqual(mockAuthorizationDelegate.transitionHistory, [])
+    }
+
+    func test_checkoutDidDismiss_whilePresentingCheckoutKit_forwardsDismissalAndResetsApplePayToIdle() async throws {
+        let controller = StatefulApplePayViewController(
+            identifier: .cart(cartID: "gid://Shopify/Cart/test-cart-id"),
+            configuration: mockConfiguration,
+            storefront: PersonalDataStorefrontAPI()
+        )
+        let paymentController = SuccessfulPaymentAuthorizationController()
+        controller.authorizationDelegate.paymentControllerFactory = { _ in paymentController }
+        try controller.authorizationDelegate.setCart(to: StorefrontAPI.Cart.testCart())
+        try await controller.authorizationDelegate.transition(to: .startPaymentRequest)
+        try await controller.authorizationDelegate.transition(to: .paymentAuthorized(payment: PKPayment()))
+        let redirectURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/thank-you"))
+        try await controller.authorizationDelegate.transition(to: .cartSubmittedForCompletion(redirectURL: redirectURL))
+        try await controller.authorizationDelegate.transition(to: .completed)
+        guard case .presentingCheckoutKit = controller.authorizationDelegate.state else {
+            return XCTFail("Expected Checkout Kit to be presented")
+        }
+
+        var dismissalCount = 0
+        var transitions: [ApplePayState] = []
+        let idleExpectation = expectation(description: "Apple Pay should return to idle")
+        controller.eventHandlers.checkoutDidDismiss = { dismissalCount += 1 }
+        controller.onTransition = { state in
+            transitions.append(state)
+            if state == .idle { idleExpectation.fulfill() }
+        }
+
+        controller.checkoutDidDismiss()
+
+        XCTAssertEqual(dismissalCount, 1)
+        await fulfillment(of: [idleExpectation], timeout: 1.0)
+        // Transitions nest (completed -> reset -> idle) and the hook runs after each returns, so innermost reports first.
+        XCTAssertEqual(transitions, [.idle, .reset, .completed])
+        XCTAssertEqual(controller.authorizationDelegate.state, .idle)
     }
 
     // MARK: - WalletController Inheritance

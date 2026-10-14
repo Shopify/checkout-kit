@@ -449,8 +449,8 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     }
 
     /// User cancels the sheet without authorizing payment
-    func test_onCompleted_withDefaultCase_shouldTransitionToReset() async throws {
-        // Start with appleSheetPresented (a state that falls into default case)
+    func test_onCompleted_withAppleSheetPresented_shouldTransitionToReset() async throws {
+        // Start with appleSheetPresented
         try await delegate.transition(to: .startPaymentRequest)
         XCTAssertEqual(delegate.state, .appleSheetPresented)
 
@@ -462,6 +462,16 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
         XCTAssertEqual(
             mockController.presentCallCount, 0, "Should not call present for default case"
         )
+    }
+
+    func test_onCompleted_withAppleSheetPresented_shouldNotifyDismissal() async throws {
+        var dismissalCount = 0
+        mockController.onCheckoutDismiss = { dismissalCount += 1 }
+
+        try await delegate.transition(to: .startPaymentRequest)
+        try await delegate.transition(to: .completed)
+
+        XCTAssertEqual(dismissalCount, 1)
     }
 
     // MARK: onPresentingCheckoutKit()
@@ -675,6 +685,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
 
         var presentCallCount = 0
         var presentCalledWith: URL?
+        var onCheckoutDismiss: (() -> Void)?
 
         init() {
             let config = ShopifyAcceleratedCheckouts.Configuration.testConfiguration
@@ -693,6 +704,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     private class FailingMockPayController: PayController {
         var cart: StorefrontAPI.Types.Cart?
         var storefront: StorefrontAPIProtocol
+        var onCheckoutDismiss: (() -> Void)?
 
         var presentCallCount = 0
 
@@ -713,6 +725,7 @@ final class ApplePayAuthorizationDelegateTests: XCTestCase {
     private class SpyPayController: PayController {
         var cart: StorefrontAPI.Types.Cart?
         var storefront: StorefrontAPIProtocol
+        var onCheckoutDismiss: (() -> Void)?
 
         var presentCallCount = 0
         var presentCalledWith: URL?
