@@ -537,7 +537,7 @@ act of presenting a view, so do not rely on it to initialize UI for every presen
 For Java integrations, override `onCheckoutStarted`, `onCheckoutUpdated`, and `onCheckoutCompleted` in
 `DefaultCheckoutListener`. These receive `CheckoutStartEvent`, `CheckoutUpdateEvent`, and `CheckoutCompleteEvent`;
 use `event.getCheckout()` to access their snapshot. Override `onCheckoutFailed` for `CheckoutFailureEvent` and
-`onCheckoutDismissed` for buyer dismissal. Unregistered callbacks have safe defaults.
+`onCheckoutDismissed` for presentation closure. Unregistered callbacks have safe defaults.
 
 Use `onLinkClick` to choose how checkout links open; see [Offsite payments and links](#offsite-payments-and-links).
 

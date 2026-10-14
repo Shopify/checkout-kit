@@ -171,9 +171,6 @@ internal class CheckoutBottomSheet(
     internal fun dismiss(animate: Boolean, notifyOnFinalize: Boolean = false) {
         if (notifyOnFinalize) {
             notifyDismissalOnFinalize = true
-            if (dismissFinalized) {
-                notifyCheckoutDismissed()
-            }
         }
 
         val sheet = findViewById<CheckoutBottomSheetLayout>(R.id.checkoutKitSheet)
