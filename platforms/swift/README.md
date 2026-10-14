@@ -381,6 +381,12 @@ ShopifyCheckout(checkout: checkoutURL)
   }
 ```
 
+When your app presents `ShopifyCheckout` in its own SwiftUI `.sheet`, SwiftUI owns that sheet's
+presentation. The close button and terminal failures call `.onDismiss`, but swiping the sheet down
+does not. Run the same cleanup from the sheet's `onDismiss` parameter, for example
+`.sheet(isPresented: $isPresented, onDismiss: refreshCart)`, and keep it safe to run twice. To keep
+`.onDismiss` as the only dismissal path, add `.interactiveDismissDisabled()` to `ShopifyCheckout`.
+
 Update callbacks combine changes to totals, line items, fulfillment, and messages;
 identical checkout snapshots do not trigger another update. Read the fields your
 app needs from `event.checkout`.
