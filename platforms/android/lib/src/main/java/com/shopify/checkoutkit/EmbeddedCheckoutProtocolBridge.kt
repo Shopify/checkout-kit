@@ -170,7 +170,7 @@ internal class EmbeddedCheckoutProtocolBridge(
                 }
             }
         } catch (e: SerializationException) {
-            log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
+            log.d(LOG_TAG, "Failed to decode ECP message: ${e::class.simpleName}.")
             val decodedMethod = runCatching {
                 Json.parseToJsonElement(message).jsonObject["method"]?.jsonPrimitive?.content
             }.getOrNull()
@@ -263,8 +263,12 @@ internal class EmbeddedCheckoutProtocolBridge(
     private fun handleClientMessage(method: String, message: String) {
         log.d(LOG_TAG, "Delegating $method to client.")
         val response = composedClient.process(message)
-        log.d(LOG_TAG, "  client response: $response")
-        response?.let { sendRaw(it) }
+        if (response == null) {
+            // Notifications such as ec.error have no JSON-RPC id, so clients correctly return no response.
+            log.d(LOG_TAG, "  client returned no bridge response.")
+        } else {
+            sendRaw(response)
+        }
     }
 
     private fun handleTerminalError(message: String, params: JsonElement?) {
@@ -291,7 +295,10 @@ internal class EmbeddedCheckoutProtocolBridge(
 
             // `ec.error` denotes a terminal session error. Message severity selects the public
             // lifecycle code, but does not keep the embedded session alive.
-            log.d(LOG_TAG, "Terminal ec.error received; ending checkout presentation.")
+            log.d(
+                LOG_TAG,
+                "Terminal ec.error received; ending checkout presentation with failureCode=${failure.code}.",
+            )
             if (
                 CheckoutWebView.evictForTerminalFailure(
                     view,
@@ -326,7 +333,7 @@ internal class EmbeddedCheckoutProtocolBridge(
     }
 
     private fun sendRaw(responseJson: String) {
-        log.d(LOG_TAG, "Sending bridge response: $responseJson")
+        log.d(LOG_TAG, "Sending bridge response.")
         webMessageTransport.send(view, ECP_RESPONSE_GLOBAL, responseJson)
     }
 

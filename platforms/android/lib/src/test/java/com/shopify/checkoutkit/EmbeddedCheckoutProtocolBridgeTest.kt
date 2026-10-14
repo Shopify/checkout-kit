@@ -546,6 +546,25 @@ class EmbeddedCheckoutProtocolBridgeTest {
     }
 
     @Test
+    fun `terminal ec error maps storefront password required to its lifecycle failure code`() {
+        val messages =
+            """
+            |[
+            |  {"type":"error","code":"storefront_password_required","content":"Storefront password required","severity":"unrecoverable"}
+            |]
+            """.trimMargin()
+
+        ecp.receiveMessage(ecErrorMessageWithMessages(messages))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val captor = argumentCaptor<CheckoutException>()
+        verify(mockListener).onCheckoutViewFailedWithError(captor.capture())
+        CheckoutExceptionAssert.assertThat(captor.firstValue)
+            .hasCode(CheckoutErrorCode.STOREFRONT_PASSWORD_REQUIRED)
+            .hasMessage("Storefront password required")
+    }
+
+    @Test
     fun `terminal ec error without an unrecoverable error message fails with unknown`() {
         ecp.receiveMessage(ecErrorMessage(severity = "recoverable"))
         shadowOf(Looper.getMainLooper()).idle()
