@@ -141,6 +141,8 @@ val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
 checkout?.dismiss()
 ```
 
+Calling `CheckoutHandle.dismiss()` is caller-controlled teardown and does not invoke `onDismiss`.
+
 ## Embed checkout
 
 Use `ShopifyCheckout` when your app owns the presentation container. The view owns the checkout header, close control,
@@ -503,6 +505,12 @@ Register checkout callbacks directly when presenting or creating a checkout. Sta
 each provide a typed `Checkout` snapshot through `event.checkout`. Failures provide a `CheckoutException` through
 `event.error`.
 
+Use `onFail` for terminal checkout failures and `onDismiss` for presentation lifecycle. For a Checkout Kit-managed
+sheet, `onDismiss` runs after the sheet closes, independently of checkout outcome. When a terminal failure closes the
+sheet, `onFail` runs first and `onDismiss` follows; these callbacks are not mutually exclusive. `onComplete` reports
+that the order completed; it does not report presentation closure, and `onDismiss` follows when the buyer later closes
+checkout.
+
 ```kotlin
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
     onStart { event ->
@@ -531,7 +539,7 @@ act of presenting a view, so do not rely on it to initialize UI for every presen
 For Java integrations, override `onCheckoutStarted`, `onCheckoutUpdated`, and `onCheckoutCompleted` in
 `DefaultCheckoutListener`. These receive `CheckoutStartEvent`, `CheckoutUpdateEvent`, and `CheckoutCompleteEvent`;
 use `event.getCheckout()` to access their snapshot. Override `onCheckoutFailed` for `CheckoutFailureEvent` and
-`onCheckoutDismissed` for buyer dismissal. Unregistered callbacks have safe defaults.
+`onCheckoutDismissed` for presentation closure. Unregistered callbacks have safe defaults.
 
 Use `onLinkClick` to choose how checkout links open; see [Offsite payments and links](#offsite-payments-and-links).
 

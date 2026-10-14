@@ -122,6 +122,28 @@ final class ShopPayCallbackTests: XCTestCase {
         await fulfillment(of: [dismissExpectation], timeout: 1.0)
     }
 
+    func testFailureAndDismissCallbacksInvokedWhenPresentedCheckoutFails() async throws {
+        let failExpectation = expectation(description: "Failure callback should be invoked")
+        let dismissExpectation = expectation(description: "Dismiss callback should be invoked")
+        viewController.eventHandlers = EventHandlers(
+            checkoutDidFail: { _ in failExpectation.fulfill() },
+            checkoutDidDismiss: { dismissExpectation.fulfill() }
+        )
+
+        let checkoutURL = try XCTUnwrap(URL(string: "https://test-shop.myshopify.com/checkout"))
+        try await viewController.present(url: checkoutURL)
+
+        let checkoutViewController = try XCTUnwrap(viewController.checkoutViewController)
+        let webViewController = try XCTUnwrap(
+            checkoutViewController.viewControllers.first as? CheckoutWebViewController
+        )
+        webViewController.checkoutViewDidFailWithError(
+            error: CheckoutError(code: .sdkError, message: "Test error")
+        )
+
+        await fulfillment(of: [failExpectation, dismissExpectation], timeout: 1.0, enforceOrder: true)
+    }
+
     // MARK: - Delegate Tests
 
     @MainActor

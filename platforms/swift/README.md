@@ -116,7 +116,7 @@ final class CartViewController: UIViewController, CheckoutDelegate {
   }
 
   func checkoutDidDismiss() {
-    // The buyer dismissed checkout.
+    // The checkout presentation closed.
   }
 
   func checkoutDidFail(_ event: CheckoutFailureEvent) {
@@ -328,8 +328,15 @@ the current `ShopifyCheckoutKit.Checkout` snapshot. Callbacks run on the main ac
 | Checkout is visible and ready for interaction. | `checkoutDidStart(_:)` | `.onStart` |
 | Checkout totals, line items, fulfillment, or messages change. | `checkoutDidUpdate(_:)` | `.onUpdate` |
 | Checkout completes. | `checkoutDidComplete(_:)` | `.onComplete` |
-| The buyer dismisses checkout. | `checkoutDidDismiss()` | `.onDismiss` |
+| The checkout presentation closes. | `checkoutDidDismiss()` | `.onDismiss` |
 | Checkout cannot continue. | `checkoutDidFail(_:)` | `.onFail` |
+
+These callbacks are not mutually exclusive. When a terminal failure closes a presented checkout,
+`checkoutDidFail(_:)` fires first and `checkoutDidDismiss()` follows after the presentation
+closes. Calling `dismiss(animated:)` on the returned view controller is caller-controlled teardown
+and does not invoke either callback. `checkoutDidComplete(_:)` reports that the order completed; it
+does not report presentation closure, and `checkoutDidDismiss()` follows when the buyer later closes
+checkout.
 
 UIKit delegates must implement `checkoutDidDismiss()` and `checkoutDidFail(_:)`.
 The other lifecycle methods have default implementations. When migrating from `checkoutDidFail(error:)`, implement
@@ -373,6 +380,12 @@ ShopifyCheckout(checkout: checkoutURL)
     handleCheckoutError(event.error)
   }
 ```
+
+When your app presents `ShopifyCheckout` in its own SwiftUI `.sheet`, SwiftUI owns that sheet's
+presentation. The close button and terminal failures call `.onDismiss`, but swiping the sheet down
+does not. Run the same cleanup from the sheet's `onDismiss` parameter, for example
+`.sheet(isPresented: $isPresented, onDismiss: refreshCart)`, and keep it safe to run twice. To keep
+`.onDismiss` as the only dismissal path, add `.interactiveDismissDisabled()` to `ShopifyCheckout`.
 
 Update callbacks combine changes to totals, line items, fulfillment, and messages;
 identical checkout snapshots do not trigger another update. Read the fields your
@@ -570,7 +583,7 @@ AcceleratedCheckoutButtons(cartID: cartID)
     // Handle checkout failure.
   }
   .onDismiss {
-    // The buyer dismissed the accelerated checkout flow.
+    // The accelerated checkout presentation closed.
   }
 ```
 

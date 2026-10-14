@@ -38,7 +38,10 @@ public interface CheckoutListener {
     public fun onCheckoutFailed(event: CheckoutFailureEvent)
 
     /**
-     * Event representing dismissal of checkout by the buyer.
+     * Called after a Checkout Kit presentation closes or when embedded checkout requests dismissal.
+     *
+     * Dismissal describes presentation lifecycle independently of checkout outcome. When a terminal
+     * failure closes a Checkout Kit presentation, [onCheckoutFailed] is called before this method.
      */
     public fun onCheckoutDismissed()
 

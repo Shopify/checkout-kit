@@ -14,6 +14,8 @@ public struct EventHandlers {
     public var checkoutDidComplete: ((CheckoutCompleteEvent) -> Void)?
     public var checkoutAction: ((CheckoutLink) -> CheckoutLinkAction)?
     public var checkoutDidFail: ((CheckoutError) -> Void)?
+
+    /// Called after the accelerated checkout presentation closes, independently of checkout outcome.
     public var checkoutDidDismiss: (() -> Void)?
     public var renderStateDidChange: ((RenderState) -> Void)?
 
