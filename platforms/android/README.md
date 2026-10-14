@@ -285,7 +285,7 @@ Preloading is enabled by default. Disable it when appropriate, for example for d
 import com.shopify.checkoutkit.Preloading
 
 ShopifyCheckoutKit.configure {
-    it.preloading = Preloading(enabled = false)
+    it.preloading = Preloading { enabled = false }
 }
 ```
 
@@ -296,14 +296,14 @@ Configure global presentation defaults before presenting checkout:
 ```kotlin
 ShopifyCheckoutKit.configure {
     it.appearance = CheckoutAppearance.Storefront()
-    it.sheet = CheckoutSheetOptions(
-        dismissal = CheckoutSheetDismissal(
-            dragToDismissEnabled = true,
-            tapAwayToDismissEnabled = true,
-        ),
-    )
+    it.sheet = CheckoutSheetOptions {
+        dismissal = CheckoutSheetDismissal {
+            dragToDismissEnabled = true
+            tapAwayToDismissEnabled = true
+        }
+    }
     it.logLevel = LogLevel.ERROR
-    it.telemetry = Telemetry(enabled = false)
+    it.telemetry = Telemetry { enabled = false }
 }
 ```
 
@@ -312,10 +312,10 @@ ShopifyCheckoutKit.configure {
 | `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
 | `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
-| `preloading` | `Preloading(enabled = true)` | Enables best-effort checkout preloading before presentation. |
+| `preloading` | `Preloading()` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
-| `telemetry` | `Telemetry(enabled = true)` | Sends anonymous diagnostic metrics to Shopify. Set `enabled` to `false` to opt out. |
+| `telemetry` | `Telemetry()` | Sends anonymous diagnostic metrics to Shopify. Set `enabled` to `false` to opt out. |
 
 Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
 errors, protocol decoding failures, navigation retries, and checkout navigation
@@ -379,21 +379,23 @@ Customize native sheet presentation independently from checkout colors:
 
 ```kotlin
 ShopifyCheckoutKit.configure {
-    it.sheet = CheckoutSheetOptions(
-        snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 72f)),
-        cornerRadiusDp = 32f,
-        maxWidthDp = 640f,
-        titleAlignment = CheckoutSheetTitleAlignment.CENTER,
-        toolbarElevationDp = 0f,
-        closeIconTint = Color.ResourceId(R.color.checkout_close),
-        dismissal = CheckoutSheetDismissal(
-            dragToDismissEnabled = true,
-            tapAwayToDismissEnabled = true,
-        ),
-        dragHandle = CheckoutSheetDragHandle(
-            visible = true,
-        ),
-    )
+    it.sheet = CheckoutSheetOptions {
+        snapPoints = listOf(CheckoutSheetSnapPoint.Expanded {
+            topMarginDp = 72f
+        })
+        cornerRadiusDp = 32f
+        maxWidthDp = 640f
+        titleAlignment = CheckoutSheetTitleAlignment.CENTER
+        toolbarElevationDp = 0f
+        closeIconTint = Color.ResourceId(R.color.checkout_close)
+        dismissal = CheckoutSheetDismissal {
+            dragToDismissEnabled = true
+            tapAwayToDismissEnabled = true
+        }
+        dragHandle = CheckoutSheetDragHandle {
+            visible = true
+        }
+    }
 }
 ```
 

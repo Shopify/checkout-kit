@@ -39,7 +39,7 @@ class CheckoutKitAndroidDemo : Application() {
                     dragToDismissEnabled = settings.dragToDismissEnabled,
                     tapAwayToDismissEnabled = settings.tapAwayToDismissEnabled,
                 )
-                it.preloading = Preloading(enabled = settings.checkoutPreloadingEnabled)
+                it.preloading = Preloading { enabled = settings.checkoutPreloadingEnabled }
                 it.title = "Plant Checkout"
             }
         }
