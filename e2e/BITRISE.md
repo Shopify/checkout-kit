@@ -38,7 +38,7 @@ The workflow sets `E2E_JUNIT_REPORT` to generate a JUnit report, exports its
 results to Bitrise's **Tests** tab, and uploads the Maestro output directory as
 a compressed artifact. It sets `E2E_MAESTRO_TEST_RETRIES=2` to rerun only failed
 flows up to twice (three attempts total). Tests that recover are named
-`(passed on retry 1)` or `(passed on retry 2)` in the Tests tab; the artifact retains each attempt's JUnit
+`Passed on retry (1 / 2)` or `Passed on retry (2 / 2)` in the Tests tab; the artifact retains each attempt's JUnit
 report and Maestro diagnostics. The workflow installs pinned REXML 3.4.4 for
 report merging. Local runs still default to no whole-flow retries.
 
@@ -310,11 +310,18 @@ comment still publishes with the available links.
 
 Every run maintains a single sticky PR comment (create-or-update via a marker).
 The comment starts with the overall result and the number of selected targets
-that passed, followed by one table with readable target names, outcomes, **Tests**
+that passed, followed by one table with readable target names, outcomes, test runtime, **Tests**
 and build links, and platform-specific Tophat links under **Install from branch**.
 Failed or missing selected workflows appear before passing and skipped targets.
 An empty selection is reported as **E2E not needed**; invalid selection metadata
 is reported as a failure without install links. The commit SHA is not displayed.
+
+Recovered targets show **Passed on retry (1 / N)**, where `N` is the configured
+retry limit and the numerator is the last retry needed for the target to pass.
+Test runtime measures elapsed Maestro execution across all attempts, excluding
+app build time. Each target shares its own summary with the report workflow;
+missing timing is shown as `—`. Workflow failures always take precedence over
+test recovery, including failures while exporting results.
 
 The existing `e2e-build-*` workflows remain available for Tophat to build signed
 device artifacts on demand; direct simulator runs do not produce signed IPAs.

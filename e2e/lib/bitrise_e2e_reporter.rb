@@ -6,11 +6,12 @@ require_relative "e2e_github_reporter"
 # A selected workflow must finish successfully, including its JUnit export.
 # Missing selection metadata or a skipped selected workflow must never pass.
 class BitriseE2EReporter < E2EGitHubReporter
-  def initialize(applications:, selected_ids:, plan_ready:, **options)
+  def initialize(applications:, selected_ids:, plan_ready:, results: {}, **options)
     super([], **options)
     @applications = applications
     @selected_ids = selected_ids
     @plan_ready = plan_ready
+    @maestro_results = results
   end
 
   def conclusion
@@ -37,10 +38,13 @@ class BitriseE2EReporter < E2EGitHubReporter
     unless errors.empty?
       lines.concat(["> [!CAUTION]", *errors.map { |error| "> #{error}" }, ""])
     end
-    lines.concat(["| Target | Result | Details | Install from branch |", "|---|---|---|---|"])
+    lines.concat(["| Target | Result | Test runtime | Details | Install from branch |", "|---|---|---|---|---|"])
     applications_by_outcome.each do |application|
       stage = application_stage(application)
-      lines << "| #{application_label(application)} | #{application_outcome(application)} | #{stage_links(stage)} | #{application_install_link(application)} |"
+      lines << "| #{application_label(application)} | #{application_outcome(application)} | #{application_runtime(application)} | #{stage_links(stage)} | #{application_install_link(application)} |"
+    end
+    if @applications.any? { |application| application_runtime(application) != "—" }
+      lines.concat(["", "Test runtime includes all Maestro attempts; app build time is excluded."])
     end
     if plan_errors.empty? && @selected_ids.empty?
       lines.concat(["", "No E2E application was selected for this change."])
@@ -103,11 +107,41 @@ class BitriseE2EReporter < E2EGitHubReporter
 
     stage = application_stage(application)
     case stage_outcome(stage)
-    when "passed" then "✅ Passed"
+    when "passed" then passed_outcome(application)
     when "did not run" then "❌ Did not run"
     else
       stage.status == "failed" ? "❌ Failed" : "❌ Failed (#{stage.status || "unknown status"})"
     end
+  end
+
+  def application_result(application)
+    return {} unless selected?(application)
+
+    result = @maestro_results[application.fetch("id")]
+    result.is_a?(Hash) ? result : {}
+  end
+
+  def passed_outcome(application)
+    result = application_result(application)
+    retries = result["retry_count"]
+    limit = result["max_retries"]
+    if result["passed"] == true && retries.is_a?(Integer) && limit.is_a?(Integer) &&
+        limit.between?(1, 5) && retries.between?(1, limit)
+      "✅ Passed on retry (#{retries} / #{limit})"
+    else
+      "✅ Passed"
+    end
+  end
+
+  def application_runtime(application)
+    return "—" if stage_outcome(application_stage(application)) == "did not run"
+
+    seconds = application_result(application)["duration_seconds"]
+    return "—" unless seconds.is_a?(Numeric) && seconds.finite? && seconds >= 0
+    return "<1s" if seconds.positive? && seconds < 1
+
+    minutes, seconds = seconds.round.divmod(60)
+    minutes.positive? ? format("%dm %02ds", minutes, seconds) : "#{seconds}s"
   end
 
   def stage_links(stage)

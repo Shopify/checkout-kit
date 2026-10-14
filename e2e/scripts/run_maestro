@@ -32,10 +32,6 @@ MAESTRO="$("$E2E_ROOT/scripts/maestro_bin")"
 CONTROL_LINK="${APP_ID}://e2e"
 
 MAESTRO_ARGS=(--platform "$PLATFORM" test --config config.yaml)
-if [ -n "${E2E_JUNIT_REPORT:-}" ] && [ "${E2E_MAESTRO_TEST_RETRIES:-0}" = 0 ]; then
-  mkdir -p "$(dirname "$E2E_JUNIT_REPORT")"
-  MAESTRO_ARGS+=(--format junit --output "$E2E_JUNIT_REPORT")
-fi
 TEST_DIRECTORIES=(tests/shared)
 TEST_FILES=()
 
@@ -62,7 +58,7 @@ MAESTRO_ARGS+=(
   -e "E2E_CONTROL_LINK=${CONTROL_LINK}"
 )
 
-if [ "${E2E_MAESTRO_TEST_RETRIES:-0}" != 0 ]; then
+if [ -n "${E2E_JUNIT_REPORT:-}" ] || [ "${E2E_MAESTRO_TEST_RETRIES:-0}" != 0 ]; then
   exec ruby "$E2E_ROOT/scripts/run_maestro_with_retries" \
     "$MAESTRO" "${MAESTRO_ARGS[@]}" -- "${TEST_FILES[@]}"
 fi

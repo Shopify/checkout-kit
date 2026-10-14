@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "json"
 require "rexml/document"
 require "tmpdir"
 require "yaml"
@@ -9,12 +10,14 @@ require "yaml"
 # Maestro 2.4 has no CLI retry flag. Run the selected suite once, then rerun only
 # failed flows. Keep raw attempts separate from the final Bitrise JUnit report.
 class MaestroRetryRunner
-  def initialize(command:, files:, report:, retries:, execute: ->(*args) { system(*args) })
-    raise ArgumentError, "E2E_MAESTRO_TEST_RETRIES must be between 1 and 5" unless retries.match?(/\A[1-5]\z/)
+  def initialize(command:, files:, report:, retries:, execute: ->(*args) { system(*args) },
+    clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })
+    raise ArgumentError, "E2E_MAESTRO_TEST_RETRIES must be between 0 and 5" unless retries.match?(/\A[0-5]\z/)
     raise ArgumentError, "Retries require E2E_JUNIT_REPORT" if report.to_s.empty?
     raise ArgumentError, "Retries require explicit flow files" if files.empty?
 
     @command, @report, @retries, @execute = command, report, retries.to_i, execute
+    @clock = clock
     @files_by_name = files.to_h do |file|
       header = YAML.safe_load(File.read(file).split(/^---\s*$/, 2).first)
       [header.fetch("name", File.basename(file, ".yaml")), file]
@@ -23,14 +26,19 @@ class MaestroRetryRunner
   end
 
   def run
+    started_at = @clock.call
+    retry_count = 0
+    passed = false
     pending = @files_by_name.keys
     final = nil
     # A fresh directory prevents stale reports from a previous run being reused.
     FileUtils.mkdir_p(File.dirname(@report))
     FileUtils.rm_f(@report)
+    FileUtils.rm_f("#{@report}.summary.json")
     attempts_dir = Dir.mktmpdir("maestro-attempts-", File.dirname(@report))
 
     (0..@retries).each do |attempt|
+      retry_count = attempt
       directory = File.join(attempts_dir, "attempt-#{attempt + 1}")
       FileUtils.mkdir_p(directory)
       attempt_report = File.join(directory, "junit.xml")
@@ -54,7 +62,7 @@ class MaestroRetryRunner
           previous = REXML::XPath.match(final, "//testcase").find { |item| item.attributes["name"] == test.attributes["name"] }
           test.attributes["time"] = (previous.attributes["time"].to_f + test.attributes["time"].to_f).to_s
           unless failed?(test) || test.elements["skipped"]
-            test.attributes["name"] = "#{test.attributes['name']} (passed on retry #{attempt})"
+            test.attributes["name"] = "#{test.attributes['name']} — Passed on retry (#{attempt} / #{@retries})"
             test.add_element("system-out").text = "Failed an earlier attempt. Raw reports and diagnostics: #{attempts_dir}"
             puts test.attributes["name"]
           end
@@ -75,9 +83,15 @@ class MaestroRetryRunner
       end
       File.write(@report, final.to_s)
       pending = cases.select { |test| failed?(test) }.map { |test| test.attributes["name"] }
-      return true if pending.empty?
+      passed = pending.empty?
+      return true if passed
     end
     false
+  ensure
+    File.write("#{@report}.summary.json", JSON.generate(
+      passed: passed, retry_count: retry_count, max_retries: @retries,
+      duration_seconds: (@clock.call - started_at).round(3)
+    ))
   end
 
   private

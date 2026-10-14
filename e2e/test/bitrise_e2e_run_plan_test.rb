@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "open3"
+require "tmpdir"
 require_relative "../lib/bitrise_e2e_run_plan"
 
 class BitriseE2ERunPlanTest < Minitest::Test
@@ -47,6 +49,36 @@ class BitriseE2ERunPlanTest < Minitest::Test
     end
     assert_equal plan.bitrise_env.keys.grep(/^E2E_RUN_/).sort, flags.sort
     plan.ensure_pipeline_coverage!(config)
+  end
+
+  def test_each_target_shares_its_own_summary_with_the_reporter
+    plan.selected_applications.each do |application|
+      id = application.fetch("id")
+      steps = config.dig("workflows", "e2e-maestro-#{id}", "steps")
+      export = steps.filter_map { |step| step["bundle::export-maestro-results"] }.fetch(0)
+      assert_equal "E2E_MAESTRO_#{id.upcase.tr('-', '_')}_RESULT", export.fetch("inputs").fetch(0).fetch("result_variable")
+    end
+    share = config.dig("step_bundles", "export-maestro-results", "steps").filter_map { |step| step["share-pipeline-variable@1"] }.fetch(0)
+    assert_equal true, share.fetch("is_always_run")
+    assert_equal '{{getenv "BITRISEIO_PIPELINE_ID" | ne ""}}', share.fetch("run_if"), "Standalone workflow runs must not require pipeline sharing"
+    assert_equal "$result_variable", share.fetch("inputs").fetch(0).fetch("variables")
+  end
+
+  def test_export_preserves_summary_json_and_handles_failure_before_tests_start
+    publish = config.dig("step_bundles", "export-maestro-results", "steps").fetch(0).fetch("script@1")
+    assert_equal true, publish.fetch("is_always_run")
+    script = publish.fetch("inputs").fetch(0).fetch("content")
+    Dir.mktmpdir do |directory|
+      report_path = File.join(directory, "junit.xml")
+      result = JSON.generate(passed: true, retry_count: 1, max_retries: 2, duration_seconds: 125.5)
+      [nil, result].each do |summary|
+        File.write("#{report_path}.summary.json", summary) if summary
+        env = {"E2E_JUNIT_REPORT" => report_path, "result_variable" => "E2E_MAESTRO_SWIFT_IOS_RESULT"}
+        output, status = Open3.capture2e(env, "bash", "-c", "envman() { printf '%s\\n' \"$@\"; }\n#{script}")
+        assert status.success?, output
+        assert_equal ["add", "--key", "E2E_MAESTRO_SWIFT_IOS_RESULT", "--value", summary || "{}"], output.lines.map(&:chomp)
+      end
+    end
   end
 
   def test_unrelated_changes_publish_an_explicit_empty_plan

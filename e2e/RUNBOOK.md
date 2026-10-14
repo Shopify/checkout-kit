@@ -24,8 +24,10 @@ signed device artifacts on demand.
 ## Retry behavior
 
 Direct workflows set `E2E_MAESTRO_TEST_RETRIES=2`: one initial attempt and up to two
-retries of only the failed flows. A recovered flow is labeled `(passed on retry 1)`
-or `(passed on retry 2)` in the final JUnit report. The artifact retains each
+retries of only the failed flows. A recovered flow is labeled `Passed on retry (1 / 2)`
+or `Passed on retry (2 / 2)` in the final JUnit report. The PR report shows the
+last retry needed for each recovered target and its elapsed test runtime across
+all attempts, excluding app build time. The artifact retains each
 attempt's report and diagnostics, so a green result does not hide an earlier
 failure. Missing or malformed JUnit reports fail the runner.
 

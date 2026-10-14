@@ -28,6 +28,7 @@ class MaestroRetryRunnerTest < Minitest::Test
     assert_equal [@files], @calls
     assert_equal "0", suite.attributes["failures"]
     assert_equal 1, Dir.glob(File.join(@directory, "maestro-attempts-*", "*", "junit.xml")).size
+    assert_equal({"passed" => true, "retry_count" => 0, "max_retries" => 1, "duration_seconds" => 123.45}, summary)
   end
 
   def test_only_failed_flow_retries_and_recovery_is_visible
@@ -35,11 +36,27 @@ class MaestroRetryRunnerTest < Minitest::Test
     assert_equal [@files, [@files.first]], @calls
     assert_equal "2", suite.attributes["tests"]
     assert_equal "0", suite.attributes["failures"]
-    assert_equal ["Guest (passed on retry 1)", "Launch"], suite.get_elements("testcase").map { |test| test.attributes["name"] }
+    assert_equal ["Guest — Passed on retry (1 / 1)", "Launch"], suite.get_elements("testcase").map { |test| test.attributes["name"] }
     assert_equal "4.0", suite.get_elements("testcase").first.attributes["time"]
     reports = Dir.glob(File.join(@directory, "maestro-attempts-*", "*", "junit.xml"))
     assert_equal 2, reports.size
     assert_includes File.read(reports.first), "<failure>"
+    assert_equal 1, summary.fetch("retry_count")
+    assert_equal 123.45, summary.fetch("duration_seconds")
+  end
+
+  def test_final_retry_reports_the_configured_limit_and_all_attempts
+    assert run_with([{"Guest" => "failure"}, {"Guest" => "failure"}, {}], retries: "2")
+    assert_equal [@files, [@files.first], [@files.first]], @calls
+    assert_equal "Guest — Passed on retry (2 / 2)", suite.get_elements("testcase").first.attributes["name"]
+    assert_equal "6.0", suite.get_elements("testcase").first.attributes["time"]
+    assert_equal({"passed" => true, "retry_count" => 2, "max_retries" => 2, "duration_seconds" => 123.45}, summary)
+  end
+
+  def test_zero_retries_still_reports_runtime_and_never_retries_failures
+    refute run_with([{"Guest" => "failure"}], retries: "0")
+    assert_equal [@files], @calls
+    assert_equal({"passed" => false, "retry_count" => 0, "max_retries" => 0, "duration_seconds" => 123.45}, summary)
   end
 
   def test_persistent_failures_stay_failed_after_retry_budget
@@ -47,6 +64,7 @@ class MaestroRetryRunnerTest < Minitest::Test
     assert_equal 2, @calls.size
     assert_equal "1", suite.attributes["failures"]
     assert_equal "Guest", suite.get_elements("testcase").first.attributes["name"]
+    assert_equal false, summary.fetch("passed")
   end
 
   def test_errors_are_retried_and_counted
@@ -56,14 +74,19 @@ class MaestroRetryRunnerTest < Minitest::Test
 
   def test_missing_report_does_not_reuse_stale_result
     File.write(@report, "old result")
+    File.write("#{@report}.summary.json", '{"passed":true,"retry_count":5}')
     error = assert_raises(RuntimeError) { run_with([:missing]) }
     assert_match(/did not produce/, error.message)
     refute_path_exists @report
+    assert_equal false, summary.fetch("passed")
+    assert_equal 0, summary.fetch("retry_count")
   end
 
   def test_missing_retry_report_preserves_original_failure
     assert_raises(RuntimeError) { run_with([{ "Guest" => "failure" }, :missing]) }
     assert_equal "1", suite.attributes["failures"]
+    assert_equal false, summary.fetch("passed")
+    assert_equal 1, summary.fetch("retry_count")
   end
 
   def test_empty_or_incomplete_report_cannot_pass
@@ -84,7 +107,7 @@ class MaestroRetryRunnerTest < Minitest::Test
   def test_duplicate_flow_names_and_invalid_retry_counts_are_rejected
     File.write(@files.last, File.read(@files.first))
     assert_raises(ArgumentError) { run_with([{}]) }
-    %w[0 -1 6 invalid].each do |retries|
+    %w[-1 6 invalid].each do |retries|
       assert_raises(ArgumentError) { MaestroRetryRunner.new(command: [], files: @files, report: @report, retries: retries) }
     end
   end
@@ -119,7 +142,11 @@ class MaestroRetryRunnerTest < Minitest::Test
     REXML::Document.new(File.read(@report)).elements["testsuites/testsuite"]
   end
 
-  def run_with(outcomes)
+  def summary
+    JSON.parse(File.read("#{@report}.summary.json"))
+  end
+
+  def run_with(outcomes, retries: "1")
     @calls = []
     execute = lambda do |*arguments|
       selected = arguments & @files
@@ -139,7 +166,9 @@ class MaestroRetryRunnerTest < Minitest::Test
       File.write(report, "<testsuites><testsuite>#{tests.join}</testsuite></testsuites>")
       outcome != :bad_exit && (!outcome.is_a?(Hash) || outcome.values.none? { |state| %w[failure error].include?(state) })
     end
-    runner = MaestroRetryRunner.new(command: ["maestro", "test"], files: @files, report: @report, retries: "1", execute: execute)
+    times = [100.0, 223.45]
+    runner = MaestroRetryRunner.new(command: ["maestro", "test"], files: @files, report: @report, retries: retries,
+      execute: execute, clock: -> { times.shift })
     result = nil
     capture_io { result = runner.run }
     result

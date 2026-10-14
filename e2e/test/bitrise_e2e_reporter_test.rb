@@ -15,10 +15,11 @@ class BitriseE2EReporterTest < Minitest::Test
 
   def report(ids: ["swift-ios"], ready: "true", stages: [stage("e2e-plan"), stage("e2e-maestro-swift-ios")],
     applications: [{"id" => "swift-ios", "target" => "swift", "platform" => "ios"}, {"id" => "kotlin-android", "target" => "kotlin", "platform" => "android"}],
-    targets: self.targets, branch: "branch", app_slug: "app-slug", client: nil, pipeline_url: "https://example.com/pipeline")
+    targets: self.targets, branch: "branch", app_slug: "app-slug", client: nil, pipeline_url: "https://example.com/pipeline", results: {})
     BitriseE2EReporter.new(
       applications: applications,
       selected_ids: ids, plan_ready: ready,
+      results: results,
       repository: "example/repo", sha: "abc123", pr_number: 1,
       stages: BitrisePipelineStages.new(stages, app_slug: "app-slug"),
       targets: targets,
@@ -42,9 +43,9 @@ class BitriseE2EReporterTest < Minitest::Test
     body = report.comment_body
 
     assert_match(/\A#{Regexp.escape(E2EGitHubReporter::COMMENT_MARKER)}\n\n\*\*✅ E2E passed · 1\/1 targets\*\*/, body)
-    assert_includes body, "| Target | Result | Details | Install from branch |"
-    assert_includes body, "| Swift · iOS | ✅ Passed | [Tests]"
-    assert_includes body, "| Kotlin · Android | ⏭️ Skipped · not needed for this change | — | — |"
+    assert_includes body, "| Target | Result | Test runtime | Details | Install from branch |"
+    assert_includes body, "| Swift · iOS | ✅ Passed | — | [Tests]"
+    assert_includes body, "| Kotlin · Android | ⏭️ Skipped · not needed for this change | — | — | — |"
     assert_equal 1, body.lines.count { |line| line.start_with?("|---") }
     refute_includes body, "abc123"
     refute_includes body, "Install this build"
@@ -61,8 +62,64 @@ class BitriseE2EReporterTest < Minitest::Test
 
       assert_includes body, "**❌ E2E failed · 1/2 targets passed**"
       assert_operator body.index("| Kotlin · Android | ❌"), :<, body.index("| Swift · iOS | ✅ Passed")
-      assert_includes body, problem["external_id"].empty? ? "❌ Did not run | —" : "❌ Failed | [Tests]"
+      assert_includes body, problem["external_id"].empty? ? "❌ Did not run | —" : "❌ Failed | — | [Tests]"
     end
+  end
+
+  def test_retry_recovery_shows_attempt_limit_and_test_runtime
+    result = {"passed" => true, "retry_count" => 1, "max_retries" => 2, "duration_seconds" => 125.2}
+    reporter = report(results: {"swift-ios" => result})
+
+    assert_equal "success", reporter.conclusion
+    assert_includes reporter.comment_body, "| Swift · iOS | ✅ Passed on retry (1 / 2) | 2m 05s |"
+    assert_includes reporter.comment_body, "Test runtime includes all Maestro attempts; app build time is excluded."
+    assert_includes report(results: {"swift-ios" => result.merge("retry_count" => 2)}).comment_body, "Passed on retry (2 / 2)"
+    assert_includes report(results: {"swift-ios" => result.merge("retry_count" => 0)}).comment_body, "✅ Passed | 2m 05s |"
+  end
+
+  def test_runtime_formatting_and_unavailable_metadata
+    {0 => "0s", 0.3 => "<1s", 12.4 => "12s", 59.8 => "1m 00s", 3601 => "60m 01s",
+     nil => "—", -1 => "—", "bad" => "—", Float::NAN => "—", Float::INFINITY => "—"}.each do |seconds, expected|
+      body = report(results: {"swift-ios" => {"duration_seconds" => seconds}}).comment_body
+      assert_includes body, "| Swift · iOS | ✅ Passed | #{expected} |"
+    end
+    [nil, [], "invalid", {"passed" => true, "retry_count" => 3, "max_retries" => 2},
+     {"passed" => true, "retry_count" => "1", "max_retries" => 2}].each do |result|
+      assert_includes report(results: {"swift-ios" => result}).comment_body, "| Swift · iOS | ✅ Passed | — |"
+    end
+  end
+
+  def test_test_metadata_never_overrides_failed_missing_or_unselected_workflows
+    result = {"passed" => true, "retry_count" => 1, "max_retries" => 2, "duration_seconds" => 125}
+    failed = report(results: {"swift-ios" => result}, stages: [stage("e2e-plan"), stage("e2e-maestro-swift-ios", "failed")])
+    assert_equal "failure", failed.conclusion
+    assert_includes failed.comment_body, "❌ Failed | 2m 05s |"
+    refute_includes failed.comment_body, "Passed on retry"
+
+    missing = report(results: {"swift-ios" => result}, stages: [stage("e2e-plan")])
+    assert_equal "failure", missing.conclusion
+    assert_includes missing.comment_body, "❌ Did not run | — |"
+    unselected = report(ids: [], results: {"swift-ios" => result})
+    assert_includes unselected.comment_body, "Skipped · not needed for this change | — |"
+    refute_includes unselected.comment_body, "Passed on retry"
+  end
+
+  def test_cli_reads_target_summary_without_requiring_a_github_token
+    result = {"passed" => true, "retry_count" => 1, "max_retries" => 2, "duration_seconds" => 125}
+    env = {
+      "BITRISE_PULL_REQUEST" => nil, "E2E_DIRECT_PLAN_READY" => "true",
+      "E2E_DIRECT_SELECTED_APPLICATIONS" => '["swift-ios"]',
+      "BITRISEIO_FINISHED_WORKFLOWS" => JSON.generate([stage("e2e-plan"), stage("e2e-maestro-swift-ios")]),
+      "E2E_MAESTRO_SWIFT_IOS_RESULT" => JSON.generate(result)
+    }
+    script = File.expand_path("../scripts/report_bitrise_e2e_results", __dir__)
+    output, status = Open3.capture2e(env, RbConfig.ruby, script)
+    assert status.success?, output
+    assert_includes output, "Passed on retry (1 / 2) | 2m 05s"
+    env["E2E_MAESTRO_SWIFT_IOS_RESULT"] = "malformed"
+    output, status = Open3.capture2e(env, RbConfig.ruby, script)
+    assert status.success?, output
+    assert_includes output, "| Swift · iOS | ✅ Passed | — |"
   end
 
   def test_empty_selection_does_not_claim_that_tests_passed_or_offer_installs

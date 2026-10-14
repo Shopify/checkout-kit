@@ -255,7 +255,26 @@ step_bundles:
             - paths: ~/.maestro-versions
 
   export-maestro-results:
+    inputs:
+      - result_variable: ""
     steps:
+      - script@1:
+          title: Publish Maestro retry count and runtime
+          is_always_run: true
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${result_variable:?result_variable is required}"
+                summary='{}'
+                if [ -f "$E2E_JUNIT_REPORT.summary.json" ]; then
+                  summary="$(cat "$E2E_JUNIT_REPORT.summary.json")"
+                fi
+                envman add --key "$result_variable" --value "$summary"
+      - share-pipeline-variable@1:
+          is_always_run: true
+          run_if: '{{getenv "BITRISEIO_PIPELINE_ID" | ne ""}}'
+          inputs:
+            - variables: $result_variable
       - custom-test-results-export@1:
           is_always_run: true
           inputs:
@@ -774,7 +793,9 @@ workflows:
                 source ./e2e/scripts/bitrise_ci_helpers
                 e2e_configure_storefront
                 ./e2e/scripts/run_local_e2e swift-ios
-      - bundle::export-maestro-results: {}
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_SWIFT_IOS_RESULT
 
   e2e-maestro-kotlin-android:
     status_report_name: "ci/bitrise/maestro-kotlin-android/<event_type>"
@@ -812,7 +833,9 @@ workflows:
             - content: |-
                 set -euo pipefail
                 ./e2e/scripts/run_bitrise_maestro kotlin-android "$E2E_KOTLIN_ANDROID_APP_PATH"
-      - bundle::export-maestro-results: {}
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_KOTLIN_ANDROID_RESULT
 
   e2e-maestro-react-native-android:
     status_report_name: "ci/bitrise/maestro-react-native-android/<event_type>"
@@ -852,7 +875,9 @@ workflows:
             - content: |-
                 set -euo pipefail
                 ./e2e/scripts/run_bitrise_maestro react-native-android "$E2E_REACT_NATIVE_ANDROID_APP_PATH"
-      - bundle::export-maestro-results: {}
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_REACT_NATIVE_ANDROID_RESULT
 
   e2e-maestro-react-native-ios:
     status_report_name: "ci/bitrise/maestro-react-native-ios/<event_type>"
@@ -891,7 +916,9 @@ workflows:
             - content: |-
                 set -euo pipefail
                 ./e2e/scripts/run_bitrise_maestro react-native-ios "$E2E_REACT_NATIVE_IOS_SIMULATOR_APP_BUNDLE"
-      - bundle::export-maestro-results: {}
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_REACT_NATIVE_IOS_RESULT
 
   e2e-build-swift-ios:
     meta:

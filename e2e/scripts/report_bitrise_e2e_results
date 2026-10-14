@@ -13,6 +13,16 @@ selected_ids = begin
 rescue JSON::ParserError
   nil
 end
+results = plan.selected_applications.to_h do |application|
+  id = application.fetch("id")
+  raw = ENV["E2E_MAESTRO_#{id.upcase.tr('-', '_')}_RESULT"]
+  result = begin
+    JSON.parse(raw.to_s)
+  rescue JSON::ParserError
+    nil
+  end
+  [id, result]
+end
 manifest = JSON.parse(File.read(File.expand_path("../../scripts/tophat/targets.json", __dir__)))
 pr_number = ENV["BITRISE_PULL_REQUEST"].to_s.strip
 has_pr = !["", "false", "0"].include?(pr_number)
@@ -27,6 +37,7 @@ reporter = BitriseE2EReporter.new(
   applications: plan.selected_applications,
   selected_ids: selected_ids,
   plan_ready: ENV["E2E_DIRECT_PLAN_READY"],
+  results: results,
   repository: ENV.fetch("GITHUB_REPOSITORY", "Shopify/checkout-kit"),
   sha: sha,
   pr_number: has_pr ? Integer(pr_number) : nil,
