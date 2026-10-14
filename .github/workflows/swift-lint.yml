@@ -46,7 +46,7 @@ jobs:
           bundler-cache: true
           working-directory: platforms/swift
       # The podspec lives at the repo root so it can glob source files in
-      # both platforms/swift/ and protocol/languages/swift/. Lint runs from
+      # both platforms/swift/ and protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/. Lint runs from
       # the repo root; the Gemfile under platforms/swift/ is still used via
       # BUNDLE_GEMFILE above.
       - run: bundle exec pod lib lint ShopifyCheckoutKit.podspec --allow-warnings

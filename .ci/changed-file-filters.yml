@@ -7,7 +7,6 @@ android:
   - &exclude-docs-directory '!**/docs/**'
 swift:
   - 'platforms/swift/**'
-  - 'telemetry/languages/swift/**'
   - *exclude-markdown
   - *exclude-docs-directory
 reactNative:
@@ -16,36 +15,41 @@ reactNative:
   - *exclude-docs-directory
 web:
   - 'platforms/web/**'
-  - 'telemetry/languages/typescript/**'
-  - 'telemetry/contract/**'
+  - 'platforms/web/internal/telemetry/**'
+  - 'platforms/shared/telemetry/contract/**'
   - *exclude-markdown
   - *exclude-docs-directory
 # Markdown stays included here: the metrics contract is a markdown document
 # and contract changes must run the telemetry checks.
 telemetry:
-  - 'telemetry/**'
+  - 'platforms/shared/telemetry/**'
+  - 'platforms/swift/Sources/Internal/Telemetry/**'
+  - 'platforms/swift/Tests/Internal/CheckoutKitTelemetryTests/**'
+  - 'platforms/web/internal/telemetry/**'
+  - 'platforms/android/shopify-checkout-kit/src/main/java/com/shopify/checkoutkit/telemetry/**'
+  - 'platforms/android/shopify-checkout-kit/src/test/java/com/shopify/checkoutkit/telemetry/**'
   - *exclude-docs-directory
 protocol:
-  - 'protocol/**'
+  - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/**'
   - *exclude-markdown
   - *exclude-docs-directory
 # Protocol files outside language bindings can change every language binding,
 # including shared code-generation tooling. Language bindings are matched separately.
 protocolShared:
-  - 'protocol/**'
-  - '!protocol/languages/**'
+  - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/**'
+  - '!protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/**'
   - *exclude-markdown
   - *exclude-docs-directory
 protocolTypescript:
-  - 'protocol/languages/typescript/**'
+  - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript/**'
   - *exclude-markdown
   - *exclude-docs-directory
 protocolSwift:
-  - 'protocol/languages/swift/**'
+  - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/**'
   - *exclude-markdown
   - *exclude-docs-directory
 protocolKotlin:
-  - 'protocol/languages/kotlin/**'
+  - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/**'
   - *exclude-markdown
   - *exclude-docs-directory
 packageSwift:

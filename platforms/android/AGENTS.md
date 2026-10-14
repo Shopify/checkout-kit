@@ -8,21 +8,21 @@ Shopify Checkout Kit for Android publishes Maven artifacts that are consumed by 
 
 The main modules are:
 
-- **`lib/`** — the Checkout Kit library, published as `com.shopify:checkout-kit`. It presents Shopify checkouts as a native bottom-sheet-hosted WebView in consumer apps.
-- **`../../protocol/languages/kotlin/embedded-checkout-protocol/`** — the Embedded Checkout Protocol Kotlin artifact, published as `com.shopify:embedded-checkout-protocol`. The Android Gradle project path is `:embedded-checkout-protocol`, and the Kotlin package is `com.shopify.ucp.embedded.checkout`.
+- **`shopify-checkout-kit/`** — the Checkout Kit library, published as `com.shopify:checkout-kit`. It presents Shopify checkouts as a native bottom-sheet-hosted WebView in consumer apps.
+- **`../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/`** — the Embedded Checkout Protocol Kotlin artifact, published as `com.shopify:embedded-checkout-protocol`. The Android Gradle project path is `:embedded-checkout-protocol`, and the Kotlin package is `com.shopify.ucp.embedded.checkout`.
 - **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes Checkout Kit from source and the published Kotlin protocol artifact transitively. Changes here never reach consumers; this module is for internal testing and developer onboarding.
 
-The sample is a separate Gradle build (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:lib` from source. The sample's `gradle.properties` and Gradle wrapper are independent of the Android root's. The standalone Kotlin protocol Gradle root also has its own wrapper at `../../protocol/languages/kotlin/gradlew`; keep its Gradle version aligned with the Android root wrapper.
+The sample is a separate Gradle build (`samples/CheckoutKitAndroidDemo/settings.gradle`) that includes `:shopify-checkout-kit` from source. The sample's `gradle.properties` and Gradle wrapper are independent of the Android root's. The standalone Kotlin protocol Gradle root also has its own wrapper at `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew`; keep its Gradle version aligned with the Android root wrapper.
 
 The library and sample resolve the pinned protocol artifact from Maven Central by default, including in CI. To develop against unreleased protocol source, pass `--local` to an Android build, test, lint, format, check, or API command (for example `dev android test --local`) or pass `-PuseLocalProtocol=true` to Gradle. Only this explicit mode includes `:embedded-checkout-protocol` in the Android builds. Remote Kit publication rejects local mode; `publishToMavenLocal` remains available for React Native's explicit `--local` workflow. Test protocol source independently with `dev protocol test kotlin`.
 
 ## Where to make changes
 
-- Checkout Kit source: `lib/src/main/java/com/shopify/checkoutkit/`.
-- Embedded Checkout Protocol source, generated models, and generated event catalog: `../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/`.
-- Library tests: `lib/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in the repo-root `.github/CONTRIBUTING.md`.
-- Protocol tests: `../../protocol/languages/kotlin/embedded-checkout-protocol/src/test/java/com/shopify/ucp/embedded/checkout/`.
-- Java interop is a first-class concern — the library is commonly consumed from Java code. `lib/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
+- Checkout Kit source: `shopify-checkout-kit/src/main/java/com/shopify/checkoutkit/`.
+- Embedded Checkout Protocol source, generated models, and generated event catalog: `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/`.
+- Library tests: `shopify-checkout-kit/src/test/java/com/shopify/checkoutkit/`. "No test, no merge" is a listed reject criterion in the repo-root `.github/CONTRIBUTING.md`.
+- Protocol tests: `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/test/java/com/shopify/ucp/embedded/checkout/`.
+- Java interop is a first-class concern — the library is commonly consumed from Java code. `shopify-checkout-kit/src/test/java/com/shopify/checkoutkit/InteropTest.java` exercises the public API from Java specifically; treat breakage there as a consumer-facing issue.
 
 ## Key components
 
@@ -32,9 +32,9 @@ The library and sample resolve the pinned protocol artifact from Maven Central b
 - **`CheckoutProtocol.kt`** — the curated consumer-facing Checkout Kit protocol API. This is where supported events/delegations are intentionally exposed.
 - **`EmbeddedCheckoutProtocolBridge.kt`** — connects the WebView message transport to the ECP client. Owns transport attachment, message filtering, protocol execution, and default-client composition.
 - **`WebMessageTransport.kt`** — the WebView messaging boundary. Its production implementation receives messages through AndroidX WebMessageListener and sends responses through JavaScript evaluation; tests inject a fake implementation.
-- **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt`** — the generated low-level Embedded Checkout Protocol event catalog.
-- **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/ProtocolCodec.kt`** — hand-written JSON-RPC request/response helpers.
-- **`../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Descriptors.kt`** — reusable protocol descriptor and codec types.
+- **`../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/EmbeddedCheckoutProtocol.kt`** — the generated low-level Embedded Checkout Protocol event catalog.
+- **`../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/ProtocolCodec.kt`** — hand-written JSON-RPC request/response helpers.
+- **`../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Descriptors.kt`** — reusable protocol descriptor and codec types.
 - **`Configuration.kt`** — runtime config container (color scheme, log level).
 - **`CheckoutListener.kt`** + **`DefaultCheckoutListener`** — consumer-implemented lifecycle interface (failure, cancellation, permission prompts, file chooser). Changes here are consumer API changes.
 - **`CheckoutPresentation.kt`** — Kotlin-first builder for per-presentation callbacks (`onFail`, `onDismiss`, browser/system hooks, ECP `connect(...)`). Builds a `DefaultCheckoutListener` internally.
@@ -49,25 +49,25 @@ The library and sample resolve the pinned protocol artifact from Maven Central b
 ## Conventions
 
 - **`-Xexplicit-api=strict`** is on for both published Kotlin artifacts. Every public class, method, field, and property must have an explicit visibility modifier. "Accidentally public" is not a thing here. This is a consumer-protection rule — if you see a public-by-default declaration, it was deliberate.
-- **Max line length: 140** (detekt-enforced). Detekt config: `lib/detekt.config.yml`.
+- **Max line length: 140** (detekt-enforced). Detekt config: `shopify-checkout-kit/detekt.config.yml`.
 - **Library JVM target: 11.** Consumers must build with JDK 11+ to consume the published artifacts. Raising further is a major-version discussion.
 - **Library Kotlin `apiVersion` / `languageVersion` are pinned at 2.0.** Set through `gradle/android-library-versions.gradle` so the published artifacts stay consumable by Kotlin 2.0+ projects even though the compiler itself is on a newer 2.x. Bumping this pin is the consumer-facing breaking change, not bumping the compiler - treat it as a planned major-version event.
-- **Kotlin/JVM compatibility values live in `gradle/android-library-versions.gradle`.** Android SDK levels live in `lib/build.gradle`. Dependency, plugin, and Android artifact versions live in `gradle/libs.versions.toml`.
+- **Kotlin/JVM compatibility values live in `gradle/android-library-versions.gradle`.** Android SDK levels live in `shopify-checkout-kit/build.gradle`. Dependency, plugin, and Android artifact versions live in `gradle/libs.versions.toml`.
 - **Protocol vs kit boundary:** the protocol artifact should own generated raw wire names, generated models, thin descriptors, and encoding/decoding helpers. Checkout Kit should own curation, default behavior, WebView integration, and the higher-level consumer API.
-- **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `../../protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.
+- **Prefer generated protocol models.** Before adding hand-written protocol DTOs, check the generated models in `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/src/main/java/com/shopify/ucp/embedded/checkout/Models.kt` and the OpenRPC schema. Use generated UCP/ECP types for wire payloads; reserve local DTOs for Android-internal transport helpers that are not represented in the schema.
 
 ## Public API surface
 
 The Android public APIs are captured by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin:
 
-- `lib/api/lib.api` for `com.shopify:checkout-kit`.
-- `../../protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
+- `shopify-checkout-kit/api/shopify-checkout-kit.api` for `com.shopify:checkout-kit`.
+- `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
 
-Every PR is gated in CI by `./gradlew :lib:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocol/languages/kotlin` — the build fails if either compiled public API diverges from the committed baselines.
+Every PR is gated in CI by `./gradlew :shopify-checkout-kit:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` — the build fails if either compiled public API diverges from the committed baselines.
 
 If a change intentionally modifies public API (adding, removing, or changing any public class, method, field, or property):
 
-1. Run `dev android api dump` to regenerate both baselines. For project-scoped updates, run `./gradlew :lib:apiDump` from `platforms/android` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin`.
+1. Run `dev android api dump` to regenerate both baselines. For project-scoped updates, run `./gradlew :shopify-checkout-kit:apiDump` from `platforms/android` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin`.
 2. Review the `.api` diffs — they are the single best indicator of consumer impact, and reviewers will focus on them.
 3. Commit the updated `.api` file in the same PR as the code change.
 
@@ -75,13 +75,13 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 ## Common commands
 
-- Published protocol resolution: `./gradlew :lib:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
+- Published protocol resolution: `./gradlew :shopify-checkout-kit:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
 - Tests: `./gradlew test` (or `dev android test`)
-- API surface: `./gradlew :lib:apiCheck` / `./gradlew :lib:apiDump` for Checkout Kit, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
+- API surface: `./gradlew :shopify-checkout-kit:apiCheck` / `./gradlew :shopify-checkout-kit:apiDump` for Checkout Kit, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
 - Format: `./gradlew detekt --auto-correct` (or `dev android format`)
 - Full local verification: `./gradlew clean test detekt lintRelease assembleRelease`
-- Kotlin protocol only: from the repo root, `cd protocol/languages/kotlin && ./gradlew test apiCheck`
+- Kotlin protocol only: from the repo root, `cd protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin && ./gradlew test apiCheck`
 - Sample app build (from `samples/CheckoutKitAndroidDemo/`): `./gradlew assembleDebug`
 
 ## Consumer requirements
@@ -93,7 +93,7 @@ Raising any of these is a consumer-facing breaking change and needs visible rele
 - Kotlin compiler / `apiVersion` / `languageVersion`
 - JVM target
 
-**Transitive `androidx` bumps can silently raise the `compileSdk` floor** — review dependabot PRs with this in mind, and run `./gradlew :lib:apiCheck` and check `aarMetadata` output when bumping any `androidx.*` dependency.
+**Transitive `androidx` bumps can silently raise the `compileSdk` floor** — review dependabot PRs with this in mind, and run `./gradlew :shopify-checkout-kit:apiCheck` and check `aarMetadata` output when bumping any `androidx.*` dependency.
 
 ## Release process
 
@@ -102,7 +102,7 @@ Published Android artifact versions are bumped via:
 1. `gradle/libs.versions.toml`: `checkoutKitAndroid` is the Kit release version; `embeddedCheckoutProtocolAndroidRelease` is the protocol release version; `embeddedCheckoutProtocolAndroid` is the already-published protocol version Kit consumes. Bump the dependency only after publishing the protocol release.
 2. The install snippets in `README.md` (Gradle and Maven).
 
-After the Android artifact is published, update `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) in the React Native release flow if RN should consume that published `com.shopify:checkout-kit` SemVer. RN CI resolves this value from Maven, so do not point it at an unpublished Android version.
+After the Android artifact is published, update `platforms/react-native/package.json` (`checkoutKit.nativeSdkVersions.android`) in the React Native release flow if RN should consume that published `com.shopify:checkout-kit` SemVer. RN CI resolves this value from Maven, so do not point it at an unpublished Android version.
 
 Embedded Checkout Protocol releases are tagged `embedded-checkout-protocol/YYYY.MM.DD.PATCH[-prerelease.N]` and publish only `com.shopify:embedded-checkout-protocol`. Android Kit releases are tagged `android/X.Y.Z` and publish only `com.shopify:checkout-kit`; the Android publish workflow fails if the referenced protocol version is not already available on Maven Central. Swift releases use bare `X.Y.Z`.
 

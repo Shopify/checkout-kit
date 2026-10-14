@@ -24,7 +24,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: protocol/languages/kotlin
+        working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
 
     steps:
       - name: Checkout Repository

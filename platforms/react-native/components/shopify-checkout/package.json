@@ -1,0 +1,16 @@
+{
+  "name": "@shopify/checkout-kit-react-native-checkout",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./context": "./src/context.tsx"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-react-native-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}

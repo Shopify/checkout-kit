@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "@shopify/checkout-kit-react-native-checkout": [
+        "./components/shopify-checkout/src/index.ts"
+      ],
+      "@shopify/checkout-kit-react-native-checkout/context": [
+        "./components/shopify-checkout/src/context.tsx"
+      ],
+      "@shopify/checkout-kit-react-native-accelerated": [
+        "./components/shopify-accelerated-checkouts/src/index.tsx"
+      ],
+      "@shopify/checkout-kit-react-native-core/*": [
+        "./internal/core/src/*"
+      ]
+    }
+  },
+  "include": ["src", "components", "internal"],
+  "exclude": ["node_modules", "lib", "**/*.test.*", "**/*.spec.*"]
+}

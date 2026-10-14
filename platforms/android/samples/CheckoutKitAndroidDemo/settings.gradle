@@ -26,9 +26,9 @@ dependencyResolutionManagement {
 }
 rootProject.name = "CheckoutKitAndroidDemo"
 include ':app'
-include ':lib'
+include ':shopify-checkout-kit'
 if (providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()) {
     include ':embedded-checkout-protocol'
-    project(':embedded-checkout-protocol').projectDir = new File(settingsDir, '../../../../protocol/languages/kotlin/embedded-checkout-protocol')
+    project(':embedded-checkout-protocol').projectDir = new File(settingsDir, '../../../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol')
 }
-project(':lib').projectDir = new File(settingsDir, '../../lib')
+project(':shopify-checkout-kit').projectDir = new File(settingsDir, '../../shopify-checkout-kit')

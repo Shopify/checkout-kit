@@ -1,5 +1,6 @@
 packages:
+  - components/*
+  - internal/*
   - sample
   - test/rct-integration-app
-  - 'modules/**/*'
-  - '../../protocol/languages/typescript'
+  - '../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript'

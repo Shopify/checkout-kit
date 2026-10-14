@@ -32,7 +32,7 @@ The tradeoff is waiting for upstream releases and rerunning downstream CI.
 
 1. After the required native artifacts are published, update the relevant
    `checkoutKit.nativeSdkVersions.android` and/or `.ios` entry in
-   `modules/@shopify/checkout-kit-react-native/package.json`. These are dependency
+   `package.json`. These are dependency
    versions; they do not have to match the RN package version.
 2. Make the wrapper changes, bump the manifest's own `version`, and update the
    public API report with `dev rn api dump` if the API changed.
@@ -51,7 +51,7 @@ Supported release versions are:
 - Prerelease: `X.Y.Z-{alpha|beta|rc}.N`
 
 The release workflow reads the version from
-`modules/@shopify/checkout-kit-react-native/package.json`, validates it, and
+`package.json`, validates it, and
 creates the correctly namespaced `react-native/` tag (for example,
 `react-native/4.0.1`). The manually entered workflow version is only a safety
 check; it must match the package version exactly.
@@ -81,3 +81,22 @@ This allows a stack of ECP, Android, and RN changes to be developed together.
 Keep the downstream adoption PRs open until their required artifacts are published,
 then rerun normal CI. Clear an exported `USE_LOCAL_SDK` before verifying published
 dependencies. Local success does not remove the ECP → Android → RN release order.
+
+
+### Private workspaces and release versions
+
+Components and native bindings are private workspaces bundled into the public
+React Native package. Their manifest versions remain `0.0.0`; they are not
+released independently and do not need updating when the public SDK version changes.
+The published SDK version identifies the release.
+
+`node scripts/check-sdk-packages.mjs` runs in CI and before React Native release
+validation. It checks package privacy, declared exports and dependency boundaries,
+including preventing private workspace dependencies from leaking into consumer installs.
+The check does not compare or modify version fields.
+
+Published native SDK pins remain explicit release dependencies. Update them only
+after the required Swift and Android versions are available; the explicit local
+SDK workflow is for development before those releases. Protocol artifacts keep
+their independent release versions. The migration does not select a new public
+version number or change the SemVer versus CalVer decision.

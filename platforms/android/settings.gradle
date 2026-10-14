@@ -18,6 +18,6 @@ rootProject.name = "checkout-kit"
 
 if (providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()) {
     include ':embedded-checkout-protocol'
-    project(':embedded-checkout-protocol').projectDir = file('../../protocol/languages/kotlin/embedded-checkout-protocol')
+    project(':embedded-checkout-protocol').projectDir = file('../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol')
 }
-include ':lib'
+include ':shopify-checkout-kit'

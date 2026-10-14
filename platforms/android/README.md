@@ -761,7 +761,7 @@ Useful checks before opening an Android change:
 
 ```sh
 cd platforms/android
-./gradlew :lib:build
+./gradlew :shopify-checkout-kit:build
 ./gradlew clean test --console=plain
 ./gradlew detekt lintRelease
 ```
@@ -777,8 +777,8 @@ For public API changes, run:
 
 ```sh
 cd platforms/android
-./gradlew :lib:apiCheck
-cd ../../protocol/languages/kotlin
+./gradlew :shopify-checkout-kit:apiCheck
+cd ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
 ./gradlew :embedded-checkout-protocol:apiCheck
 ```
 

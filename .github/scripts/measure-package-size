@@ -134,7 +134,9 @@ measure_react_native_package() {
     cd "$repo_root/platforms/react-native"
     pnpm module clean
     pnpm module build
-    cd modules/@shopify/checkout-kit-react-native
+    if [[ -f modules/@shopify/checkout-kit-react-native/package.json ]]; then
+      cd modules/@shopify/checkout-kit-react-native
+    fi
     pnpm pack --pack-destination "$pack_dir"
   )
 
@@ -144,11 +146,13 @@ measure_react_native_package() {
 }
 
 measure_android_package() {
-  local aar="$repo_root/platforms/android/lib/build/outputs/aar/lib-release.aar"
+  local module="shopify-checkout-kit"
+  [[ -d "$repo_root/platforms/android/$module" ]] || module="lib"
+  local aar="$repo_root/platforms/android/$module/build/outputs/aar/$module-release.aar"
 
   (
     cd "$repo_root/platforms/android"
-    ./gradlew :lib:assembleRelease --console=plain
+    ./gradlew ":$module:assembleRelease" --console=plain
   )
 
   record_artifact "Android" "release AAR" "$aar"

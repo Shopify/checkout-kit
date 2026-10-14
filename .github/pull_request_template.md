@@ -23,7 +23,7 @@
 <summary>Releasing a new Swift version?</summary>
 
 - [ ] I have bumped the version in `ShopifyCheckoutKit.podspec`
-- [ ] I have bumped the version in `platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift`
+- [ ] I have bumped the version in `platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`
 - [ ] I have updated the SwiftPM/CocoaPods version snippets in `platforms/swift/README.md` (major version only)
 
 </details>
@@ -32,7 +32,7 @@
 <summary>Releasing a new Embedded Checkout Protocol version?</summary>
 
 - [ ] I have bumped `embeddedCheckoutProtocolAndroidRelease` in `platforms/android/gradle/libs.versions.toml`
-- [ ] I have updated `protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public API changed
+- [ ] I have updated `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` if the public API changed
 - [ ] Kit's `embeddedCheckoutProtocolAndroid` still references an available Maven Central release
 
 </details>
@@ -49,7 +49,7 @@
 <details>
 <summary>Releasing a new React Native version?</summary>
 
-- [ ] I have bumped `version` in `platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json`
+- [ ] I have bumped `version` in `platforms/react-native/package.json`
 - [ ] Any updated `checkoutKit.nativeSdkVersions` pins are available on Maven Central/CocoaPods
 - [ ] Normal RN Android tests and the sample build pass against the published SDK, without `--local` or `USE_LOCAL_SDK=1`
 

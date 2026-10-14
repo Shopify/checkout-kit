@@ -6,6 +6,8 @@ const policy = require("./bundle-size-budgets.cjs");
 
 const checkName = "Size budgets";
 const workflow = "package-size.yml";
+const isCommand = (comment) =>
+  comment.body?.split(/\r?\n/).some((line) => line.startsWith("/accept-size"));
 const isReport = (comment) =>
   comment.user?.login === "github-actions[bot]" &&
   comment.user.type === "Bot" &&
@@ -141,11 +143,7 @@ async function processCommands({ github, repo, comments, state, report, mayAccep
   const notes = [];
   const permissions = new Map();
   for (const comment of comments) {
-    if (
-      processed.has(comment.id) ||
-      !comment.body?.split(/\r?\n/).some((line) => line.startsWith("/accept-size"))
-    )
-      continue;
+    if (processed.has(comment.id) || !isCommand(comment)) continue;
     processed.add(comment.id);
     if (!mayAccept || comment.created_at < state.publishedAt) {
       notes.push(
@@ -206,6 +204,15 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
   const run = await latestRun(github, repo, pr);
   if (!run) return; // A comment cannot create an approval before measurements exist.
   if (context.eventName === "workflow_run" && context.payload.workflow_run.id !== run.id) return;
+  const processingReactions = [];
+  const react = async (method, params) => {
+    try {
+      const { data } = await github.rest.reactions[method]({ ...repo, ...params });
+      return data;
+    } catch (error) {
+      core.warning(`Could not update reaction for comment ${params.comment_id}: ${error.message}`);
+    }
+  };
   try {
     if (run.status !== "completed") {
       await updateCheck(
@@ -244,6 +251,14 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
       processedComments: [],
       publishedAt: new Date().toISOString(),
     };
+    for (const comment of comments) {
+      if (state.processedComments.includes(comment.id) || !isCommand(comment)) continue;
+      const reaction = await react("createForIssueComment", {
+        comment_id: comment.id,
+        content: "eyes",
+      });
+      if (reaction) processingReactions.push({ comment_id: comment.id, reaction_id: reaction.id });
+    }
     const processed = await processCommands({ github, repo, comments, state, report, mayAccept });
     const next = {
       ...state,
@@ -275,9 +290,20 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
       body.replace(/<!--.*?-->/gs, "").slice(0, 60000),
       comment.html_url,
     );
+    const acceptedComments = new Set(
+      Object.values(processed.acceptances).map((acceptance) => acceptance.commentId),
+    );
+    for (const commentId of acceptedComments) {
+      if (state.processedComments.includes(commentId)) continue;
+      await react("createForIssueComment", { comment_id: commentId, content: "+1" });
+    }
   } catch (error) {
     await updateCheck(github, repo, pr, "failure", error.message, run.html_url);
     core.setFailed(error.message);
+  } finally {
+    for (const reaction of processingReactions) {
+      await react("deleteForIssueComment", reaction);
+    }
   }
 }
 

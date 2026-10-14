@@ -9,6 +9,6 @@
 --disable redundantReturn,hoistAwait,preferKeyPath,redundantInternal,redundantPublic
 --swiftversion 5.7.1
 --extensionacl on-declarations
---exclude Sources/ShopifyCheckoutKit/Models.swift
+--exclude Sources/ShopifyCheckout/Models.swift
 --exclude Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated
 --exclude Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo/Sources/Generated

@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node.js, pnpm, and install dependencies
         uses: ./.github/actions/setup
         with:
-          node-version-file: platforms/react-native/package.json
+          node-version-file: platforms/react-native/.node-version
           cache-dependency-path: platforms/react-native/pnpm-lock.yaml
           package-json-file: platforms/react-native/package.json
           working-directory: platforms/react-native
@@ -62,12 +62,12 @@ jobs:
       - name: Verify version is not already published
         run: |
           set -euo pipefail
-          NAME=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').name")
-          VERSION=$(node -p "require('./modules/@shopify/checkout-kit-react-native/package.json').version")
-          ENCODED_NAME=$(node -p "encodeURIComponent(require('./modules/@shopify/checkout-kit-react-native/package.json').name)")
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          ENCODED_NAME=$(node -p "encodeURIComponent(require('./package.json').name)")
           URL="https://registry.npmjs.org/${ENCODED_NAME}/${VERSION}"
           if curl -fs "$URL" > /dev/null; then
-            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json before re-running."
+            echo "::error::${NAME}@${VERSION} is already published on npm. Bump platforms/react-native/package.json before re-running."
             exit 1
           fi
           echo "::notice::${NAME}@${VERSION} is not yet on npm — safe to proceed."
@@ -75,7 +75,6 @@ jobs:
       - name: Build package
         run: |
           set -euo pipefail
-          cp README.md modules/@shopify/checkout-kit-react-native/README.md
           pnpm module clean
           pnpm module build
 
@@ -83,7 +82,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/react-native-publish
-          cd modules/@shopify/checkout-kit-react-native
           pnpm pack --dry-run
           pnpm pack --pack-destination /tmp/react-native-publish
           echo "Tarball contents:"
@@ -114,7 +112,6 @@ jobs:
       - name: Publish to npm
         run: |
           set -euo pipefail
-          cd modules/@shopify/checkout-kit-react-native
           pnpm dlx npm@11.5.1 publish --no-git-checks --ignore-scripts --access public --tag "$NPM_TAG" --provenance
         env:
           NPM_TAG: ${{ steps.release.outputs.npm_tag }}

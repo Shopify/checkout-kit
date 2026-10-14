@@ -51,7 +51,7 @@ module.exports = {
       root: resolvePackageRoot('react-native-webview'),
     },
     '@shopify/checkout-kit-react-native': {
-      root: path.resolve(root, 'modules', '@shopify/checkout-kit-react-native'),
+      root: root,
     },
   },
 };

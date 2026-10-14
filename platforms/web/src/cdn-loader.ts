@@ -27,7 +27,7 @@ interface ComponentSource {
 
 const componentSources: Record<CheckoutKitComponent, ComponentSource> = {
   "shopify-checkout": {
-    load: () => import("./components/shopify-checkout/register"),
+    load: () => import("@shopify/checkout-kit-component-checkout/register"),
     url:
       typeof CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK === "string"
         ? CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK

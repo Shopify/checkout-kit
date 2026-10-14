@@ -2580,7 +2580,7 @@ DEPENDENCIES:
   - "RNCMaskedView (from `../../node_modules/@react-native-masked-view/masked-view`)"
   - RNGestureHandler (from `../../node_modules/react-native-gesture-handler`)
   - RNScreens (from `../../node_modules/react-native-screens`)
-  - "RNShopifyCheckoutKit (from `../../modules/@shopify/checkout-kit-react-native`)"
+  - RNShopifyCheckoutKit (from `../..`)
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
@@ -2755,7 +2755,7 @@ EXTERNAL SOURCES:
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   RNShopifyCheckoutKit:
-    :path: "../../modules/@shopify/checkout-kit-react-native"
+    :path: "../.."
   RNVectorIcons:
     :path: "../../node_modules/react-native-vector-icons"
   Yoga:
@@ -2849,6 +2849,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: a742cc68e8366fcfc681808162492bc0aa7a9498
 
-PODFILE CHECKSUM: 5f421561b67cd1e99762e104b6021b68fffe9aaa
+PODFILE CHECKSUM: 67901e87f2c7a91ccd5688ca8936ca57b982803d
 
 COCOAPODS: 1.15.2

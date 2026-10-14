@@ -171,7 +171,7 @@ gradle.projectsEvaluated {
   }
 }
 
-def checkoutKitPackageJsonFile = rootProject.file("../../modules/@shopify/checkout-kit-react-native/package.json")
+def checkoutKitPackageJsonFile = rootProject.file("../../package.json")
 def checkoutKitPackageJson = new groovy.json.JsonSlurper().parse(checkoutKitPackageJsonFile)
 def shopifySdkVersion = checkoutKitPackageJson.checkoutKit?.nativeSdkVersions?.android as String
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SWIFT_PATHS=(
-    modules/@shopify/checkout-kit-react-native
+    ios
     test/rct-integration-app/RCTIntegrationApp
     test/rct-integration-app/RCTIntegrationAppTests
 )

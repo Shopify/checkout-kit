@@ -81,8 +81,8 @@ case "$PLATFORM_INPUT" in
     PUBLISH_WORKFLOW="swift-publish.yml"
 
     PODSPEC_FILE="ShopifyCheckoutKit.podspec"
-    SWIFT_VERSION_FILE="platforms/swift/Sources/ShopifyCheckoutKit/ShopifyCheckoutKit.swift"
-    SWIFT_METADATA_FILE="platforms/swift/Sources/ShopifyCheckoutKit/MetaData.swift"
+    SWIFT_VERSION_FILE="platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift"
+    SWIFT_METADATA_FILE="platforms/swift/Sources/ShopifyCheckout/MetaData.swift"
 
     VERSION=$(extract_first_match "$PODSPEC_FILE" 's/^[[:space:]]*s\.version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
     SWIFT_VERSION=$(extract_first_match "$SWIFT_VERSION_FILE" 's/^[[:space:]]*public[[:space:]]+let[[:space:]]+version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p')
@@ -126,8 +126,9 @@ case "$PLATFORM_INPUT" in
     TAG_PREFIX="react-native/"
     PUBLISH_WORKFLOW="rn-publish.yml"
 
-    RN_PACKAGE_FILE="platforms/react-native/modules/@shopify/checkout-kit-react-native/package.json"
+    RN_PACKAGE_FILE="platforms/react-native/package.json"
     VERSION=$(json_version "$RN_PACKAGE_FILE")
+    node scripts/check-sdk-packages.mjs >&2
     ;;
 
   *)

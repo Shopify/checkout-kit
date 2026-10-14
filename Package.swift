@@ -33,17 +33,17 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "EmbeddedCheckoutProtocol",
-            path: "protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol"
+            path: "protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol"
         ),
         .target(
             name: "CheckoutKitTelemetry",
             dependencies: ["EmbeddedCheckoutProtocol"],
-            path: "telemetry/languages/swift/Sources/CheckoutKitTelemetry"
+            path: "platforms/swift/Sources/Internal/Telemetry"
         ),
         .target(
             name: "ShopifyCheckoutKit",
             dependencies: ["EmbeddedCheckoutProtocol", "CheckoutKitTelemetry"],
-            path: "platforms/swift/Sources/ShopifyCheckoutKit",
+            path: "platforms/swift/Sources/ShopifyCheckout",
             resources: [.process("Assets.xcassets")]
         ),
         .target(
@@ -55,18 +55,18 @@ let package = Package(
         .testTarget(
             name: "EmbeddedCheckoutProtocolTests",
             dependencies: ["EmbeddedCheckoutProtocol"],
-            path: "protocol/languages/swift/Tests/EmbeddedCheckoutProtocolTests",
+            path: "protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/Tests/EmbeddedCheckoutProtocolTests",
             resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "CheckoutKitTelemetryTests",
             dependencies: ["CheckoutKitTelemetry"],
-            path: "telemetry/languages/swift/Tests/CheckoutKitTelemetryTests"
+            path: "platforms/swift/Tests/Internal/CheckoutKitTelemetryTests"
         ),
         .testTarget(
-            name: "ShopifyCheckoutKitTests",
+            name: "ShopifyCheckoutTests",
             dependencies: ["ShopifyCheckoutKit", "CheckoutKitTelemetry"],
-            path: "platforms/swift/Tests/ShopifyCheckoutKitTests"
+            path: "platforms/swift/Tests/ShopifyCheckoutTests"
         ),
         .testTarget(
             name: "ShopifyAcceleratedCheckoutsTests",

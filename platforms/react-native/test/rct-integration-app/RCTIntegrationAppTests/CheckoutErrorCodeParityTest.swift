@@ -39,7 +39,7 @@ final class CheckoutErrorCodeParityTest: XCTestCase {
         return try Set(JSONDecoder().decode([String].self, from: Data(exported.utf8)))
     }
 
-    private static let relativeErrorsPath = "src/errors.ts"
+    private static let relativeErrorsPath = "internal/core/src/errors.ts"
     private static let environmentKey = "JS_CHECKOUT_ERROR_CODES"
     private static let codesUnavailableMessage =
         "\(environmentKey) is unset. Run `dev rn test ios`, which exports it from scripts/print-error-codes.mjs."

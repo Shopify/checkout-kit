@@ -1,0 +1,281 @@
+import React, {useCallback, useMemo, useState} from 'react';
+import {Platform} from 'react-native';
+import type {AcceleratedCheckoutWallet} from '@shopify/checkout-kit-react-native-core/enums';
+import type {CheckoutEventHandlers} from '@shopify/checkout-kit-react-native-core/checkout';
+import {createPresentDispatcher} from '@shopify/checkout-kit-react-native-core/present-dispatcher';
+import RCTAcceleratedCheckoutButtons from '@shopify/checkout-kit-react-native-core/specs/RCTAcceleratedCheckoutButtonsNativeComponent';
+
+export enum RenderState {
+  Loading = 'loading',
+  Rendered = 'rendered',
+  Error = 'error',
+}
+
+export type RenderStateChangeEvent =
+  | {state: RenderState.Error; reason?: string}
+  | {state: Omit<RenderState, 'Error'>};
+
+export enum ApplePayLabel {
+  addMoney = 'addMoney',
+  book = 'book',
+  buy = 'buy',
+  checkout = 'checkout',
+  continue = 'continue',
+  contribute = 'contribute',
+  donate = 'donate',
+  inStore = 'inStore',
+  order = 'order',
+  plain = 'plain',
+  reload = 'reload',
+  rent = 'rent',
+  setUp = 'setUp',
+  subscribe = 'subscribe',
+  support = 'support',
+  tip = 'tip',
+  topUp = 'topUp',
+}
+
+export enum ApplePayStyle {
+  automatic = 'automatic',
+  black = 'black',
+  white = 'white',
+  whiteOutline = 'whiteOutline',
+}
+
+type CheckoutIdentifier =
+  | {
+      cartId: string;
+    }
+  | {
+      variantId: string;
+      quantity: number;
+    };
+
+interface CommonAcceleratedCheckoutButtonsProps extends CheckoutEventHandlers {
+  /**
+   * Corner radius for the button (defaults to 8)
+   */
+  cornerRadius?: number;
+
+  /**
+   * Wallets to display in the button
+   * Defaults to both shopPay and applePay if not specified
+   */
+  wallets?: AcceleratedCheckoutWallet[];
+
+  /**
+   * Label for the Apple Pay button
+   */
+  applePayLabel?: ApplePayLabel;
+
+  /**
+   * Style for the Apple Pay button color
+   * Defaults to 'automatic' which adapts to the current appearance (light/dark mode)
+   */
+  applePayStyle?: ApplePayStyle;
+
+  /**
+   * Called when the render state changes
+   * States from SDK: loading, rendered, error
+   */
+  onRenderStateChange?: (event: RenderStateChangeEvent) => void;
+
+  /**
+   * Called when the size of the button changes
+   */
+  onSizeChange?: (event: {nativeEvent: {height: number}}) => void;
+}
+
+interface CartProps {
+  /**
+   * The cart ID for cart-based checkout
+   */
+  cartId: string;
+}
+
+interface VariantProps {
+  /**
+   * The variant ID for product-based checkout
+   */
+  variantId: string;
+
+  /**
+   * The quantity for product-based checkout
+   */
+  quantity: number;
+}
+
+export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
+  CommonAcceleratedCheckoutButtonsProps;
+
+/**
+ * AcceleratedCheckoutButton provides pre-built payment UI components for Shop Pay and Apple Pay.
+ * It enables faster checkout with fewer steps and supports both cart and product page checkout.
+ *
+ * @example Cart-based checkout
+ * <AcceleratedCheckoutButtons
+ *   cartId="gid://shopify/Cart/123"
+ *   onFail={({error}) => console.error('Checkout failed:', error.message)}
+ * />
+ *
+ * @example Product-based checkout
+ * <AcceleratedCheckoutButtons
+ *   variantId="gid://shopify/ProductVariant/456"
+ *   quantity={1}
+ * />
+ */
+
+const defaultStyles = {flex: 1};
+export const AcceleratedCheckoutButtons: React.FC<
+  AcceleratedCheckoutButtonsProps
+> = ({
+  applePayLabel,
+  applePayStyle,
+  cornerRadius,
+  wallets,
+  onFail,
+  onDismiss,
+  onStart,
+  onUpdate,
+  onComplete,
+  onRenderStateChange,
+  onLinkClick,
+  linkAction = 'open',
+  ...props
+}) => {
+  const isCart = isCartProps(props);
+  const isVariant = isVariantProps(props);
+  const [dynamicHeight, setDynamicHeight] = useState<number | undefined>(
+    undefined,
+  );
+
+  const handleDismiss = useCallback(() => onDismiss?.(), [onDismiss]);
+
+  const handleRenderStateChange = useCallback(
+    (event: {nativeEvent: unknown}) => {
+      const nativeEvent = event.nativeEvent as {
+        state: string;
+        reason?: string | undefined;
+      };
+      const state = validRenderState(nativeEvent.state);
+      const reason = nativeEvent.reason;
+
+      if (state === RenderState.Error) {
+        onRenderStateChange?.({state, reason});
+      } else {
+        onRenderStateChange?.({state});
+      }
+    },
+    [onRenderStateChange],
+  );
+
+  const {dispatcher} = useMemo(
+    () =>
+      createPresentDispatcher({
+        callbacks: {onStart, onUpdate, onComplete, onFail, onLinkClick},
+      }),
+    [onStart, onUpdate, onComplete, onFail, onLinkClick],
+  );
+
+  const handleDispatch = useCallback(
+    (event: {nativeEvent: {value: string}}) => {
+      dispatcher(event.nativeEvent.value);
+    },
+    [dispatcher],
+  );
+
+  const handleSizeChange = useCallback(
+    (event: {nativeEvent: {height: number}}) => {
+      setDynamicHeight(event.nativeEvent.height);
+    },
+    [],
+  );
+
+  const checkoutIdentifier: CheckoutIdentifier | undefined = useMemo(() => {
+    switch (true) {
+      case isCart:
+        return {cartId: props.cartId};
+      case isVariant:
+        return {variantId: props.variantId, quantity: props.quantity};
+      default:
+        return undefined;
+    }
+  }, [isCart, isVariant, props]);
+
+  // Only render on iOS for now since ShopifyAcceleratedCheckouts is iOS-only
+  if (Platform.OS !== 'ios' || parseInt(Platform.Version, 10) < 16) {
+    return null;
+  }
+
+  if (!checkoutIdentifier) {
+    /**
+     * @todo
+     *
+     * The ShopifyAcceleratedCheckouts module will handle this error by returning an empty view over the bridge
+     * to the javascript client.
+     *
+     * The onRenderStateChange event will be invoked with both an error state and a reason to indicate the error, at
+     * which point this error handling can be removed.
+     *
+     */
+
+    const error = new Error(
+      'AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
+    );
+    if (__DEV__) {
+      throw error;
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(error.message);
+      return null;
+    }
+  }
+
+  return (
+    <RCTAcceleratedCheckoutButtons
+      testID="accelerated-checkout-buttons"
+      applePayLabel={applePayLabel}
+      applePayStyle={applePayStyle}
+      style={{...defaultStyles, height: dynamicHeight}}
+      checkoutIdentifier={checkoutIdentifier}
+      cornerRadius={cornerRadius}
+      wallets={wallets}
+      onDismiss={handleDismiss}
+      linkAction={linkAction}
+      onRenderStateChange={handleRenderStateChange}
+      onDispatch={handleDispatch}
+      onSizeChange={handleSizeChange}
+    />
+  );
+};
+
+export default AcceleratedCheckoutButtons;
+
+function validRenderState(state: string): RenderState {
+  switch (state) {
+    case RenderState.Loading:
+      return RenderState.Loading;
+    case RenderState.Rendered:
+      return RenderState.Rendered;
+    case RenderState.Error:
+      return RenderState.Error;
+    default:
+      // eslint-disable-next-line no-console
+      console.error(
+        `[ShopifyAcceleratedCheckouts] Invalid render state: ${state}`,
+      );
+      return RenderState.Error;
+  }
+}
+
+function isCartProps(
+  props: AcceleratedCheckoutButtonsProps,
+): props is CartProps {
+  return 'cartId' in props;
+}
+
+function isVariantProps(
+  props: AcceleratedCheckoutButtonsProps,
+): props is VariantProps {
+  return 'variantId' in props && 'quantity' in props && props.quantity > 0;
+}

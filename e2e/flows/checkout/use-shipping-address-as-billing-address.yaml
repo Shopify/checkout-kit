@@ -1,8 +1,23 @@
 appId: ${E2E_APP_ID}
 ---
-- scrollUntilVisible:
-    element:
-      text: "^Use shipping address as billing address$"
-    direction: DOWN
-    centerElement: true
-- assertVisible: "^Use shipping address as billing address$"
+- runFlow:
+    when:
+      platform: ios
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "^Use shipping address as billing address$"
+          direction: DOWN
+          centerElement: true
+      - assertVisible: "^Use shipping address as billing address$"
+- runFlow:
+    when:
+      platform: android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "^billingAddressCheckbox$"
+          direction: DOWN
+          centerElement: true
+      - assertVisible:
+          id: "^billingAddressCheckbox$"

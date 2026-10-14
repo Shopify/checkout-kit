@@ -1,0 +1,23 @@
+{
+  "name": "@shopify/checkout-kit-react-native-core",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./configuration": "./src/configuration.ts",
+    "./contracts": "./src/contracts.ts",
+    "./dispatch-events": "./src/dispatch-events.ts",
+    "./enums": "./src/enums.ts",
+    "./errors": "./src/errors.ts",
+    "./preload": "./src/preload.ts",
+    "./present-dispatcher": "./src/present-dispatcher.ts",
+    "./specs/*": "./src/specs/*.ts",
+    "./checkout": "./src/checkout.ts"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}

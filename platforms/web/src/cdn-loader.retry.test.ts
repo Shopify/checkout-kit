@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // module lets us drive the attempt sequence.
 describe("Checkout Kit CDN loader retries", () => {
   afterEach(() => {
-    vi.doUnmock("./components/shopify-checkout/register");
+    vi.doUnmock("@shopify/checkout-kit-component-checkout/register");
     vi.resetModules();
     vi.useRealTimers();
   });
 
   async function loaderWithFailures(failures: number) {
     let attempts = 0;
-    vi.doMock("./components/shopify-checkout/register", () => {
+    vi.doMock("@shopify/checkout-kit-component-checkout/register", () => {
       attempts += 1;
       if (attempts <= failures) {
         throw new TypeError("Failed to fetch dynamically imported module");

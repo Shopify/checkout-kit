@@ -11,13 +11,11 @@ disabled_rules:
 included:
   - platforms/swift/Sources
   - platforms/swift/Tests
-  - telemetry/languages/swift/Sources
-  - telemetry/languages/swift/Tests
 
 excluded:
   - platforms/swift/Samples
-  - platforms/swift/Sources/ShopifyCheckoutKit/Models.swift
-  - protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated
+  - platforms/swift/Sources/ShopifyCheckout/Models.swift
+  - protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/Sources/UniversalCommerceProtocol/EmbeddedCheckoutProtocol/Generated
 
 opt_in_rules:
   - array_init

@@ -14,9 +14,9 @@ function componentDefinitions() {
     packageLinkPhase({customElementsManifest}) {
       const {modules} = customElementsManifest;
       for (const module of modules) {
-        const component = module.path.match(/^src\/components\/([^/]+)\/register\.ts$/)?.[1];
+        const component = module.path.match(/^components\/([^/]+)\/src\/register\.ts$/)?.[1];
         if (!component) continue;
-        const path = `src/components/${component}/${component}.ts`;
+        const path = `components/${component}/src/${component}.ts`;
         const element = modules
           .find((candidate) => candidate.path === path)
           ?.declarations?.find((declaration) => declaration.customElement && declaration.tagName);
@@ -47,8 +47,8 @@ function componentDefinitions() {
 }
 
 export default {
-  globs: ['src/**/*.ts'],
-  exclude: ['src/**/*.test.ts'],
+  globs: ['components/*/src/**/*.ts'],
+  exclude: ['**/*.test.ts'],
   outdir: 'dist',
   packagejson: true,
   plugins: [componentDefinitions()],
