@@ -206,7 +206,9 @@ public class InteropTest {
     @Test
     public void canConfigurePreloading() {
         ShopifyCheckoutKit.configure(configuration -> {
-            configuration.setPreloading(new Preloading(false));
+            Preloading.Builder preloading = Preloading.builder();
+            preloading.setEnabled(false);
+            configuration.setPreloading(preloading.build());
         });
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
@@ -216,18 +218,24 @@ public class InteropTest {
 
     @Test
     public void canConfigureSheet() {
-        CheckoutSheetOptions sheet = new CheckoutSheetOptions(
-                12f,
-                CheckoutSheetTitleAlignment.START,
-                4f,
-                null,
-                new Color.ResourceId(android.R.color.holo_red_dark),
-                new Color.SRGB(0x52000000),
-                new CheckoutSheetDismissal(false, false),
-                new CheckoutSheetDragHandle(true),
-                Collections.singletonList(new CheckoutSheetSnapPoint.Expanded(12f)),
-                480f
-        );
+        CheckoutSheetDismissal.Builder dismissal = CheckoutSheetDismissal.builder();
+        dismissal.setDragToDismissEnabled(false);
+        dismissal.setTapAwayToDismissEnabled(false);
+        CheckoutSheetDragHandle.Builder dragHandle = CheckoutSheetDragHandle.builder();
+        dragHandle.setVisible(true);
+        CheckoutSheetSnapPoint.Expanded.Builder expanded = CheckoutSheetSnapPoint.Expanded.builder();
+        expanded.setTopMarginDp(12f);
+        CheckoutSheetOptions.Builder sheetBuilder = CheckoutSheetOptions.builder();
+        sheetBuilder.setCornerRadiusDp(12f);
+        sheetBuilder.setTitleAlignment(CheckoutSheetTitleAlignment.START);
+        sheetBuilder.setToolbarElevationDp(4f);
+        sheetBuilder.setCloseIconTint(new Color.ResourceId(android.R.color.holo_red_dark));
+        sheetBuilder.setScrimColor(new Color.SRGB(0x52000000));
+        sheetBuilder.setDismissal(dismissal.build());
+        sheetBuilder.setDragHandle(dragHandle.build());
+        sheetBuilder.setSnapPoints(Collections.singletonList(expanded.build()));
+        sheetBuilder.setMaxWidthDp(480f);
+        CheckoutSheetOptions sheet = sheetBuilder.build();
 
         ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheet));
 
@@ -238,21 +246,14 @@ public class InteropTest {
 
     @Test
     public void canConfigureSheetDismissal() {
-        CheckoutSheetDismissal dismissal = new CheckoutSheetDismissal(false, false);
+        CheckoutSheetDismissal.Builder dismissalBuilder = CheckoutSheetDismissal.builder();
+        dismissalBuilder.setDragToDismissEnabled(false);
+        dismissalBuilder.setTapAwayToDismissEnabled(false);
+        CheckoutSheetDismissal dismissal = dismissalBuilder.build();
+        CheckoutSheetOptions.Builder sheetBuilder = CheckoutSheetOptions.builder();
+        sheetBuilder.setDismissal(dismissal);
 
-        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(
-                new CheckoutSheetOptions(
-                        32f,
-                        CheckoutSheetTitleAlignment.CENTER,
-                        0f,
-                        null,
-                        null,
-                        new Color.SRGB(0x52000000),
-                        dismissal,
-                        new CheckoutSheetDragHandle(),
-                        Collections.singletonList(CheckoutSheetSnapPoint.MaterialExpanded.INSTANCE)
-                )
-        ));
+        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheetBuilder.build()));
 
         Configuration configuration = ShopifyCheckoutKit.getConfiguration();
 

@@ -63,7 +63,7 @@ class SettingsViewModel(
 
     fun setCheckoutPreloadingEnabled(enabled: Boolean) = viewModelScope.launch {
         ShopifyCheckoutKit.configure {
-            it.preloading = Preloading(enabled = enabled)
+            it.preloading = Preloading { this.enabled = enabled }
         }
         settingsRepository.setCheckoutPreloadingEnabled(enabled)
     }

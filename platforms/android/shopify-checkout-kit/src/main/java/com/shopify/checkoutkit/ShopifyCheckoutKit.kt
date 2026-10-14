@@ -43,7 +43,7 @@ public object ShopifyCheckoutKit {
      */
     @JvmStatic
     public fun getConfiguration(): Configuration {
-        return configuration.copy()
+        return configuration.snapshot()
     }
 
     /**
