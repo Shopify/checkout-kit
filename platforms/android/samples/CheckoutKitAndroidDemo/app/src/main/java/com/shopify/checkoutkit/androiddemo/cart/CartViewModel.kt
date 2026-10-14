@@ -87,6 +87,7 @@ class CartViewModel(
 
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
+    private var preloadAttempt = 0
     private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
@@ -217,9 +218,10 @@ class CartViewModel(
     fun preloadCheckout(url: String, activity: ComponentActivity) {
         if (!checkoutPreloadingEnabled) return
 
-        Timber.i("Preloading checkout")
+        val attempt = ++preloadAttempt
+        Timber.i("Starting preload attempt $attempt")
         ShopifyCheckoutKit.preload(url, activity) { state ->
-            Timber.i("Preload state changed to $state")
+            Timber.i("Preload attempt $attempt state changed to $state")
             _preloadState.value = state
             _preloadStateTestId.value = PreloadStateMarker.testId(state)
         }
