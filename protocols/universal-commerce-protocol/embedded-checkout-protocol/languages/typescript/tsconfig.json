@@ -3,7 +3,9 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
+    "declaration": true,
     "forceConsistentCasingInFileNames": true,
+    "isolatedDeclarations": true,
     "lib": [
       "esnext"
     ],

@@ -1,5 +1,4 @@
 import { type NotificationDescriptor, type NotificationMessage, type RequestDescriptor, type RequestMessage } from '../descriptors';
-import { decodeCheckout, decodeErrorResponse } from './ProtocolCodecs';
 type AddressChangeResult = import('./Models').AddressChangeResult;
 type AuthRequest = import('./Models').AuthRequest;
 type AuthResult = import('./Models').AuthResult;
@@ -75,46 +74,14 @@ export type CheckoutProtocolNotificationMessage = {
     [K in keyof CheckoutProtocolCatalogParams]: NotificationMessage<K, CheckoutProtocolCatalogParams[K]>;
 }[keyof CheckoutProtocolCatalogParams];
 export type CheckoutProtocolCatalogPayloadDecoder<K extends keyof CheckoutProtocolCatalogPayloads> = (payload: unknown) => CheckoutProtocolCatalogPayloads[K];
-export declare const checkoutProtocolCatalogPayloadDecoders: {
-    "ec.error": typeof decodeErrorResponse;
-    "ec.start": typeof decodeCheckout;
-    "ec.complete": typeof decodeCheckout;
-    "ec.messages.change": typeof decodeCheckout;
-    "ec.line_items.change": typeof decodeCheckout;
-    "ec.buyer.change": typeof decodeCheckout;
-    "ec.totals.change": typeof decodeCheckout;
-    "ec.payment.change": typeof decodeCheckout;
-    "ec.fulfillment.change": typeof decodeCheckout;
+export type CheckoutProtocolCatalogPayloadDecoders = {
+    [K in keyof CheckoutProtocolCatalogPayloads]: CheckoutProtocolCatalogPayloadDecoder<K>;
 };
-export declare const notificationDescriptors: {
-    error: NotificationDescriptor<NotificationMessage<"ec.error", {
-        error: import("./Models").ErrorResponse;
-    }>>;
-    start: NotificationDescriptor<NotificationMessage<"ec.start", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    complete: NotificationDescriptor<NotificationMessage<"ec.complete", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    messagesChange: NotificationDescriptor<NotificationMessage<"ec.messages.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    lineItemsChange: NotificationDescriptor<NotificationMessage<"ec.line_items.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    buyerChange: NotificationDescriptor<NotificationMessage<"ec.buyer.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    totalsChange: NotificationDescriptor<NotificationMessage<"ec.totals.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    paymentChange: NotificationDescriptor<NotificationMessage<"ec.payment.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
-    fulfillmentChange: NotificationDescriptor<NotificationMessage<"ec.fulfillment.change", {
-        checkout: import("./Models").Checkout;
-    }>>;
+export declare const checkoutProtocolCatalogPayloadDecoders: CheckoutProtocolCatalogPayloadDecoders;
+export type NotificationDescriptors = {
+    [K in keyof typeof checkoutProtocolCatalog]: NotificationDescriptor<NotificationMessage<(typeof checkoutProtocolCatalog)[K], CheckoutProtocolCatalogParams[(typeof checkoutProtocolCatalog)[K]]>>;
 };
+export declare const notificationDescriptors: NotificationDescriptors;
 export declare const checkoutProtocolRequestCatalog: {
     readonly ready: "ec.ready";
     readonly auth: "ec.auth";
@@ -157,19 +124,9 @@ export interface CheckoutProtocolRequestParams {
 export type CheckoutProtocolRequestMessage = {
     [K in keyof CheckoutProtocolRequestParams]: RequestMessage<K, CheckoutProtocolRequestParams[K]>;
 }[keyof CheckoutProtocolRequestParams];
-export declare const requestDescriptors: {
-    ready: RequestDescriptor<RequestMessage<"ec.ready", import("./Models").ReadyRequest>, import("./Models").ReadyResult>;
-    auth: RequestDescriptor<RequestMessage<"ec.auth", import("./Models").AuthRequest>, import("./Models").AuthResult>;
-    paymentInstrumentsChange: RequestDescriptor<RequestMessage<"ec.payment.instruments_change_request", {
-        checkout: import("./Models").Checkout;
-    }>, import("./Models").InstrumentsChangeResult>;
-    paymentCredential: RequestDescriptor<RequestMessage<"ec.payment.credential_request", {
-        checkout: import("./Models").Checkout;
-    }>, import("./Models").CredentialResult>;
-    windowOpen: RequestDescriptor<RequestMessage<"ec.window.open_request", import("./Models").WindowOpenRequest>, import("./Models").WindowOpenResult>;
-    fulfillmentAddressChange: RequestDescriptor<RequestMessage<"ec.fulfillment.address_change_request", {
-        checkout: import("./Models").Checkout;
-    }>, import("./Models").AddressChangeResult>;
+export type RequestDescriptors = {
+    [K in keyof typeof checkoutProtocolRequestCatalog]: RequestDescriptor<RequestMessage<(typeof checkoutProtocolRequestCatalog)[K], CheckoutProtocolRequestParams[(typeof checkoutProtocolRequestCatalog)[K]]>, CheckoutProtocolRequestResults[(typeof checkoutProtocolRequestCatalog)[K]]>;
 };
+export declare const requestDescriptors: RequestDescriptors;
 export declare const embeddedCheckoutMethods: ReadonlySet<string>;
 export {};
