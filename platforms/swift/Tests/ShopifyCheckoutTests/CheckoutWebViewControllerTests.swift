@@ -161,12 +161,14 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(delegate.didDismissCount, 1)
     }
 
-    func test_programmaticDismissDoesNotNotifyDismissal() {
+    func test_programmaticDismissDoesNotNotifyDismissal() async {
         let delegate = MockCheckoutDelegate()
-        let viewController = TestableCheckoutWebViewController(checkoutURL: url, delegate: delegate, entryPoint: nil)
+        let checkoutViewController = CheckoutViewController(checkout: url, delegate: delegate)
+        let dismissed = expectation(description: "Programmatic dismissal should complete")
 
-        viewController.dismiss(animated: true)
+        checkoutViewController.dismiss(animated: true) { dismissed.fulfill() }
 
+        await fulfillment(of: [dismissed], timeout: 1.0)
         XCTAssertEqual(delegate.didDismissCount, 0)
     }
 
