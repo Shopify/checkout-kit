@@ -8,11 +8,13 @@ on:
     # ready_for_review starts CI when a draft PR becomes ready; converted_to_draft
     # creates a skipped run that cancels any in-progress CI for the same PR ref.
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 # Default token permissions — dorny/paths-filter calls the PR Files API to
 # compute the diff, which needs pull-requests: read. contents: read covers
-# actions/checkout for both push and pull_request events.
+# actions/checkout for push, pull_request, and merge_group events.
 permissions:
   contents: read
   pull-requests: read
