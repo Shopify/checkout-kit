@@ -1,8 +1,10 @@
 [versions]
 checkoutKitAndroid = "4.0.0-alpha.8"
-# Protocol release version; bump independently of the published dependency below.
+# Version to publish for the standalone Embedded Checkout Protocol artifact.
+# Bump this first; it may be newer than Checkout Kit's dependency below.
 embeddedCheckoutProtocolAndroidRelease = "2026.08.25.1-alpha.2"
-# Published protocol version consumed by Checkout Kit.
+# Published ECP artifact consumed transitively by Checkout Kit clients.
+# Update only after the release version above is available from Maven Central.
 embeddedCheckoutProtocolAndroid = "2026.08.25.1-alpha.1"
 
 androidApplicationGradlePlugin = "9.3.1"
