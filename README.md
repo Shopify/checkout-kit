@@ -72,9 +72,9 @@ Package names link to their integration guides. These are the versions tracked b
 
 | Package | Version | Installation |
 | --- | --- | --- |
-| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.8` | Swift Package Manager, CocoaPods |
-| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.8` | Swift Package Manager, CocoaPods subspec |
-| [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0-alpha.8` | Maven Central |
+| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.9` | Swift Package Manager, CocoaPods |
+| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.9` | Swift Package Manager, CocoaPods subspec |
+| [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0-alpha.9` | Maven Central |
 | [`@shopify/checkout-kit-react-native`](platforms/react-native/README.md) | `4.0.0-alpha.5` | npm `next` |
 | [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0-alpha.5` | npm `next` |
 
