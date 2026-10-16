@@ -21,47 +21,47 @@ import Foundation
 extension EmbeddedCheckoutProtocol {
     public struct Checkout: Codable, Sendable {
         /// Outstanding extension-defined [String: JSONAny] for this checkout.
-        public let actions: [String: [[String: JSONAny]]]?
-        public let attribution: [String: String]?
+        public var actions: [String: [[String: JSONAny]]]?
+        public var attribution: [String: String]?
         /// Representation of the buyer.
-        public let buyer: Buyer?
-        public let context: Context?
+        public var buyer: Buyer?
+        public var context: Context?
         /// URL for checkout handoff and session recovery. MUST be provided when status is
         /// requires_escalation. See specification for format and availability requirements.
-        public let continueURL: String?
+        public var continueURL: String?
         /// ISO 4217 currency code reflecting the merchant's market determination. Derived from
         /// address, context, and geo IP—buyers provide signals, merchants determine currency.
-        public let currency: String
-        public let discounts: CheckoutDiscounts?
+        public var currency: String
+        public var discounts: CheckoutDiscounts?
         /// RFC 3339 expiry timestamp. Default TTL is 6 hours from creation if not sent.
-        public let expiresAt: Date?
+        public var expiresAt: Date?
         /// Fulfillment details.
-        public let fulfillment: CheckoutFulfillment?
+        public var fulfillment: CheckoutFulfillment?
         /// Unique identifier of the checkout session.
-        public let id: String
+        public var id: String
         /// List of line items being checked out.
-        public let lineItems: [LineItem]
+        public var lineItems: [LineItem]
         /// Links to be displayed by the platform (Privacy Policy, TOS). Mandatory for legal
         /// compliance.
-        public let links: [Link]
+        public var links: [Link]
         /// List of messages with error and info about the checkout session state.
-        public let messages: [Message]?
+        public var messages: [Message]?
         /// Details about an order created for this checkout session.
-        public let order: OrderConfirmation?
-        public let payment: Payment?
+        public var order: OrderConfirmation?
+        public var payment: Payment?
         /// Policies (e.g., return/refund terms) that apply to the items in this checkout.
         /// `applies_to` targets are relative to the response root; when absent or empty, refer to
         /// the URLs in `links[]`.
-        public let policies: [Policy]?
-        public let signals: [String: JSONAny]?
+        public var policies: [Policy]?
+        public var signals: [String: JSONAny]?
         /// Checkout state indicating the current phase and required processing. See Checkout Status
         /// lifecycle documentation for state transition details.
-        public let status: CheckoutStatus
+        public var status: CheckoutStatus
         /// Different cart totals.
-        public let totals: [CheckoutTotal]
-        public let ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
+        public var totals: [CheckoutTotal]
+        public var ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case actions, attribution, buyer, context
             case continueURL = "continue_url"
             case currency, discounts
@@ -71,27 +71,15 @@ extension EmbeddedCheckoutProtocol {
             case links, messages, order, payment, policies, signals, status, totals, ucp
         }
 
-        public init(actions: [String: [[String: JSONAny]]]?, attribution: [String: String]?, buyer: Buyer?, context: Context?, continueURL: String?, currency: String, discounts: CheckoutDiscounts?, expiresAt: Date?, fulfillment: CheckoutFulfillment?, id: String, lineItems: [LineItem], links: [Link], messages: [Message]?, order: OrderConfirmation?, payment: Payment?, policies: [Policy]?, signals: [String: JSONAny]?, status: CheckoutStatus, totals: [CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) {
-            self.actions = actions
-            self.attribution = attribution
-            self.buyer = buyer
-            self.context = context
-            self.continueURL = continueURL
+        public init(currency: String, id: String, lineItems: [LineItem], links: [Link], status: CheckoutStatus, totals: [CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema, configure: (inout Self) -> Void = { _ in }) {
             self.currency = currency
-            self.discounts = discounts
-            self.expiresAt = expiresAt
-            self.fulfillment = fulfillment
             self.id = id
             self.lineItems = lineItems
             self.links = links
-            self.messages = messages
-            self.order = order
-            self.payment = payment
-            self.policies = policies
-            self.signals = signals
             self.status = status
             self.totals = totals
             self.ucp = ucp
+            configure(&self)
         }
 
         public var additionalProperties: [String: JSONAny] = [:]
@@ -176,50 +164,11 @@ public extension EmbeddedCheckoutProtocol.Checkout {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        actions: [String: [[String: JSONAny]]]?? = nil,
-        attribution: [String: String]?? = nil,
-        buyer: Buyer?? = nil,
-        context: Context?? = nil,
-        continueURL: String?? = nil,
-        currency: String? = nil,
-        discounts: CheckoutDiscounts?? = nil,
-        expiresAt: Date?? = nil,
-        fulfillment: CheckoutFulfillment?? = nil,
-        id: String? = nil,
-        lineItems: [LineItem]? = nil,
-        links: [Link]? = nil,
-        messages: [Message]?? = nil,
-        order: OrderConfirmation?? = nil,
-        payment: Payment?? = nil,
-        policies: [Policy]?? = nil,
-        signals: [String: JSONAny]?? = nil,
-        status: CheckoutStatus? = nil,
-        totals: [CheckoutTotal]? = nil,
-        ucp: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema? = nil
-    ) -> EmbeddedCheckoutProtocol.Checkout {
-        return EmbeddedCheckoutProtocol.Checkout(
-            actions: actions ?? self.actions,
-            attribution: attribution ?? self.attribution,
-            buyer: buyer ?? self.buyer,
-            context: context ?? self.context,
-            continueURL: continueURL ?? self.continueURL,
-            currency: currency ?? self.currency,
-            discounts: discounts ?? self.discounts,
-            expiresAt: expiresAt ?? self.expiresAt,
-            fulfillment: fulfillment ?? self.fulfillment,
-            id: id ?? self.id,
-            lineItems: lineItems ?? self.lineItems,
-            links: links ?? self.links,
-            messages: messages ?? self.messages,
-            order: order ?? self.order,
-            payment: payment ?? self.payment,
-            policies: policies ?? self.policies,
-            signals: signals ?? self.signals,
-            status: status ?? self.status,
-            totals: totals ?? self.totals,
-            ucp: ucp ?? self.ucp
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -243,26 +192,23 @@ public extension EmbeddedCheckoutProtocol.Checkout {
 // MARK: - Buyer
 public struct Buyer: Codable, Sendable {
     /// Email of the buyer.
-    public let email: String?
+    public var email: String?
     /// First name of the buyer.
-    public let firstName: String?
+    public var firstName: String?
     /// Last name of the buyer.
-    public let lastName: String?
+    public var lastName: String?
     /// E.164 standard.
-    public let phoneNumber: String?
+    public var phoneNumber: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case email
         case firstName = "first_name"
         case lastName = "last_name"
         case phoneNumber = "phone_number"
     }
 
-    public init(email: String?, firstName: String?, lastName: String?, phoneNumber: String?) {
-        self.email = email
-        self.firstName = firstName
-        self.lastName = lastName
-        self.phoneNumber = phoneNumber
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -314,18 +260,11 @@ public extension Buyer {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        email: String?? = nil,
-        firstName: String?? = nil,
-        lastName: String?? = nil,
-        phoneNumber: String?? = nil
-    ) -> Buyer {
-        return Buyer(
-            email: email ?? self.email,
-            firstName: firstName ?? self.firstName,
-            lastName: lastName ?? self.lastName,
-            phoneNumber: phoneNumber ?? self.phoneNumber
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -352,63 +291,55 @@ public extension Buyer {
 public struct Context: Codable, Sendable {
     /// The country, as a 2-letter ISO 3166-1 alpha-2 code (e.g. "US"). A 3-letter alpha-3 code
     /// or full country name MAY also be used.
-    public let addressCountry: String?
+    public var addressCountry: String?
     /// The first-level administrative region within the country (e.g. a state or province such
     /// as California).
-    public let addressRegion: String?
+    public var addressRegion: String?
     /// The postal code (e.g. "94043").
-    public let postalCode: String?
+    public var postalCode: String?
     /// Preferred currency (ISO 4217, e.g., 'EUR', 'USD'). Businesses determine presentment
     /// currency from context and authoritative signals; this hint MAY inform selection in
     /// multi-currency markets. Also serves as the denomination for price filter values —
     /// platforms SHOULD include this field when sending price filters. Response prices include
     /// explicit currency confirming the resolution.
-    public let currency: String?
+    public var currency: String?
     /// Buyer claims about eligible benefits such as loyalty membership, payment instrument
     /// perks, and similar. Recognized claims MAY inform the Business response (e.g., member-only
     /// product availability, adjusted pricing in catalog, provisional discounts at cart or
     /// checkout). Businesses MUST ignore unrecognized values without error. Values MUST use
     /// reverse-domain naming (e.g., 'com.example.loyalty_gold', 'org.school.student') and MUST
     /// be non-identifying.
-    public let eligibility: [String]?
+    public var eligibility: [String]?
     /// Background context describing buyer's intent (e.g., 'looking for a gift under $50', 'need
     /// something durable for outdoor use'). Informs relevance, recommendations, and
     /// personalization.
-    public let intent: String?
+    public var intent: String?
     /// Preferred language for content. Use IETF BCP 47 language tags (e.g., 'en', 'fr-CA',
     /// 'zh-Hans'). For REST, equivalent to Accept-Language header—platforms SHOULD fall back to
     /// Accept-Language when this field is absent; when provided, overrides Accept-Language.
     /// Businesses MAY return content in a different language if unavailable.
-    public let language: String?
+    public var language: String?
     /// Stable, opaque identifier for a Location in the Business's namespace. This provisional,
     /// non-binding hint is distinct from the Buyer's locality. The operation specification or an
     /// active capability/extension defines its effects. A common example in retail shopping is
     /// the default home store ID selected and saved by the user when purchasing groceries.
-    public let location: String?
+    public var location: String?
     /// Buyer-preferred payment handlers in priority order (most preferred first). Each entry
     /// names a handler advertised in the Business profile's `ucp.payment_handlers`, optionally
     /// narrowed to preferred instrument types. The Business SHOULD use it to preselect or
     /// prioritize the handler (and type, when given) and MAY ignore unavailable or ineligible
     /// entries; unrecognized values MUST be ignored without error.
-    public let payment: [PreferredPaymentHandler]?
+    public var payment: [PreferredPaymentHandler]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case addressCountry = "address_country"
         case addressRegion = "address_region"
         case postalCode = "postal_code"
         case currency, eligibility, intent, language, location, payment
     }
 
-    public init(addressCountry: String?, addressRegion: String?, postalCode: String?, currency: String?, eligibility: [String]?, intent: String?, language: String?, location: String?, payment: [PreferredPaymentHandler]?) {
-        self.addressCountry = addressCountry
-        self.addressRegion = addressRegion
-        self.postalCode = postalCode
-        self.currency = currency
-        self.eligibility = eligibility
-        self.intent = intent
-        self.language = language
-        self.location = location
-        self.payment = payment
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -470,28 +401,11 @@ public extension Context {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        addressCountry: String?? = nil,
-        addressRegion: String?? = nil,
-        postalCode: String?? = nil,
-        currency: String?? = nil,
-        eligibility: [String]?? = nil,
-        intent: String?? = nil,
-        language: String?? = nil,
-        location: String?? = nil,
-        payment: [PreferredPaymentHandler]?? = nil
-    ) -> Context {
-        return Context(
-            addressCountry: addressCountry ?? self.addressCountry,
-            addressRegion: addressRegion ?? self.addressRegion,
-            postalCode: postalCode ?? self.postalCode,
-            currency: currency ?? self.currency,
-            eligibility: eligibility ?? self.eligibility,
-            intent: intent ?? self.intent,
-            language: language ?? self.language,
-            location: location ?? self.location,
-            payment: payment ?? self.payment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -506,15 +420,15 @@ public extension Context {
 // MARK: - PreferredPaymentHandler
 public struct PreferredPaymentHandler: Codable, Sendable {
     /// Handler registry key advertised in the Business profile's `ucp.payment_handlers`.
-    public let handler: String
+    public var handler: String
     /// Optional preferred instrument types for this handler, in priority order, aligned with the
     /// handler's advertised `payment_instrument.type` values (for example `card` or `bank`).
     /// Unrecognized values MUST be ignored.
-    public let types: [String]?
+    public var types: [String]?
 
-    public init(handler: String, types: [String]?) {
+    public init(handler: String, configure: (inout Self) -> Void = { _ in }) {
         self.handler = handler
-        self.types = types
+        configure(&self)
     }
 }
 
@@ -536,14 +450,11 @@ public extension PreferredPaymentHandler {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        handler: String? = nil,
-        types: [String]?? = nil
-    ) -> PreferredPaymentHandler {
-        return PreferredPaymentHandler(
-            handler: handler ?? self.handler,
-            types: types ?? self.types
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -559,14 +470,13 @@ public extension PreferredPaymentHandler {
 // MARK: - CheckoutDiscounts
 public struct CheckoutDiscounts: Codable, Sendable {
     /// Discounts successfully applied (code-based and automatic).
-    public let applied: [AppliedDiscount]?
+    public var applied: [AppliedDiscount]?
     /// Discount codes to apply. Case-insensitive. Replaces previously submitted codes. Send
     /// empty array to clear.
-    public let codes: [String]?
+    public var codes: [String]?
 
-    public init(applied: [AppliedDiscount]?, codes: [String]?) {
-        self.applied = applied
-        self.codes = codes
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -588,14 +498,11 @@ public extension CheckoutDiscounts {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        applied: [AppliedDiscount]?? = nil,
-        codes: [String]?? = nil
-    ) -> CheckoutDiscounts {
-        return CheckoutDiscounts(
-            applied: applied ?? self.applied,
-            codes: codes ?? self.codes
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -612,36 +519,30 @@ public extension CheckoutDiscounts {
 public struct AppliedDiscount: Codable, Sendable {
     /// Breakdown of where this discount was allocated. Sum of allocation amounts equals total
     /// amount.
-    public let allocations: [DiscountAllocation]?
+    public var allocations: [DiscountAllocation]?
     /// Total discount amount in ISO 4217 minor units.
-    public let amount: Int
+    public var amount: Int
     /// True if applied automatically by merchant rules (no code required).
-    public let automatic: Bool?
+    public var automatic: Bool?
     /// The discount code. Omitted for automatic discounts.
-    public let code: String?
+    public var code: String?
     /// The eligibility claim accepted by the Business for this discount. Corresponds to a value
     /// from context.eligibility. Omitted for code-based and non-eligibility automatic discounts.
-    public let eligibility: String?
+    public var eligibility: String?
     /// Allocation method. 'each' = applied independently per item. 'across' = split
     /// proportionally by value.
-    public let method: DiscountMethod?
+    public var method: DiscountMethod?
     /// Stacking order for discount calculation. Lower numbers applied first (1 = first).
-    public let priority: Int?
+    public var priority: Int?
     /// True if this discount requires additional verification.
-    public let provisional: Bool?
+    public var provisional: Bool?
     /// Human-readable discount name (e.g., 'Summer Sale 20% Off').
-    public let title: String
+    public var title: String
 
-    public init(allocations: [DiscountAllocation]?, amount: Int, automatic: Bool?, code: String?, eligibility: String?, method: DiscountMethod?, priority: Int?, provisional: Bool?, title: String) {
-        self.allocations = allocations
+    public init(amount: Int, title: String, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
-        self.automatic = automatic
-        self.code = code
-        self.eligibility = eligibility
-        self.method = method
-        self.priority = priority
-        self.provisional = provisional
         self.title = title
+        configure(&self)
     }
 }
 
@@ -663,28 +564,11 @@ public extension AppliedDiscount {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        allocations: [DiscountAllocation]?? = nil,
-        amount: Int? = nil,
-        automatic: Bool?? = nil,
-        code: String?? = nil,
-        eligibility: String?? = nil,
-        method: DiscountMethod?? = nil,
-        priority: Int?? = nil,
-        provisional: Bool?? = nil,
-        title: String? = nil
-    ) -> AppliedDiscount {
-        return AppliedDiscount(
-            allocations: allocations ?? self.allocations,
-            amount: amount ?? self.amount,
-            automatic: automatic ?? self.automatic,
-            code: code ?? self.code,
-            eligibility: eligibility ?? self.eligibility,
-            method: method ?? self.method,
-            priority: priority ?? self.priority,
-            provisional: provisional ?? self.provisional,
-            title: title ?? self.title
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -700,14 +584,15 @@ public extension AppliedDiscount {
 // MARK: - DiscountAllocation
 public struct DiscountAllocation: Codable, Sendable {
     /// Amount allocated to this target in ISO 4217 minor units.
-    public let amount: Int
+    public var amount: Int
     /// RFC 9535 JSONPath to the allocation target (e.g., '$.line_items[0]', '$.totals[?@.type ==
     /// "fulfillment"]').
-    public let path: String
+    public var path: String
 
-    public init(amount: Int, path: String) {
+    public init(amount: Int, path: String, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
         self.path = path
+        configure(&self)
     }
 }
 
@@ -729,14 +614,11 @@ public extension DiscountAllocation {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        amount: Int? = nil,
-        path: String? = nil
-    ) -> DiscountAllocation {
-        return DiscountAllocation(
-            amount: amount ?? self.amount,
-            path: path ?? self.path
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -750,9 +632,37 @@ public extension DiscountAllocation {
 
 /// Allocation method. 'each' = applied independently per item. 'across' = split
 /// proportionally by value.
-public enum DiscountMethod: String, Codable, Sendable {
-    case across = "across"
-    case each = "each"
+public struct DiscountMethod: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let across = DiscountMethod(unchecked: "across")
+    public static let each = DiscountMethod(unchecked: "each")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["across", "each"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Fulfillment details.
@@ -761,18 +671,17 @@ public enum DiscountMethod: String, Codable, Sendable {
 // MARK: - CheckoutFulfillment
 public struct CheckoutFulfillment: Codable, Sendable {
     /// Inventory availability hints.
-    public let availableMethods: [FulfillmentAvailableMethod]?
+    public var availableMethods: [FulfillmentAvailableMethod]?
     /// Fulfillment methods for cart items.
-    public let methods: [FulfillmentMethod]?
+    public var methods: [FulfillmentMethod]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case availableMethods = "available_methods"
         case methods
     }
 
-    public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
-        self.availableMethods = availableMethods
-        self.methods = methods
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -794,14 +703,11 @@ public extension CheckoutFulfillment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        availableMethods: [FulfillmentAvailableMethod]?? = nil,
-        methods: [FulfillmentMethod]?? = nil
-    ) -> CheckoutFulfillment {
-        return CheckoutFulfillment(
-            availableMethods: availableMethods ?? self.availableMethods,
-            methods: methods ?? self.methods
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -817,27 +723,26 @@ public extension CheckoutFulfillment {
 // MARK: - FulfillmentAvailableMethod
 public struct FulfillmentAvailableMethod: Codable, Sendable {
     /// Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
-    public let description: String?
+    public var description: String?
     /// 'now' for immediate availability, or ISO 8601 date for future (preorders, transfers).
-    public let fulfillableOn: String?
+    public var fulfillableOn: String?
     /// Line items available for this fulfillment method.
-    public let lineItemIDS: [String]
+    public var lineItemIDS: [String]
     /// Fulfillment method type this availability applies to. Well-known values: `shipping`,
     /// `pickup`; businesses MAY use additional values.
-    public let type: String
+    public var type: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case description
         case fulfillableOn = "fulfillable_on"
         case lineItemIDS = "line_item_ids"
         case type
     }
 
-    public init(description: String?, fulfillableOn: String?, lineItemIDS: [String], type: String) {
-        self.description = description
-        self.fulfillableOn = fulfillableOn
+    public init(lineItemIDS: [String], type: String, configure: (inout Self) -> Void = { _ in }) {
         self.lineItemIDS = lineItemIDS
         self.type = type
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -889,18 +794,11 @@ public extension FulfillmentAvailableMethod {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        description: String?? = nil,
-        fulfillableOn: String?? = nil,
-        lineItemIDS: [String]? = nil,
-        type: String? = nil
-    ) -> FulfillmentAvailableMethod {
-        return FulfillmentAvailableMethod(
-            description: description ?? self.description,
-            fulfillableOn: fulfillableOn ?? self.fulfillableOn,
-            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -917,35 +815,33 @@ public extension FulfillmentAvailableMethod {
 public struct FulfillmentMethod: Codable, Sendable {
     /// Available destinations for this method. In Business responses, each destination carries a
     /// `type` and `id`.
-    public let destinations: [FulfillmentDestination]?
+    public var destinations: [FulfillmentDestination]?
     /// Fulfillment groups for selecting options. Agent sets selected_option_id on groups to
     /// choose shipping method.
-    public let groups: [FulfillmentGroup]?
+    public var groups: [FulfillmentGroup]?
     /// Unique fulfillment method identifier.
-    public let id: String
+    public var id: String
     /// Line item IDs fulfilled via this method.
-    public let lineItemIDS: [String]
+    public var lineItemIDS: [String]
     /// ID of the selected destination. Accepts any stable, Business-scoped ID the Business
     /// recognizes for this method, including Location IDs not yet enumerated in `destinations`.
-    public let selectedDestinationID: String?
+    public var selectedDestinationID: String?
     /// Fulfillment method type. Well-known values: `shipping`, `pickup`. Businesses MAY use
     /// additional values.
-    public let type: String
+    public var type: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case destinations, groups, id
         case lineItemIDS = "line_item_ids"
         case selectedDestinationID = "selected_destination_id"
         case type
     }
 
-    public init(destinations: [FulfillmentDestination]?, groups: [FulfillmentGroup]?, id: String, lineItemIDS: [String], selectedDestinationID: String?, type: String) {
-        self.destinations = destinations
-        self.groups = groups
+    public init(id: String, lineItemIDS: [String], type: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.lineItemIDS = lineItemIDS
-        self.selectedDestinationID = selectedDestinationID
         self.type = type
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -1001,22 +897,11 @@ public extension FulfillmentMethod {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        destinations: [FulfillmentDestination]?? = nil,
-        groups: [FulfillmentGroup]?? = nil,
-        id: String? = nil,
-        lineItemIDS: [String]? = nil,
-        selectedDestinationID: String?? = nil,
-        type: String? = nil
-    ) -> FulfillmentMethod {
-        return FulfillmentMethod(
-            destinations: destinations ?? self.destinations,
-            groups: groups ?? self.groups,
-            id: id ?? self.id,
-            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
-            selectedDestinationID: selectedDestinationID ?? self.selectedDestinationID,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1032,41 +917,41 @@ public extension FulfillmentMethod {
 // MARK: - FulfillmentDestination
 public struct FulfillmentDestination: Codable, Sendable {
     /// Physical address of the location.
-    public let address: PostalAddress?
+    public var address: PostalAddress?
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
     /// full country name such as "Singapore" can also be used.
-    public let addressCountry: String?
+    public var addressCountry: String?
     /// The locality in which the street address is, and which is in the region. For example,
     /// Mountain View.
-    public let addressLocality: String?
+    public var addressLocality: String?
     /// The region in which the locality is, and which is in the country. Required for applicable
     /// countries (i.e. state in US, province in CA). For example, California or another
     /// appropriate first-level Administrative division.
-    public let addressRegion: String?
+    public var addressRegion: String?
     /// An address extension such as an apartment number, C/O or alternative name.
-    public let extendedAddress: String?
+    public var extendedAddress: String?
     /// Optional. First name of the contact associated with the address.
-    public let firstName: String?
+    public var firstName: String?
     /// Fulfillment destination identifier.
-    public let id: String
+    public var id: String
     /// Optional. Last name of the contact associated with the address.
-    public let lastName: String?
+    public var lastName: String?
     /// Buyer-facing, Business-owned display name.
-    public let name: String?
+    public var name: String?
     /// Optional. Phone number of the contact associated with the address.
-    public let phoneNumber: String?
+    public var phoneNumber: String?
     /// The postal code. For example, 94043.
-    public let postalCode: String?
+    public var postalCode: String?
     /// The street address.
-    public let streetAddress: String?
+    public var streetAddress: String?
     /// Destination contract discriminator. Required in Business responses and optional in
     /// Platform requests. Well-known values: `shipping_address`, `business_location`. The
     /// enclosing method contract defines request defaults and which fields the Platform may
     /// write; negotiated extensions define additional values.
-    public let type: String?
+    public var type: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case address
         case addressCountry = "address_country"
         case addressLocality = "address_locality"
@@ -1082,20 +967,9 @@ public struct FulfillmentDestination: Codable, Sendable {
         case type
     }
 
-    public init(address: PostalAddress?, addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, id: String, lastName: String?, name: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?, type: String?) {
-        self.address = address
-        self.addressCountry = addressCountry
-        self.addressLocality = addressLocality
-        self.addressRegion = addressRegion
-        self.extendedAddress = extendedAddress
-        self.firstName = firstName
+    public init(id: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.lastName = lastName
-        self.name = name
-        self.phoneNumber = phoneNumber
-        self.postalCode = postalCode
-        self.streetAddress = streetAddress
-        self.type = type
+        configure(&self)
     }
 }
 
@@ -1117,36 +991,11 @@ public extension FulfillmentDestination {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        address: PostalAddress?? = nil,
-        addressCountry: String?? = nil,
-        addressLocality: String?? = nil,
-        addressRegion: String?? = nil,
-        extendedAddress: String?? = nil,
-        firstName: String?? = nil,
-        id: String? = nil,
-        lastName: String?? = nil,
-        name: String?? = nil,
-        phoneNumber: String?? = nil,
-        postalCode: String?? = nil,
-        streetAddress: String?? = nil,
-        type: String?? = nil
-    ) -> FulfillmentDestination {
-        return FulfillmentDestination(
-            address: address ?? self.address,
-            addressCountry: addressCountry ?? self.addressCountry,
-            addressLocality: addressLocality ?? self.addressLocality,
-            addressRegion: addressRegion ?? self.addressRegion,
-            extendedAddress: extendedAddress ?? self.extendedAddress,
-            firstName: firstName ?? self.firstName,
-            id: id ?? self.id,
-            lastName: lastName ?? self.lastName,
-            name: name ?? self.name,
-            phoneNumber: phoneNumber ?? self.phoneNumber,
-            postalCode: postalCode ?? self.postalCode,
-            streetAddress: streetAddress ?? self.streetAddress,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1168,28 +1017,28 @@ public struct PostalAddress: Codable, Sendable {
     /// The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
     /// For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
     /// full country name such as "Singapore" can also be used.
-    public let addressCountry: String?
+    public var addressCountry: String?
     /// The locality in which the street address is, and which is in the region. For example,
     /// Mountain View.
-    public let addressLocality: String?
+    public var addressLocality: String?
     /// The region in which the locality is, and which is in the country. Required for applicable
     /// countries (i.e. state in US, province in CA). For example, California or another
     /// appropriate first-level Administrative division.
-    public let addressRegion: String?
+    public var addressRegion: String?
     /// An address extension such as an apartment number, C/O or alternative name.
-    public let extendedAddress: String?
+    public var extendedAddress: String?
     /// Optional. First name of the contact associated with the address.
-    public let firstName: String?
+    public var firstName: String?
     /// Optional. Last name of the contact associated with the address.
-    public let lastName: String?
+    public var lastName: String?
     /// Optional. Phone number of the contact associated with the address.
-    public let phoneNumber: String?
+    public var phoneNumber: String?
     /// The postal code. For example, 94043.
-    public let postalCode: String?
+    public var postalCode: String?
     /// The street address.
-    public let streetAddress: String?
+    public var streetAddress: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case addressCountry = "address_country"
         case addressLocality = "address_locality"
         case addressRegion = "address_region"
@@ -1201,16 +1050,8 @@ public struct PostalAddress: Codable, Sendable {
         case streetAddress = "street_address"
     }
 
-    public init(addressCountry: String?, addressLocality: String?, addressRegion: String?, extendedAddress: String?, firstName: String?, lastName: String?, phoneNumber: String?, postalCode: String?, streetAddress: String?) {
-        self.addressCountry = addressCountry
-        self.addressLocality = addressLocality
-        self.addressRegion = addressRegion
-        self.extendedAddress = extendedAddress
-        self.firstName = firstName
-        self.lastName = lastName
-        self.phoneNumber = phoneNumber
-        self.postalCode = postalCode
-        self.streetAddress = streetAddress
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -1232,28 +1073,11 @@ public extension PostalAddress {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        addressCountry: String?? = nil,
-        addressLocality: String?? = nil,
-        addressRegion: String?? = nil,
-        extendedAddress: String?? = nil,
-        firstName: String?? = nil,
-        lastName: String?? = nil,
-        phoneNumber: String?? = nil,
-        postalCode: String?? = nil,
-        streetAddress: String?? = nil
-    ) -> PostalAddress {
-        return PostalAddress(
-            addressCountry: addressCountry ?? self.addressCountry,
-            addressLocality: addressLocality ?? self.addressLocality,
-            addressRegion: addressRegion ?? self.addressRegion,
-            extendedAddress: extendedAddress ?? self.extendedAddress,
-            firstName: firstName ?? self.firstName,
-            lastName: lastName ?? self.lastName,
-            phoneNumber: phoneNumber ?? self.phoneNumber,
-            postalCode: postalCode ?? self.postalCode,
-            streetAddress: streetAddress ?? self.streetAddress
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1269,26 +1093,25 @@ public extension PostalAddress {
 // MARK: - FulfillmentGroup
 public struct FulfillmentGroup: Codable, Sendable {
     /// Group identifier for referencing merchant-generated groups in updates.
-    public let id: String
+    public var id: String
     /// Line item IDs included in this group/package.
-    public let lineItemIDS: [String]
+    public var lineItemIDS: [String]
     /// Available fulfillment options for this group.
-    public let options: [FulfillmentOption]?
+    public var options: [FulfillmentOption]?
     /// ID of the selected fulfillment option for this group.
-    public let selectedOptionID: String?
+    public var selectedOptionID: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id
         case lineItemIDS = "line_item_ids"
         case options
         case selectedOptionID = "selected_option_id"
     }
 
-    public init(id: String, lineItemIDS: [String], options: [FulfillmentOption]?, selectedOptionID: String?) {
+    public init(id: String, lineItemIDS: [String], configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.lineItemIDS = lineItemIDS
-        self.options = options
-        self.selectedOptionID = selectedOptionID
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -1340,18 +1163,11 @@ public extension FulfillmentGroup {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        lineItemIDS: [String]? = nil,
-        options: [FulfillmentOption]?? = nil,
-        selectedOptionID: String?? = nil
-    ) -> FulfillmentGroup {
-        return FulfillmentGroup(
-            id: id ?? self.id,
-            lineItemIDS: lineItemIDS ?? self.lineItemIDS,
-            options: options ?? self.options,
-            selectedOptionID: selectedOptionID ?? self.selectedOptionID
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1372,36 +1188,33 @@ public extension FulfillmentGroup {
 public struct FulfillmentOption: Codable, Sendable {
     /// Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
     /// 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
-    public let description: Description?
+    public var description: Description?
     /// Unique identifier for this fulfillment option.
-    public let id: String
+    public var id: String
     /// Short label that distinguishes this option from its siblings (e.g. 'Standard', 'Express
     /// Shipping', 'Curbside Pickup').
-    public let title: String
+    public var title: String
     /// Carrier name (for shipping).
-    public let carrier: String?
+    public var carrier: String?
     /// Earliest fulfillment date.
-    public let earliestFulfillmentTime: Date?
+    public var earliestFulfillmentTime: Date?
     /// Latest fulfillment date.
-    public let latestFulfillmentTime: Date?
+    public var latestFulfillmentTime: Date?
     /// Fulfillment option totals breakdown.
-    public let totals: [LineItemTotal]
+    public var totals: [LineItemTotal]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case description, id, title, carrier
         case earliestFulfillmentTime = "earliest_fulfillment_time"
         case latestFulfillmentTime = "latest_fulfillment_time"
         case totals
     }
 
-    public init(description: Description?, id: String, title: String, carrier: String?, earliestFulfillmentTime: Date?, latestFulfillmentTime: Date?, totals: [LineItemTotal]) {
-        self.description = description
+    public init(id: String, title: String, totals: [LineItemTotal], configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.title = title
-        self.carrier = carrier
-        self.earliestFulfillmentTime = earliestFulfillmentTime
-        self.latestFulfillmentTime = latestFulfillmentTime
         self.totals = totals
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -1411,7 +1224,7 @@ public struct FulfillmentOption: Codable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         if let legacyDescription = try? container.decode(String.self, forKey: .description) {
-            self.description = Description(html: nil, markdown: nil, plain: legacyDescription)
+            self.description = Description { $0.plain = legacyDescription }
         } else {
             self.description = try container.decodeIfPresent(Description.self, forKey: .description)
         }
@@ -1463,24 +1276,11 @@ public extension FulfillmentOption {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        description: Description?? = nil,
-        id: String? = nil,
-        title: String? = nil,
-        carrier: String?? = nil,
-        earliestFulfillmentTime: Date?? = nil,
-        latestFulfillmentTime: Date?? = nil,
-        totals: [LineItemTotal]? = nil
-    ) -> FulfillmentOption {
-        return FulfillmentOption(
-            description: description ?? self.description,
-            id: id ?? self.id,
-            title: title ?? self.title,
-            carrier: carrier ?? self.carrier,
-            earliestFulfillmentTime: earliestFulfillmentTime ?? self.earliestFulfillmentTime,
-            latestFulfillmentTime: latestFulfillmentTime ?? self.latestFulfillmentTime,
-            totals: totals ?? self.totals
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1505,16 +1305,14 @@ public extension FulfillmentOption {
 public struct Description: Codable, Sendable {
     /// HTML-formatted content. Security: Platforms MUST sanitize before rendering—strip scripts,
     /// event handlers, and untrusted elements. Treat all rich text as untrusted input.
-    public let html: String?
+    public var html: String?
     /// Markdown-formatted content.
-    public let markdown: String?
+    public var markdown: String?
     /// Plain text content.
-    public let plain: String?
+    public var plain: String?
 
-    public init(html: String?, markdown: String?, plain: String?) {
-        self.html = html
-        self.markdown = markdown
-        self.plain = plain
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -1536,16 +1334,11 @@ public extension Description {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        html: String?? = nil,
-        markdown: String?? = nil,
-        plain: String?? = nil
-    ) -> Description {
-        return Description(
-            html: html ?? self.html,
-            markdown: markdown ?? self.markdown,
-            plain: plain ?? self.plain
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1560,24 +1353,24 @@ public extension Description {
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - LineItemTotal
 public struct LineItemTotal: Codable, Sendable {
-    public let amount: Int
+    public var amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
     /// 'Delivery').
-    public let displayText: String?
+    public var displayText: String?
     /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
     /// fee, total. Businesses MAY use additional values.
-    public let type: String
+    public var type: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case amount
         case displayText = "display_text"
         case type
     }
 
-    public init(amount: Int, displayText: String?, type: String) {
+    public init(amount: Int, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
-        self.displayText = displayText
         self.type = type
+        configure(&self)
     }
 }
 
@@ -1599,16 +1392,11 @@ public extension LineItemTotal {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        amount: Int? = nil,
-        displayText: String?? = nil,
-        type: String? = nil
-    ) -> LineItemTotal {
-        return LineItemTotal(
-            amount: amount ?? self.amount,
-            displayText: displayText ?? self.displayText,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1623,31 +1411,31 @@ public extension LineItemTotal {
 /// Line item object. Expected to use the currency of the parent object.
 // MARK: - LineItem
 public struct LineItem: Codable, Sendable {
-    public let id: String
-    public let item: Item
+    public var id: String
+    public var item: Item
     /// Parent line item identifier for any nested structures.
-    public let parentID: String?
+    public var parentID: String?
     /// Always an integer step count. On Platform requests, steps use the item's
     /// Business-authoritative sale basis; omitting `item.quantity_unit` makes no assertion and
     /// does not imply `each`. On Business responses, `item.quantity_unit` describes the basis;
     /// if absent, it encodes the `each` machine identity (`C62`, 0) and `quantity` counts whole
     /// items.
-    public let quantity: Int
+    public var quantity: Int
     /// Line item totals breakdown.
-    public let totals: [LineItemTotal]
+    public var totals: [LineItemTotal]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id, item
         case parentID = "parent_id"
         case quantity, totals
     }
 
-    public init(id: String, item: Item, parentID: String?, quantity: Int, totals: [LineItemTotal]) {
+    public init(id: String, item: Item, quantity: Int, totals: [LineItemTotal], configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.item = item
-        self.parentID = parentID
         self.quantity = quantity
         self.totals = totals
+        configure(&self)
     }
 }
 
@@ -1669,20 +1457,11 @@ public extension LineItem {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        item: Item? = nil,
-        parentID: String?? = nil,
-        quantity: Int? = nil,
-        totals: [LineItemTotal]? = nil
-    ) -> LineItem {
-        return LineItem(
-            id: id ?? self.id,
-            item: item ?? self.item,
-            parentID: parentID ?? self.parentID,
-            quantity: quantity ?? self.quantity,
-            totals: totals ?? self.totals
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1699,13 +1478,13 @@ public extension LineItem {
 public struct Item: Codable, Sendable {
     /// The product identifier, often the SKU, required to resolve the product details associated
     /// with this line item. Should be recognized by both the Platform, and the Business.
-    public let id: String
+    public var id: String
     /// Product image URI.
-    public let imageURL: String?
+    public var imageURL: String?
     /// Unit price in ISO 4217 minor units. Price is the amount per one whole
     /// `quantity_unit.unit` (for example, per lb or per hour); when `quantity_unit` is absent,
     /// it is per `each`.
-    public let price: Int
+    public var price: Int
     /// Sale basis this item's `quantity` is denominated in. On an authoritative Business
     /// response, absence encodes the default `each` machine identity (`C62`, 0); the Business
     /// MUST include this descriptor for every non-`each` response. On Platform requests,
@@ -1717,17 +1496,17 @@ public struct Item: Codable, Sendable {
     /// rejection with a recoverable business outcome; silent reinterpretation is forbidden. An
     /// explicit `C62` descriptor at effective scale 0 matches an authoritative basis represented
     /// by an absent descriptor.
-    public let quantityUnit: QuantityUnit?
+    public var quantityUnit: QuantityUnit?
     /// Product title.
-    public let title: String
+    public var title: String
     /// Pricing basis for this item. On an authoritative Business response, the Business MUST
     /// include `unit_price` on every line whose pricing basis differs from its sale basis (for
     /// example, priced per pound but sold per `each`); presence on a line marks the rate as
     /// transactional rather than display-only. When the pricing basis is the sale basis,
     /// `item.price` fully denominates the charge and this field MAY be omitted.
-    public let unitPrice: UnitPrice?
+    public var unitPrice: UnitPrice?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id
         case imageURL = "image_url"
         case price
@@ -1736,13 +1515,11 @@ public struct Item: Codable, Sendable {
         case unitPrice = "unit_price"
     }
 
-    public init(id: String, imageURL: String?, price: Int, quantityUnit: QuantityUnit?, title: String, unitPrice: UnitPrice?) {
+    public init(id: String, price: Int, title: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.imageURL = imageURL
         self.price = price
-        self.quantityUnit = quantityUnit
         self.title = title
-        self.unitPrice = unitPrice
+        configure(&self)
     }
 }
 
@@ -1764,22 +1541,11 @@ public extension Item {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        imageURL: String?? = nil,
-        price: Int? = nil,
-        quantityUnit: QuantityUnit?? = nil,
-        title: String? = nil,
-        unitPrice: UnitPrice?? = nil
-    ) -> Item {
-        return Item(
-            id: id ?? self.id,
-            imageURL: imageURL ?? self.imageURL,
-            price: price ?? self.price,
-            quantityUnit: quantityUnit ?? self.quantityUnit,
-            title: title ?? self.title,
-            unitPrice: unitPrice ?? self.unitPrice
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1817,18 +1583,18 @@ public struct QuantityUnit: Codable, Sendable {
     /// does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
     /// MAY substitute its own localized label. It does not participate in unit identity or
     /// mismatch comparison.
-    public let displayText: String
+    public var displayText: String
     /// One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
     /// 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
     /// single whole unit (10^16 steps) is no longer representable, so larger scales cannot
     /// denominate one unit of their own basis. Businesses needing finer granularity use a
     /// smaller unit.
-    public let scale: Int?
+    public var scale: Int?
     /// Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
     /// when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
     /// identifier and MUST use it consistently for the same unit. The Platform MUST treat an
     /// unrecognized identifier as opaque.
-    public let unit: String
+    public var unit: String
     /// Ordering granularity, denominated in steps: the Business sells this item in integer
     /// multiples of `increment` steps. Its effective value is the provided value or 1. Advisory
     /// merchandising policy, not a representational bound: Platform-authored quantities SHOULD
@@ -1836,18 +1602,17 @@ public struct QuantityUnit: Codable, Sendable {
     /// reject an off-increment request with a recoverable business outcome and MUST NOT silently
     /// reinterpret it. Business-authored quantities (checkout revisions, fulfillment events,
     /// adjustments) are bounded only by `scale`.
-    public let increment: Int?
+    public var increment: Int?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case displayText = "display_text"
         case scale, unit, increment
     }
 
-    public init(displayText: String, scale: Int?, unit: String, increment: Int?) {
+    public init(displayText: String, unit: String, configure: (inout Self) -> Void = { _ in }) {
         self.displayText = displayText
-        self.scale = scale
         self.unit = unit
-        self.increment = increment
+        configure(&self)
     }
 }
 
@@ -1869,18 +1634,11 @@ public extension QuantityUnit {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        displayText: String? = nil,
-        scale: Int?? = nil,
-        unit: String? = nil,
-        increment: Int?? = nil
-    ) -> QuantityUnit {
-        return QuantityUnit(
-            displayText: displayText ?? self.displayText,
-            scale: scale ?? self.scale,
-            unit: unit ?? self.unit,
-            increment: increment ?? self.increment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1910,21 +1668,22 @@ public struct UnitPrice: Codable, Sendable {
     /// 10^-measure.scale)) × (reference.value × 10^-reference.scale)` and round it once to ISO
     /// 4217 minor units according to its pricing rules. The returned `unit_price.amount` is
     /// authoritative; the Platform MUST NOT recompute or substitute its own result.
-    public let amount: Int
+    public var amount: Int
     /// ISO 4217 currency code.
-    public let currency: String
+    public var currency: String
     /// Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
     /// `quantity_unit`, which defines the sale basis. Its integer `value` MUST be at least 1.
-    public let measure: Measure
+    public var measure: Measure
     /// Denominator for unit price display (for example, per 100 mL or per 1 kg). Its integer
     /// `value` MUST be at least 1.
-    public let reference: Measure
+    public var reference: Measure
 
-    public init(amount: Int, currency: String, measure: Measure, reference: Measure) {
+    public init(amount: Int, currency: String, measure: Measure, reference: Measure, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
         self.currency = currency
         self.measure = measure
         self.reference = reference
+        configure(&self)
     }
 }
 
@@ -1946,18 +1705,11 @@ public extension UnitPrice {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        amount: Int? = nil,
-        currency: String? = nil,
-        measure: Measure? = nil,
-        reference: Measure? = nil
-    ) -> UnitPrice {
-        return UnitPrice(
-            amount: amount ?? self.amount,
-            currency: currency ?? self.currency,
-            measure: measure ?? self.measure,
-            reference: reference ?? self.reference
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -1992,31 +1744,31 @@ public struct Measure: Codable, Sendable {
     /// does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
     /// MAY substitute its own localized label. It does not participate in unit identity or
     /// mismatch comparison.
-    public let displayText: String
+    public var displayText: String
     /// One step equals `10^-scale` of `unit`. When `unit` is `C62`, `scale`, if present, MUST be
     /// 0. The maximum of 15 is derived from the interoperable integer range: at scale 16 a
     /// single whole unit (10^16 steps) is no longer representable, so larger scales cannot
     /// denominate one unit of their own basis. Businesses needing finer granularity use a
     /// smaller unit.
-    public let scale: Int?
+    public var scale: Int?
     /// Stable machine identifier. The Business SHOULD use the exact UN/CEFACT Rec20 Common Code
     /// when one accurately identifies the unit. Otherwise, the Business MAY use a custom unit
     /// identifier and MUST use it consistently for the same unit. The Platform MUST treat an
     /// unrecognized identifier as opaque.
-    public let unit: String
+    public var unit: String
     /// Integer count of `10^-scale` units of `unit`.
-    public let value: Int
+    public var value: Int
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case displayText = "display_text"
         case scale, unit, value
     }
 
-    public init(displayText: String, scale: Int?, unit: String, value: Int) {
+    public init(displayText: String, unit: String, value: Int, configure: (inout Self) -> Void = { _ in }) {
         self.displayText = displayText
-        self.scale = scale
         self.unit = unit
         self.value = value
+        configure(&self)
     }
 }
 
@@ -2038,18 +1790,11 @@ public extension Measure {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        displayText: String? = nil,
-        scale: Int?? = nil,
-        unit: String? = nil,
-        value: Int? = nil
-    ) -> Measure {
-        return Measure(
-            displayText: displayText ?? self.displayText,
-            scale: scale ?? self.scale,
-            unit: unit ?? self.unit,
-            value: value ?? self.value
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2065,18 +1810,18 @@ public extension Measure {
 public struct Link: Codable, Sendable {
     /// Optional display text for the link. When provided, use this instead of generating from
     /// type.
-    public let title: String?
+    public var title: String?
     /// Type of link. Well-known values: `privacy_policy`, `terms_of_service`, `refund_policy`,
     /// `shipping_policy`, `faq`. Consumers SHOULD handle unknown values gracefully by displaying
     /// them using the `title` field or omitting the link.
-    public let type: String
+    public var type: String
     /// The actual URL pointing to the content to be displayed.
-    public let url: String
+    public var url: String
 
-    public init(title: String?, type: String, url: String) {
-        self.title = title
+    public init(type: String, url: String, configure: (inout Self) -> Void = { _ in }) {
         self.type = type
         self.url = url
+        configure(&self)
     }
 }
 
@@ -2098,16 +1843,11 @@ public extension Link {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        title: String?? = nil,
-        type: String? = nil,
-        url: String? = nil
-    ) -> Link {
-        return Link(
-            title: title ?? self.title,
-            type: type ?? self.type,
-            url: url ?? self.url
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2122,15 +1862,15 @@ public extension Link {
 /// Container for error, warning, or info messages.
 // MARK: - Message
 public struct Message: Codable, Sendable {
-    public let code: String?
+    public var code: String?
     /// Human-readable message.
     ///
     /// Human-readable warning message that MUST be displayed.
-    public let content: String
+    public var content: String
     /// Content format, default = plain.
-    public let contentType: ContentType?
+    public var contentType: ContentType?
     /// RFC 9535 JSONPath to the component the message refers to (e.g., $.line_items[0]).
-    public let path: String?
+    public var path: String?
     /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
     /// the condition in band, for example by modifying inputs or processing a related Action,
     /// and submit a new operation when needed. 'requires_buyer_input': merchant requires
@@ -2139,19 +1879,19 @@ public struct Message: Codable, Sendable {
     /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
     /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
     /// 'status: requires_escalation'.
-    public let severity: Severity?
+    public var severity: Severity?
     /// Message type discriminator.
-    public let type: MessageType
+    public var type: MessageType
     /// URL to a required visual element (e.g., warning symbol, energy class label).
-    public let imageURL: String?
+    public var imageURL: String?
     /// Rendering contract for this warning. 'notice' (default): platform MUST display, MAY
     /// dismiss. 'disclosure': platform MUST display in proximity to the path-referenced
     /// component, MUST NOT hide or auto-dismiss. See specification for full contract.
-    public let presentation: String?
+    public var presentation: String?
     /// Reference URL for more information (e.g., regulatory site, registry entry, policy page).
-    public let url: String?
+    public var url: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case code, content
         case contentType = "content_type"
         case path, severity, type
@@ -2159,16 +1899,10 @@ public struct Message: Codable, Sendable {
         case presentation, url
     }
 
-    public init(code: String?, content: String, contentType: ContentType?, path: String?, severity: Severity?, type: MessageType, imageURL: String?, presentation: String?, url: String?) {
-        self.code = code
+    public init(content: String, type: MessageType, configure: (inout Self) -> Void = { _ in }) {
         self.content = content
-        self.contentType = contentType
-        self.path = path
-        self.severity = severity
         self.type = type
-        self.imageURL = imageURL
-        self.presentation = presentation
-        self.url = url
+        configure(&self)
     }
 }
 
@@ -2190,28 +1924,11 @@ public extension Message {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        code: String?? = nil,
-        content: String? = nil,
-        contentType: ContentType?? = nil,
-        path: String?? = nil,
-        severity: Severity?? = nil,
-        type: MessageType? = nil,
-        imageURL: String?? = nil,
-        presentation: String?? = nil,
-        url: String?? = nil
-    ) -> Message {
-        return Message(
-            code: code ?? self.code,
-            content: content ?? self.content,
-            contentType: contentType ?? self.contentType,
-            path: path ?? self.path,
-            severity: severity ?? self.severity,
-            type: type ?? self.type,
-            imageURL: imageURL ?? self.imageURL,
-            presentation: presentation ?? self.presentation,
-            url: url ?? self.url
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2224,9 +1941,37 @@ public extension Message {
 }
 
 /// Content format, default = plain.
-public enum ContentType: String, Codable, Sendable {
-    case markdown = "markdown"
-    case plain = "plain"
+public struct ContentType: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let markdown = ContentType(unchecked: "markdown")
+    public static let plain = ContentType(unchecked: "plain")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["markdown", "plain"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Reflects the resource state and recommended action. 'recoverable': platform can resolve
@@ -2237,17 +1982,73 @@ public enum ContentType: String, Codable, Sendable {
 /// regulatory, or entitlement rules. 'unrecoverable': no valid resource exists to act on,
 /// retry with new resource or inputs. Errors with 'requires_*' severity contribute to
 /// 'status: requires_escalation'.
-public enum Severity: String, Codable, Sendable {
-    case recoverable = "recoverable"
-    case requiresBuyerInput = "requires_buyer_input"
-    case requiresBuyerReview = "requires_buyer_review"
-    case unrecoverable = "unrecoverable"
+public struct Severity: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let recoverable = Severity(unchecked: "recoverable")
+    public static let requiresBuyerInput = Severity(unchecked: "requires_buyer_input")
+    public static let requiresBuyerReview = Severity(unchecked: "requires_buyer_review")
+    public static let unrecoverable = Severity(unchecked: "unrecoverable")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["recoverable", "requires_buyer_input", "requires_buyer_review", "unrecoverable"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
-public enum MessageType: String, Codable, Sendable {
-    case error = "error"
-    case info = "info"
-    case warning = "warning"
+public struct MessageType: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let error = MessageType(unchecked: "error")
+    public static let info = MessageType(unchecked: "info")
+    public static let warning = MessageType(unchecked: "warning")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["error", "info", "warning"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Details about an order created for this checkout session.
@@ -2256,21 +2057,21 @@ public enum MessageType: String, Codable, Sendable {
 // MARK: - OrderConfirmation
 public struct OrderConfirmation: Codable, Sendable {
     /// Unique order identifier.
-    public let id: String
+    public var id: String
     /// Human-readable label for identifying the order. MUST only be provided by the business.
-    public let label: String?
+    public var label: String?
     /// Permalink to access the order on merchant site.
-    public let permalinkURL: String
+    public var permalinkURL: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id, label
         case permalinkURL = "permalink_url"
     }
 
-    public init(id: String, label: String?, permalinkURL: String) {
+    public init(id: String, permalinkURL: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.label = label
         self.permalinkURL = permalinkURL
+        configure(&self)
     }
 }
 
@@ -2292,16 +2093,11 @@ public extension OrderConfirmation {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        label: String?? = nil,
-        permalinkURL: String? = nil
-    ) -> OrderConfirmation {
-        return OrderConfirmation(
-            id: id ?? self.id,
-            label: label ?? self.label,
-            permalinkURL: permalinkURL ?? self.permalinkURL
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2319,10 +2115,10 @@ public struct Payment: Codable, Sendable {
     /// The payment instruments available for this payment. Each instrument is associated with a
     /// specific handler via the handler_id field. Handlers can extend the base
     /// payment_instrument schema to add handler-specific fields.
-    public let instruments: [SelectedPaymentInstrument]?
+    public var instruments: [SelectedPaymentInstrument]?
 
-    public init(instruments: [SelectedPaymentInstrument]?) {
-        self.instruments = instruments
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -2344,12 +2140,11 @@ public extension Payment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        instruments: [SelectedPaymentInstrument]?? = nil
-    ) -> Payment {
-        return Payment(
-            instruments: instruments ?? self.instruments
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2368,41 +2163,38 @@ public extension Payment {
 // MARK: - SelectedPaymentInstrument
 public struct SelectedPaymentInstrument: Codable, Sendable {
     /// The billing address associated with this payment method.
-    public let billingAddress: PostalAddress?
-    public let credential: PaymentCredential?
+    public var billingAddress: PostalAddress?
+    public var credential: PaymentCredential?
     /// Display information for this payment instrument. Each payment instrument schema defines
     /// its specific display properties, as outlined by the payment handler.
-    public let display: [String: JSONAny]?
+    public var display: [String: JSONAny]?
     /// The unique identifier for the handler instance that produced this instrument. This
     /// corresponds to the 'id' field in the Payment Handler definition.
-    public let handlerID: String
+    public var handlerID: String
     /// A unique identifier for this instrument instance. Typically assigned by the platform for
     /// instruments it collects. For a business-owned saved instrument returned on an
     /// identity-linked response, this identifier is assigned by the business; the platform MUST
     /// treat it as an opaque, business-scoped reference, and the business resolves it
     /// server-side when the buyer selects it.
-    public let id: String
+    public var id: String
     /// The broad category of the instrument (e.g., 'card', 'tokenized_card'). Specific schemas
     /// will constrain this to a constant value.
-    public let type: String
+    public var type: String
     /// Whether this instrument is selected by the user.
-    public let selected: Bool?
+    public var selected: Bool?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case billingAddress = "billing_address"
         case credential, display
         case handlerID = "handler_id"
         case id, type, selected
     }
 
-    public init(billingAddress: PostalAddress?, credential: PaymentCredential?, display: [String: JSONAny]?, handlerID: String, id: String, type: String, selected: Bool?) {
-        self.billingAddress = billingAddress
-        self.credential = credential
-        self.display = display
+    public init(handlerID: String, id: String, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.handlerID = handlerID
         self.id = id
         self.type = type
-        self.selected = selected
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -2460,24 +2252,11 @@ public extension SelectedPaymentInstrument {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        billingAddress: PostalAddress?? = nil,
-        credential: PaymentCredential?? = nil,
-        display: [String: JSONAny]?? = nil,
-        handlerID: String? = nil,
-        id: String? = nil,
-        type: String? = nil,
-        selected: Bool?? = nil
-    ) -> SelectedPaymentInstrument {
-        return SelectedPaymentInstrument(
-            billingAddress: billingAddress ?? self.billingAddress,
-            credential: credential ?? self.credential,
-            display: display ?? self.display,
-            handlerID: handlerID ?? self.handlerID,
-            id: id ?? self.id,
-            type: type ?? self.type,
-            selected: selected ?? self.selected
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2494,15 +2273,16 @@ public extension SelectedPaymentInstrument {
 public struct PaymentCredential: Codable, Sendable {
     /// The credential type discriminator. Specific schemas will constrain this to a constant
     /// value.
-    public let type: String
+    public var type: String
 
-    public init(type: String) {
+    public init(type: String, configure: (inout Self) -> Void = { _ in }) {
         self.type = type
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case type
     }
 
@@ -2547,12 +2327,11 @@ public extension PaymentCredential {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        type: String? = nil
-    ) -> PaymentCredential {
-        return PaymentCredential(
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2581,30 +2360,29 @@ public struct Policy: Codable, Sendable {
     /// a set. When omitted, the policy applies to the entire response. When policies of the same
     /// `type` contest a node, the narrowest target wins and overrides the rest. See the Policies
     /// section for how specificity resolves.
-    public let appliesTo: [String]?
+    public var appliesTo: [String]?
     /// Human-readable policy summary in one or more formats (plain, markdown, html). Required on
     /// every policy so a platform can present it without understanding any type-specific fields.
     /// This is not the buyer-facing disclosure — display is compelled by a `messages[]` warning
     /// (see the Policies section).
-    public let description: Description
+    public var description: Description
     /// Policy type discriminator. Open reverse-DNS vocabulary. Well-known values:
     /// `dev.ucp.shopping.policy.return` (return terms), `dev.ucp.shopping.policy.warranty`
     /// (warranty terms). Businesses MAY define custom types in their own domain (e.g.,
     /// `com.example.policy.price_match`). Platforms MUST tolerate unknown values.
-    public let type: String
+    public var type: String
     /// Optional link to the full policy document.
-    public let url: String?
+    public var url: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case appliesTo = "applies_to"
         case description, type, url
     }
 
-    public init(appliesTo: [String]?, description: Description, type: String, url: String?) {
-        self.appliesTo = appliesTo
+    public init(description: Description, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.description = description
         self.type = type
-        self.url = url
+        configure(&self)
     }
 
     public var additionalProperties: [String: JSONAny] = [:]
@@ -2656,18 +2434,11 @@ public extension Policy {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        appliesTo: [String]?? = nil,
-        description: Description? = nil,
-        type: String? = nil,
-        url: String?? = nil
-    ) -> Policy {
-        return Policy(
-            appliesTo: appliesTo ?? self.appliesTo,
-            description: description ?? self.description,
-            type: type ?? self.type,
-            url: url ?? self.url
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2688,13 +2459,41 @@ public extension Policy {
 
 /// Checkout state indicating the current phase and required processing. See Checkout Status
 /// lifecycle documentation for state transition details.
-public enum CheckoutStatus: String, Codable, Sendable {
-    case canceled = "canceled"
-    case completeInProgress = "complete_in_progress"
-    case completed = "completed"
-    case incomplete = "incomplete"
-    case readyForComplete = "ready_for_complete"
-    case requiresEscalation = "requires_escalation"
+public struct CheckoutStatus: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let canceled = CheckoutStatus(unchecked: "canceled")
+    public static let completeInProgress = CheckoutStatus(unchecked: "complete_in_progress")
+    public static let completed = CheckoutStatus(unchecked: "completed")
+    public static let incomplete = CheckoutStatus(unchecked: "incomplete")
+    public static let readyForComplete = CheckoutStatus(unchecked: "ready_for_complete")
+    public static let requiresEscalation = CheckoutStatus(unchecked: "requires_escalation")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["canceled", "complete_in_progress", "completed", "incomplete", "ready_for_complete", "requires_escalation"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Different cart totals.
@@ -2706,28 +2505,27 @@ public enum CheckoutStatus: String, Codable, Sendable {
 /// A cost breakdown entry with a category, amount, and optional display text.
 // MARK: - CheckoutTotal
 public struct CheckoutTotal: Codable, Sendable {
-    public let amount: Int
+    public var amount: Int
     /// Text to display against the amount. Should reflect appropriate method (e.g., 'Shipping',
     /// 'Delivery').
-    public let displayText: String?
+    public var displayText: String?
     /// Cost category. Well-known values: subtotal, items_discount, discount, fulfillment, tax,
     /// fee, total. Businesses MAY use additional values.
-    public let type: String
+    public var type: String
     /// Optional itemized breakdown. The parent entry is always rendered; lines are
     /// supplementary. Sum of line amounts MUST equal the parent entry amount.
-    public let lines: [Line]?
+    public var lines: [Line]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case amount
         case displayText = "display_text"
         case type, lines
     }
 
-    public init(amount: Int, displayText: String?, type: String, lines: [Line]?) {
+    public init(amount: Int, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
-        self.displayText = displayText
         self.type = type
-        self.lines = lines
+        configure(&self)
     }
 }
 
@@ -2749,18 +2547,11 @@ public extension CheckoutTotal {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        amount: Int? = nil,
-        displayText: String?? = nil,
-        type: String? = nil,
-        lines: [Line]?? = nil
-    ) -> CheckoutTotal {
-        return CheckoutTotal(
-            amount: amount ?? self.amount,
-            displayText: displayText ?? self.displayText,
-            type: type ?? self.type,
-            lines: lines ?? self.lines
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2775,18 +2566,19 @@ public extension CheckoutTotal {
 /// Sub-line entry. Additional metadata MAY be included.
 // MARK: - Line
 public struct Line: Codable, Sendable {
-    public let amount: Int
+    public var amount: Int
     /// Human-readable label for this sub-line.
-    public let displayText: String
+    public var displayText: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case amount
         case displayText = "display_text"
     }
 
-    public init(amount: Int, displayText: String) {
+    public init(amount: Int, displayText: String, configure: (inout Self) -> Void = { _ in }) {
         self.amount = amount
         self.displayText = displayText
+        configure(&self)
     }
 }
 
@@ -2808,14 +2600,11 @@ public extension Line {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        amount: Int? = nil,
-        displayText: String? = nil
-    ) -> Line {
-        return Line(
-            amount: amount ?? self.amount,
-            displayText: displayText ?? self.displayText
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2834,32 +2623,29 @@ public extension Line {
 extension EmbeddedCheckoutProtocol {
     public struct UCPCheckoutResponseSchema: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
-        public let capabilities: [String: [CapabilityResponseSchema]]?
+        public var capabilities: [String: [CapabilityResponseSchema]]?
         /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
         /// (`services`, `capabilities`, and `payment_handlers`).
-        public let mapOrder: [String: [String]]?
+        public var mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
-        public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]
+        public var paymentHandlers: [String: [PaymentHandlerResponseSchema]]
         /// Service registry keyed by reverse-domain name.
-        public let services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?
+        public var services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?
         /// Application-level status of the UCP operation.
-        public let status: UCPCheckoutResponseSchemaStatus?
-        public let version: String
+        public var status: UCPCheckoutResponseSchemaStatus?
+        public var version: String
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case capabilities
             case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]], services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
-            self.capabilities = capabilities
-            self.mapOrder = mapOrder
+        public init(paymentHandlers: [String: [PaymentHandlerResponseSchema]], version: String, configure: (inout Self) -> Void = { _ in }) {
             self.paymentHandlers = paymentHandlers
-            self.services = services
-            self.status = status
             self.version = version
+            configure(&self)
         }
     }
 }
@@ -2882,22 +2668,11 @@ public extension EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        capabilities: [String: [CapabilityResponseSchema]]?? = nil,
-        mapOrder: [String: [String]]?? = nil,
-        paymentHandlers: [String: [PaymentHandlerResponseSchema]]? = nil,
-        services: [String: [EmbeddedCheckoutProtocol.ServiceResponseSchema]]?? = nil,
-        status: UCPCheckoutResponseSchemaStatus?? = nil,
-        version: String? = nil
-    ) -> EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
-        return EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema(
-            capabilities: capabilities ?? self.capabilities,
-            mapOrder: mapOrder ?? self.mapOrder,
-            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
-            services: services ?? self.services,
-            status: status ?? self.status,
-            version: version ?? self.version
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -2916,27 +2691,23 @@ public extension EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
 // MARK: - CapabilityResponseSchema
 public struct CapabilityResponseSchema: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
+    public var config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
     /// exist.
-    public let id: String?
+    public var id: String?
     /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
+    public var schema: String?
     /// URL to human-readable specification document.
-    public let spec: String?
+    public var spec: String?
     /// Entity version in YYYY-MM-DD format.
-    public let version: String
+    public var version: String
     /// Parent capability(s) this extends. Present for extensions, absent for root capabilities.
     /// Use array for multi-parent extensions.
-    public let extends: Extends?
+    public var extends: Extends?
 
-    public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, extends: Extends?) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
+    public init(version: String, configure: (inout Self) -> Void = { _ in }) {
         self.version = version
-        self.extends = extends
+        configure(&self)
     }
 }
 
@@ -2958,22 +2729,11 @@ public extension CapabilityResponseSchema {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        extends: Extends?? = nil
-    ) -> CapabilityResponseSchema {
-        return CapabilityResponseSchema(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            extends: extends ?? self.extends
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3022,32 +2782,29 @@ public enum Extends: Codable, Sendable {
 // MARK: - PaymentHandlerResponseSchema
 public struct PaymentHandlerResponseSchema: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
+    public var config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
     /// exist.
-    public let id: String
+    public var id: String
     /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
+    public var schema: String?
     /// URL to human-readable specification document.
-    public let spec: String?
+    public var spec: String?
     /// Entity version in YYYY-MM-DD format.
-    public let version: String
+    public var version: String
     /// Instrument types this handler supports, with optional constraints. When absent, every
     /// instrument should be considered available.
-    public let availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?
+    public var availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case config, id, schema, spec, version
         case availableInstruments = "available_instruments"
     }
 
-    public init(config: [String: JSONAny]?, id: String, schema: String?, spec: String?, version: String, availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?) {
-        self.config = config
+    public init(id: String, version: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.schema = schema
-        self.spec = spec
         self.version = version
-        self.availableInstruments = availableInstruments
+        configure(&self)
     }
 }
 
@@ -3069,22 +2826,11 @@ public extension PaymentHandlerResponseSchema {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        availableInstruments: [PaymentHandlerResponseSchemaAvailableInstrument]?? = nil
-    ) -> PaymentHandlerResponseSchema {
-        return PaymentHandlerResponseSchema(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            availableInstruments: availableInstruments ?? self.availableInstruments
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3103,14 +2849,14 @@ public struct PaymentHandlerResponseSchemaAvailableInstrument: Codable, Sendable
     /// `properties` name members of the `constraint_target` declared by the instrument schema
     /// for this `type`. Requirements on submitted request data belong in
     /// `ucp.request_constraints` instead.
-    public let constraints: ConstraintExpression?
+    public var constraints: ConstraintExpression?
     /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
     /// schema's type constant.
-    public let type: String
+    public var type: String
 
-    public init(constraints: ConstraintExpression?, type: String) {
-        self.constraints = constraints
+    public init(type: String, configure: (inout Self) -> Void = { _ in }) {
         self.type = type
+        configure(&self)
     }
 }
 
@@ -3132,14 +2878,11 @@ public extension PaymentHandlerResponseSchemaAvailableInstrument {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        constraints: ConstraintExpression?? = nil,
-        type: String? = nil
-    ) -> PaymentHandlerResponseSchemaAvailableInstrument {
-        return PaymentHandlerResponseSchemaAvailableInstrument(
-            constraints: constraints ?? self.constraints,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3165,30 +2908,26 @@ public struct ConstraintProperty: Codable, Sendable {
     /// Alternative Object Constraints. The constrained object must satisfy at least one. A
     /// branch must be non-empty: an empty branch is satisfied by every object and neutralizes
     /// the alternation.
-    public let anyOf: [ConstraintExpression]?
+    public var anyOf: [ConstraintExpression]?
     /// Constraints keyed by property name. Must be non-empty: an empty object applies no
     /// constraint.
-    public let properties: [String: ConstraintProperty]?
+    public var properties: [String: ConstraintProperty]?
     /// Property names required by the constrained object. Must be non-empty: an empty array
     /// applies no constraint.
-    public let constraintPropertyRequired: [String]?
-    public let const: JSONAny?
+    public var constraintPropertyRequired: [String]?
+    public var const: JSONAny?
     /// A non-empty array of unique JSON values.
-    public let constraintPropertyEnum: [JSONAny]?
+    public var constraintPropertyEnum: [JSONAny]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case anyOf, properties
         case constraintPropertyRequired = "required"
         case const
         case constraintPropertyEnum = "enum"
     }
 
-    public init(anyOf: [ConstraintExpression]?, properties: [String: ConstraintProperty]?, constraintPropertyRequired: [String]?, const: JSONAny?, constraintPropertyEnum: [JSONAny]?) {
-        self.anyOf = anyOf
-        self.properties = properties
-        self.constraintPropertyRequired = constraintPropertyRequired
-        self.const = const
-        self.constraintPropertyEnum = constraintPropertyEnum
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 
     public init(from decoder: Decoder) throws {
@@ -3219,20 +2958,11 @@ public extension ConstraintProperty {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        anyOf: [ConstraintExpression]?? = nil,
-        properties: [String: ConstraintProperty]?? = nil,
-        constraintPropertyRequired: [String]?? = nil,
-        const: JSONAny?? = nil,
-        constraintPropertyEnum: [JSONAny]?? = nil
-    ) -> ConstraintProperty {
-        return ConstraintProperty(
-            anyOf: anyOf ?? self.anyOf,
-            properties: properties ?? self.properties,
-            constraintPropertyRequired: constraintPropertyRequired ?? self.constraintPropertyRequired,
-            const: const ?? self.const,
-            constraintPropertyEnum: constraintPropertyEnum ?? self.constraintPropertyEnum
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3256,23 +2986,21 @@ public struct ConstraintExpression: Codable, Sendable {
     /// Alternative Object Constraints. The constrained object must satisfy at least one. A
     /// branch must be non-empty: an empty branch is satisfied by every object and neutralizes
     /// the alternation.
-    public let anyOf: [ConstraintExpression]?
+    public var anyOf: [ConstraintExpression]?
     /// Constraints keyed by property name. Must be non-empty: an empty object applies no
     /// constraint.
-    public let properties: [String: ConstraintProperty]?
+    public var properties: [String: ConstraintProperty]?
     /// Property names required by the constrained object. Must be non-empty: an empty array
     /// applies no constraint.
-    public let constraintExpressionRequired: [String]?
+    public var constraintExpressionRequired: [String]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case anyOf, properties
         case constraintExpressionRequired = "required"
     }
 
-    public init(anyOf: [ConstraintExpression]?, properties: [String: ConstraintProperty]?, constraintExpressionRequired: [String]?) {
-        self.anyOf = anyOf
-        self.properties = properties
-        self.constraintExpressionRequired = constraintExpressionRequired
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -3294,16 +3022,11 @@ public extension ConstraintExpression {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        anyOf: [ConstraintExpression]?? = nil,
-        properties: [String: ConstraintProperty]?? = nil,
-        constraintExpressionRequired: [String]?? = nil
-    ) -> ConstraintExpression {
-        return ConstraintExpression(
-            anyOf: anyOf ?? self.anyOf,
-            properties: properties ?? self.properties,
-            constraintExpressionRequired: constraintExpressionRequired ?? self.constraintExpressionRequired
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3323,29 +3046,25 @@ public extension ConstraintExpression {
 extension EmbeddedCheckoutProtocol {
     public struct ServiceResponseSchema: Codable, Sendable {
         /// Entity-specific configuration. Structure defined by each entity's schema.
-        public let config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?
+        public var config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?
         /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
         /// exist.
-        public let id: String?
+        public var id: String?
         /// URL to JSON Schema defining this entity's structure and payloads.
-        public let schema: String?
+        public var schema: String?
         /// URL to human-readable specification document.
-        public let spec: String?
+        public var spec: String?
         /// Entity version in YYYY-MM-DD format.
-        public let version: String
+        public var version: String
         /// Endpoint URL for this transport binding.
-        public let endpoint: String?
+        public var endpoint: String?
         /// Transport protocol for this service binding.
-        public let transport: Transport
+        public var transport: Transport
 
-        public init(config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
-            self.config = config
-            self.id = id
-            self.schema = schema
-            self.spec = spec
+        public init(version: String, transport: Transport, configure: (inout Self) -> Void = { _ in }) {
             self.version = version
-            self.endpoint = endpoint
             self.transport = transport
+            configure(&self)
         }
     }
 }
@@ -3368,24 +3087,11 @@ public extension EmbeddedCheckoutProtocol.ServiceResponseSchema {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: EmbeddedCheckoutProtocol.EmbeddedTransportConfig?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        endpoint: String?? = nil,
-        transport: Transport? = nil
-    ) -> EmbeddedCheckoutProtocol.ServiceResponseSchema {
-        return EmbeddedCheckoutProtocol.ServiceResponseSchema(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            endpoint: endpoint ?? self.endpoint,
-            transport: transport ?? self.transport
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3406,19 +3112,18 @@ extension EmbeddedCheckoutProtocol {
     public struct EmbeddedTransportConfig: Codable, Sendable {
         /// Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
         /// a scheme from this list.
-        public let colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?
+        public var colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?
         /// Delegations the business allows. At service-level, declares available delegations. In UCP
         /// responses, confirms accepted delegations for this session.
-        public let delegate: [String]?
+        public var delegate: [String]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case colorScheme = "color_scheme"
             case delegate
         }
 
-        public init(colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?, delegate: [String]?) {
-            self.colorScheme = colorScheme
-            self.delegate = delegate
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -3441,14 +3146,11 @@ public extension EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        colorScheme: [EmbeddedCheckoutProtocol.EmbeddedColorScheme]?? = nil,
-        delegate: [String]?? = nil
-    ) -> EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
-        return EmbeddedCheckoutProtocol.EmbeddedTransportConfig(
-            colorScheme: colorScheme ?? self.colorScheme,
-            delegate: delegate ?? self.delegate
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3461,24 +3163,108 @@ public extension EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
 }
 
 extension EmbeddedCheckoutProtocol {
-    public enum EmbeddedColorScheme: String, Codable, Sendable {
-        case dark = "dark"
-        case light = "light"
+    public struct EmbeddedColorScheme: RawRepresentable, Codable, Hashable, Sendable {
+        public let rawValue: String
+
+        /// Preserves the string, including values this protocol version doesn't define.
+        /// This initializer never returns nil. Use `isKnown` to check for a named value.
+        public init?(rawValue: String) {
+            self.init(unchecked: rawValue)
+        }
+
+        private init(unchecked rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        public static let dark = EmbeddedColorScheme(unchecked: "dark")
+        public static let light = EmbeddedColorScheme(unchecked: "light")
+
+        /// Values defined by the pinned protocol version.
+        static let knownValues: Set<String> = ["dark", "light"]
+
+        /// Whether this protocol version defines a named constant for the value.
+        public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            self.init(unchecked: try container.decode(String.self))
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
     }
 }
 
 /// Transport protocol for this service binding.
-public enum Transport: String, Codable, Sendable {
-    case a2A = "a2a"
-    case embedded = "embedded"
-    case mcp = "mcp"
-    case rest = "rest"
+public struct Transport: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let a2A = Transport(unchecked: "a2a")
+    public static let embedded = Transport(unchecked: "embedded")
+    public static let mcp = Transport(unchecked: "mcp")
+    public static let rest = Transport(unchecked: "rest")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["a2a", "embedded", "mcp", "rest"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Application-level status of the UCP operation.
-public enum UCPCheckoutResponseSchemaStatus: String, Codable, Sendable {
-    case error = "error"
-    case success = "success"
+public struct UCPCheckoutResponseSchemaStatus: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let error = UCPCheckoutResponseSchemaStatus(unchecked: "error")
+    public static let success = UCPCheckoutResponseSchemaStatus(unchecked: "success")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["error", "success"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Order schema with line items, buyer-facing fulfillment expectations, and event logs.
@@ -3486,35 +3272,35 @@ public enum UCPCheckoutResponseSchemaStatus: String, Codable, Sendable {
 public struct Order: Codable, Sendable {
     /// Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
     /// independently of fulfillment.
-    public let adjustments: [Adjustment]?
+    public var adjustments: [Adjustment]?
     /// Snapshot of the attribution associated with the originating checkout. Read-only on the
     /// order.
-    public let attribution: [String: String]?
+    public var attribution: [String: String]?
     /// Associated checkout ID for reconciliation.
-    public let checkoutID: String
+    public var checkoutID: String
     /// ISO 4217 currency code. MUST match the currency from the originating checkout session.
-    public let currency: String
+    public var currency: String
     /// Fulfillment data: buyer expectations and what actually happened.
-    public let fulfillment: Fulfillment
+    public var fulfillment: Fulfillment
     /// Unique order identifier.
-    public let id: String
+    public var id: String
     /// Human-readable label for identifying the order. MUST only be provided by the business.
-    public let label: String?
+    public var label: String?
     /// Line items representing what was purchased — can change post-order via edits or exchanges.
-    public let lineItems: [OrderLineItem]
+    public var lineItems: [OrderLineItem]
     /// Business outcome messages (errors, warnings, informational). Present when the business
     /// needs to communicate status or issues to the platform.
-    public let messages: [Message]?
+    public var messages: [Message]?
     /// Permalink to access the order on merchant site.
-    public let permalinkURL: String
+    public var permalinkURL: String
     /// Snapshot of the policies that applied to the items at checkout, captured on the order as
     /// a durable record. `applies_to` targets are relative to the response root.
-    public let policies: [Policy]?
+    public var policies: [Policy]?
     /// Different totals for the order.
-    public let totals: [CheckoutTotal]
-    public let ucp: UCPOrderResponseSchema
+    public var totals: [CheckoutTotal]
+    public var ucp: UCPOrderResponseSchema
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case adjustments, attribution
         case checkoutID = "checkout_id"
         case currency, fulfillment, id, label
@@ -3524,20 +3310,16 @@ public struct Order: Codable, Sendable {
         case policies, totals, ucp
     }
 
-    public init(adjustments: [Adjustment]?, attribution: [String: String]?, checkoutID: String, currency: String, fulfillment: Fulfillment, id: String, label: String?, lineItems: [OrderLineItem], messages: [Message]?, permalinkURL: String, policies: [Policy]?, totals: [CheckoutTotal], ucp: UCPOrderResponseSchema) {
-        self.adjustments = adjustments
-        self.attribution = attribution
+    public init(checkoutID: String, currency: String, fulfillment: Fulfillment, id: String, lineItems: [OrderLineItem], permalinkURL: String, totals: [CheckoutTotal], ucp: UCPOrderResponseSchema, configure: (inout Self) -> Void = { _ in }) {
         self.checkoutID = checkoutID
         self.currency = currency
         self.fulfillment = fulfillment
         self.id = id
-        self.label = label
         self.lineItems = lineItems
-        self.messages = messages
         self.permalinkURL = permalinkURL
-        self.policies = policies
         self.totals = totals
         self.ucp = ucp
+        configure(&self)
     }
 }
 
@@ -3559,36 +3341,11 @@ public extension Order {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        adjustments: [Adjustment]?? = nil,
-        attribution: [String: String]?? = nil,
-        checkoutID: String? = nil,
-        currency: String? = nil,
-        fulfillment: Fulfillment? = nil,
-        id: String? = nil,
-        label: String?? = nil,
-        lineItems: [OrderLineItem]? = nil,
-        messages: [Message]?? = nil,
-        permalinkURL: String? = nil,
-        policies: [Policy]?? = nil,
-        totals: [CheckoutTotal]? = nil,
-        ucp: UCPOrderResponseSchema? = nil
-    ) -> Order {
-        return Order(
-            adjustments: adjustments ?? self.adjustments,
-            attribution: attribution ?? self.attribution,
-            checkoutID: checkoutID ?? self.checkoutID,
-            currency: currency ?? self.currency,
-            fulfillment: fulfillment ?? self.fulfillment,
-            id: id ?? self.id,
-            label: label ?? self.label,
-            lineItems: lineItems ?? self.lineItems,
-            messages: messages ?? self.messages,
-            permalinkURL: permalinkURL ?? self.permalinkURL,
-            policies: policies ?? self.policies,
-            totals: totals ?? self.totals,
-            ucp: ucp ?? self.ucp
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3606,38 +3363,36 @@ public extension Order {
 // MARK: - Adjustment
 public struct Adjustment: Codable, Sendable {
     /// Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
-    public let description: String?
+    public var description: String?
     /// Adjustment event identifier.
-    public let id: String
+    public var id: String
     /// Which line items and quantities are affected (optional).
-    public let lineItems: [AdjustmentLineItem]?
+    public var lineItems: [AdjustmentLineItem]?
     /// RFC 3339 timestamp when this adjustment occurred.
-    public let occurredAt: Date
+    public var occurredAt: Date
     /// Adjustment status.
-    public let status: AdjustmentStatus
+    public var status: AdjustmentStatus
     /// Adjustment totals breakdown. Signed values - negative for money returned to buyer
     /// (refunds, credits), positive for additional charges (exchanges).
-    public let totals: [LineItemTotal]?
+    public var totals: [LineItemTotal]?
     /// Type of adjustment (open string). Typically money-related like: refund, return, credit,
     /// price_adjustment, dispute, cancellation. Can be any value that makes sense for the
     /// merchant's business.
-    public let type: String
+    public var type: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case description, id
         case lineItems = "line_items"
         case occurredAt = "occurred_at"
         case status, totals, type
     }
 
-    public init(description: String?, id: String, lineItems: [AdjustmentLineItem]?, occurredAt: Date, status: AdjustmentStatus, totals: [LineItemTotal]?, type: String) {
-        self.description = description
+    public init(id: String, occurredAt: Date, status: AdjustmentStatus, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.lineItems = lineItems
         self.occurredAt = occurredAt
         self.status = status
-        self.totals = totals
         self.type = type
+        configure(&self)
     }
 }
 
@@ -3659,24 +3414,11 @@ public extension Adjustment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        description: String?? = nil,
-        id: String? = nil,
-        lineItems: [AdjustmentLineItem]?? = nil,
-        occurredAt: Date? = nil,
-        status: AdjustmentStatus? = nil,
-        totals: [LineItemTotal]?? = nil,
-        type: String? = nil
-    ) -> Adjustment {
-        return Adjustment(
-            description: description ?? self.description,
-            id: id ?? self.id,
-            lineItems: lineItems ?? self.lineItems,
-            occurredAt: occurredAt ?? self.occurredAt,
-            status: status ?? self.status,
-            totals: totals ?? self.totals,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3691,22 +3433,22 @@ public extension Adjustment {
 // MARK: - AdjustmentLineItem
 public struct AdjustmentLineItem: Codable, Sendable {
     /// Line item ID reference.
-    public let id: String
+    public var id: String
     /// The settled measurement this adjustment reconciles (for example, actual picked weight),
     /// present when the line's price settles by measurement. Its unit identity MUST match the
     /// line's pricing basis (`item.unit_price` measure/reference unit); no unit conversion. A
     /// pure price settlement uses `quantity: 0` together with `measure` and a totals delta.
-    public let measure: Measure?
+    public var measure: Measure?
     /// Signed integer count of steps of the referenced line item's `quantity_unit` (`10^-scale`
     /// × `unit`); when `quantity_unit` is absent, it counts whole items (`each`). Negative
     /// values represent reductions (e.g. returns); positive values represent additions (e.g.
     /// exchanges).
-    public let quantity: Int
+    public var quantity: Int
 
-    public init(id: String, measure: Measure?, quantity: Int) {
+    public init(id: String, quantity: Int, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
-        self.measure = measure
         self.quantity = quantity
+        configure(&self)
     }
 }
 
@@ -3728,16 +3470,11 @@ public extension AdjustmentLineItem {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        measure: Measure?? = nil,
-        quantity: Int? = nil
-    ) -> AdjustmentLineItem {
-        return AdjustmentLineItem(
-            id: id ?? self.id,
-            measure: measure ?? self.measure,
-            quantity: quantity ?? self.quantity
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3750,24 +3487,51 @@ public extension AdjustmentLineItem {
 }
 
 /// Adjustment status.
-public enum AdjustmentStatus: String, Codable, Sendable {
-    case completed = "completed"
-    case failed = "failed"
-    case pending = "pending"
+public struct AdjustmentStatus: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let completed = AdjustmentStatus(unchecked: "completed")
+    public static let failed = AdjustmentStatus(unchecked: "failed")
+    public static let pending = AdjustmentStatus(unchecked: "pending")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["completed", "failed", "pending"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Fulfillment data: buyer expectations and what actually happened.
 // MARK: - Fulfillment
 public struct Fulfillment: Codable, Sendable {
     /// Append-only event log of actual shipments. Each event references line items by ID.
-    public let events: [FulfillmentEvent]?
+    public var events: [FulfillmentEvent]?
     /// Buyer-facing groups representing when/how items will be delivered. Can be split, merged,
     /// or adjusted post-order.
-    public let expectations: [Expectation]?
+    public var expectations: [Expectation]?
 
-    public init(events: [FulfillmentEvent]?, expectations: [Expectation]?) {
-        self.events = events
-        self.expectations = expectations
+    public init(configure: (inout Self) -> Void = { _ in }) {
+        configure(&self)
     }
 }
 
@@ -3789,14 +3553,11 @@ public extension Fulfillment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        events: [FulfillmentEvent]?? = nil,
-        expectations: [Expectation]?? = nil
-    ) -> Fulfillment {
-        return Fulfillment(
-            events: events ?? self.events,
-            expectations: expectations ?? self.expectations
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3813,27 +3574,27 @@ public extension Fulfillment {
 // MARK: - FulfillmentEvent
 public struct FulfillmentEvent: Codable, Sendable {
     /// Carrier name (e.g., 'FedEx', 'USPS').
-    public let carrier: String?
+    public var carrier: String?
     /// Human-readable description of the shipment status or delivery information (e.g.,
     /// 'Delivered to front door', 'Out for delivery').
-    public let description: String?
+    public var description: String?
     /// Fulfillment event identifier.
-    public let id: String
+    public var id: String
     /// Which line items and quantities are fulfilled in this event.
-    public let lineItems: [EventLineItem]
+    public var lineItems: [EventLineItem]
     /// RFC 3339 timestamp when this fulfillment event occurred.
-    public let occurredAt: Date
+    public var occurredAt: Date
     /// Carrier tracking number (required if type != processing).
-    public let trackingNumber: String?
+    public var trackingNumber: String?
     /// URL to track this shipment (required if type != processing).
-    public let trackingURL: String?
+    public var trackingURL: String?
     /// Fulfillment event type. Common values include: processing (preparing to ship), shipped
     /// (handed to carrier), in_transit (in delivery network), delivered (received by buyer),
     /// failed_attempt (delivery attempt failed), canceled (fulfillment canceled), undeliverable
     /// (cannot be delivered), returned_to_sender (returned to merchant).
-    public let type: String
+    public var type: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case carrier, description, id
         case lineItems = "line_items"
         case occurredAt = "occurred_at"
@@ -3842,15 +3603,12 @@ public struct FulfillmentEvent: Codable, Sendable {
         case type
     }
 
-    public init(carrier: String?, description: String?, id: String, lineItems: [EventLineItem], occurredAt: Date, trackingNumber: String?, trackingURL: String?, type: String) {
-        self.carrier = carrier
-        self.description = description
+    public init(id: String, lineItems: [EventLineItem], occurredAt: Date, type: String, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.lineItems = lineItems
         self.occurredAt = occurredAt
-        self.trackingNumber = trackingNumber
-        self.trackingURL = trackingURL
         self.type = type
+        configure(&self)
     }
 }
 
@@ -3872,26 +3630,11 @@ public extension FulfillmentEvent {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        carrier: String?? = nil,
-        description: String?? = nil,
-        id: String? = nil,
-        lineItems: [EventLineItem]? = nil,
-        occurredAt: Date? = nil,
-        trackingNumber: String?? = nil,
-        trackingURL: String?? = nil,
-        type: String? = nil
-    ) -> FulfillmentEvent {
-        return FulfillmentEvent(
-            carrier: carrier ?? self.carrier,
-            description: description ?? self.description,
-            id: id ?? self.id,
-            lineItems: lineItems ?? self.lineItems,
-            occurredAt: occurredAt ?? self.occurredAt,
-            trackingNumber: trackingNumber ?? self.trackingNumber,
-            trackingURL: trackingURL ?? self.trackingURL,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3906,14 +3649,15 @@ public extension FulfillmentEvent {
 // MARK: - EventLineItem
 public struct EventLineItem: Codable, Sendable {
     /// Line item ID reference.
-    public let id: String
+    public var id: String
     /// Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
     /// `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
-    public let quantity: Int
+    public var quantity: Int
 
-    public init(id: String, quantity: Int) {
+    public init(id: String, quantity: Int, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.quantity = quantity
+        configure(&self)
     }
 }
 
@@ -3935,14 +3679,11 @@ public extension EventLineItem {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        quantity: Int? = nil
-    ) -> EventLineItem {
-        return EventLineItem(
-            id: id ?? self.id,
-            quantity: quantity ?? self.quantity
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -3960,21 +3701,21 @@ public extension EventLineItem {
 // MARK: - Expectation
 public struct Expectation: Codable, Sendable {
     /// Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
-    public let description: String?
+    public var description: String?
     /// Delivery destination address.
-    public let destination: PostalAddress
+    public var destination: PostalAddress
     /// When this expectation can be fulfilled: 'now' or ISO 8601 timestamp for future date
     /// (backorder, pre-order).
-    public let fulfillableOn: String?
+    public var fulfillableOn: String?
     /// Expectation identifier.
-    public let id: String
+    public var id: String
     /// Which line items and quantities are in this expectation.
-    public let lineItems: [ExpectationLineItem]
+    public var lineItems: [ExpectationLineItem]
     /// Delivery method type. Well-known values: `shipping`, `pickup`, `digital`; additional
     /// values MAY be used.
-    public let methodType: String
+    public var methodType: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case description, destination
         case fulfillableOn = "fulfillable_on"
         case id
@@ -3982,13 +3723,12 @@ public struct Expectation: Codable, Sendable {
         case methodType = "method_type"
     }
 
-    public init(description: String?, destination: PostalAddress, fulfillableOn: String?, id: String, lineItems: [ExpectationLineItem], methodType: String) {
-        self.description = description
+    public init(destination: PostalAddress, id: String, lineItems: [ExpectationLineItem], methodType: String, configure: (inout Self) -> Void = { _ in }) {
         self.destination = destination
-        self.fulfillableOn = fulfillableOn
         self.id = id
         self.lineItems = lineItems
         self.methodType = methodType
+        configure(&self)
     }
 }
 
@@ -4010,22 +3750,11 @@ public extension Expectation {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        description: String?? = nil,
-        destination: PostalAddress? = nil,
-        fulfillableOn: String?? = nil,
-        id: String? = nil,
-        lineItems: [ExpectationLineItem]? = nil,
-        methodType: String? = nil
-    ) -> Expectation {
-        return Expectation(
-            description: description ?? self.description,
-            destination: destination ?? self.destination,
-            fulfillableOn: fulfillableOn ?? self.fulfillableOn,
-            id: id ?? self.id,
-            lineItems: lineItems ?? self.lineItems,
-            methodType: methodType ?? self.methodType
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4040,14 +3769,15 @@ public extension Expectation {
 // MARK: - ExpectationLineItem
 public struct ExpectationLineItem: Codable, Sendable {
     /// Line item ID reference.
-    public let id: String
+    public var id: String
     /// Integer count of steps of the referenced line item's `quantity_unit` (`10^-scale` ×
     /// `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
-    public let quantity: Int
+    public var quantity: Int
 
-    public init(id: String, quantity: Int) {
+    public init(id: String, quantity: Int, configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.quantity = quantity
+        configure(&self)
     }
 }
 
@@ -4069,14 +3799,11 @@ public extension ExpectationLineItem {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        quantity: Int? = nil
-    ) -> ExpectationLineItem {
-        return ExpectationLineItem(
-            id: id ?? self.id,
-            quantity: quantity ?? self.quantity
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4091,36 +3818,36 @@ public extension ExpectationLineItem {
 // MARK: - OrderLineItem
 public struct OrderLineItem: Codable, Sendable {
     /// Line item identifier.
-    public let id: String
+    public var id: String
     /// Purchased item data, including identity, price, and sale basis.
-    public let item: Item
+    public var item: Item
     /// Parent line item identifier for any nested structures.
-    public let parentID: String?
+    public var parentID: String?
     /// Tracks the line item's original, current active, and fulfilled quantities. All three
     /// values use the same inherited `item.quantity_unit`. When `item.quantity_unit` is absent
     /// on an authoritative order response, each step is one whole item (`each`) under the shared
     /// default.
-    public let quantity: LineItemQuantity
+    public var quantity: LineItemQuantity
     /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
     /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
     /// quantity.fulfilled > 0, otherwise processing.
-    public let status: LineItemStatus
+    public var status: LineItemStatus
     /// Line item totals breakdown.
-    public let totals: [LineItemTotal]
+    public var totals: [LineItemTotal]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case id, item
         case parentID = "parent_id"
         case quantity, status, totals
     }
 
-    public init(id: String, item: Item, parentID: String?, quantity: LineItemQuantity, status: LineItemStatus, totals: [LineItemTotal]) {
+    public init(id: String, item: Item, quantity: LineItemQuantity, status: LineItemStatus, totals: [LineItemTotal], configure: (inout Self) -> Void = { _ in }) {
         self.id = id
         self.item = item
-        self.parentID = parentID
         self.quantity = quantity
         self.status = status
         self.totals = totals
+        configure(&self)
     }
 }
 
@@ -4142,22 +3869,11 @@ public extension OrderLineItem {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        id: String? = nil,
-        item: Item? = nil,
-        parentID: String?? = nil,
-        quantity: LineItemQuantity? = nil,
-        status: LineItemStatus? = nil,
-        totals: [LineItemTotal]? = nil
-    ) -> OrderLineItem {
-        return OrderLineItem(
-            id: id ?? self.id,
-            item: item ?? self.item,
-            parentID: parentID ?? self.parentID,
-            quantity: quantity ?? self.quantity,
-            status: status ?? self.status,
-            totals: totals ?? self.totals
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4176,17 +3892,17 @@ public extension OrderLineItem {
 // MARK: - LineItemQuantity
 public struct LineItemQuantity: Codable, Sendable {
     /// Quantity fulfilled so far, expressed as an integer step count.
-    public let fulfilled: Int
+    public var fulfilled: Int
     /// Quantity from the original checkout, expressed as an integer step count.
-    public let original: Int?
+    public var original: Int?
     /// Current active quantity after returns, cancellations, or other order changes, expressed
     /// as an integer step count.
-    public let total: Int
+    public var total: Int
 
-    public init(fulfilled: Int, original: Int?, total: Int) {
+    public init(fulfilled: Int, total: Int, configure: (inout Self) -> Void = { _ in }) {
         self.fulfilled = fulfilled
-        self.original = original
         self.total = total
+        configure(&self)
     }
 }
 
@@ -4208,16 +3924,11 @@ public extension LineItemQuantity {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        fulfilled: Int? = nil,
-        original: Int?? = nil,
-        total: Int? = nil
-    ) -> LineItemQuantity {
-        return LineItemQuantity(
-            fulfilled: fulfilled ?? self.fulfilled,
-            original: original ?? self.original,
-            total: total ?? self.total
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4232,11 +3943,39 @@ public extension LineItemQuantity {
 /// Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
 /// quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
 /// quantity.fulfilled > 0, otherwise processing.
-public enum LineItemStatus: String, Codable, Sendable {
-    case fulfilled = "fulfilled"
-    case partial = "partial"
-    case processing = "processing"
-    case removed = "removed"
+public struct LineItemStatus: RawRepresentable, Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    /// Preserves the string, including values this protocol version doesn't define.
+    /// This initializer never returns nil. Use `isKnown` to check for a named value.
+    public init?(rawValue: String) {
+        self.init(unchecked: rawValue)
+    }
+
+    private init(unchecked rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public static let fulfilled = LineItemStatus(unchecked: "fulfilled")
+    public static let partial = LineItemStatus(unchecked: "partial")
+    public static let processing = LineItemStatus(unchecked: "processing")
+    public static let removed = LineItemStatus(unchecked: "removed")
+
+    /// Values defined by the pinned protocol version.
+    static let knownValues: Set<String> = ["fulfilled", "partial", "processing", "removed"]
+
+    /// Whether this protocol version defines a named constant for the value.
+    public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(unchecked: try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// UCP metadata for order responses. No payment handlers needed post-purchase.
@@ -4245,32 +3984,28 @@ public enum LineItemStatus: String, Codable, Sendable {
 // MARK: - UCPOrderResponseSchema
 public struct UCPOrderResponseSchema: Codable, Sendable {
     /// Capability registry keyed by reverse-domain name.
-    public let capabilities: [String: [CapabilityResponseSchema]]?
+    public var capabilities: [String: [CapabilityResponseSchema]]?
     /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
     /// (`services`, `capabilities`, and `payment_handlers`).
-    public let mapOrder: [String: [String]]?
+    public var mapOrder: [String: [String]]?
     /// Payment handler registry keyed by reverse-domain name.
-    public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
+    public var paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
     /// Service registry keyed by reverse-domain name.
-    public let services: [String: [Service]]?
+    public var services: [String: [Service]]?
     /// Application-level status of the UCP operation.
-    public let status: UCPCheckoutResponseSchemaStatus?
-    public let version: String
+    public var status: UCPCheckoutResponseSchemaStatus?
+    public var version: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case capabilities
         case mapOrder = "map_order"
         case paymentHandlers = "payment_handlers"
         case services, status, version
     }
 
-    public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: UCPCheckoutResponseSchemaStatus?, version: String) {
-        self.capabilities = capabilities
-        self.mapOrder = mapOrder
-        self.paymentHandlers = paymentHandlers
-        self.services = services
-        self.status = status
+    public init(version: String, configure: (inout Self) -> Void = { _ in }) {
         self.version = version
+        configure(&self)
     }
 }
 
@@ -4292,22 +4027,11 @@ public extension UCPOrderResponseSchema {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        capabilities: [String: [CapabilityResponseSchema]]?? = nil,
-        mapOrder: [String: [String]]?? = nil,
-        paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
-        services: [String: [Service]]?? = nil,
-        status: UCPCheckoutResponseSchemaStatus?? = nil,
-        version: String? = nil
-    ) -> UCPOrderResponseSchema {
-        return UCPOrderResponseSchema(
-            capabilities: capabilities ?? self.capabilities,
-            mapOrder: mapOrder ?? self.mapOrder,
-            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
-            services: services ?? self.services,
-            status: status ?? self.status,
-            version: version ?? self.version
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4323,29 +4047,25 @@ public extension UCPOrderResponseSchema {
 // MARK: - Service
 public struct Service: Codable, Sendable {
     /// Entity-specific configuration. Structure defined by each entity's schema.
-    public let config: [String: JSONAny]?
+    public var config: [String: JSONAny]?
     /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
     /// exist.
-    public let id: String?
+    public var id: String?
     /// URL to JSON Schema defining this entity's structure and payloads.
-    public let schema: String?
+    public var schema: String?
     /// URL to human-readable specification document.
-    public let spec: String?
+    public var spec: String?
     /// Entity version in YYYY-MM-DD format.
-    public let version: String
+    public var version: String
     /// Endpoint URL for this transport binding.
-    public let endpoint: String?
+    public var endpoint: String?
     /// Transport protocol for this service binding.
-    public let transport: Transport
+    public var transport: Transport
 
-    public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
-        self.config = config
-        self.id = id
-        self.schema = schema
-        self.spec = spec
+    public init(version: String, transport: Transport, configure: (inout Self) -> Void = { _ in }) {
         self.version = version
-        self.endpoint = endpoint
         self.transport = transport
+        configure(&self)
     }
 }
 
@@ -4367,24 +4087,11 @@ public extension Service {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        endpoint: String?? = nil,
-        transport: Transport? = nil
-    ) -> Service {
-        return Service(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            endpoint: endpoint ?? self.endpoint,
-            transport: transport ?? self.transport
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4402,21 +4109,21 @@ public extension Service {
 extension EmbeddedCheckoutProtocol {
     public struct ErrorResponse: Codable, Sendable {
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]
+        public var messages: [Message]
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp
+        public var ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case continueURL = "continue_url"
             case messages, ucp
         }
 
-        public init(continueURL: String?, messages: [Message], ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp) {
-            self.continueURL = continueURL
+        public init(messages: [Message], ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp, configure: (inout Self) -> Void = { _ in }) {
             self.messages = messages
             self.ucp = ucp
+            configure(&self)
         }
     }
 }
@@ -4439,16 +4146,11 @@ public extension EmbeddedCheckoutProtocol.ErrorResponse {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        continueURL: String?? = nil,
-        messages: [Message]? = nil,
-        ucp: EmbeddedCheckoutProtocol.ErrorResponseUcp? = nil
-    ) -> EmbeddedCheckoutProtocol.ErrorResponse {
-        return EmbeddedCheckoutProtocol.ErrorResponse(
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages,
-            ucp: ucp ?? self.ucp
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4470,32 +4172,29 @@ public extension EmbeddedCheckoutProtocol.ErrorResponse {
 extension EmbeddedCheckoutProtocol {
     public struct ErrorResponseUcp: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
-        public let capabilities: [String: [CapabilityResponseSchema]]?
+        public var capabilities: [String: [CapabilityResponseSchema]]?
         /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
         /// (`services`, `capabilities`, and `payment_handlers`).
-        public let mapOrder: [String: [String]]?
+        public var mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
-        public let paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
+        public var paymentHandlers: [String: [PaymentHandlerResponseSchema]]?
         /// Service registry keyed by reverse-domain name.
-        public let services: [String: [Service]]?
+        public var services: [String: [Service]]?
         /// Application-level status of the UCP operation.
-        public let status: EmbeddedCheckoutProtocol.ErrorStatus
-        public let version: String
+        public var status: EmbeddedCheckoutProtocol.ErrorStatus
+        public var version: String
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case capabilities
             case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [CapabilityResponseSchema]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [PaymentHandlerResponseSchema]]?, services: [String: [Service]]?, status: EmbeddedCheckoutProtocol.ErrorStatus, version: String) {
-            self.capabilities = capabilities
-            self.mapOrder = mapOrder
-            self.paymentHandlers = paymentHandlers
-            self.services = services
+        public init(status: EmbeddedCheckoutProtocol.ErrorStatus, version: String, configure: (inout Self) -> Void = { _ in }) {
             self.status = status
             self.version = version
+            configure(&self)
         }
     }
 }
@@ -4518,22 +4217,11 @@ public extension EmbeddedCheckoutProtocol.ErrorResponseUcp {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        capabilities: [String: [CapabilityResponseSchema]]?? = nil,
-        mapOrder: [String: [String]]?? = nil,
-        paymentHandlers: [String: [PaymentHandlerResponseSchema]]?? = nil,
-        services: [String: [Service]]?? = nil,
-        status: EmbeddedCheckoutProtocol.ErrorStatus? = nil,
-        version: String? = nil
-    ) -> EmbeddedCheckoutProtocol.ErrorResponseUcp {
-        return EmbeddedCheckoutProtocol.ErrorResponseUcp(
-            capabilities: capabilities ?? self.capabilities,
-            mapOrder: mapOrder ?? self.mapOrder,
-            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
-            services: services ?? self.services,
-            status: status ?? self.status,
-            version: version ?? self.version
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4547,8 +4235,36 @@ public extension EmbeddedCheckoutProtocol.ErrorResponseUcp {
 
 /// Application-level status of the UCP operation.
 extension EmbeddedCheckoutProtocol {
-    public enum ErrorStatus: String, Codable, Sendable {
-        case error = "error"
+    public struct ErrorStatus: RawRepresentable, Codable, Hashable, Sendable {
+        public let rawValue: String
+
+        /// Preserves the string, including values this protocol version doesn't define.
+        /// This initializer never returns nil. Use `isKnown` to check for a named value.
+        public init?(rawValue: String) {
+            self.init(unchecked: rawValue)
+        }
+
+        private init(unchecked rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        public static let error = ErrorStatus(unchecked: "error")
+
+        /// Values defined by the pinned protocol version.
+        static let knownValues: Set<String> = ["error"]
+
+        /// Whether this protocol version defines a named constant for the value.
+        public var isKnown: Bool { Self.knownValues.contains(rawValue) }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            self.init(unchecked: try container.decode(String.self))
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
     }
 }
 
@@ -4560,25 +4276,23 @@ extension EmbeddedCheckoutProtocol {
 extension EmbeddedCheckoutProtocol {
     public struct InstrumentsChangeResult: Codable, Sendable {
         /// Partial checkout update with payment instrument selection.
-        public let checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?
+        public var checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case checkout, ucp
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-            self.checkout = checkout
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -4601,18 +4315,11 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        checkout: EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?? = nil,
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeResult {
-        return EmbeddedCheckoutProtocol.InstrumentsChangeResult(
-            checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4629,10 +4336,10 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResult {
 extension EmbeddedCheckoutProtocol {
     public struct InstrumentsChangeCheckout: Codable, Sendable {
         /// Payment instruments with selected instrument ID.
-        public let payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?
+        public var payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?
 
-        public init(payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?) {
-            self.payment = payment
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -4655,12 +4362,11 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeCheckout {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        payment: EmbeddedCheckoutProtocol.InstrumentsChangePayment?? = nil
-    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeCheckout {
-        return EmbeddedCheckoutProtocol.InstrumentsChangeCheckout(
-            payment: payment ?? self.payment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4681,18 +4387,17 @@ extension EmbeddedCheckoutProtocol {
         /// The payment instruments available for this payment. Each instrument is associated with a
         /// specific handler via the handler_id field. Handlers can extend the base
         /// payment_instrument schema to add handler-specific fields.
-        public let instruments: [SelectedPaymentInstrument]?
+        public var instruments: [SelectedPaymentInstrument]?
         /// ID of the selected payment instrument.
-        public let selectedInstrumentID: String?
+        public var selectedInstrumentID: String?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case instruments
             case selectedInstrumentID = "selected_instrument_id"
         }
 
-        public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
-            self.instruments = instruments
-            self.selectedInstrumentID = selectedInstrumentID
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -4715,14 +4420,11 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangePayment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        instruments: [SelectedPaymentInstrument]?? = nil,
-        selectedInstrumentID: String?? = nil
-    ) -> EmbeddedCheckoutProtocol.InstrumentsChangePayment {
-        return EmbeddedCheckoutProtocol.InstrumentsChangePayment(
-            instruments: instruments ?? self.instruments,
-            selectedInstrumentID: selectedInstrumentID ?? self.selectedInstrumentID
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4746,32 +4448,29 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangePayment {
 extension EmbeddedCheckoutProtocol {
     public struct InstrumentsChangeResultUcp: Codable, Sendable {
         /// Capability registry keyed by reverse-domain name.
-        public let capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?
+        public var capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?
         /// Preferred key-traversal order for sibling registry fields inside the root `ucp` envelope
         /// (`services`, `capabilities`, and `payment_handlers`).
-        public let mapOrder: [String: [String]]?
+        public var mapOrder: [String: [String]]?
         /// Payment handler registry keyed by reverse-domain name.
-        public let paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?
+        public var paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?
         /// Service registry keyed by reverse-domain name.
-        public let services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?
+        public var services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?
         /// Application-level status of the UCP operation.
-        public let status: UCPCheckoutResponseSchemaStatus
-        public let version: String
+        public var status: UCPCheckoutResponseSchemaStatus
+        public var version: String
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case capabilities
             case mapOrder = "map_order"
             case paymentHandlers = "payment_handlers"
             case services, status, version
         }
 
-        public init(capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?, mapOrder: [String: [String]]?, paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?, services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?, status: UCPCheckoutResponseSchemaStatus, version: String) {
-            self.capabilities = capabilities
-            self.mapOrder = mapOrder
-            self.paymentHandlers = paymentHandlers
-            self.services = services
+        public init(status: UCPCheckoutResponseSchemaStatus, version: String, configure: (inout Self) -> Void = { _ in }) {
             self.status = status
             self.version = version
+            configure(&self)
         }
     }
 }
@@ -4794,22 +4493,11 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        capabilities: [String: [EmbeddedCheckoutProtocol.CapabilityElement]]?? = nil,
-        mapOrder: [String: [String]]?? = nil,
-        paymentHandlers: [String: [EmbeddedCheckoutProtocol.PaymentHandlerElement]]?? = nil,
-        services: [String: [EmbeddedCheckoutProtocol.EmbeddedService]]?? = nil,
-        status: UCPCheckoutResponseSchemaStatus? = nil,
-        version: String? = nil
-    ) -> EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
-        return EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
-            capabilities: capabilities ?? self.capabilities,
-            mapOrder: mapOrder ?? self.mapOrder,
-            paymentHandlers: paymentHandlers ?? self.paymentHandlers,
-            services: services ?? self.services,
-            status: status ?? self.status,
-            version: version ?? self.version
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4829,27 +4517,23 @@ public extension EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
 extension EmbeddedCheckoutProtocol {
     public struct CapabilityElement: Codable, Sendable {
         /// Entity-specific configuration. Structure defined by each entity's schema.
-        public let config: [String: JSONAny]?
+        public var config: [String: JSONAny]?
         /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
         /// exist.
-        public let id: String?
+        public var id: String?
         /// URL to JSON Schema defining this entity's structure and payloads.
-        public let schema: String?
+        public var schema: String?
         /// URL to human-readable specification document.
-        public let spec: String?
+        public var spec: String?
         /// Entity version in YYYY-MM-DD format.
-        public let version: String
+        public var version: String
         /// Parent capability(s) this extends. Present for extensions, absent for root capabilities.
         /// Use array for multi-parent extensions.
-        public let extends: Extends?
+        public var extends: Extends?
 
-        public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, extends: Extends?) {
-            self.config = config
-            self.id = id
-            self.schema = schema
-            self.spec = spec
+        public init(version: String, configure: (inout Self) -> Void = { _ in }) {
             self.version = version
-            self.extends = extends
+            configure(&self)
         }
     }
 }
@@ -4872,22 +4556,11 @@ public extension EmbeddedCheckoutProtocol.CapabilityElement {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        extends: Extends?? = nil
-    ) -> EmbeddedCheckoutProtocol.CapabilityElement {
-        return EmbeddedCheckoutProtocol.CapabilityElement(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            extends: extends ?? self.extends
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4907,32 +4580,29 @@ public extension EmbeddedCheckoutProtocol.CapabilityElement {
 extension EmbeddedCheckoutProtocol {
     public struct PaymentHandlerElement: Codable, Sendable {
         /// Entity-specific configuration. Structure defined by each entity's schema.
-        public let config: [String: JSONAny]?
+        public var config: [String: JSONAny]?
         /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
         /// exist.
-        public let id: String
+        public var id: String
         /// URL to JSON Schema defining this entity's structure and payloads.
-        public let schema: String?
+        public var schema: String?
         /// URL to human-readable specification document.
-        public let spec: String?
+        public var spec: String?
         /// Entity version in YYYY-MM-DD format.
-        public let version: String
+        public var version: String
         /// Instrument types this handler supports, with optional constraints. When absent, every
         /// instrument should be considered available.
-        public let availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?
+        public var availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case config, id, schema, spec, version
             case availableInstruments = "available_instruments"
         }
 
-        public init(config: [String: JSONAny]?, id: String, schema: String?, spec: String?, version: String, availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?) {
-            self.config = config
+        public init(id: String, version: String, configure: (inout Self) -> Void = { _ in }) {
             self.id = id
-            self.schema = schema
-            self.spec = spec
             self.version = version
-            self.availableInstruments = availableInstruments
+            configure(&self)
         }
     }
 }
@@ -4955,22 +4625,11 @@ public extension EmbeddedCheckoutProtocol.PaymentHandlerElement {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?? = nil
-    ) -> EmbeddedCheckoutProtocol.PaymentHandlerElement {
-        return EmbeddedCheckoutProtocol.PaymentHandlerElement(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            availableInstruments: availableInstruments ?? self.availableInstruments
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -4990,14 +4649,14 @@ extension EmbeddedCheckoutProtocol {
         /// `properties` name members of the `constraint_target` declared by the instrument schema
         /// for this `type`. Requirements on submitted request data belong in
         /// `ucp.request_constraints` instead.
-        public let constraints: ConstraintExpression?
+        public var constraints: ConstraintExpression?
         /// The instrument type identifier (e.g., 'card', 'gift_card'). References an instrument
         /// schema's type constant.
-        public let type: String
+        public var type: String
 
-        public init(constraints: ConstraintExpression?, type: String) {
-            self.constraints = constraints
+        public init(type: String, configure: (inout Self) -> Void = { _ in }) {
             self.type = type
+            configure(&self)
         }
     }
 }
@@ -5020,14 +4679,11 @@ public extension EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        constraints: ConstraintExpression?? = nil,
-        type: String? = nil
-    ) -> EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
-        return EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument(
-            constraints: constraints ?? self.constraints,
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5044,29 +4700,25 @@ public extension EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
 extension EmbeddedCheckoutProtocol {
     public struct EmbeddedService: Codable, Sendable {
         /// Entity-specific configuration. Structure defined by each entity's schema.
-        public let config: [String: JSONAny]?
+        public var config: [String: JSONAny]?
         /// Unique identifier for this entity instance. Used to disambiguate when multiple instances
         /// exist.
-        public let id: String?
+        public var id: String?
         /// URL to JSON Schema defining this entity's structure and payloads.
-        public let schema: String?
+        public var schema: String?
         /// URL to human-readable specification document.
-        public let spec: String?
+        public var spec: String?
         /// Entity version in YYYY-MM-DD format.
-        public let version: String
+        public var version: String
         /// Endpoint URL for this transport binding.
-        public let endpoint: String?
+        public var endpoint: String?
         /// Transport protocol for this service binding.
-        public let transport: Transport
+        public var transport: Transport
 
-        public init(config: [String: JSONAny]?, id: String?, schema: String?, spec: String?, version: String, endpoint: String?, transport: Transport) {
-            self.config = config
-            self.id = id
-            self.schema = schema
-            self.spec = spec
+        public init(version: String, transport: Transport, configure: (inout Self) -> Void = { _ in }) {
             self.version = version
-            self.endpoint = endpoint
             self.transport = transport
+            configure(&self)
         }
     }
 }
@@ -5089,24 +4741,11 @@ public extension EmbeddedCheckoutProtocol.EmbeddedService {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        config: [String: JSONAny]?? = nil,
-        id: String?? = nil,
-        schema: String?? = nil,
-        spec: String?? = nil,
-        version: String? = nil,
-        endpoint: String?? = nil,
-        transport: Transport? = nil
-    ) -> EmbeddedCheckoutProtocol.EmbeddedService {
-        return EmbeddedCheckoutProtocol.EmbeddedService(
-            config: config ?? self.config,
-            id: id ?? self.id,
-            schema: schema ?? self.schema,
-            spec: spec ?? self.spec,
-            version: version ?? self.version,
-            endpoint: endpoint ?? self.endpoint,
-            transport: transport ?? self.transport
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5126,25 +4765,23 @@ public extension EmbeddedCheckoutProtocol.EmbeddedService {
 extension EmbeddedCheckoutProtocol {
     public struct CredentialResult: Codable, Sendable {
         /// Partial checkout update with payment credential.
-        public let checkout: EmbeddedCheckoutProtocol.CredentialCheckout?
+        public var checkout: EmbeddedCheckoutProtocol.CredentialCheckout?
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case checkout, ucp
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(checkout: EmbeddedCheckoutProtocol.CredentialCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-            self.checkout = checkout
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -5167,18 +4804,11 @@ public extension EmbeddedCheckoutProtocol.CredentialResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        checkout: EmbeddedCheckoutProtocol.CredentialCheckout?? = nil,
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.CredentialResult {
-        return EmbeddedCheckoutProtocol.CredentialResult(
-            checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5194,10 +4824,10 @@ public extension EmbeddedCheckoutProtocol.CredentialResult {
 // MARK: - CredentialCheckout
 extension EmbeddedCheckoutProtocol {
     public struct CredentialCheckout: Codable, Sendable {
-        public let payment: Payment?
+        public var payment: Payment?
 
-        public init(payment: Payment?) {
-            self.payment = payment
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5220,12 +4850,11 @@ public extension EmbeddedCheckoutProtocol.CredentialCheckout {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        payment: Payment?? = nil
-    ) -> EmbeddedCheckoutProtocol.CredentialCheckout {
-        return EmbeddedCheckoutProtocol.CredentialCheckout(
-            payment: payment ?? self.payment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5245,25 +4874,23 @@ public extension EmbeddedCheckoutProtocol.CredentialCheckout {
 extension EmbeddedCheckoutProtocol {
     public struct AddressChangeResult: Codable, Sendable {
         /// Partial checkout update with fulfillment address selection.
-        public let checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?
+        public var checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case checkout, ucp
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-            self.checkout = checkout
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -5286,18 +4913,11 @@ public extension EmbeddedCheckoutProtocol.AddressChangeResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        checkout: EmbeddedCheckoutProtocol.AddressChangeCheckout?? = nil,
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.AddressChangeResult {
-        return EmbeddedCheckoutProtocol.AddressChangeResult(
-            checkout: checkout ?? self.checkout,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5314,10 +4934,10 @@ public extension EmbeddedCheckoutProtocol.AddressChangeResult {
 extension EmbeddedCheckoutProtocol {
     public struct AddressChangeCheckout: Codable, Sendable {
         /// Updated fulfillment with new selected destination and destinations.
-        public let fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
+        public var fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
 
-        public init(fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?) {
-            self.fulfillment = fulfillment
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5340,12 +4960,11 @@ public extension EmbeddedCheckoutProtocol.AddressChangeCheckout {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?? = nil
-    ) -> EmbeddedCheckoutProtocol.AddressChangeCheckout {
-        return EmbeddedCheckoutProtocol.AddressChangeCheckout(
-            fulfillment: fulfillment ?? self.fulfillment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5364,18 +4983,17 @@ public extension EmbeddedCheckoutProtocol.AddressChangeCheckout {
 extension EmbeddedCheckoutProtocol {
     public struct CheckoutFulfillmentClass: Codable, Sendable {
         /// Inventory availability hints.
-        public let availableMethods: [FulfillmentAvailableMethod]?
+        public var availableMethods: [FulfillmentAvailableMethod]?
         /// Fulfillment methods for cart items.
-        public let methods: [FulfillmentMethod]?
+        public var methods: [FulfillmentMethod]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case availableMethods = "available_methods"
             case methods
         }
 
-        public init(availableMethods: [FulfillmentAvailableMethod]?, methods: [FulfillmentMethod]?) {
-            self.availableMethods = availableMethods
-            self.methods = methods
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5398,14 +5016,11 @@ public extension EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        availableMethods: [FulfillmentAvailableMethod]?? = nil,
-        methods: [FulfillmentMethod]?? = nil
-    ) -> EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
-        return EmbeddedCheckoutProtocol.CheckoutFulfillmentClass(
-            availableMethods: availableMethods ?? self.availableMethods,
-            methods: methods ?? self.methods
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5420,13 +5035,13 @@ public extension EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
 // MARK: - ReadyRequest
 extension EmbeddedCheckoutProtocol {
     public struct ReadyRequest: Codable, Sendable {
-        public let auth: EmbeddedCheckoutProtocol.Auth?
+        public var auth: EmbeddedCheckoutProtocol.Auth?
         /// Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
-        public let delegate: [String]
+        public var delegate: [String]
 
-        public init(auth: EmbeddedCheckoutProtocol.Auth?, delegate: [String]) {
-            self.auth = auth
+        public init(delegate: [String], configure: (inout Self) -> Void = { _ in }) {
             self.delegate = delegate
+            configure(&self)
         }
     }
 }
@@ -5449,14 +5064,11 @@ public extension EmbeddedCheckoutProtocol.ReadyRequest {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        auth: EmbeddedCheckoutProtocol.Auth?? = nil,
-        delegate: [String]? = nil
-    ) -> EmbeddedCheckoutProtocol.ReadyRequest {
-        return EmbeddedCheckoutProtocol.ReadyRequest(
-            auth: auth ?? self.auth,
-            delegate: delegate ?? self.delegate
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5471,10 +5083,10 @@ public extension EmbeddedCheckoutProtocol.ReadyRequest {
 // MARK: - Auth
 extension EmbeddedCheckoutProtocol {
     public struct Auth: Codable, Sendable {
-        public let type: String?
+        public var type: String?
 
-        public init(type: String?) {
-            self.type = type
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5497,12 +5109,11 @@ public extension EmbeddedCheckoutProtocol.Auth {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        type: String?? = nil
-    ) -> EmbeddedCheckoutProtocol.Auth {
-        return EmbeddedCheckoutProtocol.Auth(
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5523,31 +5134,27 @@ extension EmbeddedCheckoutProtocol {
     public struct ReadyResult: Codable, Sendable {
         /// Initial delegation state from host. Fields are permitted only when the corresponding
         /// delegation is accepted.
-        public let checkout: EmbeddedCheckoutProtocol.ReadyCheckout?
+        public var checkout: EmbeddedCheckoutProtocol.ReadyCheckout?
         /// Requested authorization. Some common examples include API key and OAuth token.
-        public let credential: String?
+        public var credential: String?
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// Channel upgrade instructions. If present, switch to provided MessagePort.
-        public let upgrade: EmbeddedCheckoutProtocol.Upgrade?
+        public var upgrade: EmbeddedCheckoutProtocol.Upgrade?
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case checkout, credential, ucp, upgrade
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(checkout: EmbeddedCheckoutProtocol.ReadyCheckout?, credential: String?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, upgrade: EmbeddedCheckoutProtocol.Upgrade?, continueURL: String?, messages: [Message]?) {
-            self.checkout = checkout
-            self.credential = credential
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.upgrade = upgrade
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -5570,22 +5177,11 @@ public extension EmbeddedCheckoutProtocol.ReadyResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        checkout: EmbeddedCheckoutProtocol.ReadyCheckout?? = nil,
-        credential: String?? = nil,
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        upgrade: EmbeddedCheckoutProtocol.Upgrade?? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.ReadyResult {
-        return EmbeddedCheckoutProtocol.ReadyResult(
-            checkout: checkout ?? self.checkout,
-            credential: credential ?? self.credential,
-            ucp: ucp ?? self.ucp,
-            upgrade: upgrade ?? self.upgrade,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5602,13 +5198,12 @@ public extension EmbeddedCheckoutProtocol.ReadyResult {
 // MARK: - ReadyCheckout
 extension EmbeddedCheckoutProtocol {
     public struct ReadyCheckout: Codable, Sendable {
-        public let fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
+        public var fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
         /// Payment instruments with selected instrument ID.
-        public let payment: EmbeddedCheckoutProtocol.ReadyPayment?
+        public var payment: EmbeddedCheckoutProtocol.ReadyPayment?
 
-        public init(fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?, payment: EmbeddedCheckoutProtocol.ReadyPayment?) {
-            self.fulfillment = fulfillment
-            self.payment = payment
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5631,14 +5226,11 @@ public extension EmbeddedCheckoutProtocol.ReadyCheckout {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?? = nil,
-        payment: EmbeddedCheckoutProtocol.ReadyPayment?? = nil
-    ) -> EmbeddedCheckoutProtocol.ReadyCheckout {
-        return EmbeddedCheckoutProtocol.ReadyCheckout(
-            fulfillment: fulfillment ?? self.fulfillment,
-            payment: payment ?? self.payment
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5659,18 +5251,17 @@ extension EmbeddedCheckoutProtocol {
         /// The payment instruments available for this payment. Each instrument is associated with a
         /// specific handler via the handler_id field. Handlers can extend the base
         /// payment_instrument schema to add handler-specific fields.
-        public let instruments: [SelectedPaymentInstrument]?
+        public var instruments: [SelectedPaymentInstrument]?
         /// ID of the selected payment instrument.
-        public let selectedInstrumentID: String?
+        public var selectedInstrumentID: String?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case instruments
             case selectedInstrumentID = "selected_instrument_id"
         }
 
-        public init(instruments: [SelectedPaymentInstrument]?, selectedInstrumentID: String?) {
-            self.instruments = instruments
-            self.selectedInstrumentID = selectedInstrumentID
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5693,14 +5284,11 @@ public extension EmbeddedCheckoutProtocol.ReadyPayment {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        instruments: [SelectedPaymentInstrument]?? = nil,
-        selectedInstrumentID: String?? = nil
-    ) -> EmbeddedCheckoutProtocol.ReadyPayment {
-        return EmbeddedCheckoutProtocol.ReadyPayment(
-            instruments: instruments ?? self.instruments,
-            selectedInstrumentID: selectedInstrumentID ?? self.selectedInstrumentID
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5717,10 +5305,10 @@ public extension EmbeddedCheckoutProtocol.ReadyPayment {
 extension EmbeddedCheckoutProtocol {
     public struct Upgrade: Codable, Sendable {
         /// MessagePort for upgraded channel. Runtime type is MessagePort.
-        public let port: [String: JSONAny]?
+        public var port: [String: JSONAny]?
 
-        public init(port: [String: JSONAny]?) {
-            self.port = port
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5743,12 +5331,11 @@ public extension EmbeddedCheckoutProtocol.Upgrade {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        port: [String: JSONAny]?? = nil
-    ) -> EmbeddedCheckoutProtocol.Upgrade {
-        return EmbeddedCheckoutProtocol.Upgrade(
-            port: port ?? self.port
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5763,10 +5350,10 @@ public extension EmbeddedCheckoutProtocol.Upgrade {
 // MARK: - AuthRequest
 extension EmbeddedCheckoutProtocol {
     public struct AuthRequest: Codable, Sendable {
-        public let type: String?
+        public var type: String?
 
-        public init(type: String?) {
-            self.type = type
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 }
@@ -5789,12 +5376,11 @@ public extension EmbeddedCheckoutProtocol.AuthRequest {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        type: String?? = nil
-    ) -> EmbeddedCheckoutProtocol.AuthRequest {
-        return EmbeddedCheckoutProtocol.AuthRequest(
-            type: type ?? self.type
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5814,25 +5400,23 @@ public extension EmbeddedCheckoutProtocol.AuthRequest {
 extension EmbeddedCheckoutProtocol {
     public struct AuthResult: Codable, Sendable {
         /// Requested authorization. Some common examples include API key and OAuth token.
-        public let credential: String?
+        public var credential: String?
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case credential, ucp
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(credential: String?, ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
-            self.credential = credential
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -5855,18 +5439,11 @@ public extension EmbeddedCheckoutProtocol.AuthResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        credential: String?? = nil,
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.AuthResult {
-        return EmbeddedCheckoutProtocol.AuthResult(
-            credential: credential ?? self.credential,
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5882,10 +5459,11 @@ public extension EmbeddedCheckoutProtocol.AuthResult {
 extension EmbeddedCheckoutProtocol {
     public struct WindowOpenRequest: Codable, Sendable {
         /// The URL of the resource to present.
-        public let url: String
+        public var url: String
 
-        public init(url: String) {
+        public init(url: String, configure: (inout Self) -> Void = { _ in }) {
             self.url = url
+            configure(&self)
         }
     }
 }
@@ -5908,12 +5486,11 @@ public extension EmbeddedCheckoutProtocol.WindowOpenRequest {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        url: String? = nil
-    ) -> EmbeddedCheckoutProtocol.WindowOpenRequest {
-        return EmbeddedCheckoutProtocol.WindowOpenRequest(
-            url: url ?? self.url
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {
@@ -5933,22 +5510,21 @@ public extension EmbeddedCheckoutProtocol.WindowOpenRequest {
 extension EmbeddedCheckoutProtocol {
     public struct WindowOpenResult: Codable, Sendable {
         /// UCP protocol metadata. Status MUST be 'error' for error response.
-        public let ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+        public var ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
         /// URL for buyer handoff or session recovery.
-        public let continueURL: String?
+        public var continueURL: String?
         /// Array of messages describing why the operation failed.
-        public let messages: [Message]?
+        public var messages: [Message]?
 
-        public enum CodingKeys: String, CodingKey {
+        enum CodingKeys: String, CodingKey {
             case ucp
             case continueURL = "continue_url"
             case messages
         }
 
-        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, continueURL: String?, messages: [Message]?) {
+        public init(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout Self) -> Void = { _ in }) {
             self.ucp = ucp
-            self.continueURL = continueURL
-            self.messages = messages
+            configure(&self)
         }
     }
 }
@@ -5971,16 +5547,11 @@ public extension EmbeddedCheckoutProtocol.WindowOpenResult {
         try self.init(data: try Data(contentsOf: url))
     }
 
-    func with(
-        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp? = nil,
-        continueURL: String?? = nil,
-        messages: [Message]?? = nil
-    ) -> EmbeddedCheckoutProtocol.WindowOpenResult {
-        return EmbeddedCheckoutProtocol.WindowOpenResult(
-            ucp: ucp ?? self.ucp,
-            continueURL: continueURL ?? self.continueURL,
-            messages: messages ?? self.messages
-        )
+    /// Returns a copy with `update` applied.
+    func with(_ update: (inout Self) -> Void) -> Self {
+        var copy = self
+        update(&copy)
+        return copy
     }
 
     func jsonData() throws -> Data {

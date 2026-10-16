@@ -1,0 +1,53 @@
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+
+plugins { id 'shopify.android-feature' }
+
+android {
+    // The feature owns its generated R class; the fused distribution retains the consumer namespace.
+    namespace = 'com.shopify.checkoutkit.checkout'
+    resourcePrefix = 'checkout_'
+}
+
+def useLocalProtocol = providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()
+
+dependencies {
+    if (useLocalProtocol) {
+        api project(':embedded-checkout-protocol')
+    } else {
+        api libs.embedded.checkout.protocol
+    }
+    implementation libs.kotlinx.serialization.json
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.webkit
+}
+
+def protocolDependency = libs.embedded.checkout.protocol.get()
+def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
+    group = 'verification'
+    description = 'Verify release and unit-test classpaths use the declared published protocol.'
+    onlyIf { !useLocalProtocol }
+    doLast {
+        def classpaths = ['releaseCompileClasspath', 'releaseRuntimeClasspath'] + configurations.names.findAll {
+            it.endsWith('UnitTestCompileClasspath') || it.endsWith('UnitTestRuntimeClasspath')
+        }
+        classpaths.each { classpath ->
+            // Follow the requested module so substitutions cannot hide the selected component.
+            def dependency = configurations.getByName(classpath).incoming.resolutionResult.rootComponent.get().dependencies.find {
+                it.requested instanceof ModuleComponentSelector &&
+                    it.requested.group == protocolDependency.group && it.requested.module == protocolDependency.name
+            }
+            def resolved = dependency instanceof ResolvedDependencyResult ? dependency.selected.id : null
+            if (!(resolved instanceof ModuleComponentIdentifier) ||
+                resolved.group != protocolDependency.group || resolved.module != protocolDependency.name ||
+                resolved.version != protocolDependency.version) {
+                throw new GradleException("$classpath must resolve the published $protocolDependency; found ${resolved ?: dependency}")
+            }
+        }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    dependsOn verifyPublishedProtocol
+}

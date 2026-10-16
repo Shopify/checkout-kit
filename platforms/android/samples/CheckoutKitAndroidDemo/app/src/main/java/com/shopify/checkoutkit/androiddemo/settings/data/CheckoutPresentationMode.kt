@@ -1,6 +1,6 @@
 package com.shopify.checkoutkit.androiddemo.settings.data
 
-import com.shopify.checkoutkit.CheckoutSheetOptions
+import com.shopify.checkoutkit.checkout.CheckoutSheetOptions
 
 enum class CheckoutPresentationMode {
     CheckoutKitSheet,

@@ -70,6 +70,23 @@ preload coverage. `--exclude-tags` adds exclusions requested explicitly for that
 invocation. `flaky` and `wip` are excluded from automatic and tag-selected runs
 by default.
 
+With several simulators or emulators running, `--device ID` picks the device
+that the command builds for, installs on and tests on. On iOS, `ID` is the UDID
+of a booted simulator, as `xcrun simctl list devices booted` shows. On Android,
+`ID` is an `adb` serial in state `device`, as `adb devices` shows, such as
+`emulator-5556`. Without `--device`, the command uses the first booted iOS
+simulator or the first Android device in state `device`. If the named device is
+not booted or not attached, the command stops before it builds and names the ID.
+`--device` does not select tests, so with no tags and no files the picker still
+opens:
+
+```bash
+dev swift e2e --device 00000000-0000-0000-0000-000000000000 --tags preload
+dev android e2e --device emulator-5556 launch-smoke
+dev rn e2e ios --device 00000000-0000-0000-0000-000000000000
+dev rn e2e android --device emulator-5556 --tags launch
+```
+
 ### Tags
 
 Every test declares tags from this taxonomy.

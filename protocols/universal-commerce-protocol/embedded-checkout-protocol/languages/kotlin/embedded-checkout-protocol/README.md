@@ -50,26 +50,24 @@ Handlers run synchronously on the calling thread. The client does not provide a 
 
 ## Connect to Checkout Kit
 
-Android apps using Checkout Kit should use its curated `com.shopify.checkoutkit.CheckoutProtocol` API instead of constructing the low-level protocol client directly:
+Android apps using Checkout Kit should use its high-level
+`com.shopify.checkoutkit.checkout.ShopifyCheckoutKit` API rather than
+constructing the low-level protocol client directly:
 
 ```kotlin
-import com.shopify.checkoutkit.CheckoutProtocol
-import com.shopify.checkoutkit.ShopifyCheckoutKit
-
-val protocolClient = CheckoutProtocol.Client()
-    .on(CheckoutProtocol.start) { checkout ->
-        println("Checkout started: ${checkout.id}")
-    }
-    .on(CheckoutProtocol.complete) { checkout ->
-        println("Checkout completed: ${checkout.id}")
-    }
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 
 ShopifyCheckoutKit.present(checkoutUrl, activity) {
-    connect(protocolClient)
+    onStart { event ->
+        println("Checkout started: ${event.checkout.id}")
+    }
+    onComplete { event ->
+        println("Checkout completed: ${event.checkout.id}")
+    }
 }
 ```
 
-See the Android README's [checkout lifecycle](../../../../../../platforms/android/README.md#checkout-lifecycle) section for the supported Checkout Kit descriptors and presentation callbacks.
+See the Android README's [checkout lifecycle](../../../../../../platforms/android/README.md#checkout-lifecycle) section for the supported Checkout Kit callbacks.
 
 ## Protocol notifications
 

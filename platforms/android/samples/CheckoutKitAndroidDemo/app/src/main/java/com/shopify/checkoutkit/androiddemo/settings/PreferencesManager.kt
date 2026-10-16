@@ -7,12 +7,12 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.androiddemo.common.sampleStorefrontAppearance
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutSheetPreset
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.ColorScheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json

@@ -1,7 +1,7 @@
 package com.shopify.checkoutkit.androiddemo.settings.data
 
-import com.shopify.checkoutkit.CheckoutAppearance
 import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

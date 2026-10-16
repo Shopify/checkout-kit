@@ -1,0 +1,51 @@
+package com.shopify.checkoutkit.internal.web
+import android.net.Uri
+import androidx.core.net.toUri
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.Configuration
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.effectiveColorScheme
+import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
+import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
+
+internal object CheckoutUrlDecorator {
+    fun decorate(
+        checkoutUrl: String,
+        configuration: Configuration = ShopifyCheckoutKit.getConfiguration(),
+    ): String {
+        val decorated = EmbeddedCheckoutProtocol.url(
+            checkoutUrl,
+            options = EmbeddedCheckoutProtocol.Options(
+                delegations = CheckoutProtocol.defaultDelegations,
+                colorScheme = configuration.appearance.effectiveColorScheme.id,
+            ),
+        )
+
+        val uri = decorated.toUri()
+        if (uri.isOpaque) return decorated
+
+        return uri
+            .replacingQueryParameter(CK_BRANDING_PARAM, configuration.appearance.brandingId)
+            .toString()
+    }
+
+    private const val CK_BRANDING_PARAM = "ck_branding"
+}
+
+private val CheckoutAppearance.brandingId: String
+    get() = when (this) {
+        is CheckoutAppearance.App -> "app"
+        is CheckoutAppearance.Storefront -> "shop"
+    }
+
+private fun Uri.replacingQueryParameter(name: String, value: String): Uri {
+    val builder = buildUpon().clearQuery()
+    queryParameterNames
+        .filterNot { it == name }
+        .forEach { existingName ->
+            getQueryParameters(existingName).forEach { existingValue ->
+                builder.appendQueryParameter(existingName, existingValue)
+            }
+        }
+    return builder.appendQueryParameter(name, value).build()
+}

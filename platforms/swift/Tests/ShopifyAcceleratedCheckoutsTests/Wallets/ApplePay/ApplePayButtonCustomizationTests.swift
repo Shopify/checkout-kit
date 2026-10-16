@@ -7,14 +7,14 @@ import XCTest
 @MainActor
 final class ApplePayButtonCustomizationTests: XCTestCase {
     func test_applePayButtonType_withPassKitButtonTypeModifier_shouldStorePassKitButtonType() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .applePayButtonType(.buy)
 
         XCTAssertEqual(storedApplePayButtonType(in: view)?.rawValue, PKPaymentButtonType.buy.rawValue)
     }
 
     func test_applePayButtonStyle_withPassKitButtonStyleModifier_shouldStorePassKitButtonStyle() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .applePayButtonStyle(.black)
 
         XCTAssertEqual(storedApplePayButtonStyle(in: view)?.rawValue, PKPaymentButtonStyle.black.rawValue)
@@ -79,11 +79,11 @@ final class ApplePayButtonCustomizationTests: XCTestCase {
         )
     }
 
-    private func storedApplePayButtonType(in view: AcceleratedCheckoutButtons) -> PKPaymentButtonType? {
+    private func storedApplePayButtonType(in view: ShopifyAcceleratedCheckoutButtons) -> PKPaymentButtonType? {
         return childValue(named: "applePayButtonType", in: view)
     }
 
-    private func storedApplePayButtonStyle(in view: AcceleratedCheckoutButtons) -> PKPaymentButtonStyle? {
+    private func storedApplePayButtonStyle(in view: ShopifyAcceleratedCheckoutButtons) -> PKPaymentButtonStyle? {
         return childValue(named: "applePayButtonStyle", in: view)
     }
 

@@ -153,7 +153,7 @@ const useInitialURL = (): InitialURLState => {
 
       try {
         // Get the deep link used to open the app
-        initialUrl = await Linking.getInitialURL();
+        initialUrl = (await Linking.getInitialURL()) ?? null;
       } catch (error) {
         console.warn('Failed to get initial URL', error);
       } finally {

@@ -23,8 +23,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import com.shopify.checkoutkit.ShopifyCheckout
 import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

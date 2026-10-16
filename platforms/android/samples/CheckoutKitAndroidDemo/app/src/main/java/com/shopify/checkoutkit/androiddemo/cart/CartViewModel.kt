@@ -6,13 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.shopify.checkoutkit.CheckoutErrorCode
-import com.shopify.checkoutkit.CheckoutException
-import com.shopify.checkoutkit.CheckoutLink
-import com.shopify.checkoutkit.CheckoutLinkAction
-import com.shopify.checkoutkit.CheckoutPresentation
-import com.shopify.checkoutkit.PreloadState
-import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.BuildConfig
 import com.shopify.checkoutkit.androiddemo.MainActivity
 import com.shopify.checkoutkit.androiddemo.R
@@ -32,6 +25,13 @@ import com.shopify.checkoutkit.androiddemo.settings.authentication.data.Authenti
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.CustomerRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
+import com.shopify.checkoutkit.checkout.CheckoutErrorCode
+import com.shopify.checkoutkit.checkout.CheckoutException
+import com.shopify.checkoutkit.checkout.CheckoutLink
+import com.shopify.checkoutkit.checkout.CheckoutLinkAction
+import com.shopify.checkoutkit.checkout.CheckoutPresentation
+import com.shopify.checkoutkit.checkout.PreloadState
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

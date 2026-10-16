@@ -1,189 +1,31 @@
-import io.gitlab.arturbosch.detekt.Detekt
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ModuleComponentSelector
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.file.FileCollection
+import groovy.json.JsonSlurper
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
-import org.gradle.api.tasks.Classpath
-import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+import java.util.zip.ZipInputStream
+import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
-    id 'signing'
+    id 'com.android.fused-library'
     id 'maven-publish'
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
-    id 'org.jetbrains.kotlin.plugin.serialization'
-    id 'io.gitlab.arturbosch.detekt'
 }
 
-apply from: file('../gradle/android-library-versions.gradle')
-
-def kotlinCompatibility = kotlinVersionCompatibility
 def versionName = libs.versions.checkoutKitAndroid.get()
 def useLocalProtocol = providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()
 
-class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
-    @Classpath
-    final FileCollection classpath
-
-    MockitoAgentArgumentProvider(FileCollection classpath) {
-        this.classpath = classpath
-    }
-
-    @Override
-    Iterable<String> asArguments() {
-        ["-javaagent:${classpath.singleFile.absolutePath}".toString()]
-    }
-}
-
-configurations {
-    mockitoAgent {
-        canBeConsumed = false
-        canBeResolved = true
-        transitive = false
-    }
-}
-
-android {
+androidFusedLibrary {
     namespace = 'com.shopify.checkoutkit'
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 23
-        versionCode = 1
-        versionName
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField "String", "SDK_VERSION", "\"$versionName\""
-
-        aarMetadata {
-            minCompileSdk = 35
-        }
-    }
-
-    lint {
-        checkDependencies = true
-        warningsAsErrors = true
-        disable 'GradleDependency', 'NewerVersionAvailable', 'SimilarGradleDependency'
-        warning 'LintBaseline'
-        informational 'AndroidGradlePluginVersion'
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
-            consumerProguardFiles 'proguard-rules.pro'
-        }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
-        targetCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
-    }
-    testOptions {
-        unitTests.includeAndroidResources = true
-        unitTests.all {
-            jvmArgumentProviders.add(new MockitoAgentArgumentProvider(configurations.mockitoAgent))
-            testLogging {
-                events "passed", "skipped", "failed", "standardOut", "standardError"
-                outputs.upToDateWhen { false }
-                showStandardStreams = true
-            }
-        }
-    }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
-    buildFeatures {
-        buildConfig = true
-    }
+    minSdk { version = release(23) }
+    aarMetadata { minCompileSdk = 35 }
 }
 
-tasks.withType(KotlinJvmCompile).configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.valueOf(kotlinCompatibility.kotlinJvmTarget))
-        // Pin language/API version so bytecode stays consumable by Kotlin 2.0+ consumers
-        // even though the compiler is on a newer 2.x. Kotlin 1.9 is deprecated by the 2.x
-        // compiler, so 2.0 is the lowest pin we can hold without taking deprecation warnings;
-        // keeping the compiler ahead of the pin leaves room to bump kotlinc without re-breaking
-        // consumers.
-        apiVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinApiVersion))
-        languageVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinLanguageVersion))
-        if (!name.contains("Test")) {
-            freeCompilerArgs.add("-Xexplicit-api=strict")
-        }
-    }
-}
-
+// Include each internal feature explicitly. External dependencies (including
+// the independently published protocol) remain dependencies of the final AAR.
 dependencies {
-    detektPlugins libs.detekt.formatting
-    mockitoAgent libs.mockito.core
-
-    if (useLocalProtocol) {
-        api project(':embedded-checkout-protocol')
-    } else {
-        api libs.embedded.checkout.protocol
-    }
-    testImplementation libs.junit
-    testImplementation libs.robolectric
-    testImplementation libs.mockito.core
-    testImplementation libs.mockito.kotlin
-    testImplementation libs.mockito.android
-    testImplementation libs.assertj.core
-    testImplementation libs.awaitility
-
-    androidTestImplementation libs.androidx.test.core.ktx
-    androidTestImplementation libs.androidx.test.ext.junit.ktx
-
-    // Keep the published stdlib dependency aligned with the Kotlin API/language
-    // consumer floor, not the newer compiler used to build the AAR.
-    implementation libs.kotlin.stdlib
-
-    //Implementation
-    implementation libs.kotlinx.serialization.json
-    implementation libs.androidx.appcompat
-    implementation libs.androidx.webkit
+    include project(':shopify-checkout')
 }
 
-def protocolDependency = libs.embedded.checkout.protocol.get()
-def verifyPublishedProtocol = tasks.register('verifyPublishedProtocol') {
-    group = 'verification'
-    description = 'Verify release and unit-test classpaths use the declared published protocol.'
-    onlyIf { !useLocalProtocol }
-    doLast {
-        def classpaths = ['releaseCompileClasspath', 'releaseRuntimeClasspath'] + configurations.names.findAll {
-            it.endsWith('UnitTestCompileClasspath') || it.endsWith('UnitTestRuntimeClasspath')
-        }
-        classpaths.each { classpath ->
-            // Follow the requested module so substitutions cannot hide the selected component.
-            def dependency = configurations.getByName(classpath).incoming.resolutionResult.rootComponent.get().dependencies.find {
-                it.requested instanceof ModuleComponentSelector &&
-                    it.requested.group == protocolDependency.group && it.requested.module == protocolDependency.name
-            }
-            def resolved = dependency instanceof ResolvedDependencyResult ? dependency.selected.id : null
-            if (!(resolved instanceof ModuleComponentIdentifier) ||
-                resolved.group != protocolDependency.group || resolved.module != protocolDependency.name ||
-                resolved.version != protocolDependency.version) {
-                throw new GradleException("$classpath must resolve the published $protocolDependency; found ${resolved ?: dependency}")
-            }
-        }
-    }
-}
-
-tasks.withType(Test).configureEach {
-    dependsOn verifyPublishedProtocol
-}
-
-// Local protocol sources are for joint development only. Maven Local remains
-// available for React Native's explicit --local builds.
 tasks.withType(PublishToMavenRepository).configureEach {
-    dependsOn verifyPublishedProtocol
+    dependsOn ':shopify-checkout:verifyPublishedProtocol'
     doFirst {
         if (useLocalProtocol) {
             throw new GradleException('Cannot publish Checkout Kit with useLocalProtocol=true. Build against the published protocol first.')
@@ -191,30 +33,78 @@ tasks.withType(PublishToMavenRepository).configureEach {
     }
 }
 
-signing {
-    def signingKeyId = findProperty("signingKeyId")
-    def signingKey = findProperty("signingKey")
-    def signingPassword = findProperty("signingPassword")
-    if (signingKey) {
-        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign publishing.publications
+// The fused plugin publishes runtime dependencies. Add a compile variant for
+// dependencies deliberately exposed by feature APIs, such as protocol types.
+def apiPublication = configurations.create('apiPublication') {
+    canBeConsumed = true
+    canBeResolved = false
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'aar'))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
     }
 }
 
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom('detekt.config.yml')
-    autoCorrect = true
+// Fused runtime metadata uses project coordinates. Explicit local protocol mode
+// must resolve to the same Maven coordinate that publishToMavenLocal produces.
+if (useLocalProtocol) {
+    project(':embedded-checkout-protocol') {
+        group = 'com.shopify'
+        version = libs.versions.embeddedCheckoutProtocolAndroidRelease.get()
+    }
 }
 
-// Models.kt is generated from UCP JSON Schemas — exclude it from static analysis.
-tasks.withType(Detekt).configureEach {
-    exclude('**/Models.kt')
+def bundledProjects = { configurations.include.dependencies.withType(ProjectDependency).collect { project(it.path) } }
+
+def sourcesJar = tasks.register('sourcesJar', Jar) {
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    archiveBaseName = project.name
+    archiveClassifier = 'sources'
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+def javadocJar = tasks.register('javadocJar', Jar) {
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    archiveBaseName = project.name
+    archiveClassifier = 'javadoc'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+gradle.projectsEvaluated {
+    def features = bundledProjects()
+    features.each { feature ->
+        feature.configurations.api.allDependencies.each { dependency ->
+            if (!(dependency instanceof ProjectDependency) || !features.any { it.path == dependency.path }) {
+                dependencies.add(apiPublication.name, dependency.copy())
+            }
+        }
+        sourcesJar.configure {
+            from((feature.android.sourceSets.main.java.srcDirs + feature.android.sourceSets.main.kotlin.srcDirs).toSet())
+            include '**/*.kt', '**/*.java'
+        }
+
+        def docs = feature.tasks.named('javaDocReleaseJar', Jar)
+        javadocJar.configure {
+            dependsOn docs
+            from(docs.map { zipTree(it.archiveFile.get().asFile) }) { into feature.name }
+        }
+    }
+    def component = components.fusedLibraryComponent
+    component.withVariantsFromConfiguration(configurations.runtimeSourcePublication) { skip() }
+    apiPublication.outgoing.artifact(tasks.named('bundle')) {
+        type = 'aar'
+        extension = 'aar'
+    }
+    component.addVariantsFromConfiguration(apiPublication) { mapToMavenScope('compile') }
+    publishing.publications.release {
+        artifact sourcesJar
+        artifact javadocJar
+    }
+}
 
 project.afterEvaluate {
     publishing {
+        publications.remove(publications.getByName('maven'))
         publications {
             release(MavenPublication) {
                 pom {
@@ -246,12 +136,16 @@ project.afterEvaluate {
                 }
 
                 afterEvaluate {
-                    from components.release
+                    from components.fusedLibraryComponent
                 }
             }
         }
 
         repositories {
+            maven {
+                name = 'verification'
+                url = rootProject.layout.buildDirectory.dir('verification-repository')
+            }
             maven {
                 name = 'ossrh-staging-api'
                 url = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
@@ -261,5 +155,126 @@ project.afterEvaluate {
                 }
             }
         }
+    }
+}
+
+// AGP's fused plugin owns its lifecycle tasks. Apply signing in the root
+// project so Gradle's signing/base plugin does not register a second assemble.
+def sdkPublications = publishing.publications
+rootProject.signing {
+    def signingKeyId = findProperty('signingKeyId')
+    def signingKey = findProperty('signingKey')
+    def signingPassword = findProperty('signingPassword')
+    if (signingKey) {
+        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign sdkPublications
+    }
+}
+
+// Inspect the final AAR and published metadata rather than relying on the
+// intermediate feature outputs alone. This keeps fused-publication validation
+// in Gradle, without requiring another scripting runtime.
+tasks.register('verifyFusedPublication') {
+    group = 'verification'
+    description = 'Verify the published fused AAR contains all feature APIs and resources.'
+    dependsOn 'publishReleasePublicationToVerificationRepository', ':shopify-checkout:assembleRelease',
+        ':shopify-checkout:lintRelease', 'report'
+
+    doLast {
+        def verify = { boolean condition, String message ->
+            if (!condition) {
+                throw new GradleException(message)
+            }
+        }
+        def entryBytes = { archive, String name ->
+            def entry = archive.getEntry(name)
+            verify(entry != null, "Missing $name from ${archive.name}")
+            archive.getInputStream(entry).bytes
+        }
+        def entryNames = { byte[] bytes ->
+            def names = [] as Set
+            new ZipInputStream(new ByteArrayInputStream(bytes)).withCloseable { archive ->
+                for (def entry = archive.nextEntry; entry != null; entry = archive.nextEntry) {
+                    names << entry.name
+                }
+            }
+            names
+        }
+        def resourceSymbols = { archive ->
+            new String(entryBytes(archive, 'R.txt'), 'UTF-8').readLines().collect { line ->
+                def parts = line.split()
+                parts.size() >= 3 ? [parts[1], parts[2]] : null
+            }.findAll().toSet()
+        }
+        def resourceFiles = { archive ->
+            archive.entries().findAll { entry -> entry.name.startsWith('res/') && !entry.directory }*.name.toSet()
+        }
+
+        def bundle = layout.buildDirectory.get().asFile
+        def metadata = new JsonSlurper().parse(new File(bundle, 'publications/release/module.json'))
+        verify(metadata.component.group == 'com.shopify', 'Incorrect publication group')
+        verify(metadata.component.module == 'checkout-kit', 'Incorrect publication module')
+        def variants = metadata.variants.collectEntries { variant -> [(variant.attributes['org.gradle.usage']): variant] }
+        ['java-api', 'java-runtime'].each { usage ->
+            def variant = variants[usage]
+            verify(variant != null, "Missing $usage publication variant")
+            verify(variant.files.every { it.name.endsWith('.aar') }, "Unexpected $usage artifact: $variant")
+            def shopify = variant.dependencies.findAll { it.group == 'com.shopify' }*.module.toSet()
+            verify(shopify == ['embedded-checkout-protocol'] as Set, "Unexpected $usage Shopify dependencies: $shopify")
+            verify(variant.dependencies.every { it.group != 'checkout-kit' },
+                "$usage must not depend on an internal feature project: $variant")
+        }
+
+        def pom = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            .parse(new File(bundle, 'publications/release/pom-default.xml'))
+        def childText = { node, String name -> node.getElementsByTagName(name).item(0)?.textContent }
+        def protocol = (0..<pom.getElementsByTagName('dependency').length).collect { index ->
+            pom.getElementsByTagName('dependency').item(index)
+        }.findAll { dependency -> childText(dependency, 'artifactId') == 'embedded-checkout-protocol' }
+        verify(protocol.size() == 1, 'Expected exactly one embedded-checkout-protocol POM dependency')
+        verify(childText(protocol[0], 'scope') == 'compile', 'Protocol POM dependency must have compile scope')
+
+        def report = new JsonSlurper().parse(new File(bundle, 'reports/fused_library_report/single/report.json'))
+        verify(!report.included.isEmpty(), 'No features bundled')
+        def aarFile = new File(bundle, 'outputs/aar/shopify-checkout-kit.aar')
+        new java.util.zip.ZipFile(aarFile).withCloseable { aar ->
+            def classNames = entryNames(entryBytes(aar, 'classes.jar'))
+            verify(!classNames.any { it.startsWith('com/shopify/ucp/') }, 'Protocol must remain external')
+            verify(classNames.any { it.endsWith('.kotlin_module') }, 'Missing Kotlin metadata')
+            verify(new String(entryBytes(aar, 'META-INF/com/android/build/gradle/aar-metadata.properties'), 'UTF-8').contains('minCompileSdk=35'),
+                'Incorrect minCompileSdk metadata')
+            verify(!new String(entryBytes(aar, 'proguard.txt'), 'UTF-8').trim().isEmpty(), 'Missing consumer rules')
+
+            def featureSymbols = [:].withDefault { [] }
+            def expectedResourceFiles = [] as Set
+            report.included.each { projectPath ->
+                def module = projectPath.replaceFirst(/^project ':/, '').replaceFirst(/'$/, '')
+                def featureAar = new File(rootProject.projectDir, "$module/build/outputs/aar/$module-release.aar")
+                new java.util.zip.ZipFile(featureAar).withCloseable { feature ->
+                    def missingClasses = entryNames(entryBytes(feature, 'classes.jar')).findAll { it.endsWith('.class') } - classNames
+                    verify(missingClasses.isEmpty(), "Missing classes from $module: $missingClasses")
+                    resourceSymbols(feature).each { symbol -> featureSymbols.get(symbol) << module }
+                    expectedResourceFiles.addAll(resourceFiles(feature))
+                }
+            }
+
+            // IDs are intentionally shareable: multiple layouts or features may refer to the
+            // same ID, which is merged into one R.id entry. Other duplicate resource names
+            // would make the fused artifact's resource ownership ambiguous.
+            def collisions = featureSymbols.findAll { symbol, modules -> symbol[0] != 'id' && modules.size() > 1 }
+            verify(collisions.isEmpty(), "Feature resource symbol collisions: $collisions")
+            def missingSymbols = featureSymbols.keySet() - resourceSymbols(aar)
+            verify(missingSymbols.isEmpty(), "Missing feature resource symbols: $missingSymbols")
+            def missingResourceFiles = expectedResourceFiles - resourceFiles(aar)
+            verify(missingResourceFiles.isEmpty(), "Missing feature resource files: $missingResourceFiles")
+        }
+
+        [['sources', '.kt'], ['javadoc', '.html']].each { classifier, suffix ->
+            new java.util.zip.ZipFile(new File(bundle, "libs/shopify-checkout-kit-${classifier}.jar")).withCloseable { archive ->
+                verify(archive.entries().any { it.name.endsWith(suffix) }, "Empty $classifier archive")
+            }
+        }
+        logger.lifecycle('Single SDK AAR, all feature classes, resources, consumer rules, Kotlin metadata, ' +
+            'sources, documentation and protocol dependency verified.')
     }
 }

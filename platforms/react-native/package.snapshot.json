@@ -10,6 +10,7 @@
   "android/src/main/java/com/shopify/reactnative/checkoutkit/DispatchHandle.java",
   "android/src/main/java/com/shopify/reactnative/checkoutkit/ShopifyCheckoutKitModule.java",
   "android/src/main/java/com/shopify/reactnative/checkoutkit/ShopifyCheckoutKitPackage.java",
+  "internal/core/src/specs/codegen-types.ts",
   "internal/core/src/specs/NativeShopifyCheckoutKit.ts",
   "internal/core/src/specs/RCTAcceleratedCheckoutButtonsNativeComponent.ts",
   "ios/AcceleratedCheckoutButtons.swift",

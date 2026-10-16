@@ -8,7 +8,7 @@ extension EmbeddedCheckoutProtocol.WindowOpenRequest {
 
 extension EmbeddedCheckoutProtocol.WindowOpenResult {
     public static func success(version: String = EmbeddedCheckoutProtocol.specVersion) -> EmbeddedCheckoutProtocol.WindowOpenResult {
-        EmbeddedCheckoutProtocol.WindowOpenResult(ucp: .success(version: version), continueURL: nil, messages: nil)
+        EmbeddedCheckoutProtocol.WindowOpenResult(ucp: .success(version: version))
     }
 
     public static func rejected(
@@ -16,28 +16,14 @@ extension EmbeddedCheckoutProtocol.WindowOpenResult {
         version: String = EmbeddedCheckoutProtocol.specVersion
     ) -> EmbeddedCheckoutProtocol.WindowOpenResult {
         EmbeddedCheckoutProtocol.WindowOpenResult(
-            ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
-                capabilities: nil,
-                mapOrder: nil,
-                paymentHandlers: nil,
-                services: nil,
-                status: .error,
-                version: version
-            ),
-            continueURL: nil,
-            messages: [
-                Message(
-                    code: "window_open_rejected_error",
-                    content: reason ?? "Window open rejected",
-                    contentType: nil,
-                    path: nil,
-                    severity: .unrecoverable,
-                    type: .error,
-                    imageURL: nil,
-                    presentation: nil,
-                    url: nil
-                ),
+            ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(status: .error, version: version)
+        ) {
+            $0.messages = [
+                Message(content: reason ?? "Window open rejected", type: .error) {
+                    $0.code = "window_open_rejected_error"
+                    $0.severity = .unrecoverable
+                },
             ]
-        )
+        }
     }
 }

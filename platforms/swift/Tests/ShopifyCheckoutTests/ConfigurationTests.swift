@@ -16,26 +16,6 @@ class ConfigurationTests: XCTestCase {
 
     private func resetConfigurationState() {
         ShopifyCheckoutKit.configure { $0 = Configuration() }
-        CheckoutWebView.invalidate()
-    }
-
-    func testCloseButtonTintColorDefaultsToNil() {
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-    }
-
-    func testCloseButtonTintColorCanBeSet() {
-        let customColor = UIColor.red
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = customColor }
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, customColor)
-    }
-
-    func testCloseButtonTintColorCanBeReset() {
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = .blue }
-        XCTAssertNotNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-
-        ShopifyCheckoutKit.configure { $0.closeButtonTintColor = nil }
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
     }
 
     func testPreloadingDefaultsToEnabled() {
@@ -43,7 +23,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testAppearanceDefaultsToStorefront() {
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
     }
 
     func testAllowedMessageOriginsDefaultsToEmpty() {
@@ -92,16 +72,6 @@ class ConfigurationTests: XCTestCase {
         }
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
-    }
-
-    func testConfigureCanBatchConfigurationChanges() {
-        ShopifyCheckoutKit.configure {
-            $0.appearance = .app(.dark)
-            $0.closeButtonTintColor = .blue
-        }
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, .blue)
     }
 
     func testConfigureUpdatesLogger() {

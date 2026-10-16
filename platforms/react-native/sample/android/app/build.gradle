@@ -3,9 +3,8 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 def resolveNodeModuleDir(String packageName) {
-    def output = new ByteArrayOutputStream()
     def workspaceRoot = new File(rootProject.projectDir, "../..").canonicalFile
-    exec {
+    def output = providers.exec {
         commandLine(
             "node",
             "--print",
@@ -13,13 +12,13 @@ def resolveNodeModuleDir(String packageName) {
             workspaceRoot.getAbsolutePath(),
             rootProject.projectDir.getAbsolutePath()
         )
-        standardOutput = output
-    }
-    return file(output.toString().trim()).parentFile
+    }.standardOutput.asText.get()
+    return file(output.trim()).parentFile
 }
 
 def reactNativeDirPath = resolveNodeModuleDir("react-native")
 def reactNativeCodegenDirPath = resolveNodeModuleDir("@react-native/codegen")
+def hermesCompilerDirPath = resolveNodeModuleDir("hermes-compiler")
 def vectorIconsDirPath = resolveNodeModuleDir("react-native-vector-icons")
 
 project.ext["REACT_NATIVE_NODE_MODULES_DIR"] = reactNativeDirPath
@@ -41,7 +40,7 @@ react {
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
-    //   skip the bundling of the JS bundle and the assets. By default is just 'debug'.
+    //   skip bundling for debug and debugOptimized variants by default.
     //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
     // debuggableVariants = ["liteDebug", "prodDebug"]
 
@@ -66,8 +65,8 @@ react {
     // extraPackagerArgs = []
 
     /* Hermes Commands */
-    //   The hermes compiler command to run. By default it is 'hermesc'
-    hermesCommand = new File(reactNativeDirPath, "sdks/hermesc/%OS-BIN%/hermesc").getAbsolutePath()
+    // Resolve the separate compiler package from the workspace's node_modules.
+    hermesCommand = new File(hermesCompilerDirPath, "hermesc/%OS-BIN%/hermesc").getAbsolutePath()
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
     hermesFlags = ["-O", "-output-source-map"]
@@ -134,7 +133,7 @@ android {
     release {
       signingConfig signingConfigs.release
       minifyEnabled true
-      proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+      proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
     }
     e2e {
       initWith release
@@ -160,14 +159,12 @@ android {
 }
 
 gradle.projectsEvaluated {
-  if (project.findProperty("newArchEnabled").toString() == "true") {
-    def codegenTasks = rootProject.subprojects.collect { subproject ->
-      subproject.tasks.findByName("generateCodegenArtifactsFromSchema")
-    }.findAll { task -> task != null }
+  def codegenTasks = rootProject.subprojects.collect { subproject ->
+    subproject.tasks.findByName("generateCodegenArtifactsFromSchema")
+  }.findAll { task -> task != null }
 
-    tasks.matching { task -> task.name.startsWith("configureCMake") }.configureEach { task ->
-      task.dependsOn(codegenTasks)
-    }
+  tasks.matching { task -> task.name.startsWith("configureCMake") }.configureEach { task ->
+    task.dependsOn(codegenTasks)
   }
 }
 

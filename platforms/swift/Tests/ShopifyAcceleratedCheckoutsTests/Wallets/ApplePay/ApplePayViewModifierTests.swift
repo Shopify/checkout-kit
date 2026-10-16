@@ -52,7 +52,7 @@ final class ApplePayViewModifierTests: XCTestCase {
             dismissCallbackInvoked = true
         }
 
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -68,7 +68,7 @@ final class ApplePayViewModifierTests: XCTestCase {
         var firstCallbackInvoked = false
         var secondCallbackInvoked = false
 
-        _ = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        _ = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onDismiss { firstCallbackInvoked = true }
             .onDismiss { secondCallbackInvoked = true } // Should replace the first
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
@@ -87,7 +87,7 @@ final class ApplePayViewModifierTests: XCTestCase {
             errorCallbackInvoked = true
         }
 
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -112,7 +112,7 @@ final class ApplePayViewModifierTests: XCTestCase {
             dismissInvoked = true
         }
 
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
             .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
@@ -132,7 +132,7 @@ final class ApplePayViewModifierTests: XCTestCase {
     // MARK: - Environment Propagation Tests
 
     func testEnvironmentValueDefaults() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
             .environmentObject(mockShopSettings)
@@ -149,7 +149,7 @@ final class ApplePayViewModifierTests: XCTestCase {
         let errorAction = { (_: CheckoutError) in errorInvoked = true }
         let dismissAction = { dismissInvoked = true }
 
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .onFail(errorAction)
             .onDismiss(dismissAction)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
@@ -175,7 +175,7 @@ final class ApplePayViewModifierTests: XCTestCase {
         var errorCount = 0
 
         let view = VStack {
-            AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+            ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
                 .onFail { _ in errorCount += 1 }
         }
         .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
@@ -194,7 +194,7 @@ final class ApplePayViewModifierTests: XCTestCase {
     // MARK: - Corner Radius Modifier Tests
 
     func testCornerRadiusModifier() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(16)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -204,7 +204,7 @@ final class ApplePayViewModifierTests: XCTestCase {
     }
 
     func testCornerRadiusZeroValue() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(0)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -214,7 +214,7 @@ final class ApplePayViewModifierTests: XCTestCase {
     }
 
     func testCornerRadiusNegativeValue() {
-        let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
             .cornerRadius(-10)
             .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockConfiguration)
             .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)

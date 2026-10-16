@@ -1,4 +1,6 @@
 packages:
+  # The SDK package itself, so Changesets can version it.
+  - .
   - components/*
   - 'test/e2e'
   - '../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript'

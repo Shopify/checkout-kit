@@ -16,6 +16,11 @@ specific to each workspace.
 
 ## Getting started
 
+The development workspace and sample use React Native 0.87.1 with React 19.2.3.
+Use Node 22.13+ (or a supported newer LTS release), Xcode 26+, and JDK 17.
+The Android sample uses Gradle 9.4.1, Android SDK/Build Tools 37, and targets API 36.
+TypeScript stays on 5.9 while the declaration bundler uses API Extractor's 5.9 compiler.
+
 If you've cloned the repo and want to run the sample app, Shopify employees can
 run `dev up` and `dev react-native <command>` from the repo root or any
 platform directory (`dev rn` is an alias). Run `dev rn pod-install` when iOS

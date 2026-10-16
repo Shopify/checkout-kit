@@ -1,5 +1,16 @@
 # Shopify Checkout Kit - Android
 
+The Android build separates internal feature modules from the SDK publication:
+
+- `shopify-checkout/` owns the existing checkout implementation, resources and tests.
+- `shopify-checkout-kit/` bundles internal modules using AGP's fused-library plugin and publishes `com.shopify:checkout-kit`.
+- `build-logic/` supplies the `shopify.android-feature` convention plugin; shared compiler, lint and test settings live here.
+
+Feature modules use lowercase, hyphenated Gradle project names and conventional `src/main` and `src/test` source sets. Kotlin/Java package names remain lowercase dot-separated names. This restructuring preserves existing imports and behavior. The demo uses the feature from source; the publication consumer under `tests/publication` exercises the single Maven artifact. Embedded Checkout Protocol remains an external, independently published dependency.
+
+To add another feature, apply `shopify.android-feature`, set its unique Android namespace, declare its dependencies, include it in `settings.gradle`, and add it to the bundle's `include` dependencies. Keep feature implementation details `internal`; share APIs through declared Gradle dependencies. Features do not apply `maven-publish`.
+
+
 [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](../../LICENSE)
 ![Tests](https://github.com/Shopify/checkout-kit/actions/workflows/test.yml/badge.svg?branch=main)
 
@@ -90,7 +101,7 @@ For production use, see the [Storefront API GraphiQL Explorer](https://shopify.d
 Use the Kotlin builder when presenting from a `ComponentActivity`:
 
 ```kotlin
-import com.shopify.checkoutkit.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 
 fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
     ShopifyCheckoutKit.present(checkoutUrl, activity) {
@@ -284,7 +295,7 @@ Updating configuration through `ShopifyCheckoutKit.configure {}` triggers `Shopi
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
 ```kotlin
-import com.shopify.checkoutkit.Preloading
+import com.shopify.checkoutkit.checkout.Preloading
 
 ShopifyCheckoutKit.configure {
     it.preloading = Preloading { enabled = false }
@@ -374,6 +385,9 @@ ShopifyCheckoutKit.configure {
     ))
 }
 ```
+
+On `ColorScheme.Light` or `ColorScheme.Dark`, `customize(light, dark)` applies only the matching
+block, so one shared customization works for whichever scheme the app selects.
 
 ### Sheet options
 
@@ -550,9 +564,9 @@ Event constructors are public in Kotlin and Java: create `CheckoutStartEvent(che
 Build checkout snapshots with `Checkout.Builder()` and derive variants with `toBuilder()`:
 
 ```kotlin
-import com.shopify.checkoutkit.Checkout
-import com.shopify.checkoutkit.CheckoutStartEvent
-import com.shopify.checkoutkit.CheckoutUpdateEvent
+import com.shopify.checkoutkit.checkout.Checkout
+import com.shopify.checkoutkit.checkout.CheckoutStartEvent
+import com.shopify.checkoutkit.checkout.CheckoutUpdateEvent
 import com.shopify.ucp.embedded.checkout.CheckoutStatus
 
 val checkout = Checkout.Builder()
@@ -771,7 +785,7 @@ Useful checks before opening an Android change:
 
 ```sh
 cd platforms/android
-./gradlew :shopify-checkout-kit:build
+./gradlew build
 ./gradlew clean test --console=plain
 ./gradlew detekt lintRelease
 ```
@@ -787,7 +801,7 @@ For public API changes, run:
 
 ```sh
 cd platforms/android
-./gradlew :shopify-checkout-kit:apiCheck
+./gradlew :shopify-checkout:apiCheck
 cd ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
 ./gradlew :embedded-checkout-protocol:apiCheck
 ```

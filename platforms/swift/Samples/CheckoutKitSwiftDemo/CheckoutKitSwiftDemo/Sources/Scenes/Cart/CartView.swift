@@ -54,7 +54,7 @@ struct CartView: View {
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {
                         if #available(iOS 16, *) {
-                            AcceleratedCheckoutButtons(cartID: cartID)
+                            ShopifyAcceleratedCheckoutButtons(cartID: cartID)
                                 .applePayButtonStyle(applePayStyle.style)
                                 .onStart { event in
                                     print("[AcceleratedCheckout] Started: \(event.checkout.id)")
@@ -106,7 +106,6 @@ struct CartView: View {
             .sheet(isPresented: $checkoutPresentation.showCheckoutSheet) {
                 if let url = cartManager.cart?.checkoutURL {
                     ShopifyCheckout(checkout: url)
-                        .appearance(.app(.automatic))
                         .title("Checkout (SwiftUI)")
                         .onStart(checkoutPresentation.checkoutDidStart)
                         .onUpdate(checkoutPresentation.checkoutDidUpdate)

@@ -72,11 +72,11 @@ Package names link to their integration guides. These are the versions tracked b
 
 | Package | Version | Installation |
 | --- | --- | --- |
-| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods |
-| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.6` | Swift Package Manager, CocoaPods subspec |
+| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.8` | Swift Package Manager, CocoaPods |
+| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.8` | Swift Package Manager, CocoaPods subspec |
 | [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0-alpha.8` | Maven Central |
 | [`@shopify/checkout-kit-react-native`](platforms/react-native/README.md) | `4.0.0-alpha.5` | npm `next` |
-| [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0-alpha.4` | npm `next` |
+| [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0-alpha.5` | npm `next` |
 
 <details>
 <summary>Supporting packages: Embedded Checkout Protocol</summary>
@@ -92,7 +92,7 @@ These internal/supporting clients handle Embedded Checkout Protocol messages.
 
 Checkout Kit is the current home for the SDKs previously published as Checkout Sheet Kit.
 
-- Platform releases are versioned independently using the `4.0.0-alpha.X` format during the alpha period.
+- Platform releases are versioned independently using the `4.0.0-alpha.X` format during the alpha period. Each platform records its changes in its own `CHANGELOG.md`, managed with Changesets (see [contributing](.github/CONTRIBUTING.md#versions-and-release-notes)).
 - Stable releases will continue on the same `4.x` package line after the alpha period.
 
 <details>

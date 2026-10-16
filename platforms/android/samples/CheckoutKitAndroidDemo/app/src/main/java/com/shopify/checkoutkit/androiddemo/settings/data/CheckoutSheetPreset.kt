@@ -1,8 +1,8 @@
 package com.shopify.checkoutkit.androiddemo.settings.data
 
-import com.shopify.checkoutkit.CheckoutSheetDismissal
-import com.shopify.checkoutkit.CheckoutSheetOptions
-import com.shopify.checkoutkit.CheckoutSheetTitleAlignment
+import com.shopify.checkoutkit.checkout.CheckoutSheetDismissal
+import com.shopify.checkoutkit.checkout.CheckoutSheetOptions
+import com.shopify.checkoutkit.checkout.CheckoutSheetTitleAlignment
 
 enum class CheckoutSheetPreset {
     NewDefaults,

@@ -18,7 +18,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var checkoutView: CheckoutWebView?
 
     lazy var progressBar: ProgressBarView = {
-        let progressBar = ProgressBarView(frame: .zero, tintColor: configuration.tintColor)
+        let progressBar = ProgressBarView(frame: .zero, tintColor: colorScheme.color { $0.progressIndicator })
         progressBar.translatesAutoresizingMaskIntoConstraints = false
         return progressBar
     }()
@@ -27,40 +27,37 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     private let checkoutURL: URL
     private let configuration: Configuration
+    private let colorScheme: CheckoutColorScheme
 
-    private lazy var closeBarButtonItem: UIBarButtonItem = {
-        if let closeButtonTintColor = configuration.closeButtonTintColor {
-            var item: UIBarButtonItem
+    private var closeBarButtonItem: UIBarButtonItem {
+        let colors = colorScheme.colors(isDark: traitCollection.userInterfaceStyle == .dark)
+        let item: UIBarButtonItem
 
+        if colors.closeIcon != nil || colors.closeIconTint != nil {
+            let defaultSymbolName: String
             if #available(iOS 26.0, *) {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
+                defaultSymbolName = "xmark"
             } else {
-                item = UIBarButtonItem(
-                    image: UIImage(systemName: "xmark.circle.fill"),
-                    style: .plain,
-                    target: self,
-                    action: #selector(close)
-                )
+                defaultSymbolName = "xmark.circle.fill"
             }
-
-            item.tintColor = closeButtonTintColor
-            item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
-            return item
+            item = UIBarButtonItem(
+                image: colors.closeIcon ?? UIImage(systemName: defaultSymbolName),
+                style: .plain,
+                target: self,
+                action: #selector(close)
+            )
+            item.tintColor = colors.closeIconTint
+        } else {
+            item = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self,
+                action: #selector(close)
+            )
         }
 
-        let item = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(close)
-        )
         item.accessibilityIdentifier = Self.closeButtonAccessibilityIdentifier
         return item
-    }()
+    }
 
     var progressObserver: NSKeyValueObservation?
     private var hasNotifiedDismissal = false
@@ -70,12 +67,12 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     public init(checkoutURL url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         checkoutURL = url
         self.configuration = configuration
+        colorScheme = configuration.appearance.effectiveColorScheme
         self.delegate = delegate
 
         let checkoutView = CheckoutWebView.for(checkout: url, entryPoint: entryPoint)
         checkoutView.isPresented = true
-        checkoutView.backgroundColor = configuration.backgroundColor
-        checkoutView.underPageBackgroundColor = configuration.backgroundColor
+        checkoutView.applyColorScheme(colorScheme)
         checkoutView.translatesAutoresizingMaskIntoConstraints = false
         checkoutView.scrollView.contentInsetAdjustmentBehavior = .automatic
         self.checkoutView = checkoutView
@@ -89,13 +86,20 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
 
+        overrideUserInterfaceStyle = colorScheme.userInterfaceStyle
         title = configuration.title
 
         navigationItem.rightBarButtonItem = closeBarButtonItem
 
         checkoutView.viewDelegate = self
 
-        view.backgroundColor = configuration.backgroundColor
+        view.backgroundColor = colorScheme.color { $0.webViewBackground }
+
+        if #available(iOS 17.0, *) {
+            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: CheckoutWebViewController, _) in
+                controller.navigationItem.rightBarButtonItem = controller.closeBarButtonItem
+            }
+        }
     }
 
     @available(*, unavailable)
@@ -105,10 +109,13 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     // MARK: UIViewController Lifecycle
 
-    override public func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    @available(iOS, deprecated: 17.0)
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
 
-        view.backgroundColor = configuration.backgroundColor
+        if #unavailable(iOS 17.0), previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
+            navigationItem.rightBarButtonItem = closeBarButtonItem
+        }
     }
 
     override public func viewDidLoad() {
@@ -137,11 +144,50 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         loadCheckout()
     }
 
+    override public func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        notifyDismissalAfterInteractiveDismissTransition()
+    }
+
     override public func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
-        if isBeingDismissed || navigationController?.isBeingDismissed == true || isMovingFromParent {
+        if isPresentationBeingDismissed || isMovingFromParent {
             cleanUpCheckoutView()
+        }
+    }
+
+    /// Whether this controller, or a controller that contains it, is being dismissed.
+    ///
+    /// UIKit reports `isBeingDismissed` only on the presented controller. Checkout can be nested
+    /// below it: in its own navigation controller, or inside the hosting controller of an app's
+    /// SwiftUI `.sheet`.
+    private var isPresentationBeingDismissed: Bool {
+        sequence(first: self as UIViewController, next: \.parent).contains { $0.isBeingDismissed }
+    }
+
+    /// Reports a buyer's swipe-down when checkout runs inside a presentation it does not own.
+    ///
+    /// UIKit tells only the presentation controller's delegate about a swipe-down. For a SwiftUI
+    /// `.sheet`, SwiftUI owns that delegate, so `presentationControllerDidDismiss(_:)` never runs
+    /// here. The swipe drives an interactive dismissal transition, which this controller observes.
+    /// A programmatic dismissal, such as an app setting `isPresented` to `false`, is not
+    /// interactive and reports nothing, the same as in the UIKit entry point. A canceled swipe
+    /// reports nothing either. A buyer's tap outside the sheet, such as on iPad, is not interactive
+    /// either; from here it looks the same as a programmatic dismissal, so it also reports nothing.
+    private func notifyDismissalAfterInteractiveDismissTransition() {
+        guard isPresentationBeingDismissed,
+              let transitionCoordinator,
+              transitionCoordinator.initiallyInteractive
+        else {
+            return
+        }
+
+        transitionCoordinator.animate(alongsideTransition: nil) { [weak self] context in
+            guard !context.isCancelled else { return }
+
+            self?.didDismiss()
         }
     }
 

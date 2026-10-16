@@ -2,9 +2,6 @@ package com.shopify.checkoutkit.androiddemo.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.Preloading
-import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.BuildConfig
 import com.shopify.checkoutkit.androiddemo.common.withCustomCloseIcon
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.AuthenticationState
@@ -15,6 +12,9 @@ import com.shopify.checkoutkit.androiddemo.settings.data.Settings
 import com.shopify.checkoutkit.androiddemo.settings.data.SettingsRepository
 import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.androiddemo.settings.data.toCheckoutSheetOptions
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.Preloading
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

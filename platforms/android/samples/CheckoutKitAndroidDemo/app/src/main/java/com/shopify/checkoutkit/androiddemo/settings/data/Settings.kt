@@ -1,7 +1,7 @@
 package com.shopify.checkoutkit.androiddemo.settings.data
 
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.ColorScheme
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.ColorScheme
 
 data class Settings(
     val appearance: CheckoutAppearance,

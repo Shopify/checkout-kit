@@ -1,0 +1,368 @@
+package com.shopify.checkoutkit.checkout
+import android.os.Looper
+import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.RelativeLayout
+import androidx.activity.ComponentActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.view.children
+import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
+import com.shopify.checkoutkit.internal.web.CheckoutWebView
+import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility.await
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
+import org.robolectric.shadows.ShadowLooper
+import java.util.concurrent.TimeUnit
+
+@RunWith(RobolectricTestRunner::class)
+class ShopifyCheckoutTest {
+
+    private lateinit var activityController: ActivityController<ComponentActivity>
+    private lateinit var activity: ComponentActivity
+    private lateinit var webMessageTransport: FakeWebMessageTransport
+
+    @Before
+    fun setUp() {
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().idle()
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        activity = activityController.get()
+        webMessageTransport = FakeWebMessageTransport()
+    }
+
+    @After
+    fun tearDown() {
+        CheckoutWebView.clearCache()
+        ShadowLooper.shadowMainLooper().idle()
+    }
+
+    @Test
+    fun `creates embeddable checkout chrome and content`() {
+        val view = shopifyCheckout()
+
+        assertThat(view.findViewById<Toolbar>(R.id.checkout_header)).isNotNull
+        assertThat(view.findViewById<ProgressBar>(R.id.checkout_progress_bar)).isNotNull
+        assertThat(view.currentWebView()).isNotNull
+        assertThat(view.layoutParams).isNull()
+
+        view.destroy()
+    }
+
+    @Test
+    fun `destroy discards matching preloaded checkout`() {
+        CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val view = shopifyCheckout()
+
+        assertThat(view.currentWebView()).isSameAs(preloadedWebView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
+
+        view.destroy()
+        assertThat(shadowOf(preloadedWebView).wasDestroyCalled()).isTrue()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+    }
+
+    @Test
+    fun `concurrent presentation does not reuse active preloaded checkout`() {
+        CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        val firstView = shopifyCheckout()
+        val secondView = shopifyCheckout()
+
+        assertThat(firstView.currentWebView()).isSameAs(preloadedWebView)
+        assertThat(secondView.currentWebView()).isNotSameAs(preloadedWebView)
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
+
+        secondView.destroy()
+        firstView.destroy()
+    }
+
+    @Test
+    fun `Kotlin factory connects callbacks to checkout chrome`() {
+        var dismissCount = 0
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+        ) {
+            onDismiss { dismissCount += 1 }
+        }
+        val toolbar = view.findViewById<Toolbar>(R.id.checkout_header)
+        toolbar.menu.performIdentifierAction(R.id.checkout_close_button, 0)
+        toolbar.menu.performIdentifierAction(R.id.checkout_close_button, 0)
+
+        assertThat(dismissCount).isEqualTo(1)
+        assertThat(view.currentWebView().parent).isNotNull
+
+        view.destroy()
+    }
+
+    @Test
+    fun `failure callback leaves presentation and checkout session ownership with host`() {
+        var receivedError: CheckoutException? = null
+        var dismissed = false
+        val view = shopifyCheckout(
+            onDismiss = { dismissed = true },
+            onFailure = { receivedError = it },
+        )
+        activity.setContentView(view)
+        val webView = view.currentWebView()
+        val error = CheckoutException(code = CheckoutErrorCode.SDK_ERROR, message = "boom")
+
+        webView.listener.onCheckoutViewFailedWithError(error)
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+
+        assertThat(receivedError).isSameAs(error)
+        assertThat(view.parent).isNotNull
+        assertThat(webView.parent).isNotNull
+        assertThat(shadowOf(webView).wasDestroyCalled()).isFalse()
+
+        view.findViewById<Toolbar>(R.id.checkout_header)
+            .menu
+            .performIdentifierAction(R.id.checkout_close_button, 0)
+        assertThat(dismissed).isTrue()
+
+        view.destroy()
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `app owned failure stops checkout events while host retains the view`() {
+        val events = mutableListOf<String>()
+        var protocolMessages = 0
+        var failure: CheckoutFailureEvent? = null
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+        ) {
+            onStart { events.add("start") }
+            onUpdate { events.add("update") }
+            onComplete { events.add("complete") }
+            onFail { failure = it }
+        }
+        activity.setContentView(view)
+        val webView = view.currentWebView()
+        webView.setClient(
+            CheckoutProtocol.Client()
+                .on(CheckoutProtocol.start) { protocolMessages += 1 }
+                .on(CheckoutProtocol.messagesChange) { protocolMessages += 1 }
+                .on(CheckoutProtocol.complete) { protocolMessages += 1 },
+        )
+        shadowOf(Looper.getMainLooper()).idle()
+
+        webMessageTransport.dispatchMessage(checkoutMessage("ec.messages.change", "before-failure"))
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(protocolMessages).isEqualTo(1)
+        }
+        assertThat(events).containsExactly("update")
+
+        val error = CheckoutException(CheckoutErrorCode.NETWORK_ERROR, "Offline")
+        webView.listener.onCheckoutViewFailedWithError(error)
+        listOf("ec.start", "ec.messages.change", "ec.complete").forEach { method ->
+            webMessageTransport.dispatchMessage(checkoutMessage(method, "after-failure"))
+        }
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(protocolMessages).isEqualTo(4)
+        }
+
+        assertThat(failure!!.error).isSameAs(error)
+        assertThat(events).containsExactly("update")
+        assertThat(view.parent).isNotNull
+        assertThat(shadowOf(webView).wasDestroyCalled()).isFalse()
+        view.destroy()
+    }
+
+    @Test
+    fun `unsupported WebView reports failure after construction and creates inert view`() {
+        webMessageTransport.supported = false
+        var receivedError: CheckoutException? = null
+        var constructionComplete = false
+        var failureReportedAfterConstruction = false
+
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+        ) {
+            onFail {
+                receivedError = it.error
+                failureReportedAfterConstruction = constructionComplete
+            }
+        }
+
+        assertThat(receivedError).isNull()
+        constructionComplete = true
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(receivedError!!.code).isEqualTo(CheckoutErrorCode.WEB_VIEW_NOT_SUPPORTED)
+        assertThat(failureReportedAfterConstruction).isTrue()
+        assertThat(view.findViewById<RelativeLayout>(R.id.checkout_container).children.none { it is CheckoutWebView })
+            .isTrue()
+
+        view.destroy()
+    }
+
+    @Test
+    fun `non HTTPS checkout reports failure after construction and creates inert view`() {
+        var receivedError: CheckoutException? = null
+
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = "http://checkout.shopify.com/cart/123",
+            webMessageTransport = webMessageTransport,
+        ) {
+            onFail { receivedError = it.error }
+        }
+        ShadowLooper.shadowMainLooper().runToEndOfTasks()
+
+        assertThat(receivedError)
+            .isInstanceOf(CheckoutException::class.java)
+            .extracting("message")
+            .asString()
+            .contains("requires an HTTPS URL")
+        assertThat(view.findViewById<RelativeLayout>(R.id.checkout_container).children.none { it is CheckoutWebView })
+            .isTrue()
+
+        view.destroy()
+    }
+
+    @Test
+    fun `destroy suppresses pending initialization failure`() {
+        webMessageTransport.supported = false
+        var failed = false
+        val view = ShopifyCheckout.create(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+        ) {
+            onFail { failed = true }
+        }
+
+        view.destroy()
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(failed).isFalse()
+    }
+
+    @Test
+    fun `destroy releases WebView once without reporting an outcome`() {
+        var dismissed = false
+        var failed = false
+        val view = shopifyCheckout(
+            onDismiss = { dismissed = true },
+            onFailure = { failed = true },
+        )
+        val webView = view.currentWebView()
+        activity.setContentView(view)
+
+        view.destroy()
+        view.destroy()
+
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
+        assertThat(webView.parent).isNull()
+        assertThat(dismissed).isFalse()
+        assertThat(failed).isFalse()
+    }
+
+    @Test
+    fun `attach and detach resume and pause WebView`() {
+        val view = shopifyCheckout()
+        val webView = view.currentWebView()
+
+        activity.setContentView(view)
+        assertThat(shadowOf(webView).wasOnResumeCalled()).isTrue()
+
+        (view.parent as ViewGroup).removeView(view)
+        assertThat(shadowOf(webView).wasOnPauseCalled()).isTrue()
+
+        view.destroy()
+    }
+
+    @Test
+    fun `host lifecycle destruction destroys WebView after detach`() {
+        val view = shopifyCheckout()
+        val webView = view.currentWebView()
+        activity.setContentView(view)
+        (view.parent as ViewGroup).removeView(view)
+
+        activityController.destroy()
+
+        assertThat(shadowOf(webView).wasDestroyCalled()).isTrue()
+    }
+
+    @Test
+    fun `system back requests dismissal when WebView has no history`() {
+        var dismissed = false
+        val view = shopifyCheckout(onDismiss = { dismissed = true })
+        activity.setContentView(view)
+
+        activity.onBackPressedDispatcher.onBackPressed()
+
+        assertThat(dismissed).isTrue()
+
+        view.destroy()
+    }
+
+    @Test
+    fun `system back navigates WebView history before requesting dismissal`() {
+        var dismissed = false
+        val view = shopifyCheckout(onDismiss = { dismissed = true })
+        val webView = view.currentWebView()
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc")
+        shadowOf(webView).pushEntryToHistory("https://shopify.com/checkouts/c/abc/step2")
+        activity.setContentView(view)
+
+        activity.onBackPressedDispatcher.onBackPressed()
+
+        assertThat(dismissed).isFalse()
+        assertThat(shadowOf(webView).goBackInvocations).isGreaterThan(0)
+
+        view.destroy()
+    }
+
+    private fun shopifyCheckout(
+        onDismiss: () -> Unit = {},
+        onFailure: (CheckoutException) -> Unit = {},
+    ): ShopifyCheckout {
+        val listener = noopDefaultCheckoutListener()
+        return ShopifyCheckout(
+            context = activity,
+            checkoutUrl = CHECKOUT_URL,
+            webMessageTransport = webMessageTransport,
+            hostConfiguration = CheckoutHostConfiguration(
+                listener = listener,
+                protocolClient = null,
+                onDismissRequest = onDismiss,
+                onFailure = onFailure,
+                reportInitializationFailure = false,
+            ),
+        )
+    }
+
+    private fun ShopifyCheckout.currentWebView(): CheckoutWebView =
+        findViewById<RelativeLayout>(R.id.checkout_container)
+            .children
+            .first { it is CheckoutWebView } as CheckoutWebView
+
+    private fun checkoutMessage(method: String, id: String): String =
+        """{"jsonrpc":"2.0","method":"$method","params":{"checkout":{"id":"$id","currency":"USD","status":"incomplete",""" +
+            """"line_items":[],"totals":[],"links":[],"ucp":{"payment_handlers":{},"version":"1.0"}}}}"""
+
+    private companion object {
+        private const val CHECKOUT_URL = "https://shopify.com/checkouts/c/abc"
+    }
+}

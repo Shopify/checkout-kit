@@ -1,7 +1,7 @@
 package com.shopify.checkoutkit.androiddemo.e2e
 
-import com.shopify.checkoutkit.PreloadState
 import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
+import com.shopify.checkoutkit.checkout.PreloadState
 
 /** Maps whether [PreloadState] is ready to a preload identifier. */
 object PreloadStateMarker {

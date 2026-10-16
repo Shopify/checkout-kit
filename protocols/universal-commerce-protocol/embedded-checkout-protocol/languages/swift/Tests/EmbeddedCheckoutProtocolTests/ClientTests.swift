@@ -1,5 +1,5 @@
-import Foundation
 @testable import EmbeddedCheckoutProtocol
+import Foundation
 import Testing
 
 private struct TestURLPayload: EventPayload {
@@ -81,6 +81,30 @@ struct ClientTests {
         #expect(response == nil)
         #expect(receivedCheckout != nil)
         #expect(receivedCheckout?.id == "checkout-123")
+    }
+
+    @Test(arguments: ["completed", "on_hold"])
+    @MainActor func completionPreservesUnknownStrings(status: String) async throws {
+        let message = try protocolFixture("checkout-unknown-values")
+            .replacingOccurrences(of: #""status": "completed""#, with: "\"status\": \"\(status)\"")
+        let recorder = DecodeErrorRecorder()
+        var receivedCheckout: EmbeddedCheckoutProtocol.Checkout?
+        let client = EmbeddedCheckoutProtocol.Client()
+            .onDecodeError { method, error, _ in recorder.record(method: method, error: error) }
+            .on(EmbeddedCheckoutProtocol.Event.complete) { receivedCheckout = $0.params.checkout }
+
+        _ = await client.process(message)
+
+        #expect(recorder.error == nil)
+        let checkout = try #require(receivedCheckout)
+        #expect(checkout.status.rawValue == status)
+        #expect(checkout.discounts?.applied?.first?.method?.rawValue == "future_method")
+        let copied = checkout.with { $0.id = "checkout-copy" }
+        let encoded = try JSONEncoder().encode(copied)
+        let decoded = try JSONDecoder().decode(EmbeddedCheckoutProtocol.Checkout.self, from: encoded)
+        #expect(decoded.id == "checkout-copy")
+        #expect(decoded.status == checkout.status)
+        #expect(decoded.discounts?.applied?.first?.method?.rawValue == "future_method")
     }
 
     @Test(arguments: ["", ".123"], ["Z", "+05:30", "-04:00"])
@@ -337,14 +361,7 @@ struct ClientTests {
     @Test @MainActor func readyRequestDispatchesToRegisteredHandler() async throws {
         let response = try await EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                EmbeddedCheckoutProtocol.ReadyResult(
-                    checkout: nil,
-                    credential: nil,
-                    ucp: .success(),
-                    upgrade: nil,
-                    continueURL: nil,
-                    messages: nil
-                )
+                EmbeddedCheckoutProtocol.ReadyResult(ucp: .success())
             }
             .process(readyFixture())
 
@@ -367,14 +384,7 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                    EmbeddedCheckoutProtocol.ReadyResult(
-                        checkout: nil,
-                        credential: nil,
-                        ucp: .success(),
-                        upgrade: nil,
-                        continueURL: nil,
-                        messages: nil
-                    )
+                    EmbeddedCheckoutProtocol.ReadyResult(ucp: .success())
                 }
                 .process(ready)
         )
@@ -393,12 +403,9 @@ struct ClientTests {
         let response = try #require(
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.auth) { _ in
-                    EmbeddedCheckoutProtocol.AuthResult(
-                        credential: "tok-xyz",
-                        ucp: .success(),
-                        continueURL: nil,
-                        messages: nil
-                    )
+                    EmbeddedCheckoutProtocol.AuthResult(ucp: .success()) {
+                        $0.credential = "tok-xyz"
+                    }
                 }
                 .process(request)
         )
@@ -415,19 +422,7 @@ struct ClientTests {
             await EmbeddedCheckoutProtocol.Client()
                 .on(EmbeddedCheckoutProtocol.Event.paymentCredential) { message in
                     receivedCheckoutID = message.params.checkout.id
-                    return EmbeddedCheckoutProtocol.CredentialResult(
-                        checkout: nil,
-                        ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(
-                            capabilities: nil,
-                            mapOrder: nil,
-                            paymentHandlers: nil,
-                            services: nil,
-                            status: .success,
-                            version: EmbeddedCheckoutProtocol.specVersion
-                        ),
-                        continueURL: nil,
-                        messages: nil
-                    )
+                    return EmbeddedCheckoutProtocol.CredentialResult(ucp: EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp(status: .success, version: EmbeddedCheckoutProtocol.specVersion))
                 }
                 .process(requestFixture())
         )
@@ -441,14 +436,7 @@ struct ClientTests {
     @Test @MainActor func delegationsReflectsOnlyDelegationCarryingHandlers() {
         let client = EmbeddedCheckoutProtocol.Client()
             .on(EmbeddedCheckoutProtocol.Event.ready) { _ in
-                EmbeddedCheckoutProtocol.ReadyResult(
-                    checkout: nil,
-                    credential: nil,
-                    ucp: .success(),
-                    upgrade: nil,
-                    continueURL: nil,
-                    messages: nil
-                )
+                EmbeddedCheckoutProtocol.ReadyResult(ucp: .success())
             }
             .on(windowOpenDescriptor) { _ in .success }
 

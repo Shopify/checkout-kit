@@ -113,7 +113,8 @@ least `24`.
 
 The Android package also requires Kotlin `2.0+`. React Native `0.77+` templates
 use compatible Kotlin defaults (`2.0.21` for React Native `0.77`–`0.79`, and
-`2.1.20` for React Native `0.80+`). If your app defines a Kotlin version, the
+`2.1.20` for React Native `0.80`, and `2.2.0` for React Native `0.87`). If your app
+defines a Kotlin version, the
 package will use `rootProject.ext.kotlinVersion`, `rootProject.ext.kotlin_version`,
 or matching Gradle properties before falling back to `2.0.21`.
 

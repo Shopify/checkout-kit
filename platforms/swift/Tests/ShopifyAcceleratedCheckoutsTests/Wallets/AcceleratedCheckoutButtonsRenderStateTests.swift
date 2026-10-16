@@ -13,8 +13,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with invalid ID and onRenderStateChange in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(cartID: invalidCartID)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with invalid ID and onRenderStateChange in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(cartID: invalidCartID)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if case .error = state {
@@ -40,8 +40,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with empty cart ID in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(cartID: emptyCartID)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with empty cart ID in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(cartID: emptyCartID)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if case .error = state {
@@ -67,8 +67,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with invalid variant ID in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(variantID: invalidVariantID, quantity: 1)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with invalid variant ID in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(variantID: invalidVariantID, quantity: 1)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if case .error = state {
@@ -94,8 +94,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with zero quantity in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(variantID: validVariantID, quantity: 0)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with zero quantity in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(variantID: validVariantID, quantity: 0)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if case .error = state {
@@ -121,8 +121,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with loading state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with valid cart ID in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(cartID: validCartID)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with valid cart ID in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(cartID: validCartID)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if state == .loading {
@@ -148,8 +148,8 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         let expectation = XCTestExpectation(description: "onRenderStateChange called with loading state")
         var receivedStates: [RenderState] = []
 
-        // When: Creating AcceleratedCheckoutButtons with valid variant ID in SwiftUI environment
-        let testView = AcceleratedCheckoutButtons(variantID: validVariantID, quantity: 2)
+        // When: Creating ShopifyAcceleratedCheckoutButtons with valid variant ID in SwiftUI environment
+        let testView = ShopifyAcceleratedCheckoutButtons(variantID: validVariantID, quantity: 2)
             .onRenderStateChange { state in
                 receivedStates.append(state)
                 if state == .loading {

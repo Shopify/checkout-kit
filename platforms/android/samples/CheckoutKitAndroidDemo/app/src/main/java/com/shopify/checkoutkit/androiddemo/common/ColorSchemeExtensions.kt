@@ -1,9 +1,9 @@
 package com.shopify.checkoutkit.androiddemo.common
 
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.Color
-import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.androiddemo.R
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.Color
+import com.shopify.checkoutkit.checkout.ColorScheme
 
 fun sampleStorefrontAppearance(): CheckoutAppearance.Storefront {
     return CheckoutAppearance.Storefront().customize {

@@ -1,0 +1,157 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.Classpath
+import org.gradle.process.CommandLineArgumentProvider
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'io.gitlab.arturbosch.detekt'
+}
+
+def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+
+project.apply from: file('../gradle/android-library-versions.gradle')
+
+def kotlinCompatibility = kotlinVersionCompatibility
+def versionName = libs.findVersion('checkoutKitAndroid').get().requiredVersion
+
+class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
+    @Classpath
+    final FileCollection classpath
+
+    MockitoAgentArgumentProvider(FileCollection classpath) {
+        this.classpath = classpath
+    }
+
+    @Override
+    Iterable<String> asArguments() {
+        ["-javaagent:${classpath.singleFile.absolutePath}".toString()]
+    }
+}
+
+configurations {
+    mockitoAgent {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+android {
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 23
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "SDK_VERSION", "\"$versionName\""
+
+        aarMetadata {
+            minCompileSdk = 35
+        }
+    }
+
+    lint {
+        checkDependencies = true
+        warningsAsErrors = true
+        disable 'GradleDependency', 'NewerVersionAvailable', 'SimilarGradleDependency'
+        warning 'LintBaseline'
+        informational 'AndroidGradlePluginVersion'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            consumerProguardFiles 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
+        targetCompatibility JavaVersion.toVersion(kotlinCompatibility.javaVersion)
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            jvmArgumentProviders.add(new MockitoAgentArgumentProvider(configurations.mockitoAgent))
+            testLogging {
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen { false }
+                showStandardStreams = true
+            }
+        }
+    }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+tasks.withType(KotlinJvmCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.valueOf(kotlinCompatibility.kotlinJvmTarget))
+        // Pin language/API version so bytecode stays consumable by Kotlin 2.0+ consumers
+        // even though the compiler is on a newer 2.x. Kotlin 1.9 is deprecated by the 2.x
+        // compiler, so 2.0 is the lowest pin we can hold without taking deprecation warnings;
+        // keeping the compiler ahead of the pin leaves room to bump kotlinc without re-breaking
+        // consumers.
+        apiVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinApiVersion))
+        languageVersion.set(KotlinVersion.valueOf(kotlinCompatibility.kotlinLanguageVersion))
+        if (!name.contains("Test")) {
+            freeCompilerArgs.add("-Xexplicit-api=strict")
+        }
+    }
+}
+
+dependencies {
+    detektPlugins libs.findLibrary('detekt-formatting').get()
+    mockitoAgent libs.findLibrary('mockito-core').get()
+
+    testImplementation libs.findLibrary('junit').get()
+    testImplementation libs.findLibrary('robolectric').get()
+    testImplementation libs.findLibrary('mockito-core').get()
+    testImplementation libs.findLibrary('mockito-kotlin').get()
+    testImplementation libs.findLibrary('mockito-android').get()
+    testImplementation libs.findLibrary('assertj-core').get()
+    testImplementation libs.findLibrary('awaitility').get()
+
+    androidTestImplementation libs.findLibrary('androidx-test-core-ktx').get()
+    androidTestImplementation libs.findLibrary('androidx-test-ext-junit-ktx').get()
+
+    // Keep the published stdlib dependency aligned with the Kotlin API/language
+    // consumer floor, not the newer compiler used to build the AAR.
+    implementation libs.findLibrary('kotlin-stdlib').get()
+
+}
+
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(file('../gradle/detekt.config.yml'))
+    autoCorrect = true
+}
+
+tasks.withType(Detekt).configureEach {
+    exclude('**/Models.kt')
+}
+
+afterEvaluate {
+    if (!android.resourcePrefix) {
+        throw new GradleException("$path must declare an Android resourcePrefix.")
+    }
+}
+
+// Feature projects are build boundaries, never independently released artifacts.
+pluginManager.withPlugin('maven-publish') {
+    throw new GradleException('Publish Android features through :shopify-checkout-kit only.')
+}

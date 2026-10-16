@@ -3,10 +3,11 @@
 #endif
 import Foundation
 
-public enum CheckoutProtocol {
-    public typealias Client = EmbeddedCheckoutProtocol.Client
+/// Protocol routing is an implementation detail of Checkout Kit.
+enum CheckoutProtocol {
+    typealias Client = EmbeddedCheckoutProtocol.Client
 
-    public static func url(for url: URL) -> URL {
+    static func url(for url: URL) -> URL {
         CheckoutURLDecorator.decorate(url)
     }
 
@@ -17,20 +18,19 @@ public enum CheckoutProtocol {
 
     static let ready = EmbeddedCheckoutProtocol.Event.ready.map { $0.params }
 
-    public static let complete = EmbeddedCheckoutProtocol.Event.complete.map { $0.params.checkout }
+    static let complete = EmbeddedCheckoutProtocol.Event.complete.map { $0.params.checkout }
     /// Delivers the complete payload of a valid terminal `ec.error` notification.
     ///
     /// This callback runs before Checkout Kit maps the terminal event to
-    /// ``CheckoutDelegate/checkoutDidFail(_:)``. It is for advanced protocol diagnostics;
-    /// use ``CheckoutError/code`` for normal lifecycle recovery.
-    public static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }
-    public static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange.map { $0.params.checkout }
-    public static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange.map { $0.params.checkout }
+    /// ``CheckoutDelegate/checkoutDidFail(_:)``.
+    static let error = EmbeddedCheckoutProtocol.Event.error.map { $0.params.error }
+    static let fulfillmentChange = EmbeddedCheckoutProtocol.Event.fulfillmentChange.map { $0.params.checkout }
+    static let lineItemsChange = EmbeddedCheckoutProtocol.Event.lineItemsChange.map { $0.params.checkout }
     /// Delivers in-checkout messages and warnings as state updates.
-    public static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange.map { $0.params.checkout }
-    public static let start = EmbeddedCheckoutProtocol.Event.start.map { $0.params.checkout }
-    public static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange.map { $0.params.checkout }
-    public static let windowOpen = EmbeddedCheckoutProtocol.Event.windowOpen.map { $0.params }
+    static let messagesChange = EmbeddedCheckoutProtocol.Event.messagesChange.map { $0.params.checkout }
+    static let start = EmbeddedCheckoutProtocol.Event.start.map { $0.params.checkout }
+    static let totalsChange = EmbeddedCheckoutProtocol.Event.totalsChange.map { $0.params.checkout }
+    static let windowOpen = EmbeddedCheckoutProtocol.Event.windowOpen.map { $0.params }
 
     static let supportedProtocolMethods: Set<String> = [
         ready.method,

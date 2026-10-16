@@ -24,6 +24,8 @@ up:
       version: v22.14.0
       package_manager: pnpm@10.33.1
       packages:
+        # Root release tooling: only the Changesets CLI, not a workspace.
+        - .
         - protocols/universal-commerce-protocol/embedded-checkout-protocol
         - platforms/react-native
         - platforms/web
@@ -152,6 +154,7 @@ commands:
     run: |
       set -e
       node scripts/check-sdk-packages.mjs
+      node scripts/release/sync-versions.mjs --check
       /opt/dev/bin/dev android lint
       /opt/dev/bin/dev swift lint
       /opt/dev/bin/dev react-native lint
@@ -257,6 +260,9 @@ commands:
           set -e
           /opt/dev/bin/dev protocol build
           /opt/dev/bin/dev protocol test
+      compat:
+        desc: "Check that an additive protocol change keeps Kotlin, Java, Swift and TypeScript consumers working"
+        run: protocols/universal-commerce-protocol/embedded-checkout-protocol/compat/check.sh
       check-upstream:
         desc: Compare vendored UCP snapshot files against upstream
         run: ./protocols/universal-commerce-protocol/embedded-checkout-protocol/scripts/check_ucp_snapshot.sh "$@"
@@ -283,9 +289,9 @@ commands:
             (cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package CheckoutKitTelemetryTests/CheckoutKitTelemetryTests)
           }
           run_kotlin() {
-            platforms/android/gradlew -p platforms/android :shopify-checkout-kit:testDebugUnitTest \
-              --tests "com.shopify.checkoutkit.telemetry.*" \
-              --tests "com.shopify.checkoutkit.Telemetry*" \
+            platforms/android/gradlew -p platforms/android :shopify-checkout:testDebugUnitTest \
+              --tests "com.shopify.checkoutkit.checkout.telemetry.*" \
+              --tests "com.shopify.checkoutkit.checkout.Telemetry*" \
               --console=plain
           }
           case "${1:-all}" in
@@ -331,7 +337,7 @@ commands:
         run: |
           source platforms/android/scripts/parse_local_protocol_flag
           parse_local_protocol_flag "$@"
-          platforms/android/gradlew -p platforms/android :shopify-checkout-kit:build
+          platforms/android/gradlew -p platforms/android build
         subcommands:
           samples:
             desc: Build all sample applications
@@ -344,12 +350,70 @@ commands:
 
       start:
         desc: Build the android sample app and install it to the booted emulator
-        syntax:
-          optional: --local
+        long_desc: |
+          Builds the Android sample app and installs it with installDebug. The
+          command does not launch the app.
+
+          Options:
+            --local      Build against the in-repo Kotlin protocol artifacts.
+            --device ID  Install only on this device. ID is an adb serial, such
+                         as emulator-5556, listed in state device by adb devices.
+                         Without it, installDebug runs with no serial.
+
+          Examples:
+            dev android start
+            dev android start --device emulator-5556
+            dev android start --local --device emulator-5556
+        syntax: "[--local] [--device ID]"
         run: |
           source platforms/android/scripts/parse_local_protocol_flag
-          parse_local_protocol_flag "$@"
-          platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
+          local_flag_args=()
+          device_id=""
+          while [ "$#" -gt 0 ]; do
+            case "$1" in
+              --device)
+                device_id="${2:-}"
+                if [ -z "$device_id" ]; then
+                  echo "--device needs an adb serial, such as emulator-5556." >&2
+                  exit 1
+                fi
+                shift 2
+                ;;
+              --device=*)
+                device_id="${1#--device=}"
+                if [ -z "$device_id" ]; then
+                  echo "--device needs an adb serial, such as emulator-5556." >&2
+                  exit 1
+                fi
+                shift
+                ;;
+              --local)
+                local_flag_args+=("$1")
+                shift
+                ;;
+              *)
+                echo "Unknown argument: $1" >&2
+                echo "Usage: dev android start [--local] [--device ID]" >&2
+                exit 1
+                ;;
+            esac
+          done
+          parse_local_protocol_flag ${local_flag_args[@]+"${local_flag_args[@]}"}
+
+          if [ -z "$device_id" ]; then
+            platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
+            exit
+          fi
+
+          attached_device_ids=$(adb devices | awk '$2 == "device" { print $1 }')
+          if ! printf '%s\n' "$attached_device_ids" | awk -v serial="$device_id" '$0 == serial { found = 1 } END { exit !found }'; then
+            echo "$device_id is not listed by adb devices in state device." >&2
+            echo "Attached Android devices:" >&2
+            printf '%s\n' "${attached_device_ids:-(none)}" | sed 's/^/  /' >&2
+            exit 1
+          fi
+          echo "Using device: $device_id"
+          ANDROID_SERIAL="$device_id" platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
 
       e2e:
         desc: Run Android sample end-to-end tests
@@ -359,11 +423,17 @@ commands:
           all enabled coverage noninteractively. Pass matrix tags to select a
           group or positional YAML files to run exact tests.
 
+          --device ID builds, installs and tests on that device only. ID is an
+          adb serial, such as emulator-5556, listed in state device by adb
+          devices. Without it, the first device in state device is used.
+          --device does not select tests, so the picker still opens.
+
           Examples:
             dev android e2e
             dev android e2e --tags preload
             dev android e2e tests/shared/launch-smoke.yaml
-        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+            dev android e2e --device emulator-5556 --tags preload
+        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
         run: ./e2e/scripts/run_local_e2e kotlin-android "$@"
 
       test:
@@ -394,7 +464,7 @@ commands:
               shift
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
-              platforms/android/gradlew -p platforms/android :shopify-checkout-kit:testDebugUnitTest --tests "$test_class"
+              platforms/android/gradlew -p platforms/android :shopify-checkout:testDebugUnitTest --tests "$test_class"
           demo:
             desc: Run demo app unit tests
             syntax:
@@ -510,7 +580,7 @@ commands:
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
               set -e
-              platforms/android/gradlew -p platforms/android :shopify-checkout-kit:apiCheck
+              platforms/android/gradlew -p platforms/android :shopify-checkout:apiCheck
               protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiCheck
           dump:
             desc: Regenerate the baselines after intentional public API changes
@@ -520,7 +590,7 @@ commands:
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
               set -e
-              platforms/android/gradlew -p platforms/android :shopify-checkout-kit:apiDump
+              platforms/android/gradlew -p platforms/android :shopify-checkout:apiDump
               protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiDump
 
   # Swift
@@ -547,24 +617,71 @@ commands:
 
       start:
         desc: Build, install, and run the Swift sample app on a simulator
+        long_desc: |
+          Builds the Swift sample app, installs it on a simulator, and launches it.
+
+          Options:
+            --device ID  Build for, install on and launch on this simulator only.
+                         ID is the UDID of a booted iOS simulator. The command
+                         does not boot it. Without it, the first booted iOS
+                         simulator is used, or one is booted when none is.
+
+          Examples:
+            dev swift start
+            dev swift start --device 00000000-0000-0000-0000-000000000000
+        syntax: "[--device ID]"
         run: |
           set -eo pipefail
           cd platforms/swift
-          ./Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
 
-          DEVICE_ID=$(xcrun simctl list devices booted | awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }')
-          if [ -n "$DEVICE_ID" ]; then
-            echo "Using booted simulator: $DEVICE_ID"
-          else
-            DEVICE_ID=$(./Scripts/get_device_id "iPhone 16" 2>/dev/null || ./Scripts/get_device_id "iPhone" 2>/dev/null || true)
-            if [ -z "$DEVICE_ID" ]; then
-              echo "No iOS simulator found." >&2
+          REQUESTED_DEVICE_ID=""
+          while [ "$#" -gt 0 ]; do
+            case "$1" in
+              --device)
+                REQUESTED_DEVICE_ID="${2:-}"
+                [ -n "$REQUESTED_DEVICE_ID" ] || { echo "--device needs a simulator UDID." >&2; exit 1; }
+                shift 2
+                ;;
+              --device=*)
+                REQUESTED_DEVICE_ID="${1#--device=}"
+                [ -n "$REQUESTED_DEVICE_ID" ] || { echo "--device needs a simulator UDID." >&2; exit 1; }
+                shift
+                ;;
+              *)
+                echo "Unknown argument: $1" >&2
+                echo "Usage: dev swift start [--device ID]" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+          BOOTED_DEVICE_IDS=$(xcrun simctl list devices booted | awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36) }')
+          if [ -n "$REQUESTED_DEVICE_ID" ]; then
+            if ! printf '%s\n' "$BOOTED_DEVICE_IDS" | awk -v udid="$REQUESTED_DEVICE_ID" '$0 == udid { found = 1 } END { exit !found }'; then
+              echo "$REQUESTED_DEVICE_ID is not a booted iOS simulator." >&2
+              echo "Booted iOS simulators:" >&2
+              printf '%s\n' "${BOOTED_DEVICE_IDS:-(none)}" | sed 's/^/  /' >&2
               exit 1
             fi
-            echo "No booted simulator found. Booting simulator: $DEVICE_ID"
-            xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-            xcrun simctl bootstatus "$DEVICE_ID" -b
+            DEVICE_ID="$REQUESTED_DEVICE_ID"
+            echo "Using booted simulator: $DEVICE_ID"
+          else
+            DEVICE_ID="${BOOTED_DEVICE_IDS%%$'\n'*}"
+            if [ -n "$DEVICE_ID" ]; then
+              echo "Using booted simulator: $DEVICE_ID"
+            else
+              DEVICE_ID=$(./Scripts/get_device_id "iPhone 16" 2>/dev/null || ./Scripts/get_device_id "iPhone" 2>/dev/null || true)
+              if [ -z "$DEVICE_ID" ]; then
+                echo "No iOS simulator found." >&2
+                exit 1
+              fi
+              echo "No booted simulator found. Booting simulator: $DEVICE_ID"
+              xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+              xcrun simctl bootstatus "$DEVICE_ID" -b
+            fi
           fi
+
+          ./Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
 
           DERIVED_DATA="$PWD/../../.build/swift-start-simulator"
           cd Samples/CheckoutKitSwiftDemo
@@ -632,11 +749,17 @@ commands:
           all enabled coverage noninteractively. Pass matrix tags to select a
           group or positional YAML files to run exact tests.
 
+          --device ID builds, installs and tests on that simulator only. ID is
+          the UDID of a booted iOS simulator. Without it, the first booted iOS
+          simulator is used. --device does not select tests, so the picker
+          still opens.
+
           Examples:
             dev swift e2e
             dev swift e2e --tags preload
             dev swift e2e tests/shared/launch-smoke.yaml
-        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+            dev swift e2e --device 00000000-0000-0000-0000-000000000000 --tags preload
+        syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
         run: ./e2e/scripts/run_local_e2e swift-ios "$@"
 
       test:
@@ -662,10 +785,11 @@ commands:
       api:
         desc: Validate or update the public Swift API baseline (platforms/swift/api/*.json)
         run: |
-          echo "Usage: dev swift api {check|dump}"
+          echo "Usage: dev swift api {check|dump|diagnose [<ref>]}"
           echo ""
-          echo "  check  Verify public Swift API matches the committed baselines"
-          echo "  dump   Regenerate the Swift API baselines after intentional public API changes"
+          echo "  check     Verify public Swift API matches the committed baselines"
+          echo "  dump      Regenerate the Swift API baselines after intentional public API changes"
+          echo "  diagnose  Summarize baseline changes since <ref> (default origin/main)"
           exit 1
         subcommands:
           check:
@@ -674,6 +798,9 @@ commands:
           dump:
             desc: Regenerate the Swift API baselines after intentional public API changes
             run: cd platforms/swift && ./Scripts/api dump
+          diagnose:
+            desc: "Summarize Swift API baseline changes since a ref. Usage: dev swift api diagnose [<ref>]"
+            run: cd platforms/swift && ./Scripts/api diagnose "$@"
 
       lint:
         desc: Check format and lint issues using SwiftLint and SwiftFormat
@@ -801,10 +928,12 @@ commands:
         long_desc: |
           Runs a React Native application's coverage from the E2E matrix.
           Choose ios or android, then use the interactive picker, matrix tags,
-          or positional YAML files to select coverage.
-        syntax: "{ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+          or positional YAML files to select coverage. --device ID runs on that
+          device only: a booted simulator UDID on iOS, or an adb serial such as
+          emulator-5556 on Android.
+        syntax: "{ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
         run: |
-          echo "Usage: dev rn e2e {ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
+          echo "Usage: dev rn e2e {ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]" >&2
           exit 1
         subcommands:
           ios:
@@ -815,11 +944,17 @@ commands:
               all enabled coverage noninteractively. Pass matrix tags to select a
               group or positional YAML files to run exact tests.
 
+              --device ID builds, installs and tests on that simulator only. ID
+              is the UDID of a booted iOS simulator. Without it, the first booted
+              iOS simulator is used. --device does not select tests, so the
+              picker still opens.
+
               Examples:
                 dev rn e2e ios
                 dev rn e2e ios --tags launch
                 dev rn e2e ios tests/shared/launch-smoke.yaml
-            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+                dev rn e2e ios --device 00000000-0000-0000-0000-000000000000 --tags launch
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
             run: ./e2e/scripts/run_local_e2e react-native-ios "$@"
           android:
             desc: Run React Native Android end-to-end tests
@@ -829,11 +964,17 @@ commands:
               all enabled coverage noninteractively. Pass matrix tags to select a
               group or positional YAML files to run exact tests.
 
+              --device ID builds, installs and tests on that device only. ID is
+              an adb serial, such as emulator-5556, listed in state device by
+              adb devices. Without it, the first device in state device is used.
+              --device does not select tests, so the picker still opens.
+
               Examples:
                 dev rn e2e android
                 dev rn e2e android --tags launch
                 dev rn e2e android tests/shared/launch-smoke.yaml
-            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]"
+                dev rn e2e android --device emulator-5556 --tags launch
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
             run: ./e2e/scripts/run_local_e2e react-native-android "$@"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)

@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 usage() {
   if [ -n "${DEV_COMMAND:-}" ]; then
     cat <<EOF >&2
-Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]
+Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]
 
 Runs the Maestro tests enabled for $TARGET in e2e/config/matrix.yml. Coverage tags
 select enabled behaviors. Positional test files directly select exact flows.
@@ -16,11 +16,15 @@ select enabled behaviors. Positional test files directly select exact flows.
 Options:
   --tags TAG[,TAG...]           Run only tests carrying any of these tags.
   --exclude-tags TAG[,TAG...]   Skip tests carrying any of these tags.
+  --device ID                   Build, install and test on this device only: a booted
+                                simulator UDID on iOS, or an adb serial such as
+                                emulator-5556 on Android. Without it, the first
+                                booted simulator or attached device is used.
 EOF
     return
   fi
 
-  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]]" >&2
+  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]" >&2
 }
 
 configure_target() {
@@ -78,6 +82,31 @@ configure_target() {
 
 parse_arguments() {
   while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --device)
+        REQUESTED_DEVICE_ID="${2:-}"
+        if [ -z "$REQUESTED_DEVICE_ID" ]; then
+          usage
+          echo "--device needs a simulator UDID or an adb serial" >&2
+          exit 1
+        fi
+        shift 2
+        continue
+        ;;
+      --device=*)
+        REQUESTED_DEVICE_ID="${1#--device=}"
+        if [ -z "$REQUESTED_DEVICE_ID" ]; then
+          usage
+          echo "--device needs a simulator UDID or an adb serial" >&2
+          exit 1
+        fi
+        shift
+        continue
+        ;;
+    esac
+
+    # Every argument except --device selects or filters tests, so it bypasses the picker.
+    SELECTOR_COUNT=$((SELECTOR_COUNT + 1))
     case "$1" in
       --tags)
         INCLUDE_TAGS="${2:-}"
@@ -309,10 +338,11 @@ interactive_terminal() {
 print_reproducible_command() {
   printf '\nRunning:\n  %s' "$DEV_COMMAND"
   local test_file
-  for test_file in "${TEST_FILES[@]}"; do
+  for test_file in ${TEST_FILES[@]+"${TEST_FILES[@]}"}; do
     printf ' %q' "$test_file"
   done
   [ "$HAS_EXPLICIT_TAGS" = true ] && printf ' --tags %q' "$INCLUDE_TAGS"
+  [ -n "$REQUESTED_DEVICE_ID" ] && printf ' --device %q' "$REQUESTED_DEVICE_ID"
   printf '\n\n'
 }
 
@@ -402,19 +432,68 @@ prepare_react_native_environment() {
   prepare_e2e_env
 }
 
-booted_ios_simulator() {
+booted_ios_simulators() {
   xcrun simctl list devices booted |
-    awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36); exit }'
+    awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36) }'
 }
 
-attached_android_device() {
-  adb devices | awk '$2 == "device" { print $1; exit }'
+attached_android_devices() {
+  adb devices | awk '$2 == "device" { print $1 }'
+}
+
+device_listed() {
+  local requested="$1"
+  local listed
+
+  while IFS= read -r listed; do
+    [ "$listed" = "$requested" ] && return 0
+  done <<< "$2"
+  return 1
+}
+
+print_unavailable_device() {
+  local available_devices="$1"
+  local device
+
+  case "$PLATFORM" in
+    ios)
+      echo "$REQUESTED_DEVICE_ID is not a booted iOS simulator." >&2
+      echo "Booted iOS simulators:" >&2
+      ;;
+    android)
+      echo "$REQUESTED_DEVICE_ID is not listed by adb devices in state device." >&2
+      echo "Attached Android devices:" >&2
+      ;;
+  esac
+  if [ -z "$available_devices" ]; then
+    echo "  (none)" >&2
+    return
+  fi
+  while IFS= read -r device; do
+    echo "  $device" >&2
+  done <<< "$available_devices"
 }
 
 resolve_device() {
+  local available_devices
+
+  case "$PLATFORM" in
+    ios) available_devices="$(booted_ios_simulators || true)" ;;
+    android) available_devices="$(attached_android_devices || true)" ;;
+  esac
+
+  if [ -n "$REQUESTED_DEVICE_ID" ]; then
+    if ! device_listed "$REQUESTED_DEVICE_ID" "$available_devices"; then
+      print_unavailable_device "$available_devices"
+      return 1
+    fi
+    DEVICE_ID="$REQUESTED_DEVICE_ID"
+  else
+    DEVICE_ID="${available_devices%%$'\n'*}"
+  fi
+
   case "$PLATFORM" in
     ios)
-      DEVICE_ID="$(booted_ios_simulator || true)"
       if [ -z "$DEVICE_ID" ]; then
         echo "No booted iOS simulator found." >&2
         echo "Boot a simulator first, because Maestro drives the device the app runs on." >&2
@@ -423,7 +502,6 @@ resolve_device() {
       echo "Using booted simulator: $DEVICE_ID"
       ;;
     android)
-      DEVICE_ID="$(attached_android_device || true)"
       if [ -z "$DEVICE_ID" ]; then
         echo "No running Android device or emulator found." >&2
         echo "Start an emulator first, because Maestro drives the device the app runs on." >&2
@@ -482,7 +560,8 @@ main() {
 
   configure_target "$1"
   shift
-  SELECTOR_COUNT="$#"
+  SELECTOR_COUNT=0
+  REQUESTED_DEVICE_ID=""
 
   INCLUDE_TAGS=""
   EXCLUDE_TAGS=""

@@ -4,12 +4,13 @@ set -eo pipefail
 # Validate the public Swift API surface against committed baselines.
 #
 # Usage:
-#   ./Scripts/api check   # diff committed baselines vs current sources (CI gate)
-#   ./Scripts/api dump    # regenerate committed baselines from current sources
+#   ./Scripts/api check             # diff committed baselines vs current sources (CI gate)
+#   ./Scripts/api dump              # regenerate committed baselines from current sources
+#   ./Scripts/api diagnose [<ref>]  # summarize baseline changes since <ref> (default origin/main)
 
 SUBCOMMAND="${1:-}"
-if [[ "$SUBCOMMAND" != "check" && "$SUBCOMMAND" != "dump" ]]; then
-    echo "Usage: $0 {check|dump}" >&2
+if [[ "$SUBCOMMAND" != "check" && "$SUBCOMMAND" != "dump" && "$SUBCOMMAND" != "diagnose" ]]; then
+    echo "Usage: $0 {check|dump|diagnose [<ref>]}" >&2
     exit 1
 fi
 
@@ -94,6 +95,55 @@ diagnose_module() {
         -target "$TARGET" \
         2>&1 || true
 }
+
+# Compares committed baselines with those at <ref>, without building. swift-api-digester reads
+# both dumps and reports declarations that were removed, moved, renamed or changed type; an empty
+# report means the baselines only gained declarations.
+diagnose_baselines() {
+    local ref="$1"
+    local workdir
+    workdir="$(mktemp -d)"
+    local status=0
+
+    for module in "${MODULES[@]}"; do
+        local relative="api/$module.json"
+        local previous="$workdir/$module.previous.json"
+        local report="$workdir/$module.report.txt"
+
+        if ! git -C "$SWIFT_ROOT" show "$ref:./$relative" > "$previous" 2>/dev/null; then
+            echo "$module: no baseline at $ref"
+            continue
+        fi
+        if cmp -s "$previous" "$BASELINE_DIR/$module.json"; then
+            echo "$module: unchanged since $ref"
+            continue
+        fi
+
+        xcrun swift-api-digester -diagnose-sdk \
+            -input-paths "$previous" \
+            -input-paths "$BASELINE_DIR/$module.json" \
+            -o "$report" > /dev/null 2>&1 || status=1
+
+        # Keep only the report sections that have entries.
+        local findings
+        findings="$(awk '/^\/\*/ { section = $0; next } NF { if (section != printed) { print section; printed = section } print "  " $0 }' "$report")"
+        if [[ -z "$findings" ]]; then
+            echo "$module: additions only since $ref"
+        else
+            echo "$module: changes since $ref"
+            echo "$findings"
+        fi
+        echo ""
+    done
+
+    rm -rf "$workdir"
+    return "$status"
+}
+
+if [[ "$SUBCOMMAND" == "diagnose" ]]; then
+    diagnose_baselines "${2:-origin/main}"
+    exit $?
+fi
 
 echo "Building $PACKAGE_ROOT to produce .swiftmodule files for swift-api-digester..."
 build_for_digester

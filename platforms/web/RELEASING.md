@@ -9,25 +9,16 @@ the package is published to npm with SLSA provenance.
 
 ## Day-to-day: publishing a release
 
-### 1. Bump the version (in a PR)
+### 1. Merge the release PR
 
-```bash
-cd platforms/web
-pnpm version <new-version> --no-git-tag-version
-```
+Maintainers prepare the Web release pull request with `pnpm changeset web version`
+from the repository root. It bumps `version` in `package.json` and adds the
+release's notes to [`CHANGELOG.md`](./CHANGELOG.md). Don't bump the version by
+hand. See
+[Versions and release notes](../../.github/CONTRIBUTING.md#versions-and-release-notes).
 
-Use a [semver](https://semver.org/) string. Examples:
-
-- `4.0.0-alpha.4` — next alpha prerelease
-- `4.0.0-beta.1` — first beta
-- `4.0.0-rc.1` — release candidate
-- `4.0.0` — stable
-
-`--no-git-tag-version` is intentional — the tag is created by the GitHub
-Release UI in step 2, not by `pnpm version`.
-
-Open a PR titled like `chore(web): bump to 4.0.0-alpha.4`. Get it reviewed
-and merged into `main`. Wait for CI to be green on `main`.
+Get the pull request reviewed and merged into `main`. Wait for CI to be green on
+`main`.
 
 ### 2. Draft a GitHub Release
 
@@ -35,8 +26,9 @@ Go to <https://github.com/Shopify/checkout-kit/releases/new>:
 
 - **Tag**: `web/<version>` — e.g. `web/4.0.0-alpha.4`. Create the tag from `main`.
 - **Title**: `Web <version>` — e.g. `Web 4.0.0-alpha.4`.
-- **Notes**: click _Generate release notes_ and edit as needed. Highlight
-  any breaking changes at the top.
+- **Notes**: click _Generate release notes_, then paste the version's section
+  from [`CHANGELOG.md`](./CHANGELOG.md), without its `## <version>` heading,
+  above the generated pull request list. Highlight any breaking changes at the top.
 - **Set as a pre-release**: ✅ check this box for any version containing
   `-alpha`, `-beta`, or `-rc`. Leave unchecked for stable releases.
 - **Set as the latest release**: ✅ check for stable releases only. Don't

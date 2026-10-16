@@ -1,0 +1,27 @@
+// Consumer-compatibility check for the Kotlin protocol package: code written the way apps and
+// hosts use the models, compiled and run against the protocol module as an included build.
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+    versionCatalogs {
+        libs {
+            from(files('../../../../../platforms/android/gradle/libs.versions.toml'))
+        }
+    }
+}
+
+rootProject.name = "protocol-compat-consumer"
+
+includeBuild('../../languages/kotlin') {
+    dependencySubstitution {
+        substitute module('com.shopify:embedded-checkout-protocol') using project(':embedded-checkout-protocol')
+    }
+}

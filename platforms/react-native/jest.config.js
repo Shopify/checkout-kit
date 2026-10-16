@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'react-native',
+  preset: '@react-native/jest-preset',
   modulePathIgnorePatterns: ['<rootDir>/lib/'],
   modulePaths: ['<rootDir>/node_modules', '<rootDir>/sample/node_modules'],
   moduleNameMapper: {
@@ -30,12 +30,5 @@ module.exports = {
   },
   transform: {
     '\\.[jt]sx?$': 'babel-jest',
-  },
-  globals: {
-    'ts-jest': {
-      tsConfig: {
-        importHelpers: true,
-      },
-    },
   },
 };

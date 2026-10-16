@@ -1,4 +1,4 @@
-import EmbeddedCheckoutProtocol
+@testable import EmbeddedCheckoutProtocol
 @testable import ShopifyCheckoutKit
 import XCTest
 
