@@ -6,6 +6,7 @@ require "json"
 require "optparse"
 require_relative "../lib/browserstack_client"
 require_relative "../lib/browserstack_device_resolver"
+require_relative "../lib/browserstack_test_results"
 
 # Executes one row from the BrowserStack run plan, from artifact upload through
 # build polling and normalized result persistence.
@@ -130,6 +131,7 @@ class BrowserStackRunExecutor
     log_build_started(@build.fetch("build_id"))
     build_status, sessions = poll_build(@build.fetch("build_id"))
     sessions = fetch_sessions(build_status) if sessions.empty?
+    write_json("sessions.json", sessions)
     result = normalize_result(@run, @device, @app, @suite, @build, build_status, sessions)
     write_json("result.json", result)
     log_completion(result, build_status, sessions)
@@ -234,11 +236,7 @@ class BrowserStackRunExecutor
 
   def normalize_result(run, device, app, suite, build, build_status, sessions)
     status = build_status.fetch("status").to_s.downcase
-    failed_tests = sessions.flat_map do |session|
-      session.dig("testcases", "data").to_a.flat_map do |group|
-        group.fetch("testcases", []).select { |testcase| testcase.fetch("status", "") != "passed" }
-      end
-    end
+    tests = BrowserStackTestResults.new(build_status, sessions, retries: @test_retries)
 
     {
       "id" => run.fetch("id"),
@@ -258,8 +256,9 @@ class BrowserStackRunExecutor
       "test_suite_url" => suite.fetch("test_suite_url"),
       "build_id" => build.fetch("build_id"),
       "status" => status,
-      "passed" => %w[completed passed].include?(status) && failed_tests.empty?,
-      "failed_tests" => failed_tests
+      "passed" => tests.passed?,
+      "failed_tests" => tests.failed_tests,
+      "retried_tests" => tests.retried_tests
     }
   end
 
@@ -408,8 +407,9 @@ class BrowserStackRunExecutor
       "",
       "Status:           #{result.fetch("status")}",
       "Duration:         #{format_duration(build_status.fetch("duration", 0) || 0)}s",
-      "Tests:            #{counts.fetch("passed")} passed, #{counts.fetch("failed")} failed, " \
+      "Attempts:         #{counts.fetch("passed")} passed, #{counts.fetch("failed")} failed, " \
         "#{counts.fetch("skipped")} skipped, #{counts.fetch("timedout")} timed out, #{counts.fetch("error")} errors",
+      "Passed on retry:  #{result.fetch("retried_tests", []).length} flow(s)",
       "Dashboard:        #{BrowserStackClient.build_url(result.fetch("build_id"))}"
     )
   end

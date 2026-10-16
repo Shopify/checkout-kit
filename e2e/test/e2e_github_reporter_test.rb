@@ -143,6 +143,62 @@ class E2EGitHubReporterTest < Minitest::Test
     refute_includes check.dig(:output, :summary), "No native E2E runs were selected"
   end
 
+  def reusable_swift_run
+    swift_ios_run.merge(
+      "input_fingerprint" => "a" * 64,
+      "reused_result" => {
+        "id" => swift_ios_run.fetch("id"), "fingerprint" => "a" * 64,
+        "passed_at" => "2026-10-16T10:00:00Z", "source_sha" => "b" * 40,
+        "source_url" => E2E_PIPELINE_URL
+      }
+    )
+  end
+
+  def test_reused_pass_completes_the_required_check_and_links_to_its_original_run
+    run = reusable_swift_run
+    report = reporter(
+      expected: 1, run_plan: [run],
+      stages: stage_roster(workflow("e2e-build-swift-ios", status: "", external_id: ""))
+    )
+    check = report.check_run_payload
+
+    assert_equal "success", check.fetch(:conclusion)
+    assert_includes check.dig(:output, :summary), "Reused passing results"
+    assert_includes check.dig(:output, :summary), "[original run](#{E2E_PIPELINE_URL})"
+    refute_includes report.comment_body, "## Install this build"
+    refute_includes check.dig(:output, :summary), "did not report"
+    # Carry the original time and provenance forward; a chain of docs commits
+    # must not keep an old pass alive indefinitely.
+    assert_equal [run.fetch("reused_result")], JSON.parse(check.dig(:output, :text)).fetch("runs")
+  end
+
+  def test_reused_pass_does_not_hide_missing_failed_or_duplicate_fresh_results
+    fresh = react_native_ios_run.merge("input_fingerprint" => "c" * 64)
+    [[], [fresh.merge("passed" => false)], [reusable_swift_run.merge("passed" => true)]].each do |results|
+      report = reporter(expected: 2, run_plan: [reusable_swift_run, fresh], results: results)
+
+      assert_equal "failure", report.check_run_payload.fetch(:conclusion)
+      manifest = JSON.parse(report.check_run_payload.dig(:output, :text))
+      assert_equal [reusable_swift_run.fetch("reused_result")], manifest.fetch("runs")
+    end
+  end
+
+  def test_only_an_actual_matching_success_is_published_for_future_reuse
+    run = swift_ios_run.merge("input_fingerprint" => "a" * 64)
+    report = reporter(expected: 1, run_plan: [run], results: [run.merge("passed" => true)], pipeline_url: E2E_PIPELINE_URL)
+    manifest = JSON.parse(report.check_run_payload.dig(:output, :text))
+
+    assert_equal 1, manifest.fetch("version")
+    assert_equal 1, manifest.fetch("pr_number")
+    assert_equal run.fetch("input_fingerprint"), manifest.fetch("runs").first.fetch("fingerprint")
+    assert_equal E2E_PIPELINE_URL, manifest.fetch("runs").first.fetch("source_url")
+
+    [[], [run.merge("passed" => false)], [run.merge("passed" => true, "id" => "other")], [run.merge("passed" => true)] * 2].each do |results|
+      manifest = JSON.parse(reporter(expected: 1, run_plan: [run], results: results).check_run_payload.dig(:output, :text))
+      assert_empty manifest.fetch("runs")
+    end
+  end
+
   def test_install_table_lists_every_produced_target
     body = reporter(results: [result("react-native"), result("swift"), result("kotlin")]).comment_body
 
@@ -286,6 +342,19 @@ class E2EGitHubReporterTest < Minitest::Test
     ).markdown_summary
 
     refute_includes summary, "did not report"
+  end
+
+  def test_passing_retries_are_visible_without_failing_the_check
+    result = swift_ios_run.merge(
+      "passed" => true, "build_id" => "retry-build", "failed_tests" => [],
+      "retried_tests" => [{"name" => "checkout", "attempts" => []}]
+    )
+    payload = reporter(results: [result], expected: 1).check_run_payload
+
+    assert_equal "success", payload.fetch(:conclusion)
+    assert_includes payload.dig(:output, :summary), "Passed on retry: `checkout` (swift-ios)"
+    assert_includes payload.dig(:output, :summary), "/builds/retry-build"
+    refute_includes payload.dig(:output, :summary), "## Failures"
   end
 
   def test_failure_heading_names_the_target

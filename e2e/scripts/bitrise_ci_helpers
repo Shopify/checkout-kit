@@ -25,6 +25,17 @@ e2e_has_pull_request() {
   [ -n "${BITRISE_PULL_REQUEST:-}" ] && [ "$BITRISE_PULL_REQUEST" != "false" ] && [ "$BITRISE_PULL_REQUEST" != "0" ]
 }
 
+# git-clone@8 exports the fetched PR head, which can differ from the trigger
+# commit when an old build is rerun after a rebase. Keep the pipeline definition,
+# tested code and GitHub report tied to the same commit; never silently retarget.
+e2e_assert_pr_checkout() {
+  if e2e_has_pull_request && [ -n "${GIT_CLONE_COMMIT_HASH:-}" ] && [ "${BITRISE_GIT_COMMIT:-}" != "$GIT_CLONE_COMMIT_HASH" ]; then
+    printf 'Stale PR build: trigger commit %s differs from the cloned PR head %s. Start a fresh build for the current PR head instead of rerunning this build.\n' \
+      "${BITRISE_GIT_COMMIT:-<unset>}" "$GIT_CLONE_COMMIT_HASH" >&2
+    return 1
+  fi
+}
+
 # Writes the changed file list and prints its path. Two gates read it — the E2E matrix
 # and the iOS CI run plan — and a second copy of this derivation would let them select
 # different work from the same commit.
@@ -33,6 +44,7 @@ e2e_has_pull_request() {
 # authoritative source for the PR's changed files. Non-PR runs select every tracked
 # file so manually starting a pipeline against a branch runs every applicable job.
 e2e_changed_files_file() {
+  e2e_assert_pr_checkout || return
   local changed_files
   changed_files="$(mktemp "${TMPDIR:-/tmp}/checkout-kit-changed-files.XXXXXX")"
   if e2e_has_pull_request; then
@@ -48,19 +60,21 @@ e2e_changed_files_file() {
 # from the merged tree. A stale branch can select a job whose workflow does not exist in
 # the graph, which fails cryptically later. Comparing against this copy fails fast.
 e2e_branch_bitrise_config() {
+  e2e_assert_pr_checkout || return
   local branch_config
   branch_config="$(e2e_deploy_dir)/branch-bitrise.yml"
-  if [ -z "${BITRISE_PULL_REQUEST:-}" ]; then
+  if ! e2e_has_pull_request; then
     cp e2e/bitrise.yml "$branch_config"
   elif [ -z "${BITRISE_GIT_COMMIT:-}" ] || ! git show "${BITRISE_GIT_COMMIT}:e2e/bitrise.yml" > "$branch_config" 2>/dev/null; then
     rm -f "$branch_config"
-    printf '%s\n' "Unable to read e2e/bitrise.yml from the pull request branch head. Rebase on main and push the branch again." >&2
+    printf '%s\n' "Unable to read e2e/bitrise.yml from the trigger commit. Start a fresh build for the current PR head; rerunning a build from before a rebase can reference an unavailable commit." >&2
     return 1
   fi
   printf '%s\n' "$branch_config"
 }
 
 e2e_export_github_token() {
+  e2e_assert_pr_checkout || return
   if ! e2e_has_pull_request; then
     e2e_log "No pull request associated with this build; skipping GitHub reporting configuration"
     return

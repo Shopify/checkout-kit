@@ -135,6 +135,37 @@ matrix support, `e2e/lib/e2e_matrix_to_browserstack_run_plan.rb` transforms the
 matrix into a BrowserStack run plan and the pipeline parallelizes over the
 resulting rows.
 
+For pull requests, `scripts/plan_e2e_runs` also reuses passing results from the
+latest E2E report on the current or immediately preceding PR commit. Each row
+fingerprints its tracked inputs in the checked-out merge tree, including file
+paths and modes, dependencies, shared build scripts, encrypted storefront
+configuration, tests, the pipeline definition, and device/Maestro overrides.
+Changes from the base branch therefore invalidate affected results too. An
+Android-only follow-up can reuse Swift's pass; documentation-only follow-ups
+can reuse every unchanged target.
+
+Reused targets skip their app builds and BrowserStack runs. The required check
+still reports, linking each reused target to its original run. Only passing rows
+with matching fingerprints from Bitrise reports on the same PR qualify. Failed
+or missing rows run again. Missing history, older reports without fingerprints,
+and lookup errors also run tests normally.
+
+Passes expire 24 hours after the original run so changes outside the repository
+eventually get fresh coverage. Reusing a pass does not extend that time. Set
+`E2E_FORCE_RUN=true` when starting a Bitrise build to bypass reuse. Builds without
+a pull request always run the selected targets.
+
+BrowserStack retries failed flows once by default. A passing retry clears the
+earlier assertion failure for that flow, and the GitHub report identifies flows
+that passed on retry. Missing results, interrupted sessions, and infrastructure
+errors still fail the run. Raw session details and every recovered attempt's
+artifacts are retained in the result bundle.
+
+After rebasing or force-pushing a PR, start a fresh Bitrise build for its current
+head instead of rerunning an older build. Bitrise can retain the old trigger
+commit while cloning the new PR head. Planning and reporting reject that mismatch
+so results cannot be attributed to code that was not tested.
+
 Current applications:
 
 - React Native iOS sample app

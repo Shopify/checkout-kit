@@ -61,6 +61,13 @@ e2e:
   - *exclude-docs-directory
 ciFilters:
   - '.ci/changed-file-filters.yml'
+# Shared build tools, dependency pins, and encrypted storefront configuration.
+e2eBuildInputs:
+  - '*'
+  - 'scripts/**'
+  - 'config/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
 # The macOS CI gate on Bitrise. Narrower than the e2e filter on purpose: these files
 # decide which macOS jobs run, so a change to one has to rerun them all, while a Maestro
 # flow edit under e2e/ must not.
