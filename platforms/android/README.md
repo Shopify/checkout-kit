@@ -6,7 +6,7 @@ The Android build separates internal feature modules from the SDK publication:
 - `shopify-checkout-kit/` bundles internal modules using AGP's fused-library plugin and publishes `com.shopify:checkout-kit`.
 - `build-logic/` supplies the `shopify.android-feature` convention plugin; shared compiler, lint and test settings live here.
 
-Feature modules use lowercase, hyphenated Gradle project names and conventional `src/main` and `src/test` source sets. Kotlin/Java package names remain lowercase dot-separated names. This restructuring preserves existing imports and behavior. The demo uses the feature from source; the publication consumer under `tests/publication` exercises the single Maven artifact. Embedded Checkout Protocol remains an external, independently published dependency.
+Feature modules use lowercase, hyphenated Gradle project names and conventional `src/main` and `src/test` source sets. Public checkout APIs now live in `com.shopify.checkoutkit.checkout`; update imports from earlier alphas accordingly. The demo uses the feature from source; the publication consumer under `tests/publication` exercises the single Maven artifact. Embedded Checkout Protocol remains an external, independently published dependency.
 
 To add another feature, apply `shopify.android-feature`, set its unique Android namespace, declare its dependencies, include it in `settings.gradle`, and add it to the bundle's `include` dependencies. Keep feature implementation details `internal`; share APIs through declared Gradle dependencies. Features do not apply `maven-publish`.
 
@@ -18,7 +18,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 > [!WARNING]
 > **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.8`.
+> production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.9`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
 **Checkout Kit for Android** lets Android apps present Shopify checkout in a native bottom sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
@@ -61,7 +61,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 ## Install
 
-For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.8`.
+For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.9`.
 
 The checkout event API in `4.0.0-alpha.7` replaces the protocol-client API in `4.0.0-alpha.6`;
 see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) when upgrading.
@@ -70,7 +70,7 @@ see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) wh
 
 ```groovy
 dependencies {
-    implementation "com.shopify:checkout-kit:4.0.0-alpha.8"
+    implementation "com.shopify:checkout-kit:4.0.0-alpha.9"
 }
 ```
 
@@ -80,7 +80,7 @@ dependencies {
 <dependency>
   <groupId>com.shopify</groupId>
   <artifactId>checkout-kit</artifactId>
-  <version>4.0.0-alpha.8</version>
+  <version>4.0.0-alpha.9</version>
 </dependency>
 ```
 
