@@ -1,0 +1,42 @@
+diff --git a/QuickCrypto.podspec b/QuickCrypto.podspec
+index 72abe7ee49c73dcdfb5108950ab44fe19031b335..7d4c43b6492604e03c0d7e4ec8aa5cd0ecd5c7b8 100644
+--- a/QuickCrypto.podspec
++++ b/QuickCrypto.podspec
+@@ -203,17 +203,15 @@ Pod::Spec.new do |s|
+ 
+   # Every translation unit calls the renamed OpenSSL symbols. Missing a rename
+   # is a link error, never a silent bind to a foreign OpenSSL.
+-  openssl_include = File.join(openssl_dir, "include")
+-  force_include = "-include \"#{openssl_prefix_header}\""
++  # Keep build settings independent of the checkout path so CocoaPods checksums
++  # match on developer machines and CI. Xcode resolves the pod root at build time.
++  force_include = '-include "$(PODS_TARGET_SRCROOT)/ios/openssl/quickcrypto_openssl_prefix.h"'
+   xcconfig["OTHER_CFLAGS"] = "$(inherited) #{force_include}"
+   xcconfig["OTHER_CPLUSPLUSFLAGS"] = "$(inherited) #{force_include}"
+ 
+   # Add cpp subdirectories to header search paths
+   cpp_headers = [
+-    # Absolute path as well as the pod-relative one: in monorepos the podspec is
+-    # reached through a symlink but sources resolve to their real paths.
+     "\"$(PODS_TARGET_SRCROOT)/ios/openssl/include\"",
+-    "\"#{openssl_include}\"",
+     "\"$(PODS_TARGET_SRCROOT)/cpp/utils\"",
+     "\"$(PODS_TARGET_SRCROOT)/cpp/hkdf\"",
+     "\"$(PODS_TARGET_SRCROOT)/cpp/dh\"",
+@@ -228,15 +226,9 @@ Pod::Spec.new do |s|
+   ]
+ 
+   if sodium_enabled
+-    # Use absolute path from __dir__ which resolves symlinks correctly.
+-    # This is necessary in monorepo setups where the podspec is accessed via symlink
+-    # but the source files are resolved to their real paths during compilation.
+-    real_sodium_include = File.join(__dir__, "ios", "libsodium-stable", "src", "libsodium", "include")
+     sodium_headers = [
+       "\"$(PODS_TARGET_SRCROOT)/ios/libsodium-stable/src/libsodium/include\"",
+-      "\"$(PODS_TARGET_SRCROOT)/ios/libsodium-stable/src/libsodium/include/sodium\"",
+-      "\"#{real_sodium_include}\"",
+-      "\"#{real_sodium_include}/sodium\""
++      "\"$(PODS_TARGET_SRCROOT)/ios/libsodium-stable/src/libsodium/include/sodium\""
+     ]
+     xcconfig["HEADER_SEARCH_PATHS"] = (cpp_headers + sodium_headers).join(' ')
+     xcconfig["GCC_PREPROCESSOR_DEFINITIONS"] = "$(inherited) FOLLY_NO_CONFIG FOLLY_CFG_NO_COROUTINES BLSALLOC_SODIUM=1"
