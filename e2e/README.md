@@ -219,6 +219,11 @@ these markers:
 only after the app parsed the link, resolved a variant, created a cart, added the
 line, and navigated to the cart.
 
+The checkout close button uses `checkout_close_button` in the Android SDK source
+and `shopify_checkout_kit_close_button` in Swift and older published Android SDKs.
+The shared close and dismissal flows match both identifiers because the Kotlin
+sample builds from source while React Native consumes the published native SDKs.
+
 `flows/app/bootstrap-cart-from-link.yaml` takes `E2E_CART_PARAMS`, the query string
 for the `cart` command. A test that does not care about buyer identity omits
 `buyerIdentityMode` and keeps the app's configured mode.
