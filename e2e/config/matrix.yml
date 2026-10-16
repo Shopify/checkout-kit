@@ -25,6 +25,7 @@ applications:
       - protocolShared
       - e2e
       - ciFilters
+      - e2eBuildInputs
   - id: react-native-android
     target: react-native
     platform: android
@@ -37,6 +38,7 @@ applications:
       - protocolShared
       - e2e
       - ciFilters
+      - e2eBuildInputs
   - id: kotlin-android
     target: kotlin
     platform: android
@@ -53,6 +55,7 @@ applications:
       - protocolShared
       - e2e
       - ciFilters
+      - e2eBuildInputs
   - id: swift-ios
     target: swift
     platform: ios
@@ -68,5 +71,6 @@ applications:
       - packageSwift
       - e2e
       - ciFilters
+      - e2eBuildInputs
 os_version_tags:
   - latest

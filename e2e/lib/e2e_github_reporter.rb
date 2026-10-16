@@ -2,7 +2,9 @@
 
 require "json"
 require "uri"
+require "time"
 require_relative "browserstack_client"
+require_relative "e2e_result_reuse"
 require_relative "../../scripts/lib/json_http_client"
 
 # Publishes normalized E2E run results back to GitHub as a check run and a
@@ -27,6 +29,7 @@ class E2EGitHubReporter
     @targets = targets
     @expected = expected
     @run_plan = run_plan || []
+    @reused_runs = @run_plan.select { |run| run["reused_result"] }
     @stages = stages
     @pipeline_url = pipeline_url
     @pipeline_urls = {"E2E" => pipeline_url}
@@ -63,6 +66,22 @@ class E2EGitHubReporter
     lines << ""
     lines << "No native E2E runs were selected for this change." if @expected == 0 && @results.empty?
     lines.concat(results_table) unless @results.empty?
+    @results.each do |result|
+      result.fetch("retried_tests", []).each do |test|
+        lines << ""
+        lines << "Passed on retry: `#{test.fetch("name")}` (#{result["application_id"] || result["target"]}). " \
+          "[View attempts](#{browserstack_build_url(result)})."
+      end
+    end
+    unless @reused_runs.empty?
+      lines << "" unless lines.last == ""
+      lines << "Reused passing results because the E2E inputs are unchanged:"
+      lines << ""
+      @reused_runs.each do |run|
+        source = run.fetch("reused_result")
+        lines << "- #{missing_run_label(run)} — [original run](#{source.fetch("source_url")}) (`#{source.fetch("source_sha")[0, 7]}`)"
+      end
+    end
     unless complete?
       lines << "" unless @results.empty?
       lines.concat(completeness_lines)
@@ -89,12 +108,35 @@ class E2EGitHubReporter
       conclusion: conclusion,
       output: {
         title: check_run_title,
-        summary: markdown_summary
+        summary: markdown_summary,
+        text: JSON.generate(reuse_manifest)
       }
     }
   end
 
   private
+
+  def reuse_manifest
+    runs = @run_plan.filter_map do |run|
+      next unless run["input_fingerprint"]
+
+      if run["reused_result"]
+        run.fetch("reused_result")
+      else
+        results = @results.select { |result| result["id"] == run["id"] }
+        next unless results.length == 1 && results.first["passed"] == true
+
+        {
+          "id" => run.fetch("id"),
+          "fingerprint" => run.fetch("input_fingerprint"),
+          "passed_at" => Time.now.utc.iso8601,
+          "source_sha" => @sha,
+          "source_url" => @pipeline_url || "https://github.com/#{@repository}/commit/#{@sha}"
+        }
+      end
+    end
+    {"version" => E2EResultReuse::VERSION, "pr_number" => @pr_number, "runs" => runs}
+  end
 
   def load_pipeline_urls
     PIPELINE_CHECKS.each do |label, check_name|
@@ -163,7 +205,7 @@ class E2EGitHubReporter
   def shortfall_lines
     lines = []
     lines << "> [!WARNING]"
-    lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{@results.length} — #{missing_count} did not report. Missing runs count as failures until every run reports."
+    lines << "> Expected #{@expected} run#{@expected == 1 ? "" : "s"}, received #{reported_count} — #{missing_count} did not report. Missing runs count as failures until every run reports."
     lines.concat(missing_run_lines)
     unless blocking_stages.empty?
       lines << ">"
@@ -175,7 +217,7 @@ class E2EGitHubReporter
   end
 
   def blocked?
-    @results.empty? && !blocking_stages.empty?
+    reported_count.zero? && !blocking_stages.empty?
   end
 
   def blocking_stages
@@ -194,7 +236,10 @@ class E2EGitHubReporter
   def expected_stage_names
     return [] if @expected == 0
 
-    application_ids = @run_plan.map { |run| run["application_id"] }.compact.uniq
+    pending = @run_plan.reject { |run| run["reused_result"] }
+    return [] if pending.empty?
+
+    application_ids = pending.map { |run| run["application_id"] }.compact.uniq
     application_ids.map { |application_id| "e2e-build-#{application_id}" } + [EXECUTE_STAGE_NAME]
   end
 
@@ -263,11 +308,18 @@ class E2EGitHubReporter
   end
 
   def complete?
-    @expected.nil? || @results.length >= @expected
+    @expected.nil? || reported_count >= @expected
+  end
+
+  def reported_count
+    return @results.length if @run_plan.empty?
+
+    reported_ids = (@results + @reused_runs).map { |result| result["id"] }
+    (@run_plan.map { |run| run["id"] } & reported_ids).length
   end
 
   def missing_runs
-    reported_ids = @results.map { |result| result["id"] }.compact
+    reported_ids = (@results + @reused_runs).map { |result| result["id"] }.compact
     @run_plan.reject { |run| reported_ids.include?(run["id"]) }
   end
 
@@ -278,7 +330,7 @@ class E2EGitHubReporter
   def missing_count
     return 0 if @expected.nil?
 
-    [@expected - @results.length, 0].max
+    [@expected - reported_count, 0].max
   end
 
   def sync_comment

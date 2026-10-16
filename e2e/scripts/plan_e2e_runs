@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require_relative "../lib/e2e_matrix_to_browserstack_run_plan"
+require_relative "../lib/e2e_result_reuse"
+require_relative "../lib/github_token"
+
+options = {}
+OptionParser.new do |opts|
+  opts.on("--changed-files-file PATH") { |path| options[:changed_files] = path }
+  opts.on("--pipeline-config PATH") { |path| options[:pipeline_config] = path }
+  opts.on("--output-dir PATH") { |path| options[:output_dir] = path }
+end.parse!
+
+repo_root = File.expand_path("../..", __dir__)
+matrix = E2EMatrixToBrowserStackRunPlan.load(
+  File.join(repo_root, "e2e/config/matrix.yml"),
+  changed_files: File.readlines(options.fetch(:changed_files), chomp: true)
+)
+runs = E2EResultReuse.new(
+  matrix: matrix,
+  repo_root: repo_root,
+  repository: ENV.fetch("GITHUB_REPOSITORY", "Shopify/checkout-kit"),
+  pr_number: ENV["BITRISE_PULL_REQUEST"],
+  sha: ENV["BITRISE_GIT_COMMIT"],
+  token: GitHubToken.resolve,
+  pipeline_config: options.fetch(:pipeline_config)
+).apply(matrix.expand)
+
+output_dir = options.fetch(:output_dir)
+pending = runs.reject { |run| run["reused_result"] }
+File.write(File.join(output_dir, "browserstack-run-plan.json"), JSON.pretty_generate(pending))
+File.write(File.join(output_dir, "e2e-report-run-plan.json"), JSON.pretty_generate(runs))
+File.write(File.join(output_dir, "e2e-bitrise-env.txt"), matrix.bitrise_env(runs: runs).map { |key, value| "#{key}=#{value}\n" }.join)
+puts "E2E plan: #{pending.length} run(s), #{runs.length - pending.length} reused passing result(s)"

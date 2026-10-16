@@ -81,18 +81,26 @@ class E2EMatrixToBrowserStackRunPlan
     }
   end
 
-  def bitrise_env
+  def bitrise_env(runs: expand)
     ensure_valid!
-    selected_ids = selected_applications.map { |application| application.fetch("id") }
+    pending = runs.reject { |run| run["reused_result"] }
+    selected_ids = pending.map { |run| run.fetch("application_id") }
     env = {
-      "E2E_BROWSERSTACK_RUN_PLAN_COUNT" => count.to_s,
-      "E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT" => [count, 1].max.to_s,
-      "E2E_HAS_E2E_RUNS" => count.positive?.to_s
+      "E2E_BROWSERSTACK_RUN_PLAN_COUNT" => runs.length.to_s,
+      "E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT" => [pending.length, 1].max.to_s,
+      "E2E_HAS_E2E_RUNS" => pending.any?.to_s
     }
     applications.each do |application|
       env[build_env_key(application.fetch("id"))] = selected_ids.include?(application.fetch("id")).to_s
     end
     env
+  end
+
+  def input_file?(application_id, path)
+    application = applications.find { |candidate| candidate.fetch("id") == application_id }
+    raise KeyError, "unknown E2E application #{application_id}" unless application
+
+    changed_file_filters.match?(application_changed_file_filter_names(application), [path])
   end
 
   def missing_build_workflows(available_workflow_names)

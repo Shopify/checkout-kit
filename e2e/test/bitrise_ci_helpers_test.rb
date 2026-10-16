@@ -72,7 +72,7 @@ class BitriseCIHelpersTest < Minitest::Test
       )
 
       refute status.success?
-      assert_includes error, "Rebase on main"
+      assert_includes error, "Start a fresh build for the current PR head"
     end
   end
 
@@ -87,12 +87,62 @@ class BitriseCIHelpersTest < Minitest::Test
     end
   end
 
+  def test_stale_reruns_stop_planning_and_reporting_even_inside_command_substitution
+    %w[e2e_changed_files_file e2e_branch_bitrise_config e2e_export_github_token].each do |helper|
+      Dir.mktmpdir do |directory|
+        output, error, status = run_helper(
+          "result=\"$(#{helper})\"; echo continued",
+          "BITRISE_DEPLOY_DIR" => directory,
+          "BITRISE_PULL_REQUEST" => "123",
+          "BITRISE_GIT_COMMIT" => "a" * 40,
+          "GIT_CLONE_COMMIT_HASH" => "b" * 40
+        )
+
+        refute status.success?, helper
+        refute_includes output, "continued"
+        assert_includes error, "Stale PR build"
+        assert_includes error, "Start a fresh build"
+        refute File.exist?(File.join(directory, "e2e", "branch-bitrise.yml"))
+      end
+    end
+  end
+
+  def test_matching_trigger_and_cloned_head_are_allowed
+    Dir.mktmpdir do |directory|
+      _output, error, status = run_helper(
+        "e2e_assert_pr_checkout",
+        "BITRISE_DEPLOY_DIR" => directory,
+        "BITRISE_PULL_REQUEST" => "123",
+        "BITRISE_GIT_COMMIT" => "a" * 40,
+        "GIT_CLONE_COMMIT_HASH" => "a" * 40
+      )
+
+      assert status.success?, error
+    end
+  end
+
+  def test_false_and_zero_pr_values_use_the_checked_out_config
+    %w[false 0].each do |value|
+      Dir.mktmpdir do |directory|
+        output, error, status = run_helper(
+          'config="$(e2e_branch_bitrise_config)"; cmp e2e/bitrise.yml "$config"',
+          "BITRISE_DEPLOY_DIR" => directory,
+          "BITRISE_PULL_REQUEST" => value,
+          "BITRISE_GIT_COMMIT" => "old-commit",
+          "GIT_CLONE_COMMIT_HASH" => "new-commit"
+        )
+
+        assert status.success?, "#{output}#{error}"
+      end
+    end
+  end
+
   private
 
   def run_helper(command, environment)
     FileUtils.mkdir_p(environment.fetch("BITRISE_DEPLOY_DIR"))
     Open3.capture3(
-      environment,
+      {"BITRISE_PULL_REQUEST" => nil, "BITRISE_GIT_COMMIT" => nil, "GIT_CLONE_COMMIT_HASH" => nil}.merge(environment),
       "bash",
       "-c",
       'source "$1"; eval "$2"',

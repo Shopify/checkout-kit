@@ -15,7 +15,7 @@ options = {
   token: GitHubToken.resolve,
   branch: ENV["BITRISE_GIT_BRANCH"],
   expected: ENV["E2E_BROWSERSTACK_RUN_PLAN_COUNT"],
-  run_plan: ENV["E2E_BROWSERSTACK_RUN_PLAN_JSON"],
+  run_plan: ENV["E2E_REPORT_RUN_PLAN_JSON"] || ENV["E2E_BROWSERSTACK_RUN_PLAN_JSON"],
   finished_workflows: ENV["BITRISEIO_FINISHED_WORKFLOWS"],
   pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]
 }

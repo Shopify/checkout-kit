@@ -298,6 +298,23 @@ class E2EMatrixToBrowserStackRunPlanTest < Minitest::Test
     assert_equal "E2E_BUILD_SWIFT_IOS", plan.send(:build_env_key, "swift-ios")
   end
 
+  def test_shared_build_inputs_select_all_applications
+    %w[scripts/setup_storefront_env config/secrets/e2e.ejson .ruby-version ShopifyCheckoutKit.podspec].each do |path|
+      run_plan = E2EMatrixToBrowserStackRunPlan.load(MATRIX_PATH, changed_files: [path])
+
+      assert_equal 4, run_plan.selected_applications.length, path
+    end
+  end
+
+  def test_reporter_downloads_the_plan_even_when_every_result_is_reused
+    config = YAML.safe_load_file(File.expand_path("../bitrise.yml", __dir__), aliases: true)
+    steps = config.fetch("workflows").fetch("e2e-report").fetch("steps")
+    download = steps.find { |step| step.key?("pull-intermediate-files@1") }.fetch("pull-intermediate-files@1")
+
+    refute download.key?("run_if")
+    assert_includes download.fetch("inputs").first.fetch("artifact_sources"), "e2e-produce-browserstack-run-plan"
+  end
+
   def test_application_changed_file_filter_names_prefers_plural
     application = {"changed_files_filters" => ["reactNative", "e2e"]}
 

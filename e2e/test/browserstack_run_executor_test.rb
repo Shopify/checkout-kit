@@ -2,6 +2,7 @@
 
 require "minitest/autorun"
 require "tmpdir"
+require "stringio"
 load File.expand_path("../scripts/execute_browserstack_run", __dir__)
 
 class BrowserStackRunExecutorTest < Minitest::Test
@@ -132,6 +133,55 @@ class BrowserStackRunExecutorTest < Minitest::Test
       end
 
       assert_includes error.message, "E2E_BROWSERSTACK_TEST_RETRIES must be an integer between 0 and 5"
+    end
+  end
+
+  def test_executor_persists_a_passing_retry_with_the_original_failure_evidence
+    Dir.mktmpdir do |output_dir|
+      run = {
+        "id" => "sample-android", "status_context" => "e2e/sample",
+        "application_id" => "sample", "platform" => "android", "target" => "sample",
+        "os_version_tag" => "latest", "execute" => ".", "include_tags" => [], "exclude_tags" => [],
+        "device_selector" => "android:phone:latest", "app_id" => "com.example.sample",
+        "ready_marker" => "ready", "control_link" => "com.example.sample://e2e", "artifact_env" => "TEST_APP_PATH"
+      }
+      plan = File.join(output_dir, "plan.json")
+      File.write(plan, JSON.generate([run]))
+      failed = {"name" => "./tests/checkout", "status" => "failed", "video" => "https://example.com/failed"}
+      retry_test = {"name" => "./tests/checkout_bstackretry1", "status" => "passed"}
+      session = {
+        "id" => "session", "status" => "failed",
+        "testcases" => {"count" => 2, "status" => {"passed" => 1, "failed" => 1},
+                        "data" => [{"testcases" => [failed]}, {"testcases" => [retry_test]}]}
+      }
+      build = {"id" => "build", "status" => "failed", "devices" => [{"sessions" => [session]}]}
+      client = Object.new
+      client.define_singleton_method(:upload) { |*| {"app_url" => "bs://app", "test_suite_url" => "bs://suite"} }
+      client.define_singleton_method(:start_build) { |*| {"build_id" => "build"} }
+      client.define_singleton_method(:get_build) { |*| build }
+      client.define_singleton_method(:get_session) { |*| session }
+      output = StringIO.new
+      executor = BrowserStackRunExecutor.new(
+        {output_dir: output_dir, run_plan_path: plan, run_index: 0, tests_zip: "tests.zip", test_retries: 1},
+        client: client, output: output
+      )
+      previous = ENV.to_h.slice("TEST_APP_PATH", "E2E_DEVICE_OVERRIDE")
+      begin
+        ENV["TEST_APP_PATH"] = "sample.apk"
+        ENV["E2E_DEVICE_OVERRIDE"] = "Sample Device-17.0"
+        executor.run
+      ensure
+        %w[TEST_APP_PATH E2E_DEVICE_OVERRIDE].each { |key| ENV[key] = previous[key] }
+      end
+
+      result = JSON.parse(File.read(File.join(output_dir, "result.json")))
+      assert result.fetch("passed")
+      assert_equal "failed", result.fetch("status")
+      assert_empty result.fetch("failed_tests")
+      assert_equal [failed, retry_test], result.fetch("retried_tests").first.fetch("attempts")
+      assert_equal [session], JSON.parse(File.read(File.join(output_dir, "sessions.json")))
+      assert_includes output.string, "BrowserStack build passed"
+      assert_includes output.string, "Passed on retry:  1 flow(s)"
     end
   end
 
