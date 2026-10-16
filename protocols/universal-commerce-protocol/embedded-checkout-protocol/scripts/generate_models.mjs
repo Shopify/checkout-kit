@@ -40,6 +40,11 @@ import {
   removeUnreferencedInternalDeclaration,
 } from "./codegen_guards.mjs";
 import {MODEL_EXTRACTIONS} from "./method_catalog.mjs";
+import {
+  applyKotlinEvolvableShapes,
+  applySwiftEvolvableShapes,
+  applyTypescriptEvolvableShapes,
+} from "./evolvable_shapes.mjs";
 import {namespaceSwiftPayloadModels} from "./swift_namespacing.mjs";
 
 const SCHEMA_SOURCE_DIR = path.join(PROTOCOL_DIR, "schemas");
@@ -835,7 +840,9 @@ async function generateKotlin(specDir, output, {openModelNames, mapModelNames}) 
       throw new Error("ExtendsSerializer injection failed; quicktype Extends output may have changed");
     }
 
-    return preserveKotlinConstraintConstants(injectKotlinAdditionalProperties(withSerializer, openModelNames));
+    return applyKotlinEvolvableShapes(
+      preserveKotlinConstraintConstants(injectKotlinAdditionalProperties(withSerializer, openModelNames)),
+    );
   });
 }
 
@@ -884,7 +891,7 @@ function injectSwiftAdditionalProperties(source, openModelNames) {
       for (const prop of props) {
         if (name === "FulfillmentOption" && prop.name === "description") {
           lines.push("        if let legacyDescription = try? container.decode(String.self, forKey: .description) {");
-          lines.push("            self.description = Description(html: nil, markdown: nil, plain: legacyDescription)");
+          lines.push("            self.description = Description { $0.plain = legacyDescription }");
           lines.push("        } else {");
           lines.push("            self.description = try container.decodeIfPresent(Description.self, forKey: .description)");
           lines.push("        }");
@@ -1024,7 +1031,7 @@ async function generateSwift(specDir, output, {openModelNames, mapModelNames}) {
     const stripped = `${source.slice(0, helperStart)}${SWIFT_JSON_HELPER_REPLACEMENT}`;
     const withMapModels = useSwiftMapsForModels(stripped, mapModelNames);
     const withAdditionalProperties = injectSwiftAdditionalProperties(withMapModels, openModelNames);
-    return namespaceSwiftPayloadModels(preserveSwiftConstraintConstants(withAdditionalProperties));
+    return applySwiftEvolvableShapes(namespaceSwiftPayloadModels(preserveSwiftConstraintConstants(withAdditionalProperties)));
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_swift_catalog.mjs")]);
@@ -1098,7 +1105,9 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
 
   await normalizeGeneratedFile(output, (source) => {
     const withCompatibility = injectTypescriptLegacyDescriptionCompatibility(source);
-    return useTypescriptMapsForModels(withCompatibility.replace(/^type /gm, "export type "), mapModelNames);
+    return applyTypescriptEvolvableShapes(
+      useTypescriptMapsForModels(withCompatibility.replace(/^type /gm, "export type "), mapModelNames),
+    );
   });
 
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_rename_map.mjs")]);
@@ -1106,7 +1115,10 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
   await run("node", [path.join(PROTOCOL_DIR, "scripts", "generate_typescript_notifications.mjs")]);
 
   const declarationOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.d.ts");
-  const tscBin = path.join(REPO_ROOT, "platforms", "react-native", "node_modules", "typescript", "bin", "tsc");
+  // PROTOCOL_TSC lets checks that don't install React Native's dependencies (compat/check.sh)
+  // emit declarations; generated, committed declarations come from React Native's TypeScript.
+  const tscBin =
+    process.env.PROTOCOL_TSC ?? path.join(REPO_ROOT, "platforms", "react-native", "node_modules", "typescript", "bin", "tsc");
   const indexOutput = path.join(PROTOCOL_DIR, "languages", "typescript", "src", "index.ts");
 
   await run("node", [

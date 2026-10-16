@@ -2,12 +2,40 @@ package com.shopify.ucp.embedded.checkout
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
 class ClientTest {
+    @Test
+    fun `completion preserves unknown strings`() {
+        listOf("completed", "on_hold").forEach { status ->
+            val message = requireNotNull(javaClass.getResource("/checkout-unknown-values.json")).readText()
+                .replace("{{SPEC_VERSION}}", EmbeddedCheckoutProtocol.SPEC_VERSION)
+                .replace("\"status\": \"completed\"", "\"status\": \"$status\"")
+            var received: Checkout? = null
+            val errors = mutableListOf<Throwable>()
+            val client = Client()
+                .onDecodeError { _, error, _ -> errors.add(error) }
+                .on(EmbeddedCheckoutProtocol.complete) { received = it.checkout }
+
+            client.process(message)
+
+            assertThat(errors).isEmpty()
+            val checkout = requireNotNull(received)
+            assertThat(checkout.status.value).isEqualTo(status)
+            assertThat(checkout.discounts?.applied?.first()?.method?.value).isEqualTo("future_method")
+            val copy = checkout.toBuilder().id("checkout-copy").build()
+            val encoded = Json.encodeToString(Checkout.serializer(), copy)
+            val decoded = Json.decodeFromString(Checkout.serializer(), encoded)
+            assertThat(decoded.id).isEqualTo("checkout-copy")
+            assertThat(decoded.status).isEqualTo(checkout.status)
+            assertThat(decoded.discounts?.applied?.first()?.method?.value).isEqualTo("future_method")
+        }
+    }
+
     @Test
     fun `process dispatches decoded notification payload to handler`() {
         var received: Ping? = null

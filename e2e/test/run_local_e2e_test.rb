@@ -24,6 +24,24 @@ class RunLocalE2ETest < Minitest::Test
     "react-native-ios" => ["ios", "com.shopify.checkoutkit.reactnativedemo", "platforms/react-native"],
     "react-native-android" => ["android", "com.shopify.checkoutkit.reactnativedemo", "platforms/react-native"]
   }.freeze
+  FIRST_SIMULATOR = "11111111-1111-1111-1111-111111111111"
+  SECOND_SIMULATOR = "22222222-2222-2222-2222-222222222222"
+  WATCH_SIMULATOR = "33333333-3333-3333-3333-333333333333"
+  BOOTED_SIMULATORS = <<~TEXT
+    == Devices ==
+    -- iOS 18.5 --
+        iPhone 16 (#{FIRST_SIMULATOR}) (Booted)
+        iPhone 16 Pro (#{SECOND_SIMULATOR}) (Booted)
+    -- watchOS 11.5 --
+        Apple Watch Series 10 (46mm) (#{WATCH_SIMULATOR}) (Booted)
+  TEXT
+  ADB_DEVICES = <<~TEXT
+    List of devices attached
+    emulator-5554\tdevice
+    emulator-5556\tdevice
+    emulator-5558\toffline
+
+  TEXT
 
   def test_runner_is_executable_bash
     assert File.executable?(RUNNER)
@@ -67,7 +85,7 @@ class RunLocalE2ETest < Minitest::Test
     output, error, status = Open3.capture3(
       "bash",
       "-c",
-      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); parse_arguments exact-flow --tags launch --exclude-tags flaky; printf "%s\n%s\n%s\n" "$INCLUDE_TAGS" "$EXCLUDE_TAGS" "${TEST_FILES[*]}"',
+      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); SELECTOR_COUNT=0; REQUESTED_DEVICE_ID=""; parse_arguments exact-flow --tags launch --exclude-tags flaky; printf "%s\n%s\n%s\n" "$INCLUDE_TAGS" "$EXCLUDE_TAGS" "${TEST_FILES[*]}"',
       "run-local-e2e-test",
       RUNNER
     )
@@ -80,13 +98,89 @@ class RunLocalE2ETest < Minitest::Test
     _output, error, status = Open3.capture3(
       "bash",
       "-c",
-      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); parse_arguments --exclude-tags',
+      'source "$1"; INCLUDE_TAGS=""; EXCLUDE_TAGS=""; HAS_EXPLICIT_TAGS=false; TEST_FILES=(); SELECTOR_COUNT=0; REQUESTED_DEVICE_ID=""; parse_arguments --exclude-tags',
       "run-local-e2e-test",
       RUNNER
     )
 
     refute status.success?
     assert_includes error, "--exclude-tags needs a comma separated tag list"
+  end
+
+  def test_device_option_is_not_a_test_selector
+    [["--device", "emulator-5556"], ["--device=emulator-5556"]].each do |arguments|
+      output, error, status = parsed_arguments(*arguments)
+
+      assert status.success?, error
+      assert_equal ["emulator-5556", "0", "false", ""], output.lines.map(&:chomp)
+    end
+  end
+
+  def test_device_option_keeps_tags_and_files_as_selectors
+    output, error, status = parsed_arguments("exact-flow", "--device", "emulator-5556", "--tags", "launch")
+
+    assert status.success?, error
+    device, selector_count, explicit_tags, test_files = output.lines.map(&:chomp)
+    assert_equal ["emulator-5556", "true", "exact-flow"], [device, explicit_tags, test_files]
+    refute_equal "0", selector_count
+  end
+
+  def test_device_option_requires_a_value
+    _output, error, status = parsed_arguments("--device")
+
+    refute status.success?
+    assert_includes error, "--device needs a simulator UDID or an adb serial"
+  end
+
+  def test_resolve_device_selects_the_requested_device
+    {
+      "swift-ios" => SECOND_SIMULATOR,
+      "react-native-ios" => SECOND_SIMULATOR,
+      "kotlin-android" => "emulator-5556",
+      "react-native-android" => "emulator-5556"
+    }.each do |target, device|
+      output, error, status = resolved_device(target, device)
+
+      assert status.success?, error
+      assert_equal device, output.lines.last.chomp, target
+    end
+  end
+
+  def test_resolve_device_without_a_request_selects_the_first_available_device
+    {
+      "swift-ios" => FIRST_SIMULATOR,
+      "react-native-ios" => FIRST_SIMULATOR,
+      "kotlin-android" => "emulator-5554",
+      "react-native-android" => "emulator-5554"
+    }.each do |target, device|
+      output, error, status = resolved_device(target, "")
+
+      assert status.success?, error
+      assert_equal device, output.lines.last.chomp, target
+    end
+  end
+
+  def test_resolve_device_rejects_a_device_that_is_not_available
+    {
+      "swift-ios" => [WATCH_SIMULATOR, "is not a booted iOS simulator"],
+      "react-native-ios" => ["unknown-udid", "is not a booted iOS simulator"],
+      "kotlin-android" => ["emulator-5558", "is not listed by adb devices in state device"],
+      "react-native-android" => ["emulator-9999", "is not listed by adb devices in state device"]
+    }.each do |target, (device, message)|
+      output, error, status = resolved_device(target, device)
+
+      refute status.success?, target
+      assert_includes error, "#{device} #{message}", target
+      refute_includes output, "resolved:", target
+    end
+  end
+
+  def test_resolve_device_reports_when_no_device_is_available
+    output, error, status = resolved_device("swift-ios", "", simulators: "== Devices ==\n-- iOS 18.5 --\n")
+
+    refute status.success?
+    assert_includes error, "No booted iOS simulator found."
+    refute_includes output, "resolved:"
   end
 
   def test_matrix_exclusions_remain_separate_from_explicit_exclusions
@@ -210,6 +304,21 @@ class RunLocalE2ETest < Minitest::Test
     assert_equal ["true", "preload", "tests/shared/presentation.yaml"], output.lines.map(&:chomp)
   end
 
+  def test_picker_reproducible_command_includes_the_requested_device
+    command = <<~'SH'
+      fzf() {
+        command cat >/dev/null
+        printf 'tag\tpreload\tTAG       preload\n'
+      }
+      REQUESTED_DEVICE_ID="emulator-5556"
+      run_picker
+    SH
+    output, error, status = picker_script(command)
+
+    assert status.success?, error
+    assert_includes output, "dev swift e2e --tags preload --device emulator-5556"
+  end
+
   def test_maestro_runs_shared_and_target_specific_test_files
     react_native_arguments = maestro_arguments("react-native")
     swift_arguments = maestro_arguments("swift")
@@ -259,6 +368,7 @@ class RunLocalE2ETest < Minitest::Test
         INCLUDE_TAGS=""
         HAS_EXPLICIT_TAGS=false
         TEST_FILES=()
+        REQUESTED_DEVICE_ID=""
         #{command}
       SH
       "run-local-e2e-test",
@@ -278,6 +388,8 @@ class RunLocalE2ETest < Minitest::Test
         EXCLUDE_TAGS=""
         HAS_EXPLICIT_TAGS=false
         TEST_FILES=()
+        SELECTOR_COUNT=0
+        REQUESTED_DEVICE_ID=""
         CANDIDATE_TEST_FILES=(
           tests/shared/presentation.yaml
           tests/shared/completion.yaml
@@ -308,6 +420,49 @@ class RunLocalE2ETest < Minitest::Test
       "run-local-e2e-test",
       RUNNER,
       *arguments
+    )
+  end
+
+  def parsed_arguments(*arguments)
+    Open3.capture3(
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        shift
+        INCLUDE_TAGS=""
+        EXCLUDE_TAGS=""
+        HAS_EXPLICIT_TAGS=false
+        TEST_FILES=()
+        SELECTOR_COUNT=0
+        REQUESTED_DEVICE_ID=""
+        parse_arguments "$@"
+        printf '%s\n%s\n%s\n%s\n' "$REQUESTED_DEVICE_ID" "$SELECTOR_COUNT" "$HAS_EXPLICIT_TAGS" "${TEST_FILES[*]:-}"
+      SH
+      "run-local-e2e-test",
+      RUNNER,
+      *arguments
+    )
+  end
+
+  def resolved_device(target, requested_device, simulators: BOOTED_SIMULATORS, android_devices: ADB_DEVICES)
+    Open3.capture3(
+      { "STUB_SIMULATORS" => simulators, "STUB_ANDROID_DEVICES" => android_devices },
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        xcrun() { printf '%s' "$STUB_SIMULATORS"; }
+        adb() { printf '%s' "$STUB_ANDROID_DEVICES"; }
+        configure_target "$2"
+        REQUESTED_DEVICE_ID="$3"
+        resolve_device
+        printf 'resolved:\n%s\n' "$DEVICE_ID"
+      SH
+      "run-local-e2e-test",
+      RUNNER,
+      target,
+      requested_device
     )
   end
 

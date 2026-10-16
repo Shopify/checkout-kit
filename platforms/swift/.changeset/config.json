@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": "../../../scripts/release/changelog.cjs",
+  "format": false,
+  "privatePackages": { "version": true }
+}

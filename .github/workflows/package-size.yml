@@ -18,9 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      android: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocolKotlin == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
-      reactNative: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.reactNative == 'true' }}
-      web: ${{ steps.package.outputs.web == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
+      android: ${{ steps.selected.outputs.android }}
+      reactNative: ${{ steps.selected.outputs.reactNative }}
+      web: ${{ steps.selected.outputs.web }}
+      any: ${{ steps.selected.outputs.any }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -58,9 +59,60 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/package-size.yml'
 
+      - name: Select packages to measure
+        id: selected
+        env:
+          MEASURE_ANDROID: ${{ steps.package.outputs.android == 'true' || steps.package.outputs.protocolKotlin == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
+          MEASURE_REACT_NATIVE: ${{ steps.package.outputs.reactNative == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.reactNative == 'true' }}
+          MEASURE_WEB: ${{ steps.package.outputs.web == 'true' || steps.package.outputs.protocolTypescript == 'true' || steps.package.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
+        run: |
+          echo "android=$MEASURE_ANDROID" >> "$GITHUB_OUTPUT"
+          echo "reactNative=$MEASURE_REACT_NATIVE" >> "$GITHUB_OUTPUT"
+          echo "web=$MEASURE_WEB" >> "$GITHUB_OUTPUT"
+          if [[ "$MEASURE_ANDROID" == 'true' || "$MEASURE_REACT_NATIVE" == 'true' || "$MEASURE_WEB" == 'true' ]]; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Keep the publisher's report contract without starting a measurement job.
+      - name: Resolve current PR base for empty report
+        if: steps.selected.outputs.any == 'false'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: base
+        with:
+          script: |
+            const {data: pr} = await github.rest.pulls.get({
+              ...context.repo, pull_number: context.issue.number,
+            });
+            core.setOutput('sha', pr.base.sha);
+
+      - name: Prepare empty budget report
+        if: steps.selected.outputs.any == 'false'
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+          MEASURE_ANDROID: 'false'
+          MEASURE_REACT_NATIVE: 'false'
+          MEASURE_WEB: 'false'
+        run: |
+          mkdir -p "$RUNNER_TEMP/bundle-size-report"
+          : > "$RUNNER_TEMP/package-size-empty.tsv"
+          node .github/scripts/bundle-size-budgets.cjs "$RUNNER_TEMP/package-size-empty.tsv" "$RUNNER_TEMP/package-size-empty.tsv" .ci/bundle-size-budgets.json "$RUNNER_TEMP/bundle-size-report/report.json"
+          .github/scripts/measure-package-size render "$RUNNER_TEMP/package-size-empty.tsv" "$RUNNER_TEMP/package-size-empty.tsv" "$RUNNER_TEMP/bundle-size-report/comment.md"
+
+      - name: Upload empty report
+        if: steps.selected.outputs.any == 'false'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bundle-size-report
+          path: ${{ runner.temp }}/bundle-size-report/
+          if-no-files-found: error
+          retention-days: 90
+
   measure:
     name: Measure Package Size
     needs: changes
+    if: needs.changes.outputs.any == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

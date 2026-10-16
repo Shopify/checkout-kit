@@ -23,12 +23,40 @@ public object EmbeddedCheckoutProtocol {
     /**
      * Options controlling the query parameters appended to a checkout URL when
      * initiating the Embedded Checkout Protocol handshake.
+     *
+     * Build with `Options { colorScheme = "dark" }` in Kotlin or `Options.Builder()` in
+     * Java. New handshake parameters become new builder properties, so they don't
+     * change an existing constructor signature.
      */
-    public class Options(
+    public class Options internal constructor(
         public val delegations: List<Delegation> = emptyList(),
         public val colorScheme: String? = null,
         public val auth: String? = null,
-    )
+    ) {
+        /** Builds [Options]. Every option is a property and a setter. */
+        @ProtocolModelDsl
+        public class Builder {
+            public var delegations: List<Delegation> = emptyList()
+
+            public var colorScheme: String? = null
+
+            public var auth: String? = null
+
+            public fun delegations(value: List<Delegation>): Builder = apply { this.delegations = value }
+
+            public fun colorScheme(value: String?): Builder = apply { this.colorScheme = value }
+
+            public fun auth(value: String?): Builder = apply { this.auth = value }
+
+            public fun build(): Options = Options(delegations = delegations, colorScheme = colorScheme, auth = auth)
+        }
+
+        public companion object {
+            /** Builds [Options]: `Options { delegations = …; colorScheme = … }`. */
+            public operator fun invoke(configure: Builder.() -> Unit = {}): Options =
+                Builder().apply(configure).build()
+        }
+    }
 
     /**
      * Delegations the host can request from the business, as declared by the
@@ -271,11 +299,23 @@ public object EmbeddedCheckoutProtocol {
 }
 
 @Serializable
-public data class CheckoutParams(
+public class CheckoutParams internal constructor(
     public val checkout: Checkout,
-)
+) {
+    override fun equals(other: Any?): Boolean = this === other || (other is CheckoutParams && checkout == other.checkout)
+
+    override fun hashCode(): Int = checkout.hashCode()
+
+    override fun toString(): String = "CheckoutParams(checkout=$checkout)"
+}
 
 @Serializable
-public data class ErrorParams(
+public class ErrorParams internal constructor(
     public val error: ErrorResponse,
-)
+) {
+    override fun equals(other: Any?): Boolean = this === other || (other is ErrorParams && error == other.error)
+
+    override fun hashCode(): Int = error.hashCode()
+
+    override fun toString(): String = "ErrorParams(error=$error)"
+}

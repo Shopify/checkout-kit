@@ -148,11 +148,16 @@ measure_react_native_package() {
 measure_android_package() {
   local module="shopify-checkout-kit"
   [[ -d "$repo_root/platforms/android/$module" ]] || module="lib"
+  local task="assembleRelease"
   local aar="$repo_root/platforms/android/$module/build/outputs/aar/$module-release.aar"
+  if [[ -d "$repo_root/platforms/android/shopify-checkout" ]]; then
+    task="assemble"
+    aar="$repo_root/platforms/android/$module/build/outputs/aar/$module.aar"
+  fi
 
   (
     cd "$repo_root/platforms/android"
-    ./gradlew ":$module:assembleRelease" --console=plain
+    ./gradlew ":$module:$task" --console=plain
   )
 
   record_artifact "Android" "release AAR" "$aar"

@@ -16,6 +16,7 @@
 - [Install](#install)
   - [Swift Package Manager](#swift-package-manager)
   - [CocoaPods](#cocoapods)
+  - [Compatibility](#compatibility)
 - [Get a checkout URL](#get-a-checkout-url)
 - [Present checkout](#present-checkout)
   - [UIKit](#uikit)
@@ -25,6 +26,7 @@
   - [Incoming message origin validation](#incoming-message-origin-validation)
   - [Current configuration](#current-configuration)
 - [Checkout lifecycle](#checkout-lifecycle)
+  - [Constructing event fixtures](#constructing-event-fixtures)
   - [Error handling](#error-handling)
 - [Authentication and buyer identity](#authentication-and-buyer-identity)
 - [Offsite payments and links](#offsite-payments-and-links)
@@ -79,12 +81,22 @@ Then add the products you need to your app target:
 
 ### CocoaPods
 
+The CocoaPods spec exists so that [Checkout Kit for React Native](../react-native) can consume the native SDK. Native apps should use Swift Package Manager.
+
 ```ruby
 pod "ShopifyCheckoutKit", "4.0.0-alpha.8"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
 pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.8"
 ```
+
+### Compatibility
+
+Checkout Kit follows semantic versioning. Its compatibility promise covers `ShopifyCheckoutKit` and `ShopifyAcceleratedCheckouts`, including the protocol types they expose, such as `Checkout` and everything it contains in checkout events. The full list of covered protocol types is in [COVERED_TYPES.md](../../protocols/universal-commerce-protocol/embedded-checkout-protocol/COVERED_TYPES.md).
+
+- **New optional protocol fields and enum-like values can arrive in minor releases. New required construction inputs are breaking changes.** Values such as `checkout.status` and `message.severity` are open: include a `default` case when you switch over them.
+- **Protocol types that Checkout Kit doesn't expose** are outside this promise. If you use the `EmbeddedCheckoutProtocol` product directly, those types can change in a minor release when Checkout Kit adopts a new protocol version.
+- **CocoaPods** compiles the protocol sources into the `ShopifyCheckoutKit` module, so every protocol type is visible there. The same scope applies: only the types Checkout Kit exposes are covered.
 
 ## Get a checkout URL
 
@@ -142,10 +154,7 @@ struct CartView: View {
     .sheet(isPresented: $isPresented) {
       ShopifyCheckout(checkout: checkoutURL)
         .title("Checkout")
-        .appearance(.storefront)
-        .tintColor(.systemBlue)
-        .backgroundColor(.systemBackground)
-        .closeButtonTintColor(nil)
+        .appearance(.storefront(colors: CheckoutColors(progressIndicator: .systemBlue)))
         .onDismiss {
           isPresented = false
         }
@@ -157,6 +166,8 @@ struct CartView: View {
   }
 }
 ```
+
+`CheckoutSheet` remains available as a deprecated typealias for `ShopifyCheckout`. Use `ShopifyCheckout` in new code.
 
 Checkout Kit adds the required UCP query parameters automatically when it loads checkout.
 
@@ -245,24 +256,18 @@ Configure global presentation defaults before presenting checkout. `ShopifyCheck
 import ShopifyCheckoutKit
 
 ShopifyCheckoutKit.configure {
-  $0.appearance = .storefront
-  $0.tintColor = .systemBlue
-  $0.backgroundColor = .systemBackground
-  $0.closeButtonTintColor = nil
+  $0.appearance = .storefront(colors: CheckoutColors(progressIndicator: .systemBlue))
   $0.logLevel = .debug
   $0.telemetry.enabled = false
 }
 ```
 
-`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)`, `.tintColor(...)`, and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
+`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)` and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `appearance` | `.storefront` | Match the storefront's web checkout branding with a light color scheme, or use the Checkout Kit style with `.app(.automatic)`, `.app(.light)`, or `.app(.dark)`. |
-| `tintColor` | Shopify blue | Progress indicator color while checkout initializes. |
-| `backgroundColor` | `.systemBackground` | Background behind the web view while checkout initializes. |
+| `appearance` | `.storefront()` | Match the storefront's web checkout branding with a light color scheme, or use the Checkout Kit style with `.app(.automatic())`, `.app(.light())`, or `.app(.dark())`. Each appearance owns its native colors. |
 | `title` | Localized `shopify_checkout_kit_title` or `Checkout` | Navigation title for the checkout sheet. |
-| `closeButtonTintColor` | `nil` | Optional tint for the close button. |
 | `logLevel` | `.warn` | SDK logging verbosity. Threshold-ordered `.debug` → `.warn` → `.error` → `.none`; use `.debug` during integration. |
 | `preloading.enabled` | `true` | Enables best-effort checkout preloading before presentation. |
 | `allowedMessageOrigins` | `[]` | Origins trusted to send incoming checkout messages. Empty trusts every origin (open by default). See [Incoming message origin validation](#incoming-message-origin-validation). |
@@ -276,6 +281,52 @@ collection and discards measurements that have not already been handed to the
 operating system for delivery.
 
 To localize the title, add `shopify_checkout_kit_title` to your app's `Localizable.xcstrings`.
+
+### Appearance and native colors
+
+`CheckoutAppearance` owns the native palette. Use `.storefront(colors:)` to customize the surrounding native UI without changing the merchant's web checkout branding, or `.app(...)` with a `CheckoutColorScheme` to use Checkout Kit branding.
+
+`CheckoutColors` uses native `UIColor` and `UIImage` values. Dynamic colors, accessibility contrast, and transparency remain supported. The default navigation bar remains transparent and the default close button remains the iOS system control.
+
+| `CheckoutColors` property | Default | Purpose |
+| --- | --- | --- |
+| `webViewBackground` | `.systemBackground` | Background behind the WebView and its overscroll area. |
+| `headerBackground` | `.clear` | Navigation-bar background. |
+| `headerFont` | `.label` | Navigation-title color. |
+| `progressIndicator` | Shopify blue | Progress indicator while checkout loads. |
+| `closeIcon` | `nil` | Optional native image for the close button. |
+| `closeIconTint` | `nil` | Optional close-button tint. With no icon or tint override, iOS supplies the system close button. |
+| `headerBorderColor` | `nil` | Optional navigation-bar shadow color. |
+
+Light and dark schemes each own one palette. Automatic appearance owns independent `lightColors` and `darkColors`, and switches natively when the system appearance changes:
+
+```swift
+ShopifyCheckoutKit.configure {
+  $0.appearance = .app(.automatic(
+    lightColors: CheckoutColors(progressIndicator: .systemBlue, closeIconTint: .systemBlue),
+    darkColors: CheckoutColors(progressIndicator: .systemTeal, closeIconTint: .systemTeal)
+  ))
+}
+```
+
+Use `customize` to derive a modified copy without changing the original palette or scheme. A single customization applies to both automatic palettes; use `customize(light:dark:)` for separate light and dark overrides. On an explicit scheme, only the matching closure is applied: `.light` applies `light` and `.dark` applies `dark`. For example:
+
+```swift
+let appearance = CheckoutAppearance.app(
+  .automatic().customize(
+    light: { $0.progressIndicator = .systemBlue },
+    dark: { $0.progressIndicator = .systemTeal }
+  )
+)
+
+ShopifyCheckoutKit.configure {
+  $0.appearance = appearance
+}
+```
+
+Set appearance before presenting checkout. Replacing it with `.storefront()`, `.app(.light())`, `.app(.dark())`, or `.app(.automatic())` restores that appearance's default colors. Updating unrelated settings such as logging, preloading, or the checkout title preserves the configured palette. A presented checkout uses the native colors of the configuration it was created with, including a reused preloaded WebView.
+
+The previous configuration-level `backgroundColor`, `tintColor`, and `closeButtonTintColor` properties, and the corresponding SwiftUI color modifiers, have been removed. Use `CheckoutColors.webViewBackground`, `CheckoutColors.progressIndicator`, and `CheckoutColors.closeIconTint` through `appearance` instead. `CheckoutAppearance` replaces `Configuration.Appearance`, and `CheckoutColorScheme` replaces `Configuration.ColorScheme`. The new types are prefixed with `Checkout` so they do not clash with `SwiftUI.ColorScheme`.
 
 ### Incoming message origin validation
 
@@ -381,11 +432,20 @@ ShopifyCheckout(checkout: checkoutURL)
   }
 ```
 
-When your app presents `ShopifyCheckout` in its own SwiftUI `.sheet`, SwiftUI owns that sheet's
-presentation. The close button and terminal failures call `.onDismiss`, but swiping the sheet down
-does not. Run the same cleanup from the sheet's `onDismiss` parameter, for example
-`.sheet(isPresented: $isPresented, onDismiss: refreshCart)`, and keep it safe to run twice. To keep
-`.onDismiss` as the only dismissal path, add `.interactiveDismissDisabled()` to `ShopifyCheckout`.
+When your app presents `ShopifyCheckout` in its own SwiftUI `.sheet`, `.onDismiss` runs after the
+buyer taps the close button or swipes the sheet down, and after a terminal failure closes checkout.
+It does not run in these cases:
+
+- The buyer taps outside the sheet to dismiss it, for example on iPad. SwiftUI owns the sheet's
+  presentation, so checkout cannot tell this apart from your app closing the sheet.
+- Your app sets the sheet's `isPresented` binding to `false`. This matches calling
+  `dismiss(animated:)` on a UIKit checkout.
+
+To handle every dismissal, run your cleanup from the sheet's `onDismiss` parameter, for example
+`.sheet(isPresented: $isPresented, onDismiss: refreshCart)`. That parameter also runs after the
+close button and swipe-down, so keep the cleanup safe to run twice. To keep the buyer from
+dismissing the sheet by tapping outside it, add `.interactiveDismissDisabled()` to
+`ShopifyCheckout`; this also turns off swipe-down.
 
 Update callbacks combine changes to totals, line items, fulfillment, and messages;
 identical checkout snapshots do not trigger another update. Read the fields your
@@ -393,6 +453,34 @@ app needs from `event.checkout`.
 
 Completion does not dismiss checkout. Record completion, then clear or refresh the
 cart when checkout is dismissed so the confirmation page remains visible.
+
+### Constructing event fixtures
+
+Event initializers are public, so tests can create `CheckoutStartEvent(checkout:)`,
+`CheckoutUpdateEvent(checkout:)`, and `CheckoutCompleteEvent(checkout:)`. The protocol
+models inside a checkout, such as `LineItem` and `CheckoutTotal`, take their required fields
+as arguments and optional fields in a configuration closure:
+
+```swift
+let lineItem = LineItem(
+    id: "line-1",
+    item: Item(id: "gid://shopify/ProductVariant/1", price: 2500, title: "T-shirt"),
+    quantity: 1,
+    totals: [LineItemTotal(amount: 2500, type: "subtotal")]
+)
+let checkout = Checkout(
+    id: "fixture-checkout",
+    status: .incomplete,
+    currency: "USD",
+    lineItems: [lineItem],
+    totals: [CheckoutTotal(amount: 2500, type: "total")]
+)
+let update = CheckoutUpdateEvent(checkout: checkout)
+let renamed = lineItem.with { $0.parentID = "line-0" }
+```
+
+New optional protocol fields become new properties, so these fixtures keep compiling. You
+can also decode a snapshot from JSON with `JSONDecoder().decode(Checkout.self, from: data)`.
 
 ### Error handling
 
@@ -559,7 +647,7 @@ ShopifyAcceleratedCheckouts.Customer(
 ```swift
 import ShopifyAcceleratedCheckouts
 
-AcceleratedCheckoutButtons(cartID: cartID)
+ShopifyAcceleratedCheckoutButtons(cartID: cartID)
   .wallets([.shopPay, .applePay])
   .applePayButtonType(.buy)
   .applePayButtonStyle(.automatic)
@@ -587,10 +675,12 @@ AcceleratedCheckoutButtons(cartID: cartID)
   }
 ```
 
+`AcceleratedCheckoutButtons` remains available as a deprecated typealias. Use `ShopifyAcceleratedCheckoutButtons` in new code.
+
 You can also render buttons for a single product variant:
 
 ```swift
-AcceleratedCheckoutButtons(
+ShopifyAcceleratedCheckoutButtons(
   variantID: "gid://shopify/ProductVariant/...",
   quantity: 1
 )

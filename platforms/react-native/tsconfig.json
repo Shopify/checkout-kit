@@ -1,20 +1,17 @@
 {
   "compilerOptions": {
+    "types": ["jest", "node"],
     "rootDir": ".",
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
-    "lib": [
-      "esnext"
-    ],
+    "lib": ["esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "noImplicitUseStrict": false,
-    "noStrictGenericChecks": false,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -24,9 +21,7 @@
     "verbatimModuleSyntax": true,
     "target": "esnext",
     "paths": {
-      "@shopify/checkout-kit-react-native": [
-        "./src/index.ts"
-      ]
+      "@shopify/checkout-kit-react-native": ["./src/index.ts"]
     }
   },
   "include": [
@@ -37,8 +32,5 @@
     "sample",
     "jest.setup.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "lib"
-  ]
+  "exclude": ["**/node_modules", "**/Pods", "lib"]
 }

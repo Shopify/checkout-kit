@@ -65,7 +65,7 @@ signing {
 
 detekt {
     buildUponDefaultConfig = true
-    config.setFrom('../../../../../../platforms/android/shopify-checkout-kit/detekt.config.yml')
+    config.setFrom('../../../../../../platforms/android/gradle/detekt.config.yml')
     autoCorrect = true
 }
 

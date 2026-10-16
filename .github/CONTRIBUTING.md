@@ -35,9 +35,10 @@ When in doubt about whether we will be interested in including a new feature, pl
 3. Make changes and add any relevant tests.
 4. Run the platform-specific formatter / linter (see below).
 5. Verify the changes locally (e.g. via the platform's sample app).
-6. Commit your changes and push.
-7. Ensure all checks (tests, lint) are passing in GitHub.
-8. Open a pull request with a detailed description of what is changing and why.
+6. If the change affects a published platform, add a changeset with `pnpm changeset <platform>` (see [Versions and release notes](#versions-and-release-notes)).
+7. Commit your changes and push.
+8. Ensure all checks (tests, lint) are passing in GitHub.
+9. Open a pull request with a detailed description of what is changing and why.
 
 ### Dev tooling
 
@@ -189,14 +190,44 @@ Sample app storefront configuration is generated from the repo-root `.env` and, 
 it exists, `.env.local`. See [Dev tooling](#dev-tooling) for how each audience gets
 those files.
 
-## Release notes
+## Versions and release notes
+
+Each platform (Swift, Android, React Native, and Web) has its own version,
+changelog, and release schedule. We use
+[Changesets](https://github.com/changesets/changesets) to record release notes
+and calculate each platform's next version. Don't bump versions by hand.
+
+To describe your change, run `pnpm changeset <platform>` from the repository
+root after `pnpm install`, where `<platform>` is `swift`, `android`,
+`react-native`, or `web`. Choose a bump type
+(`patch` for fixes, `minor` for additions, `major` for breaking changes), then
+write a summary for SDK users. Commit the generated
+`platforms/<platform>/.changeset/*.md` file with your code. If your change
+affects more than one platform, add a changeset for each. Changes to a
+platform's internal packages, such as `platforms/web/components/`, need a
+changeset for that platform too. For platform changes
+that need no release note, such as tests, run `pnpm changeset <platform> --empty`.
+
+```md
+---
+"@shopify/checkout-kit-swift": patch
+---
+
+Close the checkout sheet after the buyer completes an order.
+```
+
+Maintainers release a platform with `pnpm changeset <platform> version`. It bumps
+that platform's version, writes its `CHANGELOG.md`, and updates its native version
+files; other platforms are unaffected. Releases reach this repository already
+versioned.
 
 The Release package workflow prepends `.github/RELEASE_TEMPLATE.md` to GitHub's
 generated release notes. Before publishing a draft release, complete the
 breaking, additive, and behaviour change sections, including focused code diffs
 where they help consumers understand the change or migrate. Keep `None.` for
-sections that do not apply. The generated list of included pull requests and
-contributors remains below the curated sections.
+sections that do not apply. Use the platform's `CHANGELOG.md` entry as the
+source. The generated list of included pull requests and contributors remains
+below the curated sections.
 
 ### Coordinating ECP, Android, and React Native releases
 
@@ -231,14 +262,14 @@ The version declarations have different jobs. The Android catalog is
    versions. Follow [the ECP release steps](#releasing-a-new-embedded-checkout-protocol-version)
    and wait for the new protocol JAR and metadata to be available on Maven Central.
 2. **Adopt ECP and release Android.** In the Kit PR, update
-   `embeddedCheckoutProtocolAndroid`, make the SDK changes, and bump
-   `checkoutKitAndroid` and the installation snippets. Run normal SDK and sample
+   `embeddedCheckoutProtocolAndroid`, make the SDK changes, and add an
+   Android changeset. Run normal SDK and sample
    tests/builds and API checks against the published ECP dependency. Merge with
    passing CI, follow [the Android release steps](#releasing-a-new-android-version),
    and wait for the Kit AAR and metadata to be available on Maven Central.
 3. **Adopt Android and release RN.** In the RN PR, update
    `checkoutKit.nativeSdkVersions.android` to the published Kit version, make the
-   wrapper changes, and bump the RN package's own `version`. Run the normal RN
+   wrapper changes, and add a React Native changeset. Run the normal RN
    Android tests and sample build, plus the other required RN checks, before
    merging. Follow [the RN release steps](#releasing-a-new-react-native-version)
    to publish the npm package. RN resolves ECP transitively through Kit; it does
@@ -324,11 +355,13 @@ When `dev swift api check` fails, it prints both the unified diff and a `swift-a
 
 ### Releasing a new Swift version
 
-Open a pull request with the following changes:
-
-1. Bump the package version in `platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`.
-2. Bump the metadata version in `platforms/swift/Sources/ShopifyCheckout/MetaData.swift`.
-3. Bump the podspec version in `ShopifyCheckoutKit.podspec` (at the repo root).
+Maintainers prepare the release pull request with `pnpm changeset swift version`.
+It sets the version in `platforms/swift/package.json`, then copies it to
+`platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`,
+`platforms/swift/Sources/ShopifyCheckout/MetaData.swift`, and
+`ShopifyCheckoutKit.podspec` (at the repo root). In that pull request, update the
+SwiftPM/CocoaPods snippets in `platforms/swift/README.md`. See
+[Versions and release notes](#versions-and-release-notes).
 
 All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -362,14 +395,14 @@ To check for lint issues without auto-correcting:
 
 The Android-facing public APIs are tracked via committed baselines managed by the [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator) Gradle plugin:
 
-- `platforms/android/shopify-checkout-kit/api/shopify-checkout-kit.api` for `com.shopify:checkout-kit`.
+- `platforms/android/shopify-checkout/api/shopify-checkout.api` for `com.shopify:checkout-kit`.
 - `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
 
-The unified `Breaking Changes` CI workflow runs `./gradlew :shopify-checkout-kit:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
+The unified `Breaking Changes` CI workflow runs `./gradlew :shopify-checkout:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
 
 If your change intentionally modifies the public API:
 
-1. Run `dev android api dump` from the repo root to regenerate both baselines. For project-scoped updates, run `./gradlew :shopify-checkout-kit:apiDump` from `platforms/android/` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/`.
+1. Run `dev android api dump` from the repo root to regenerate both baselines. For project-scoped updates, run `./gradlew :shopify-checkout:apiDump` from `platforms/android/` or `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/`.
 2. Review the relevant `.api` diff alongside your code changes.
 3. Commit the updated `.api` file in the same PR.
 
@@ -398,16 +431,19 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 
 ### Releasing a new Android version
 
-Open a pull request with the following changes:
+Maintainers prepare the release pull request with `pnpm changeset android version`.
+It sets the version in `platforms/android/package.json`, then copies it to
+`checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`. In that
+pull request, update the Gradle/Maven snippets in `platforms/android/README.md`.
+See [Versions and release notes](#versions-and-release-notes).
 
-1. Bump `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`.
-2. If Kit needs a new protocol version, publish that protocol release first, then
-   update `embeddedCheckoutProtocolAndroid` to it in the same catalog.
+If Kit needs a new protocol version, publish that protocol release first, then
+update `embeddedCheckoutProtocolAndroid` to it in the pull request that adopts it.
 
 The Android library and sample compile against the protocol artifact pinned in
 `platforms/android/gradle/libs.versions.toml` from Maven Central. CI uses the same
 dependency, and the publish workflow runs unit tests and API checks before uploading.
-Unit tests and remote publication also run `:shopify-checkout-kit:verifyPublishedProtocol`, which
+Unit tests and remote publication also run `:shopify-checkout:verifyPublishedProtocol`, which
 checks that the release and unit-test classpaths resolve ECP as an external module
 at exactly the catalog-pinned dependency version. This rejects accidental project
 substitution or version changes introduced by dependency resolution. Explicit local
@@ -474,10 +510,15 @@ If you did _not_ intend to change public API and `api:check` is failing, the dif
 
 ### Releasing a new React Native version
 
-Open a pull request with the following changes:
+Maintainers prepare the release pull request with
+`pnpm changeset react-native version`. It bumps the `version` in
+`platforms/react-native/package.json`. Before merging it, regenerate both React
+Native `Podfile.lock` files without `--local`. See
+[Versions and release notes](#versions-and-release-notes).
 
-1. Bump the `version` in `platforms/react-native/package.json`.
-2. Update `checkoutKit.nativeSdkVersions.ios` and `checkoutKit.nativeSdkVersions.android` in `platforms/react-native/package.json` to the published native SDK versions React Native should consume.
+Update `checkoutKit.nativeSdkVersions` to newly published native SDK versions in
+a normal pull request with a React Native changeset, not in the release pull
+request.
 
 Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 

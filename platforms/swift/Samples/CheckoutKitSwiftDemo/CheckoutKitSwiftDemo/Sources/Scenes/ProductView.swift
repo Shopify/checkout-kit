@@ -205,7 +205,7 @@ struct ProductView: View {
     private func acceleratedCheckoutButton(
         for variant: Product.Variants.Node
     ) -> some View {
-        AcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
+        ShopifyAcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
             .wallets([.applePay])
             .applePayButtonStyle(applePayStyle.style)
             .onFail { error in

@@ -91,11 +91,11 @@ ShopifyCheckout(checkout: checkoutURL)
 ### Accelerated checkout buttons
 
 ```swift
-AcceleratedCheckoutButtons(cartID: cartID)
+ShopifyAcceleratedCheckoutButtons(cartID: cartID)
   .connect(client)
 ```
 
-The button-specific `onFail`, `onDismiss`, and `onRenderStateChange` handlers remain on `AcceleratedCheckoutButtons`.
+The button-specific `onFail`, `onDismiss`, and `onRenderStateChange` handlers remain on `ShopifyAcceleratedCheckoutButtons`.
 
 ## Supported notifications
 

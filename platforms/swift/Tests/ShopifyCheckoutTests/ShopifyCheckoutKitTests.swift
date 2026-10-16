@@ -10,8 +10,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         originalConfiguration = ShopifyCheckoutKit.configuration
-        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark) }
-        CheckoutWebView.invalidate()
+        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark()) }
     }
 
     override func tearDown() async throws {

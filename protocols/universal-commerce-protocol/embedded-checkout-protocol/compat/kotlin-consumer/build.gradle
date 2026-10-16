@@ -1,0 +1,29 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
+}
+
+dependencies {
+    implementation 'com.shopify:embedded-checkout-protocol:local'
+}
+
+// Runs the consumer. With -PconsumerClasses=<dirs>, runs previously compiled consumer classes
+// against the protocol module as it is now, which checks binary compatibility.
+tasks.register('runConsumer', JavaExec) {
+    mainClass = 'com.shopify.compat.KotlinConsumerKt'
+    systemProperty 'compat.additiveChange', findProperty('additiveChange') ?: 'false'
+    def compiled = findProperty('consumerClasses')
+    classpath = (compiled ? files(compiled.split(File.pathSeparator)) : sourceSets.main.output) + configurations.runtimeClasspath
+}

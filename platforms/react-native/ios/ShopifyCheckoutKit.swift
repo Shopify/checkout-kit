@@ -43,11 +43,26 @@ class RCTShopifyCheckoutKit: NSObject {
     }
 
     override init() {
-        configure {
-            $0.platform = Platform.reactNative
+        // The new architecture can create modules off the main thread.
+        Self.performOnMainActor {
+            ShopifyCheckoutKit.configure {
+                $0.platform = Platform.reactNative
+            }
         }
 
         super.init()
+    }
+
+    /// Runs `work` immediately on the main thread, otherwise enqueues it on the main queue so calls keep their order.
+    private static func performOnMainActor(_ work: @escaping @MainActor () -> Void) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async {
+                work()
+            }
+            return
+        }
+
+        MainActor.assumeIsolated(work)
     }
 
     @objc func constantsToExport() -> [AnyHashable: Any]! {
@@ -205,47 +220,51 @@ class RCTShopifyCheckoutKit: NSObject {
         let colorConfig = configuration["colors"] as? [AnyHashable: Any]
         let iosConfig = colorConfig?["ios"] as? [String: String]
 
-        if let title = configuration["title"] as? String {
-            ShopifyCheckoutKit.configuration.title = title
-        }
+        Self.performOnMainActor { [self] in
+            ShopifyCheckoutKit.configure { config in
+                if let title = configuration["title"] as? String {
+                    config.title = title
+                }
 
-        if let preloading = configuration["preloading"] as? Bool {
-            ShopifyCheckoutKit.configuration.preloading.enabled = preloading
-        }
+                if let preloading = configuration["preloading"] as? Bool {
+                    config.preloading.enabled = preloading
+                }
 
-        if let allowedMessageOrigins = configuration["allowedMessageOrigins"] as? [String] {
-            ShopifyCheckoutKit.configuration.allowedMessageOrigins = allowedMessageOrigins
-        }
+                if let allowedMessageOrigins = configuration["allowedMessageOrigins"] as? [String] {
+                    config.allowedMessageOrigins = allowedMessageOrigins
+                }
 
-        if let telemetry = configuration["telemetry"] as? Bool {
-            ShopifyCheckoutKit.configuration.telemetry.enabled = telemetry
-        }
+                if let telemetry = configuration["telemetry"] as? Bool {
+                    config.telemetry.enabled = telemetry
+                }
 
-        if let colorScheme = configuration["colorScheme"] as? String,
-           let appearance = appearanceFor(colorScheme)
-        {
-            ShopifyCheckoutKit.configuration.appearance = appearance
-        }
+                if let colorScheme = configuration["colorScheme"] as? String,
+                   let appearance = appearanceFor(colorScheme)
+                {
+                    config.appearance = appearance
+                }
 
-        if let tintColorHex = iosConfig?["tintColor"] as? String {
-            ShopifyCheckoutKit.configuration.tintColor = UIColor(hex: tintColorHex)
-        }
+                if let tintColorHex = iosConfig?["tintColor"] {
+                    config.tintColor = UIColor(hex: tintColorHex)
+                }
 
-        if let backgroundColorHex = iosConfig?["backgroundColor"] as? String {
-            ShopifyCheckoutKit.configuration.backgroundColor = UIColor(hex: backgroundColorHex)
-        }
+                if let backgroundColorHex = iosConfig?["backgroundColor"] {
+                    config.backgroundColor = UIColor(hex: backgroundColorHex)
+                }
 
-        if let closeButtonColorHex = iosConfig?["closeButtonColor"] as? String {
-            ShopifyCheckoutKit.configuration.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
-        }
+                if let closeButtonColorHex = iosConfig?["closeButtonColor"] {
+                    config.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
+                }
 
-        if let logLevel = configuration["logLevel"] as? String,
-           let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
-        {
-            ShopifyCheckoutKit.configuration.logLevel = parsedLogLevel
-        }
+                if let logLevel = configuration["logLevel"] as? String,
+                   let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
+                {
+                    config.logLevel = parsedLogLevel
+                }
+            }
 
-        NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
+            NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
+        }
     }
 
     @objc func getConfig() -> NSDictionary {

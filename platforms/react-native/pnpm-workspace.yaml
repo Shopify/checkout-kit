@@ -1,4 +1,6 @@
 packages:
+  # The SDK package itself, so Changesets can version it.
+  - .
   - components/*
   - internal/*
   - sample

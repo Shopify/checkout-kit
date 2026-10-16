@@ -11,12 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.androiddemo.R
 import com.shopify.checkoutkit.androiddemo.common.components.Header3
 import com.shopify.checkoutkit.androiddemo.common.sampleStorefrontAppearance
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.verticalPadding
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.ColorScheme
 
 @Composable
 fun AppearanceSection(

@@ -1,6 +1,6 @@
 package com.shopify.checkoutkit.androiddemo.e2e
 
-import com.shopify.checkoutkit.PreloadState
+import com.shopify.checkoutkit.checkout.PreloadState
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 

@@ -36,7 +36,19 @@ class ExtensionPreservationTest {
         assertThat(signals?.get("dev.ucp.buyer_ip")?.jsonPrimitive?.content).isEqualTo("203.0.113.7")
         assertThat(signals?.get("com.example.device_id")?.jsonPrimitive?.content).isEqualTo("abc-123")
 
-        val colliding = checkout.copy(
+        val copied = checkout.toBuilder().id("checkout-copy").build()
+        val copyEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), copied)).jsonObject
+        assertThat(copyEncoded).isEqualTo(reEncoded + ("id" to JsonPrimitive("checkout-copy")))
+        assertThat(checkout.id).isEqualTo("checkout-123")
+
+        val colliding = Checkout(
+            currency = checkout.currency,
+            id = checkout.id,
+            lineItems = checkout.lineItems,
+            links = checkout.links,
+            status = checkout.status,
+            totals = checkout.totals,
+            ucp = checkout.ucp,
             additionalProperties = checkout.additionalProperties + ("id" to JsonPrimitive("extension-id")),
         )
         val collisionEncoded = json.parseToJsonElement(json.encodeToString(Checkout.serializer(), colliding)).jsonObject

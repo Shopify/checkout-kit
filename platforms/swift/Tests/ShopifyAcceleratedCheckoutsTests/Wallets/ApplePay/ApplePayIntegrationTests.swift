@@ -59,7 +59,7 @@ final class ApplePayIntegrationTests: XCTestCase {
 
     func testViewModifierWithButtonIntegration() async {
         await MainActor.run {
-            let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
+            let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
                 .wallets([.applePay])
                 .environment(\.shopifyAcceleratedCheckoutsConfiguration, mockCommonConfiguration)
                 .environment(\.shopifyApplePayConfiguration, mockApplePayConfiguration)
@@ -82,7 +82,7 @@ final class ApplePayIntegrationTests: XCTestCase {
         dismissExpectation.isInverted = true
 
         await MainActor.run {
-            let view = AcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
+            let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart")
                 .wallets([.applePay])
                 .onFail { _ in
                     failExpectation.fulfill()

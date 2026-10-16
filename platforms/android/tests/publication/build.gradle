@@ -1,0 +1,20 @@
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = 'com.shopify.checkoutkit.consumer'
+    compileSdk = 36
+    defaultConfig { minSdk = 23 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 } }
+
+dependencies {
+    // No project, feature, or protocol dependency: exercise the published SDK.
+    implementation "com.shopify:checkout-kit:${libs.versions.checkoutKitAndroid.get()}"
+}

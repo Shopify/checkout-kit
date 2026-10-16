@@ -39,3 +39,31 @@ jobs:
           report-path: protocols/universal-commerce-protocol/embedded-checkout-protocol/coverage/coverage-summary.json
           report-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/coverage
           outcome: ${{ steps.coverage_tests.outcome }}
+
+  compat:
+    name: Consumer compatibility
+    runs-on: ${{ vars.MACOS_RUNNER }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node.js, pnpm, and install dependencies
+        uses: ./.github/actions/setup
+        with:
+          node-version-file: protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json
+          cache-dependency-path: protocols/universal-commerce-protocol/embedded-checkout-protocol/pnpm-lock.yaml
+          package-json-file: protocols/universal-commerce-protocol/embedded-checkout-protocol/package.json
+          working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol
+      - name: Setup Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'gradle'
+      - name: Check consumer compatibility with an additive protocol change
+        run: compat/check.sh
+

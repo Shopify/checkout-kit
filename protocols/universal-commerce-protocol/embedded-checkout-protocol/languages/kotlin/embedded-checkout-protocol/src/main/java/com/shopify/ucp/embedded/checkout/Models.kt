@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.*
  * Base checkout schema. Extensions compose onto this using allOf.
  */
 @Serializable(with = CheckoutSerializer::class)
-public data class Checkout (
+public class Checkout internal constructor (
     /**
      * Outstanding extension-defined JsonObject for this checkout.
      */
@@ -102,7 +102,143 @@ public data class Checkout (
     public val ucp: UCPCheckoutResponseSchema,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Checkout &&
+            actions == other.actions &&
+            attribution == other.attribution &&
+            buyer == other.buyer &&
+            context == other.context &&
+            continueURL == other.continueURL &&
+            currency == other.currency &&
+            discounts == other.discounts &&
+            expiresAt == other.expiresAt &&
+            fulfillment == other.fulfillment &&
+            id == other.id &&
+            lineItems == other.lineItems &&
+            links == other.links &&
+            messages == other.messages &&
+            order == other.order &&
+            payment == other.payment &&
+            policies == other.policies &&
+            signals == other.signals &&
+            status == other.status &&
+            totals == other.totals &&
+            ucp == other.ucp &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(actions, attribution, buyer, context, continueURL, currency, discounts, expiresAt, fulfillment, id, lineItems, links, messages, order, payment, policies, signals, status, totals, ucp, additionalProperties)
+
+    override fun toString(): String = "Checkout(actions=$actions, attribution=$attribution, buyer=$buyer, context=$context, continueURL=$continueURL, currency=$currency, discounts=$discounts, expiresAt=$expiresAt, fulfillment=$fulfillment, id=$id, lineItems=$lineItems, links=$links, messages=$messages, order=$order, payment=$payment, policies=$policies, signals=$signals, status=$status, totals=$totals, ucp=$ucp, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(currency, id, lineItems, links, status, totals, ucp).also { builder ->
+        builder.actions = this.actions
+        builder.attribution = this.attribution
+        builder.buyer = this.buyer
+        builder.context = this.context
+        builder.continueURL = this.continueURL
+        builder.discounts = this.discounts
+        builder.expiresAt = this.expiresAt
+        builder.fulfillment = this.fulfillment
+        builder.messages = this.messages
+        builder.order = this.order
+        builder.payment = this.payment
+        builder.policies = this.policies
+        builder.signals = this.signals
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [Checkout]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var currency: String,
+        public var id: String,
+        public var lineItems: List<LineItem>,
+        public var links: List<Link>,
+        public var status: CheckoutStatus,
+        public var totals: List<CheckoutTotal>,
+        public var ucp: UCPCheckoutResponseSchema,
+    ) {
+        public var actions: Map<String, List<JsonObject>>? = null
+
+        public var attribution: Map<String, String>? = null
+
+        public var buyer: Buyer? = null
+
+        public var context: Context? = null
+
+        public var continueURL: String? = null
+
+        public var discounts: CheckoutDiscounts? = null
+
+        public var expiresAt: String? = null
+
+        public var fulfillment: CheckoutFulfillment? = null
+
+        public var messages: List<Message>? = null
+
+        public var order: OrderConfirmation? = null
+
+        public var payment: Payment? = null
+
+        public var policies: List<Policy>? = null
+
+        public var signals: JsonObject? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun actions(value: Map<String, List<JsonObject>>?): Builder = apply { this.actions = value }
+
+        public fun attribution(value: Map<String, String>?): Builder = apply { this.attribution = value }
+
+        public fun buyer(value: Buyer?): Builder = apply { this.buyer = value }
+
+        public fun context(value: Context?): Builder = apply { this.context = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun currency(value: String): Builder = apply { this.currency = value }
+
+        public fun discounts(value: CheckoutDiscounts?): Builder = apply { this.discounts = value }
+
+        public fun expiresAt(value: String?): Builder = apply { this.expiresAt = value }
+
+        public fun fulfillment(value: CheckoutFulfillment?): Builder = apply { this.fulfillment = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItems(value: List<LineItem>): Builder = apply { this.lineItems = value }
+
+        public fun links(value: List<Link>): Builder = apply { this.links = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun order(value: OrderConfirmation?): Builder = apply { this.order = value }
+
+        public fun payment(value: Payment?): Builder = apply { this.payment = value }
+
+        public fun policies(value: List<Policy>?): Builder = apply { this.policies = value }
+
+        public fun signals(value: JsonObject?): Builder = apply { this.signals = value }
+
+        public fun status(value: CheckoutStatus): Builder = apply { this.status = value }
+
+        public fun totals(value: List<CheckoutTotal>): Builder = apply { this.totals = value }
+
+        public fun ucp(value: UCPCheckoutResponseSchema): Builder = apply { this.ucp = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): Checkout = Checkout(actions = actions, attribution = attribution, buyer = buyer, context = context, continueURL = continueURL, currency = currency, discounts = discounts, expiresAt = expiresAt, fulfillment = fulfillment, id = id, lineItems = lineItems, links = links, messages = messages, order = order, payment = payment, policies = policies, signals = signals, status = status, totals = totals, ucp = ucp, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [Checkout]: `Checkout(required = …) { optional = … }`. */
+        public operator fun invoke(currency: String, id: String, lineItems: List<LineItem>, links: List<Link>, status: CheckoutStatus, totals: List<CheckoutTotal>, ucp: UCPCheckoutResponseSchema, configure: Builder.() -> Unit = {}): Checkout =
+            Builder(currency, id, lineItems, links, status, totals, ucp).apply(configure).build()
+    }
+}
 
 /**
  * Non-empty instances of one Action type. JSON preserves array order; the declaring
@@ -117,7 +253,7 @@ public data class Checkout (
  * Representation of the buyer.
  */
 @Serializable(with = BuyerSerializer::class)
-public data class Buyer (
+public class Buyer internal constructor (
     /**
      * Email of the buyer.
      */
@@ -142,7 +278,60 @@ public data class Buyer (
     public val phoneNumber: String? = null,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Buyer &&
+            email == other.email &&
+            firstName == other.firstName &&
+            lastName == other.lastName &&
+            phoneNumber == other.phoneNumber &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(email, firstName, lastName, phoneNumber, additionalProperties)
+
+    override fun toString(): String = "Buyer(email=$email, firstName=$firstName, lastName=$lastName, phoneNumber=$phoneNumber, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.email = this.email
+        builder.firstName = this.firstName
+        builder.lastName = this.lastName
+        builder.phoneNumber = this.phoneNumber
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [Buyer]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var email: String? = null
+
+        public var firstName: String? = null
+
+        public var lastName: String? = null
+
+        public var phoneNumber: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun email(value: String?): Builder = apply { this.email = value }
+
+        public fun firstName(value: String?): Builder = apply { this.firstName = value }
+
+        public fun lastName(value: String?): Builder = apply { this.lastName = value }
+
+        public fun phoneNumber(value: String?): Builder = apply { this.phoneNumber = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): Buyer = Buyer(email = email, firstName = firstName, lastName = lastName, phoneNumber = phoneNumber, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [Buyer]: `Buyer(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Buyer =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Provisional buyer signals for relevance and localization—not authoritative data.
@@ -158,7 +347,7 @@ public data class Buyer (
  * alternative to a full postal address.
  */
 @Serializable(with = ContextSerializer::class)
-public data class Context (
+public class Context internal constructor (
     /**
      * The country, as a 2-letter ISO 3166-1 alpha-2 code (e.g. "US"). A 3-letter alpha-3 code
      * or full country name MAY also be used.
@@ -231,10 +420,93 @@ public data class Context (
     public val payment: List<PreferredPaymentHandler>? = null,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Context &&
+            addressCountry == other.addressCountry &&
+            addressRegion == other.addressRegion &&
+            postalCode == other.postalCode &&
+            currency == other.currency &&
+            eligibility == other.eligibility &&
+            intent == other.intent &&
+            language == other.language &&
+            location == other.location &&
+            payment == other.payment &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(addressCountry, addressRegion, postalCode, currency, eligibility, intent, language, location, payment, additionalProperties)
+
+    override fun toString(): String = "Context(addressCountry=$addressCountry, addressRegion=$addressRegion, postalCode=$postalCode, currency=$currency, eligibility=$eligibility, intent=$intent, language=$language, location=$location, payment=$payment, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.addressCountry = this.addressCountry
+        builder.addressRegion = this.addressRegion
+        builder.postalCode = this.postalCode
+        builder.currency = this.currency
+        builder.eligibility = this.eligibility
+        builder.intent = this.intent
+        builder.language = this.language
+        builder.location = this.location
+        builder.payment = this.payment
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [Context]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var addressCountry: String? = null
+
+        public var addressRegion: String? = null
+
+        public var postalCode: String? = null
+
+        public var currency: String? = null
+
+        public var eligibility: List<String>? = null
+
+        public var intent: String? = null
+
+        public var language: String? = null
+
+        public var location: String? = null
+
+        public var payment: List<PreferredPaymentHandler>? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun addressCountry(value: String?): Builder = apply { this.addressCountry = value }
+
+        public fun addressRegion(value: String?): Builder = apply { this.addressRegion = value }
+
+        public fun postalCode(value: String?): Builder = apply { this.postalCode = value }
+
+        public fun currency(value: String?): Builder = apply { this.currency = value }
+
+        public fun eligibility(value: List<String>?): Builder = apply { this.eligibility = value }
+
+        public fun intent(value: String?): Builder = apply { this.intent = value }
+
+        public fun language(value: String?): Builder = apply { this.language = value }
+
+        public fun location(value: String?): Builder = apply { this.location = value }
+
+        public fun payment(value: List<PreferredPaymentHandler>?): Builder = apply { this.payment = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): Context = Context(addressCountry = addressCountry, addressRegion = addressRegion, postalCode = postalCode, currency = currency, eligibility = eligibility, intent = intent, language = language, location = location, payment = payment, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [Context]: `Context(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Context =
+            Builder().apply(configure).build()
+    }
+}
 
 @Serializable
-public data class PreferredPaymentHandler (
+public class PreferredPaymentHandler internal constructor (
     /**
      * Handler registry key advertised in the Business profile's `ucp.payment_handlers`.
      */
@@ -246,13 +518,47 @@ public data class PreferredPaymentHandler (
      * Unrecognized values MUST be ignored.
      */
     public val types: List<String>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PreferredPaymentHandler &&
+            handler == other.handler &&
+            types == other.types)
+
+    override fun hashCode(): Int = java.util.Objects.hash(handler, types)
+
+    override fun toString(): String = "PreferredPaymentHandler(handler=$handler, types=$types)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(handler).also { builder ->
+        builder.types = this.types
+    }
+
+    /** Builds a [PreferredPaymentHandler]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var handler: String,
+    ) {
+        public var types: List<String>? = null
+
+        public fun handler(value: String): Builder = apply { this.handler = value }
+
+        public fun types(value: List<String>?): Builder = apply { this.types = value }
+
+        public fun build(): PreferredPaymentHandler = PreferredPaymentHandler(handler = handler, types = types)
+    }
+
+    public companion object {
+        /** Builds a [PreferredPaymentHandler]: `PreferredPaymentHandler(required = …) { optional = … }`. */
+        public operator fun invoke(handler: String, configure: Builder.() -> Unit = {}): PreferredPaymentHandler =
+            Builder(handler).apply(configure).build()
+    }
+}
 
 /**
  * Discount codes input and applied discounts output.
  */
 @Serializable
-public data class CheckoutDiscounts (
+public class CheckoutDiscounts internal constructor (
     /**
      * Discounts successfully applied (code-based and automatic).
      */
@@ -263,13 +569,48 @@ public data class CheckoutDiscounts (
      * empty array to clear.
      */
     public val codes: List<String>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CheckoutDiscounts &&
+            applied == other.applied &&
+            codes == other.codes)
+
+    override fun hashCode(): Int = java.util.Objects.hash(applied, codes)
+
+    override fun toString(): String = "CheckoutDiscounts(applied=$applied, codes=$codes)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.applied = this.applied
+        builder.codes = this.codes
+    }
+
+    /** Builds a [CheckoutDiscounts]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var applied: List<AppliedDiscount>? = null
+
+        public var codes: List<String>? = null
+
+        public fun applied(value: List<AppliedDiscount>?): Builder = apply { this.applied = value }
+
+        public fun codes(value: List<String>?): Builder = apply { this.codes = value }
+
+        public fun build(): CheckoutDiscounts = CheckoutDiscounts(applied = applied, codes = codes)
+    }
+
+    public companion object {
+        /** Builds a [CheckoutDiscounts]: `CheckoutDiscounts(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): CheckoutDiscounts =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * A discount that was successfully applied.
  */
 @Serializable
-public data class AppliedDiscount (
+public class AppliedDiscount internal constructor (
     /**
      * Breakdown of where this discount was allocated. Sum of allocation amounts equals total
      * amount.
@@ -317,13 +658,87 @@ public data class AppliedDiscount (
      * Human-readable discount name (e.g., 'Summer Sale 20% Off').
      */
     public val title: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AppliedDiscount &&
+            allocations == other.allocations &&
+            amount == other.amount &&
+            automatic == other.automatic &&
+            code == other.code &&
+            eligibility == other.eligibility &&
+            method == other.method &&
+            priority == other.priority &&
+            provisional == other.provisional &&
+            title == other.title)
+
+    override fun hashCode(): Int = java.util.Objects.hash(allocations, amount, automatic, code, eligibility, method, priority, provisional, title)
+
+    override fun toString(): String = "AppliedDiscount(allocations=$allocations, amount=$amount, automatic=$automatic, code=$code, eligibility=$eligibility, method=$method, priority=$priority, provisional=$provisional, title=$title)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, title).also { builder ->
+        builder.allocations = this.allocations
+        builder.automatic = this.automatic
+        builder.code = this.code
+        builder.eligibility = this.eligibility
+        builder.method = this.method
+        builder.priority = this.priority
+        builder.provisional = this.provisional
+    }
+
+    /** Builds a [AppliedDiscount]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var title: String,
+    ) {
+        public var allocations: List<DiscountAllocation>? = null
+
+        public var automatic: Boolean? = null
+
+        public var code: String? = null
+
+        public var eligibility: String? = null
+
+        public var method: DiscountMethod? = null
+
+        public var priority: Long? = null
+
+        public var provisional: Boolean? = null
+
+        public fun allocations(value: List<DiscountAllocation>?): Builder = apply { this.allocations = value }
+
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun automatic(value: Boolean?): Builder = apply { this.automatic = value }
+
+        public fun code(value: String?): Builder = apply { this.code = value }
+
+        public fun eligibility(value: String?): Builder = apply { this.eligibility = value }
+
+        public fun method(value: DiscountMethod?): Builder = apply { this.method = value }
+
+        public fun priority(value: Long?): Builder = apply { this.priority = value }
+
+        public fun provisional(value: Boolean?): Builder = apply { this.provisional = value }
+
+        public fun title(value: String): Builder = apply { this.title = value }
+
+        public fun build(): AppliedDiscount = AppliedDiscount(allocations = allocations, amount = amount, automatic = automatic, code = code, eligibility = eligibility, method = method, priority = priority, provisional = provisional, title = title)
+    }
+
+    public companion object {
+        /** Builds a [AppliedDiscount]: `AppliedDiscount(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, title: String, configure: Builder.() -> Unit = {}): AppliedDiscount =
+            Builder(amount, title).apply(configure).build()
+    }
+}
 
 /**
  * Breakdown of how a discount amount was allocated to a specific target.
  */
 @Serializable
-public data class DiscountAllocation (
+public class DiscountAllocation internal constructor (
     /**
      * Amount allocated to this target in ISO 4217 minor units.
      */
@@ -334,16 +749,79 @@ public data class DiscountAllocation (
      * "fulfillment"]').
      */
     public val path: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is DiscountAllocation &&
+            amount == other.amount &&
+            path == other.path)
+
+    override fun hashCode(): Int = java.util.Objects.hash(amount, path)
+
+    override fun toString(): String = "DiscountAllocation(amount=$amount, path=$path)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, path)
+
+    /** Builds a [DiscountAllocation]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var path: String,
+    ) {
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun path(value: String): Builder = apply { this.path = value }
+
+        public fun build(): DiscountAllocation = DiscountAllocation(amount = amount, path = path)
+    }
+
+    public companion object {
+        /** Builds a [DiscountAllocation]: `DiscountAllocation(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, path: String, configure: Builder.() -> Unit = {}): DiscountAllocation =
+            Builder(amount, path).apply(configure).build()
+    }
+}
 
 /**
  * Allocation method. 'each' = applied independently per item. 'across' = split
  * proportionally by value.
  */
-@Serializable
-public enum class DiscountMethod(public val value: String) {
-    @SerialName("across") Across("across"),
-    @SerialName("each") Each("each");
+@Serializable(with = DiscountMethodSerializer::class)
+public class DiscountMethod private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Across: DiscountMethod = DiscountMethod("across")
+        @JvmField public val Each: DiscountMethod = DiscountMethod("each")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, DiscountMethod> = listOf(Across, Each).associateBy { it.value }
+
+        internal fun fromWire(value: String): DiscountMethod = known[value] ?: DiscountMethod(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is DiscountMethod && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object DiscountMethodSerializer : KSerializer<DiscountMethod> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.DiscountMethod", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): DiscountMethod {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for DiscountMethod")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return DiscountMethod.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: DiscountMethod): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -352,7 +830,7 @@ public enum class DiscountMethod(public val value: String) {
  * Container for fulfillment methods and availability.
  */
 @Serializable
-public data class CheckoutFulfillment (
+public class CheckoutFulfillment internal constructor (
     /**
      * Inventory availability hints.
      */
@@ -363,13 +841,48 @@ public data class CheckoutFulfillment (
      * Fulfillment methods for cart items.
      */
     public val methods: List<FulfillmentMethod>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CheckoutFulfillment &&
+            availableMethods == other.availableMethods &&
+            methods == other.methods)
+
+    override fun hashCode(): Int = java.util.Objects.hash(availableMethods, methods)
+
+    override fun toString(): String = "CheckoutFulfillment(availableMethods=$availableMethods, methods=$methods)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.availableMethods = this.availableMethods
+        builder.methods = this.methods
+    }
+
+    /** Builds a [CheckoutFulfillment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var availableMethods: List<FulfillmentAvailableMethod>? = null
+
+        public var methods: List<FulfillmentMethod>? = null
+
+        public fun availableMethods(value: List<FulfillmentAvailableMethod>?): Builder = apply { this.availableMethods = value }
+
+        public fun methods(value: List<FulfillmentMethod>?): Builder = apply { this.methods = value }
+
+        public fun build(): CheckoutFulfillment = CheckoutFulfillment(availableMethods = availableMethods, methods = methods)
+    }
+
+    public companion object {
+        /** Builds a [CheckoutFulfillment]: `CheckoutFulfillment(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): CheckoutFulfillment =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Inventory availability hint for a fulfillment method type.
  */
 @Serializable(with = FulfillmentAvailableMethodSerializer::class)
-public data class FulfillmentAvailableMethod (
+public class FulfillmentAvailableMethod internal constructor (
     /**
      * Human-readable availability info (e.g., 'Available for pickup at Downtown Store today').
      */
@@ -394,13 +907,63 @@ public data class FulfillmentAvailableMethod (
     public val type: String,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentAvailableMethod &&
+            description == other.description &&
+            fulfillableOn == other.fulfillableOn &&
+            lineItemIDS == other.lineItemIDS &&
+            type == other.type &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(description, fulfillableOn, lineItemIDS, type, additionalProperties)
+
+    override fun toString(): String = "FulfillmentAvailableMethod(description=$description, fulfillableOn=$fulfillableOn, lineItemIDS=$lineItemIDS, type=$type, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(lineItemIDS, type).also { builder ->
+        builder.description = this.description
+        builder.fulfillableOn = this.fulfillableOn
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [FulfillmentAvailableMethod]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var lineItemIDS: List<String>,
+        public var type: String,
+    ) {
+        public var description: String? = null
+
+        public var fulfillableOn: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun description(value: String?): Builder = apply { this.description = value }
+
+        public fun fulfillableOn(value: String?): Builder = apply { this.fulfillableOn = value }
+
+        public fun lineItemIDS(value: List<String>): Builder = apply { this.lineItemIDS = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): FulfillmentAvailableMethod = FulfillmentAvailableMethod(description = description, fulfillableOn = fulfillableOn, lineItemIDS = lineItemIDS, type = type, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentAvailableMethod]: `FulfillmentAvailableMethod(required = …) { optional = … }`. */
+        public operator fun invoke(lineItemIDS: List<String>, type: String, configure: Builder.() -> Unit = {}): FulfillmentAvailableMethod =
+            Builder(lineItemIDS, type).apply(configure).build()
+    }
+}
 
 /**
  * A fulfillment method with destinations and groups.
  */
 @Serializable(with = FulfillmentMethodSerializer::class)
-public data class FulfillmentMethod (
+public class FulfillmentMethod internal constructor (
     /**
      * Available destinations for this method. In Business responses, each destination carries a
      * `type` and `id`.
@@ -438,13 +1001,73 @@ public data class FulfillmentMethod (
     public val type: String,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentMethod &&
+            destinations == other.destinations &&
+            groups == other.groups &&
+            id == other.id &&
+            lineItemIDS == other.lineItemIDS &&
+            selectedDestinationID == other.selectedDestinationID &&
+            type == other.type &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(destinations, groups, id, lineItemIDS, selectedDestinationID, type, additionalProperties)
+
+    override fun toString(): String = "FulfillmentMethod(destinations=$destinations, groups=$groups, id=$id, lineItemIDS=$lineItemIDS, selectedDestinationID=$selectedDestinationID, type=$type, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, lineItemIDS, type).also { builder ->
+        builder.destinations = this.destinations
+        builder.groups = this.groups
+        builder.selectedDestinationID = this.selectedDestinationID
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [FulfillmentMethod]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var lineItemIDS: List<String>,
+        public var type: String,
+    ) {
+        public var destinations: List<FulfillmentDestination>? = null
+
+        public var groups: List<FulfillmentGroup>? = null
+
+        public var selectedDestinationID: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun destinations(value: List<FulfillmentDestination>?): Builder = apply { this.destinations = value }
+
+        public fun groups(value: List<FulfillmentGroup>?): Builder = apply { this.groups = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItemIDS(value: List<String>): Builder = apply { this.lineItemIDS = value }
+
+        public fun selectedDestinationID(value: String?): Builder = apply { this.selectedDestinationID = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): FulfillmentMethod = FulfillmentMethod(destinations = destinations, groups = groups, id = id, lineItemIDS = lineItemIDS, selectedDestinationID = selectedDestinationID, type = type, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentMethod]: `FulfillmentMethod(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, lineItemIDS: List<String>, type: String, configure: Builder.() -> Unit = {}): FulfillmentMethod =
+            Builder(id, lineItemIDS, type).apply(configure).build()
+    }
+}
 
 /**
  * A destination for fulfillment.
  */
 @Serializable
-public data class FulfillmentDestination (
+public class FulfillmentDestination internal constructor (
     /**
      * Physical address of the location.
      */
@@ -526,7 +1149,107 @@ public data class FulfillmentDestination (
      * write; negotiated extensions define additional values.
      */
     public val type: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentDestination &&
+            address == other.address &&
+            addressCountry == other.addressCountry &&
+            addressLocality == other.addressLocality &&
+            addressRegion == other.addressRegion &&
+            extendedAddress == other.extendedAddress &&
+            firstName == other.firstName &&
+            id == other.id &&
+            lastName == other.lastName &&
+            name == other.name &&
+            phoneNumber == other.phoneNumber &&
+            postalCode == other.postalCode &&
+            streetAddress == other.streetAddress &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(address, addressCountry, addressLocality, addressRegion, extendedAddress, firstName, id, lastName, name, phoneNumber, postalCode, streetAddress, type)
+
+    override fun toString(): String = "FulfillmentDestination(address=$address, addressCountry=$addressCountry, addressLocality=$addressLocality, addressRegion=$addressRegion, extendedAddress=$extendedAddress, firstName=$firstName, id=$id, lastName=$lastName, name=$name, phoneNumber=$phoneNumber, postalCode=$postalCode, streetAddress=$streetAddress, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id).also { builder ->
+        builder.address = this.address
+        builder.addressCountry = this.addressCountry
+        builder.addressLocality = this.addressLocality
+        builder.addressRegion = this.addressRegion
+        builder.extendedAddress = this.extendedAddress
+        builder.firstName = this.firstName
+        builder.lastName = this.lastName
+        builder.name = this.name
+        builder.phoneNumber = this.phoneNumber
+        builder.postalCode = this.postalCode
+        builder.streetAddress = this.streetAddress
+        builder.type = this.type
+    }
+
+    /** Builds a [FulfillmentDestination]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+    ) {
+        public var address: PostalAddress? = null
+
+        public var addressCountry: String? = null
+
+        public var addressLocality: String? = null
+
+        public var addressRegion: String? = null
+
+        public var extendedAddress: String? = null
+
+        public var firstName: String? = null
+
+        public var lastName: String? = null
+
+        public var name: String? = null
+
+        public var phoneNumber: String? = null
+
+        public var postalCode: String? = null
+
+        public var streetAddress: String? = null
+
+        public var type: String? = null
+
+        public fun address(value: PostalAddress?): Builder = apply { this.address = value }
+
+        public fun addressCountry(value: String?): Builder = apply { this.addressCountry = value }
+
+        public fun addressLocality(value: String?): Builder = apply { this.addressLocality = value }
+
+        public fun addressRegion(value: String?): Builder = apply { this.addressRegion = value }
+
+        public fun extendedAddress(value: String?): Builder = apply { this.extendedAddress = value }
+
+        public fun firstName(value: String?): Builder = apply { this.firstName = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lastName(value: String?): Builder = apply { this.lastName = value }
+
+        public fun name(value: String?): Builder = apply { this.name = value }
+
+        public fun phoneNumber(value: String?): Builder = apply { this.phoneNumber = value }
+
+        public fun postalCode(value: String?): Builder = apply { this.postalCode = value }
+
+        public fun streetAddress(value: String?): Builder = apply { this.streetAddress = value }
+
+        public fun type(value: String?): Builder = apply { this.type = value }
+
+        public fun build(): FulfillmentDestination = FulfillmentDestination(address = address, addressCountry = addressCountry, addressLocality = addressLocality, addressRegion = addressRegion, extendedAddress = extendedAddress, firstName = firstName, id = id, lastName = lastName, name = name, phoneNumber = phoneNumber, postalCode = postalCode, streetAddress = streetAddress, type = type)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentDestination]: `FulfillmentDestination(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, configure: Builder.() -> Unit = {}): FulfillmentDestination =
+            Builder(id).apply(configure).build()
+    }
+}
 
 /**
  * Physical address of the location.
@@ -536,7 +1259,7 @@ public data class FulfillmentDestination (
  * Delivery destination address.
  */
 @Serializable
-public data class PostalAddress (
+public class PostalAddress internal constructor (
     /**
      * The country. Recommended to be in 2-letter ISO 3166-1 alpha-2 format, for example "US".
      * For backward compatibility, a 3-letter ISO 3166-1 alpha-3 country code such as "SGP" or a
@@ -595,13 +1318,90 @@ public data class PostalAddress (
      */
     @SerialName("street_address")
     public val streetAddress: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PostalAddress &&
+            addressCountry == other.addressCountry &&
+            addressLocality == other.addressLocality &&
+            addressRegion == other.addressRegion &&
+            extendedAddress == other.extendedAddress &&
+            firstName == other.firstName &&
+            lastName == other.lastName &&
+            phoneNumber == other.phoneNumber &&
+            postalCode == other.postalCode &&
+            streetAddress == other.streetAddress)
+
+    override fun hashCode(): Int = java.util.Objects.hash(addressCountry, addressLocality, addressRegion, extendedAddress, firstName, lastName, phoneNumber, postalCode, streetAddress)
+
+    override fun toString(): String = "PostalAddress(addressCountry=$addressCountry, addressLocality=$addressLocality, addressRegion=$addressRegion, extendedAddress=$extendedAddress, firstName=$firstName, lastName=$lastName, phoneNumber=$phoneNumber, postalCode=$postalCode, streetAddress=$streetAddress)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.addressCountry = this.addressCountry
+        builder.addressLocality = this.addressLocality
+        builder.addressRegion = this.addressRegion
+        builder.extendedAddress = this.extendedAddress
+        builder.firstName = this.firstName
+        builder.lastName = this.lastName
+        builder.phoneNumber = this.phoneNumber
+        builder.postalCode = this.postalCode
+        builder.streetAddress = this.streetAddress
+    }
+
+    /** Builds a [PostalAddress]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var addressCountry: String? = null
+
+        public var addressLocality: String? = null
+
+        public var addressRegion: String? = null
+
+        public var extendedAddress: String? = null
+
+        public var firstName: String? = null
+
+        public var lastName: String? = null
+
+        public var phoneNumber: String? = null
+
+        public var postalCode: String? = null
+
+        public var streetAddress: String? = null
+
+        public fun addressCountry(value: String?): Builder = apply { this.addressCountry = value }
+
+        public fun addressLocality(value: String?): Builder = apply { this.addressLocality = value }
+
+        public fun addressRegion(value: String?): Builder = apply { this.addressRegion = value }
+
+        public fun extendedAddress(value: String?): Builder = apply { this.extendedAddress = value }
+
+        public fun firstName(value: String?): Builder = apply { this.firstName = value }
+
+        public fun lastName(value: String?): Builder = apply { this.lastName = value }
+
+        public fun phoneNumber(value: String?): Builder = apply { this.phoneNumber = value }
+
+        public fun postalCode(value: String?): Builder = apply { this.postalCode = value }
+
+        public fun streetAddress(value: String?): Builder = apply { this.streetAddress = value }
+
+        public fun build(): PostalAddress = PostalAddress(addressCountry = addressCountry, addressLocality = addressLocality, addressRegion = addressRegion, extendedAddress = extendedAddress, firstName = firstName, lastName = lastName, phoneNumber = phoneNumber, postalCode = postalCode, streetAddress = streetAddress)
+    }
+
+    public companion object {
+        /** Builds a [PostalAddress]: `PostalAddress(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): PostalAddress =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * A merchant-generated package/group of line items with fulfillment options.
  */
 @Serializable(with = FulfillmentGroupSerializer::class)
-public data class FulfillmentGroup (
+public class FulfillmentGroup internal constructor (
     /**
      * Group identifier for referencing merchant-generated groups in updates.
      */
@@ -625,7 +1425,57 @@ public data class FulfillmentGroup (
     public val selectedOptionID: String? = null,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentGroup &&
+            id == other.id &&
+            lineItemIDS == other.lineItemIDS &&
+            options == other.options &&
+            selectedOptionID == other.selectedOptionID &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, lineItemIDS, options, selectedOptionID, additionalProperties)
+
+    override fun toString(): String = "FulfillmentGroup(id=$id, lineItemIDS=$lineItemIDS, options=$options, selectedOptionID=$selectedOptionID, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, lineItemIDS).also { builder ->
+        builder.options = this.options
+        builder.selectedOptionID = this.selectedOptionID
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [FulfillmentGroup]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var lineItemIDS: List<String>,
+    ) {
+        public var options: List<FulfillmentOption>? = null
+
+        public var selectedOptionID: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItemIDS(value: List<String>): Builder = apply { this.lineItemIDS = value }
+
+        public fun options(value: List<FulfillmentOption>?): Builder = apply { this.options = value }
+
+        public fun selectedOptionID(value: String?): Builder = apply { this.selectedOptionID = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): FulfillmentGroup = FulfillmentGroup(id = id, lineItemIDS = lineItemIDS, options = options, selectedOptionID = selectedOptionID, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentGroup]: `FulfillmentGroup(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, lineItemIDS: List<String>, configure: Builder.() -> Unit = {}): FulfillmentGroup =
+            Builder(id, lineItemIDS).apply(configure).build()
+    }
+}
 
 /**
  * A fulfillment option within a group (e.g., Standard Shipping $5, Express $15). Extends
@@ -635,7 +1485,7 @@ public data class FulfillmentGroup (
  * Express). Catalog uses this base directly; checkout composes it with cost and timing.
  */
 @Serializable(with = FulfillmentOptionSerializer::class)
-public data class FulfillmentOption (
+public class FulfillmentOption internal constructor (
     /**
      * Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
      * 12-15 via FedEx'). Directly renderable; MUST NOT repeat the title.
@@ -676,7 +1526,73 @@ public data class FulfillmentOption (
     public val totals: List<LineItemTotal>,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentOption &&
+            description == other.description &&
+            id == other.id &&
+            title == other.title &&
+            carrier == other.carrier &&
+            earliestFulfillmentTime == other.earliestFulfillmentTime &&
+            latestFulfillmentTime == other.latestFulfillmentTime &&
+            totals == other.totals &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(description, id, title, carrier, earliestFulfillmentTime, latestFulfillmentTime, totals, additionalProperties)
+
+    override fun toString(): String = "FulfillmentOption(description=$description, id=$id, title=$title, carrier=$carrier, earliestFulfillmentTime=$earliestFulfillmentTime, latestFulfillmentTime=$latestFulfillmentTime, totals=$totals, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, title, totals).also { builder ->
+        builder.description = this.description
+        builder.carrier = this.carrier
+        builder.earliestFulfillmentTime = this.earliestFulfillmentTime
+        builder.latestFulfillmentTime = this.latestFulfillmentTime
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [FulfillmentOption]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var title: String,
+        public var totals: List<LineItemTotal>,
+    ) {
+        public var description: Description? = null
+
+        public var carrier: String? = null
+
+        public var earliestFulfillmentTime: String? = null
+
+        public var latestFulfillmentTime: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun description(value: Description?): Builder = apply { this.description = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun title(value: String): Builder = apply { this.title = value }
+
+        public fun carrier(value: String?): Builder = apply { this.carrier = value }
+
+        public fun earliestFulfillmentTime(value: String?): Builder = apply { this.earliestFulfillmentTime = value }
+
+        public fun latestFulfillmentTime(value: String?): Builder = apply { this.latestFulfillmentTime = value }
+
+        public fun totals(value: List<LineItemTotal>): Builder = apply { this.totals = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): FulfillmentOption = FulfillmentOption(description = description, id = id, title = title, carrier = carrier, earliestFulfillmentTime = earliestFulfillmentTime, latestFulfillmentTime = latestFulfillmentTime, totals = totals, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentOption]: `FulfillmentOption(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, title: String, totals: List<LineItemTotal>, configure: Builder.() -> Unit = {}): FulfillmentOption =
+            Builder(id, title, totals).apply(configure).build()
+    }
+}
 
 /**
  * Supplementary context for the title (e.g. 'Arrives in 4 business days', 'Arrives Dec
@@ -690,7 +1606,7 @@ public data class FulfillmentOption (
  * (see the Policies section).
  */
 @Serializable
-public data class Description (
+public class Description internal constructor (
     /**
      * HTML-formatted content. Security: Platforms MUST sanitize before rendering—strip scripts,
      * event handlers, and untrusted elements. Treat all rich text as untrusted input.
@@ -706,13 +1622,54 @@ public data class Description (
      * Plain text content.
      */
     public val plain: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Description &&
+            html == other.html &&
+            markdown == other.markdown &&
+            plain == other.plain)
+
+    override fun hashCode(): Int = java.util.Objects.hash(html, markdown, plain)
+
+    override fun toString(): String = "Description(html=$html, markdown=$markdown, plain=$plain)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.html = this.html
+        builder.markdown = this.markdown
+        builder.plain = this.plain
+    }
+
+    /** Builds a [Description]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var html: String? = null
+
+        public var markdown: String? = null
+
+        public var plain: String? = null
+
+        public fun html(value: String?): Builder = apply { this.html = value }
+
+        public fun markdown(value: String?): Builder = apply { this.markdown = value }
+
+        public fun plain(value: String?): Builder = apply { this.plain = value }
+
+        public fun build(): Description = Description(html = html, markdown = markdown, plain = plain)
+    }
+
+    public companion object {
+        /** Builds a [Description]: `Description(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Description =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * A cost breakdown entry with a category, amount, and optional display text.
  */
 @Serializable
-public data class LineItemTotal (
+public class LineItemTotal internal constructor (
     public val amount: Long,
 
     /**
@@ -727,13 +1684,51 @@ public data class LineItemTotal (
      * fee, total. Businesses MAY use additional values.
      */
     public val type: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is LineItemTotal &&
+            amount == other.amount &&
+            displayText == other.displayText &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(amount, displayText, type)
+
+    override fun toString(): String = "LineItemTotal(amount=$amount, displayText=$displayText, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, type).also { builder ->
+        builder.displayText = this.displayText
+    }
+
+    /** Builds a [LineItemTotal]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var type: String,
+    ) {
+        public var displayText: String? = null
+
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun displayText(value: String?): Builder = apply { this.displayText = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun build(): LineItemTotal = LineItemTotal(amount = amount, displayText = displayText, type = type)
+    }
+
+    public companion object {
+        /** Builds a [LineItemTotal]: `LineItemTotal(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, type: String, configure: Builder.() -> Unit = {}): LineItemTotal =
+            Builder(amount, type).apply(configure).build()
+    }
+}
 
 /**
  * Line item object. Expected to use the currency of the parent object.
  */
 @Serializable
-public data class LineItem (
+public class LineItem internal constructor (
     public val id: String,
     public val item: Item,
 
@@ -756,13 +1751,59 @@ public data class LineItem (
      * Line item totals breakdown.
      */
     public val totals: List<LineItemTotal>
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is LineItem &&
+            id == other.id &&
+            item == other.item &&
+            parentID == other.parentID &&
+            quantity == other.quantity &&
+            totals == other.totals)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, item, parentID, quantity, totals)
+
+    override fun toString(): String = "LineItem(id=$id, item=$item, parentID=$parentID, quantity=$quantity, totals=$totals)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, item, quantity, totals).also { builder ->
+        builder.parentID = this.parentID
+    }
+
+    /** Builds a [LineItem]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var item: Item,
+        public var quantity: Long,
+        public var totals: List<LineItemTotal>,
+    ) {
+        public var parentID: String? = null
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun item(value: Item): Builder = apply { this.item = value }
+
+        public fun parentID(value: String?): Builder = apply { this.parentID = value }
+
+        public fun quantity(value: Long): Builder = apply { this.quantity = value }
+
+        public fun totals(value: List<LineItemTotal>): Builder = apply { this.totals = value }
+
+        public fun build(): LineItem = LineItem(id = id, item = item, parentID = parentID, quantity = quantity, totals = totals)
+    }
+
+    public companion object {
+        /** Builds a [LineItem]: `LineItem(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, item: Item, quantity: Long, totals: List<LineItemTotal>, configure: Builder.() -> Unit = {}): LineItem =
+            Builder(id, item, quantity, totals).apply(configure).build()
+    }
+}
 
 /**
  * Purchased item data, including identity, price, and sale basis.
  */
 @Serializable
-public data class Item (
+public class Item internal constructor (
     /**
      * The product identifier, often the SKU, required to resolve the product details associated
      * with this line item. Should be recognized by both the Platform, and the Business.
@@ -812,7 +1853,61 @@ public data class Item (
      */
     @SerialName("unit_price")
     public val unitPrice: UnitPrice? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Item &&
+            id == other.id &&
+            imageURL == other.imageURL &&
+            price == other.price &&
+            quantityUnit == other.quantityUnit &&
+            title == other.title &&
+            unitPrice == other.unitPrice)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, imageURL, price, quantityUnit, title, unitPrice)
+
+    override fun toString(): String = "Item(id=$id, imageURL=$imageURL, price=$price, quantityUnit=$quantityUnit, title=$title, unitPrice=$unitPrice)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, price, title).also { builder ->
+        builder.imageURL = this.imageURL
+        builder.quantityUnit = this.quantityUnit
+        builder.unitPrice = this.unitPrice
+    }
+
+    /** Builds a [Item]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var price: Long,
+        public var title: String,
+    ) {
+        public var imageURL: String? = null
+
+        public var quantityUnit: QuantityUnit? = null
+
+        public var unitPrice: UnitPrice? = null
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun imageURL(value: String?): Builder = apply { this.imageURL = value }
+
+        public fun price(value: Long): Builder = apply { this.price = value }
+
+        public fun quantityUnit(value: QuantityUnit?): Builder = apply { this.quantityUnit = value }
+
+        public fun title(value: String): Builder = apply { this.title = value }
+
+        public fun unitPrice(value: UnitPrice?): Builder = apply { this.unitPrice = value }
+
+        public fun build(): Item = Item(id = id, imageURL = imageURL, price = price, quantityUnit = quantityUnit, title = title, unitPrice = unitPrice)
+    }
+
+    public companion object {
+        /** Builds a [Item]: `Item(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, price: Long, title: String, configure: Builder.() -> Unit = {}): Item =
+            Builder(id, price, title).apply(configure).build()
+    }
+}
 
 /**
  * Sale basis this item's `quantity` is denominated in. On an authoritative Business
@@ -837,7 +1932,7 @@ public data class Item (
  * or 0; `display_text` is excluded.
  */
 @Serializable
-public data class QuantityUnit (
+public class QuantityUnit internal constructor (
     /**
      * Required printable unit label provided by the Business. The Platform MUST use it when it
      * does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
@@ -874,7 +1969,51 @@ public data class QuantityUnit (
      * adjustments) are bounded only by `scale`.
      */
     public val increment: Long? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is QuantityUnit &&
+            displayText == other.displayText &&
+            scale == other.scale &&
+            unit == other.unit &&
+            increment == other.increment)
+
+    override fun hashCode(): Int = java.util.Objects.hash(displayText, scale, unit, increment)
+
+    override fun toString(): String = "QuantityUnit(displayText=$displayText, scale=$scale, unit=$unit, increment=$increment)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(displayText, unit).also { builder ->
+        builder.scale = this.scale
+        builder.increment = this.increment
+    }
+
+    /** Builds a [QuantityUnit]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var displayText: String,
+        public var unit: String,
+    ) {
+        public var scale: Long? = null
+
+        public var increment: Long? = null
+
+        public fun displayText(value: String): Builder = apply { this.displayText = value }
+
+        public fun scale(value: Long?): Builder = apply { this.scale = value }
+
+        public fun unit(value: String): Builder = apply { this.unit = value }
+
+        public fun increment(value: Long?): Builder = apply { this.increment = value }
+
+        public fun build(): QuantityUnit = QuantityUnit(displayText = displayText, scale = scale, unit = unit, increment = increment)
+    }
+
+    public companion object {
+        /** Builds a [QuantityUnit]: `QuantityUnit(required = …) { optional = … }`. */
+        public operator fun invoke(displayText: String, unit: String, configure: Builder.() -> Unit = {}): QuantityUnit =
+            Builder(displayText, unit).apply(configure).build()
+    }
+}
 
 /**
  * Pricing basis for this item. On an authoritative Business response, the Business MUST
@@ -890,7 +2029,7 @@ public data class QuantityUnit (
  * 10^-scale`.
  */
 @Serializable
-public data class UnitPrice (
+public class UnitPrice internal constructor (
     /**
      * Unit price in ISO 4217 minor units. After satisfying the same-unit invariant, the
      * Business MUST compute the comparator as `(price.amount / (measure.value ×
@@ -916,7 +2055,46 @@ public data class UnitPrice (
      * `value` MUST be at least 1.
      */
     public val reference: Measure
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is UnitPrice &&
+            amount == other.amount &&
+            currency == other.currency &&
+            measure == other.measure &&
+            reference == other.reference)
+
+    override fun hashCode(): Int = java.util.Objects.hash(amount, currency, measure, reference)
+
+    override fun toString(): String = "UnitPrice(amount=$amount, currency=$currency, measure=$measure, reference=$reference)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, currency, measure, reference)
+
+    /** Builds a [UnitPrice]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var currency: String,
+        public var measure: Measure,
+        public var reference: Measure,
+    ) {
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun currency(value: String): Builder = apply { this.currency = value }
+
+        public fun measure(value: Measure): Builder = apply { this.measure = value }
+
+        public fun reference(value: Measure): Builder = apply { this.reference = value }
+
+        public fun build(): UnitPrice = UnitPrice(amount = amount, currency = currency, measure = measure, reference = reference)
+    }
+
+    public companion object {
+        /** Builds a [UnitPrice]: `UnitPrice(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, currency: String, measure: Measure, reference: Measure, configure: Builder.() -> Unit = {}): UnitPrice =
+            Builder(amount, currency, measure, reference).apply(configure).build()
+    }
+}
 
 /**
  * Product quantity in packaging/content (for example, a 750 mL bottle), distinct from
@@ -938,7 +2116,7 @@ public data class UnitPrice (
  * or 0; `display_text` is excluded.
  */
 @Serializable
-public data class Measure (
+public class Measure internal constructor (
     /**
      * Required printable unit label provided by the Business. The Platform MUST use it when it
      * does not recognize `unit`; for a recognized UN/CEFACT Rec 20 Common Code, the Platform
@@ -969,10 +2147,52 @@ public data class Measure (
      * Integer count of `10^-scale` units of `unit`.
      */
     public val value: Long
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Measure &&
+            displayText == other.displayText &&
+            scale == other.scale &&
+            unit == other.unit &&
+            value == other.value)
+
+    override fun hashCode(): Int = java.util.Objects.hash(displayText, scale, unit, value)
+
+    override fun toString(): String = "Measure(displayText=$displayText, scale=$scale, unit=$unit, value=$value)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(displayText, unit, value).also { builder ->
+        builder.scale = this.scale
+    }
+
+    /** Builds a [Measure]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var displayText: String,
+        public var unit: String,
+        public var value: Long,
+    ) {
+        public var scale: Long? = null
+
+        public fun displayText(value: String): Builder = apply { this.displayText = value }
+
+        public fun scale(value: Long?): Builder = apply { this.scale = value }
+
+        public fun unit(value: String): Builder = apply { this.unit = value }
+
+        public fun value(value: Long): Builder = apply { this.value = value }
+
+        public fun build(): Measure = Measure(displayText = displayText, scale = scale, unit = unit, value = value)
+    }
+
+    public companion object {
+        /** Builds a [Measure]: `Measure(required = …) { optional = … }`. */
+        public operator fun invoke(displayText: String, unit: String, value: Long, configure: Builder.() -> Unit = {}): Measure =
+            Builder(displayText, unit, value).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class Link (
+public class Link internal constructor (
     /**
      * Optional display text for the link. When provided, use this instead of generating from
      * type.
@@ -990,13 +2210,51 @@ public data class Link (
      * The actual URL pointing to the content to be displayed.
      */
     public val url: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Link &&
+            title == other.title &&
+            type == other.type &&
+            url == other.url)
+
+    override fun hashCode(): Int = java.util.Objects.hash(title, type, url)
+
+    override fun toString(): String = "Link(title=$title, type=$type, url=$url)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(type, url).also { builder ->
+        builder.title = this.title
+    }
+
+    /** Builds a [Link]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var type: String,
+        public var url: String,
+    ) {
+        public var title: String? = null
+
+        public fun title(value: String?): Builder = apply { this.title = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun url(value: String): Builder = apply { this.url = value }
+
+        public fun build(): Link = Link(title = title, type = type, url = url)
+    }
+
+    public companion object {
+        /** Builds a [Link]: `Link(required = …) { optional = … }`. */
+        public operator fun invoke(type: String, url: String, configure: Builder.() -> Unit = {}): Link =
+            Builder(type, url).apply(configure).build()
+    }
+}
 
 /**
  * Container for error, warning, or info messages.
  */
 @Serializable
-public data class Message (
+public class Message internal constructor (
     public val code: String? = null,
 
     /**
@@ -1051,15 +2309,121 @@ public data class Message (
      * Reference URL for more information (e.g., regulatory site, registry entry, policy page).
      */
     public val url: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Message &&
+            code == other.code &&
+            content == other.content &&
+            contentType == other.contentType &&
+            path == other.path &&
+            severity == other.severity &&
+            type == other.type &&
+            imageURL == other.imageURL &&
+            presentation == other.presentation &&
+            url == other.url)
+
+    override fun hashCode(): Int = java.util.Objects.hash(code, content, contentType, path, severity, type, imageURL, presentation, url)
+
+    override fun toString(): String = "Message(code=$code, content=$content, contentType=$contentType, path=$path, severity=$severity, type=$type, imageURL=$imageURL, presentation=$presentation, url=$url)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(content, type).also { builder ->
+        builder.code = this.code
+        builder.contentType = this.contentType
+        builder.path = this.path
+        builder.severity = this.severity
+        builder.imageURL = this.imageURL
+        builder.presentation = this.presentation
+        builder.url = this.url
+    }
+
+    /** Builds a [Message]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var content: String,
+        public var type: MessageType,
+    ) {
+        public var code: String? = null
+
+        public var contentType: ContentType? = null
+
+        public var path: String? = null
+
+        public var severity: Severity? = null
+
+        public var imageURL: String? = null
+
+        public var presentation: String? = null
+
+        public var url: String? = null
+
+        public fun code(value: String?): Builder = apply { this.code = value }
+
+        public fun content(value: String): Builder = apply { this.content = value }
+
+        public fun contentType(value: ContentType?): Builder = apply { this.contentType = value }
+
+        public fun path(value: String?): Builder = apply { this.path = value }
+
+        public fun severity(value: Severity?): Builder = apply { this.severity = value }
+
+        public fun type(value: MessageType): Builder = apply { this.type = value }
+
+        public fun imageURL(value: String?): Builder = apply { this.imageURL = value }
+
+        public fun presentation(value: String?): Builder = apply { this.presentation = value }
+
+        public fun url(value: String?): Builder = apply { this.url = value }
+
+        public fun build(): Message = Message(code = code, content = content, contentType = contentType, path = path, severity = severity, type = type, imageURL = imageURL, presentation = presentation, url = url)
+    }
+
+    public companion object {
+        /** Builds a [Message]: `Message(required = …) { optional = … }`. */
+        public operator fun invoke(content: String, type: MessageType, configure: Builder.() -> Unit = {}): Message =
+            Builder(content, type).apply(configure).build()
+    }
+}
 
 /**
  * Content format, default = plain.
  */
-@Serializable
-public enum class ContentType(public val value: String) {
-    @SerialName("markdown") Markdown("markdown"),
-    @SerialName("plain") Plain("plain");
+@Serializable(with = ContentTypeSerializer::class)
+public class ContentType private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Markdown: ContentType = ContentType("markdown")
+        @JvmField public val Plain: ContentType = ContentType("plain")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, ContentType> = listOf(Markdown, Plain).associateBy { it.value }
+
+        internal fun fromWire(value: String): ContentType = known[value] ?: ContentType(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is ContentType && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object ContentTypeSerializer : KSerializer<ContentType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.ContentType", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): ContentType {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for ContentType")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return ContentType.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: ContentType): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -1072,19 +2436,83 @@ public enum class ContentType(public val value: String) {
  * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
  * 'status: requires_escalation'.
  */
-@Serializable
-public enum class Severity(public val value: String) {
-    @SerialName("recoverable") Recoverable("recoverable"),
-    @SerialName("requires_buyer_input") RequiresBuyerInput("requires_buyer_input"),
-    @SerialName("requires_buyer_review") RequiresBuyerReview("requires_buyer_review"),
-    @SerialName("unrecoverable") Unrecoverable("unrecoverable");
+@Serializable(with = SeveritySerializer::class)
+public class Severity private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Recoverable: Severity = Severity("recoverable")
+        @JvmField public val RequiresBuyerInput: Severity = Severity("requires_buyer_input")
+        @JvmField public val RequiresBuyerReview: Severity = Severity("requires_buyer_review")
+        @JvmField public val Unrecoverable: Severity = Severity("unrecoverable")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, Severity> = listOf(Recoverable, RequiresBuyerInput, RequiresBuyerReview, Unrecoverable).associateBy { it.value }
+
+        internal fun fromWire(value: String): Severity = known[value] ?: Severity(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is Severity && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
 }
 
-@Serializable
-public enum class MessageType(public val value: String) {
-    @SerialName("error") Error("error"),
-    @SerialName("info") Info("info"),
-    @SerialName("warning") Warning("warning");
+internal object SeveritySerializer : KSerializer<Severity> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.Severity", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Severity {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for Severity")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return Severity.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: Severity): Unit = encoder.encodeString(value.value)
+}
+
+@Serializable(with = MessageTypeSerializer::class)
+public class MessageType private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Error: MessageType = MessageType("error")
+        @JvmField public val Info: MessageType = MessageType("info")
+        @JvmField public val Warning: MessageType = MessageType("warning")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, MessageType> = listOf(Error, Info, Warning).associateBy { it.value }
+
+        internal fun fromWire(value: String): MessageType = known[value] ?: MessageType(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is MessageType && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object MessageTypeSerializer : KSerializer<MessageType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.MessageType", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): MessageType {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for MessageType")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return MessageType.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: MessageType): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -1093,7 +2521,7 @@ public enum class MessageType(public val value: String) {
  * Order details available at the time of checkout completion.
  */
 @Serializable
-public data class OrderConfirmation (
+public class OrderConfirmation internal constructor (
     /**
      * Unique order identifier.
      */
@@ -1109,20 +2537,87 @@ public data class OrderConfirmation (
      */
     @SerialName("permalink_url")
     public val permalinkURL: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is OrderConfirmation &&
+            id == other.id &&
+            label == other.label &&
+            permalinkURL == other.permalinkURL)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, label, permalinkURL)
+
+    override fun toString(): String = "OrderConfirmation(id=$id, label=$label, permalinkURL=$permalinkURL)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, permalinkURL).also { builder ->
+        builder.label = this.label
+    }
+
+    /** Builds a [OrderConfirmation]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var permalinkURL: String,
+    ) {
+        public var label: String? = null
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun label(value: String?): Builder = apply { this.label = value }
+
+        public fun permalinkURL(value: String): Builder = apply { this.permalinkURL = value }
+
+        public fun build(): OrderConfirmation = OrderConfirmation(id = id, label = label, permalinkURL = permalinkURL)
+    }
+
+    public companion object {
+        /** Builds a [OrderConfirmation]: `OrderConfirmation(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, permalinkURL: String, configure: Builder.() -> Unit = {}): OrderConfirmation =
+            Builder(id, permalinkURL).apply(configure).build()
+    }
+}
 
 /**
  * Payment configuration containing handlers.
  */
 @Serializable
-public data class Payment (
+public class Payment internal constructor (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
      * payment_instrument schema to add handler-specific fields.
      */
     public val instruments: List<SelectedPaymentInstrument>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Payment &&
+            instruments == other.instruments)
+
+    override fun hashCode(): Int = java.util.Objects.hash(instruments)
+
+    override fun toString(): String = "Payment(instruments=$instruments)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.instruments = this.instruments
+    }
+
+    /** Builds a [Payment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var instruments: List<SelectedPaymentInstrument>? = null
+
+        public fun instruments(value: List<SelectedPaymentInstrument>?): Builder = apply { this.instruments = value }
+
+        public fun build(): Payment = Payment(instruments = instruments)
+    }
+
+    public companion object {
+        /** Builds a [Payment]: `Payment(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Payment =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * A payment instrument with selection state.
@@ -1131,7 +2626,7 @@ public data class Payment (
  * payment handler.
  */
 @Serializable(with = SelectedPaymentInstrumentSerializer::class)
-public data class SelectedPaymentInstrument (
+public class SelectedPaymentInstrument internal constructor (
     /**
      * The billing address associated with this payment method.
      */
@@ -1174,13 +2669,79 @@ public data class SelectedPaymentInstrument (
     public val selected: Boolean? = null,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is SelectedPaymentInstrument &&
+            billingAddress == other.billingAddress &&
+            credential == other.credential &&
+            display == other.display &&
+            handlerID == other.handlerID &&
+            id == other.id &&
+            type == other.type &&
+            selected == other.selected &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(billingAddress, credential, display, handlerID, id, type, selected, additionalProperties)
+
+    override fun toString(): String = "SelectedPaymentInstrument(billingAddress=$billingAddress, credential=$credential, display=$display, handlerID=$handlerID, id=$id, type=$type, selected=$selected, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(handlerID, id, type).also { builder ->
+        builder.billingAddress = this.billingAddress
+        builder.credential = this.credential
+        builder.display = this.display
+        builder.selected = this.selected
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [SelectedPaymentInstrument]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var handlerID: String,
+        public var id: String,
+        public var type: String,
+    ) {
+        public var billingAddress: PostalAddress? = null
+
+        public var credential: PaymentCredential? = null
+
+        public var display: JsonObject? = null
+
+        public var selected: Boolean? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun billingAddress(value: PostalAddress?): Builder = apply { this.billingAddress = value }
+
+        public fun credential(value: PaymentCredential?): Builder = apply { this.credential = value }
+
+        public fun display(value: JsonObject?): Builder = apply { this.display = value }
+
+        public fun handlerID(value: String): Builder = apply { this.handlerID = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun selected(value: Boolean?): Builder = apply { this.selected = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): SelectedPaymentInstrument = SelectedPaymentInstrument(billingAddress = billingAddress, credential = credential, display = display, handlerID = handlerID, id = id, type = type, selected = selected, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [SelectedPaymentInstrument]: `SelectedPaymentInstrument(required = …) { optional = … }`. */
+        public operator fun invoke(handlerID: String, id: String, type: String, configure: Builder.() -> Unit = {}): SelectedPaymentInstrument =
+            Builder(handlerID, id, type).apply(configure).build()
+    }
+}
 
 /**
  * The base definition for any payment credential. Handlers define specific credential types.
  */
 @Serializable(with = PaymentCredentialSerializer::class)
-public data class PaymentCredential (
+public class PaymentCredential internal constructor (
     /**
      * The credential type discriminator. Specific schemas will constrain this to a constant
      * value.
@@ -1188,7 +2749,41 @@ public data class PaymentCredential (
     public val type: String,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PaymentCredential &&
+            type == other.type &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(type, additionalProperties)
+
+    override fun toString(): String = "PaymentCredential(type=$type, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(type).also { builder ->
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [PaymentCredential]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var type: String,
+    ) {
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): PaymentCredential = PaymentCredential(type = type, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [PaymentCredential]: `PaymentCredential(required = …) { optional = … }`. */
+        public operator fun invoke(type: String, configure: Builder.() -> Unit = {}): PaymentCredential =
+            Builder(type).apply(configure).build()
+    }
+}
 
 /**
  * A durable business rule about the items in a response — return/refund terms, warranty,
@@ -1200,7 +2795,7 @@ public data class PaymentCredential (
  * `code` equals the policy `type` — see the Policies section of the specification.
  */
 @Serializable(with = PolicySerializer::class)
-public data class Policy (
+public class Policy internal constructor (
     /**
      * RFC 9535 JSONPath expressions identifying the nodes this policy applies to, relative to
      * the embedding response root (e.g., `$.line_items[0]` in cart/checkout, `$.products[2]` in
@@ -1236,7 +2831,57 @@ public data class Policy (
     public val url: String? = null,
 
     public val additionalProperties: Map<String, JsonElement> = emptyMap()
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Policy &&
+            appliesTo == other.appliesTo &&
+            description == other.description &&
+            type == other.type &&
+            url == other.url &&
+            additionalProperties == other.additionalProperties)
+
+    override fun hashCode(): Int = java.util.Objects.hash(appliesTo, description, type, url, additionalProperties)
+
+    override fun toString(): String = "Policy(appliesTo=$appliesTo, description=$description, type=$type, url=$url, additionalProperties=$additionalProperties)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(description, type).also { builder ->
+        builder.appliesTo = this.appliesTo
+        builder.url = this.url
+        builder.additionalProperties = this.additionalProperties
+    }
+
+    /** Builds a [Policy]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var description: Description,
+        public var type: String,
+    ) {
+        public var appliesTo: List<String>? = null
+
+        public var url: String? = null
+
+        public var additionalProperties: Map<String, JsonElement> = emptyMap()
+
+        public fun appliesTo(value: List<String>?): Builder = apply { this.appliesTo = value }
+
+        public fun description(value: Description): Builder = apply { this.description = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun url(value: String?): Builder = apply { this.url = value }
+
+        public fun additionalProperties(value: Map<String, JsonElement>): Builder = apply { this.additionalProperties = value }
+
+        public fun build(): Policy = Policy(appliesTo = appliesTo, description = description, type = type, url = url, additionalProperties = additionalProperties)
+    }
+
+    public companion object {
+        /** Builds a [Policy]: `Policy(required = …) { optional = … }`. */
+        public operator fun invoke(description: Description, type: String, configure: Builder.() -> Unit = {}): Policy =
+            Builder(description, type).apply(configure).build()
+    }
+}
 
 /**
  * Environment data provided by the platform to support authorization and abuse prevention.
@@ -1250,14 +2895,46 @@ public data class Policy (
  * Checkout state indicating the current phase and required processing. See Checkout Status
  * lifecycle documentation for state transition details.
  */
-@Serializable
-public enum class CheckoutStatus(public val value: String) {
-    @SerialName("canceled") Canceled("canceled"),
-    @SerialName("complete_in_progress") CompleteInProgress("complete_in_progress"),
-    @SerialName("completed") Completed("completed"),
-    @SerialName("incomplete") Incomplete("incomplete"),
-    @SerialName("ready_for_complete") ReadyForComplete("ready_for_complete"),
-    @SerialName("requires_escalation") RequiresEscalation("requires_escalation");
+@Serializable(with = CheckoutStatusSerializer::class)
+public class CheckoutStatus private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Canceled: CheckoutStatus = CheckoutStatus("canceled")
+        @JvmField public val CompleteInProgress: CheckoutStatus = CheckoutStatus("complete_in_progress")
+        @JvmField public val Completed: CheckoutStatus = CheckoutStatus("completed")
+        @JvmField public val Incomplete: CheckoutStatus = CheckoutStatus("incomplete")
+        @JvmField public val ReadyForComplete: CheckoutStatus = CheckoutStatus("ready_for_complete")
+        @JvmField public val RequiresEscalation: CheckoutStatus = CheckoutStatus("requires_escalation")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, CheckoutStatus> = listOf(Canceled, CompleteInProgress, Completed, Incomplete, ReadyForComplete, RequiresEscalation).associateBy { it.value }
+
+        internal fun fromWire(value: String): CheckoutStatus = known[value] ?: CheckoutStatus(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is CheckoutStatus && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object CheckoutStatusSerializer : KSerializer<CheckoutStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.CheckoutStatus", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): CheckoutStatus {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for CheckoutStatus")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return CheckoutStatus.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: CheckoutStatus): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -1270,7 +2947,7 @@ public enum class CheckoutStatus(public val value: String) {
  * A cost breakdown entry with a category, amount, and optional display text.
  */
 @Serializable
-public data class CheckoutTotal (
+public class CheckoutTotal internal constructor (
     public val amount: Long,
 
     /**
@@ -1291,13 +2968,57 @@ public data class CheckoutTotal (
      * supplementary. Sum of line amounts MUST equal the parent entry amount.
      */
     public val lines: List<Line>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CheckoutTotal &&
+            amount == other.amount &&
+            displayText == other.displayText &&
+            type == other.type &&
+            lines == other.lines)
+
+    override fun hashCode(): Int = java.util.Objects.hash(amount, displayText, type, lines)
+
+    override fun toString(): String = "CheckoutTotal(amount=$amount, displayText=$displayText, type=$type, lines=$lines)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, type).also { builder ->
+        builder.displayText = this.displayText
+        builder.lines = this.lines
+    }
+
+    /** Builds a [CheckoutTotal]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var type: String,
+    ) {
+        public var displayText: String? = null
+
+        public var lines: List<Line>? = null
+
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun displayText(value: String?): Builder = apply { this.displayText = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun lines(value: List<Line>?): Builder = apply { this.lines = value }
+
+        public fun build(): CheckoutTotal = CheckoutTotal(amount = amount, displayText = displayText, type = type, lines = lines)
+    }
+
+    public companion object {
+        /** Builds a [CheckoutTotal]: `CheckoutTotal(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, type: String, configure: Builder.() -> Unit = {}): CheckoutTotal =
+            Builder(amount, type).apply(configure).build()
+    }
+}
 
 /**
  * Sub-line entry. Additional metadata MAY be included.
  */
 @Serializable
-public data class Line (
+public class Line internal constructor (
     public val amount: Long,
 
     /**
@@ -1305,7 +3026,38 @@ public data class Line (
      */
     @SerialName("display_text")
     public val displayText: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Line &&
+            amount == other.amount &&
+            displayText == other.displayText)
+
+    override fun hashCode(): Int = java.util.Objects.hash(amount, displayText)
+
+    override fun toString(): String = "Line(amount=$amount, displayText=$displayText)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(amount, displayText)
+
+    /** Builds a [Line]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var amount: Long,
+        public var displayText: String,
+    ) {
+        public fun amount(value: Long): Builder = apply { this.amount = value }
+
+        public fun displayText(value: String): Builder = apply { this.displayText = value }
+
+        public fun build(): Line = Line(amount = amount, displayText = displayText)
+    }
+
+    public companion object {
+        /** Builds a [Line]: `Line(required = …) { optional = … }`. */
+        public operator fun invoke(amount: Long, displayText: String, configure: Builder.() -> Unit = {}): Line =
+            Builder(amount, displayText).apply(configure).build()
+    }
+}
 
 /**
  * UCP metadata for checkout responses.
@@ -1313,7 +3065,7 @@ public data class Line (
  * Base UCP metadata with shared properties for all schema types.
  */
 @Serializable
-public data class UCPCheckoutResponseSchema (
+public class UCPCheckoutResponseSchema internal constructor (
     /**
      * Capability registry keyed by reverse-domain name.
      */
@@ -1343,7 +3095,63 @@ public data class UCPCheckoutResponseSchema (
     public val status: UCPCheckoutResponseSchemaStatus? = null,
 
     public val version: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is UCPCheckoutResponseSchema &&
+            capabilities == other.capabilities &&
+            mapOrder == other.mapOrder &&
+            paymentHandlers == other.paymentHandlers &&
+            services == other.services &&
+            status == other.status &&
+            version == other.version)
+
+    override fun hashCode(): Int = java.util.Objects.hash(capabilities, mapOrder, paymentHandlers, services, status, version)
+
+    override fun toString(): String = "UCPCheckoutResponseSchema(capabilities=$capabilities, mapOrder=$mapOrder, paymentHandlers=$paymentHandlers, services=$services, status=$status, version=$version)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(paymentHandlers, version).also { builder ->
+        builder.capabilities = this.capabilities
+        builder.mapOrder = this.mapOrder
+        builder.services = this.services
+        builder.status = this.status
+    }
+
+    /** Builds a [UCPCheckoutResponseSchema]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>,
+        public var version: String,
+    ) {
+        public var capabilities: Map<String, List<CapabilityResponseSchema>>? = null
+
+        public var mapOrder: Map<String, List<String>>? = null
+
+        public var services: Map<String, List<ServiceResponseSchema>>? = null
+
+        public var status: UCPCheckoutResponseSchemaStatus? = null
+
+        public fun capabilities(value: Map<String, List<CapabilityResponseSchema>>?): Builder = apply { this.capabilities = value }
+
+        public fun mapOrder(value: Map<String, List<String>>?): Builder = apply { this.mapOrder = value }
+
+        public fun paymentHandlers(value: Map<String, List<PaymentHandlerResponseSchema>>): Builder = apply { this.paymentHandlers = value }
+
+        public fun services(value: Map<String, List<ServiceResponseSchema>>?): Builder = apply { this.services = value }
+
+        public fun status(value: UCPCheckoutResponseSchemaStatus?): Builder = apply { this.status = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun build(): UCPCheckoutResponseSchema = UCPCheckoutResponseSchema(capabilities = capabilities, mapOrder = mapOrder, paymentHandlers = paymentHandlers, services = services, status = status, version = version)
+    }
+
+    public companion object {
+        /** Builds a [UCPCheckoutResponseSchema]: `UCPCheckoutResponseSchema(required = …) { optional = … }`. */
+        public operator fun invoke(paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>, version: String, configure: Builder.() -> Unit = {}): UCPCheckoutResponseSchema =
+            Builder(paymentHandlers, version).apply(configure).build()
+    }
+}
 
 /**
  * Capability reference in responses. Only name/version required to confirm active
@@ -1352,7 +3160,7 @@ public data class UCPCheckoutResponseSchema (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class CapabilityResponseSchema (
+public class CapabilityResponseSchema internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1384,7 +3192,65 @@ public data class CapabilityResponseSchema (
      * Use array for multi-parent extensions.
      */
     public val extends: Extends? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CapabilityResponseSchema &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            extends == other.extends)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, extends)
+
+    override fun toString(): String = "CapabilityResponseSchema(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, extends=$extends)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version).also { builder ->
+        builder.config = this.config
+        builder.id = this.id
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.extends = this.extends
+    }
+
+    /** Builds a [CapabilityResponseSchema]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+    ) {
+        public var config: JsonObject? = null
+
+        public var id: String? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var extends: Extends? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String?): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun extends(value: Extends?): Builder = apply { this.extends = value }
+
+        public fun build(): CapabilityResponseSchema = CapabilityResponseSchema(config = config, id = id, schema = schema, spec = spec, version = version, extends = extends)
+    }
+
+    public companion object {
+        /** Builds a [CapabilityResponseSchema]: `CapabilityResponseSchema(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, configure: Builder.() -> Unit = {}): CapabilityResponseSchema =
+            Builder(version).apply(configure).build()
+    }
+}
 
 /**
  * Parent capability(s) this extends. Present for extensions, absent for root capabilities.
@@ -1403,7 +3269,7 @@ public sealed class Extends {
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class PaymentHandlerResponseSchema (
+public class PaymentHandlerResponseSchema internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1436,13 +3302,69 @@ public data class PaymentHandlerResponseSchema (
      */
     @SerialName("available_instruments")
     public val availableInstruments: List<PaymentHandlerResponseSchemaAvailableInstrument>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PaymentHandlerResponseSchema &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            availableInstruments == other.availableInstruments)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, availableInstruments)
+
+    override fun toString(): String = "PaymentHandlerResponseSchema(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, availableInstruments=$availableInstruments)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, version).also { builder ->
+        builder.config = this.config
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.availableInstruments = this.availableInstruments
+    }
+
+    /** Builds a [PaymentHandlerResponseSchema]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var version: String,
+    ) {
+        public var config: JsonObject? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var availableInstruments: List<PaymentHandlerResponseSchemaAvailableInstrument>? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun availableInstruments(value: List<PaymentHandlerResponseSchemaAvailableInstrument>?): Builder = apply { this.availableInstruments = value }
+
+        public fun build(): PaymentHandlerResponseSchema = PaymentHandlerResponseSchema(config = config, id = id, schema = schema, spec = spec, version = version, availableInstruments = availableInstruments)
+    }
+
+    public companion object {
+        /** Builds a [PaymentHandlerResponseSchema]: `PaymentHandlerResponseSchema(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, version: String, configure: Builder.() -> Unit = {}): PaymentHandlerResponseSchema =
+            Builder(id, version).apply(configure).build()
+    }
+}
 
 /**
  * An instrument type available from a payment handler with optional constraints.
  */
 @Serializable
-public data class PaymentHandlerResponseSchemaAvailableInstrument (
+public class PaymentHandlerResponseSchemaAvailableInstrument internal constructor (
     /**
      * A Constraint Expression describing the instrument this entry makes available. Keys in
      * `properties` name members of the `constraint_target` declared by the instrument schema
@@ -1456,7 +3378,41 @@ public data class PaymentHandlerResponseSchemaAvailableInstrument (
      * schema's type constant.
      */
     public val type: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PaymentHandlerResponseSchemaAvailableInstrument &&
+            constraints == other.constraints &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(constraints, type)
+
+    override fun toString(): String = "PaymentHandlerResponseSchemaAvailableInstrument(constraints=$constraints, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(type).also { builder ->
+        builder.constraints = this.constraints
+    }
+
+    /** Builds a [PaymentHandlerResponseSchemaAvailableInstrument]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var type: String,
+    ) {
+        public var constraints: ConstraintExpression? = null
+
+        public fun constraints(value: ConstraintExpression?): Builder = apply { this.constraints = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun build(): PaymentHandlerResponseSchemaAvailableInstrument = PaymentHandlerResponseSchemaAvailableInstrument(constraints = constraints, type = type)
+    }
+
+    public companion object {
+        /** Builds a [PaymentHandlerResponseSchemaAvailableInstrument]: `PaymentHandlerResponseSchemaAvailableInstrument(required = …) { optional = … }`. */
+        public operator fun invoke(type: String, configure: Builder.() -> Unit = {}): PaymentHandlerResponseSchemaAvailableInstrument =
+            Builder(type).apply(configure).build()
+    }
+}
 
 /**
  * A Constraint Expression describing the instrument this entry makes available. Keys in
@@ -1470,7 +3426,7 @@ public data class PaymentHandlerResponseSchemaAvailableInstrument (
  * A Value Constraint containing `enum`, `const`, or both.
  */
 @Serializable(with = ConstraintPropertySerializer::class)
-public data class ConstraintProperty (
+public class ConstraintProperty internal constructor (
     /**
      * Alternative Object Constraints. The constrained object must satisfy at least one. A
      * branch must be non-empty: an empty branch is satisfied by every object and neutralizes
@@ -1496,7 +3452,60 @@ public data class ConstraintProperty (
      * A non-empty array of unique JSON values.
      */
     public val enum: JsonArray? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ConstraintProperty &&
+            anyOf == other.anyOf &&
+            properties == other.properties &&
+            required == other.required &&
+            const == other.const &&
+            enum == other.enum)
+
+    override fun hashCode(): Int = java.util.Objects.hash(anyOf, properties, required, const, enum)
+
+    override fun toString(): String = "ConstraintProperty(anyOf=$anyOf, properties=$properties, required=$required, const=$const, enum=$enum)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.anyOf = this.anyOf
+        builder.properties = this.properties
+        builder.required = this.required
+        builder.const = this.const
+        builder.enum = this.enum
+    }
+
+    /** Builds a [ConstraintProperty]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var anyOf: List<ConstraintExpression>? = null
+
+        public var properties: Map<String, ConstraintProperty>? = null
+
+        public var required: List<String>? = null
+
+        public var const: JsonElement? = null
+
+        public var enum: JsonArray? = null
+
+        public fun anyOf(value: List<ConstraintExpression>?): Builder = apply { this.anyOf = value }
+
+        public fun properties(value: Map<String, ConstraintProperty>?): Builder = apply { this.properties = value }
+
+        public fun required(value: List<String>?): Builder = apply { this.required = value }
+
+        public fun const(value: JsonElement?): Builder = apply { this.const = value }
+
+        public fun enum(value: JsonArray?): Builder = apply { this.enum = value }
+
+        public fun build(): ConstraintProperty = ConstraintProperty(anyOf = anyOf, properties = properties, required = required, const = const, enum = enum)
+    }
+
+    public companion object {
+        /** Builds a [ConstraintProperty]: `ConstraintProperty(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): ConstraintProperty =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * A Constraint Expression describing the instrument this entry makes available. Keys in
@@ -1508,7 +3517,7 @@ public data class ConstraintProperty (
  * positions.
  */
 @Serializable
-public data class ConstraintExpression (
+public class ConstraintExpression internal constructor (
     /**
      * Alternative Object Constraints. The constrained object must satisfy at least one. A
      * branch must be non-empty: an empty branch is satisfied by every object and neutralizes
@@ -1527,7 +3536,48 @@ public data class ConstraintExpression (
      * applies no constraint.
      */
     public val required: List<String>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ConstraintExpression &&
+            anyOf == other.anyOf &&
+            properties == other.properties &&
+            required == other.required)
+
+    override fun hashCode(): Int = java.util.Objects.hash(anyOf, properties, required)
+
+    override fun toString(): String = "ConstraintExpression(anyOf=$anyOf, properties=$properties, required=$required)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.anyOf = this.anyOf
+        builder.properties = this.properties
+        builder.required = this.required
+    }
+
+    /** Builds a [ConstraintExpression]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var anyOf: List<ConstraintExpression>? = null
+
+        public var properties: Map<String, ConstraintProperty>? = null
+
+        public var required: List<String>? = null
+
+        public fun anyOf(value: List<ConstraintExpression>?): Builder = apply { this.anyOf = value }
+
+        public fun properties(value: Map<String, ConstraintProperty>?): Builder = apply { this.properties = value }
+
+        public fun required(value: List<String>?): Builder = apply { this.required = value }
+
+        public fun build(): ConstraintExpression = ConstraintExpression(anyOf = anyOf, properties = properties, required = required)
+    }
+
+    public companion object {
+        /** Builds a [ConstraintExpression]: `ConstraintExpression(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): ConstraintExpression =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Service binding in API responses. Includes per-resource transport configuration via typed
@@ -1536,7 +3586,7 @@ public data class ConstraintExpression (
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class ServiceResponseSchema (
+public class ServiceResponseSchema internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -1572,7 +3622,69 @@ public data class ServiceResponseSchema (
      * Transport protocol for this service binding.
      */
     public val transport: Transport
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ServiceResponseSchema &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            endpoint == other.endpoint &&
+            transport == other.transport)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, endpoint, transport)
+
+    override fun toString(): String = "ServiceResponseSchema(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, endpoint=$endpoint, transport=$transport)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version, transport).also { builder ->
+        builder.config = this.config
+        builder.id = this.id
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.endpoint = this.endpoint
+    }
+
+    /** Builds a [ServiceResponseSchema]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+        public var transport: Transport,
+    ) {
+        public var config: EmbeddedTransportConfig? = null
+
+        public var id: String? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var endpoint: String? = null
+
+        public fun config(value: EmbeddedTransportConfig?): Builder = apply { this.config = value }
+
+        public fun id(value: String?): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun endpoint(value: String?): Builder = apply { this.endpoint = value }
+
+        public fun transport(value: Transport): Builder = apply { this.transport = value }
+
+        public fun build(): ServiceResponseSchema = ServiceResponseSchema(config = config, id = id, schema = schema, spec = spec, version = version, endpoint = endpoint, transport = transport)
+    }
+
+    public companion object {
+        /** Builds a [ServiceResponseSchema]: `ServiceResponseSchema(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, transport: Transport, configure: Builder.() -> Unit = {}): ServiceResponseSchema =
+            Builder(version, transport).apply(configure).build()
+    }
+}
 
 /**
  * Entity-specific configuration. Structure defined by each entity's schema.
@@ -1581,7 +3693,7 @@ public data class ServiceResponseSchema (
  * availability and delegations based on cart contents, agent authorization, or policy.
  */
 @Serializable
-public data class EmbeddedTransportConfig (
+public class EmbeddedTransportConfig internal constructor (
     /**
      * Color schemes the business supports. Hosts use ec_color_scheme query parameter to request
      * a scheme from this list.
@@ -1594,39 +3706,170 @@ public data class EmbeddedTransportConfig (
      * responses, confirms accepted delegations for this session.
      */
     public val delegate: List<String>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is EmbeddedTransportConfig &&
+            colorScheme == other.colorScheme &&
+            delegate == other.delegate)
 
-@Serializable
-public enum class EmbeddedColorScheme(public val value: String) {
-    @SerialName("dark") Dark("dark"),
-    @SerialName("light") Light("light");
+    override fun hashCode(): Int = java.util.Objects.hash(colorScheme, delegate)
+
+    override fun toString(): String = "EmbeddedTransportConfig(colorScheme=$colorScheme, delegate=$delegate)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.colorScheme = this.colorScheme
+        builder.delegate = this.delegate
+    }
+
+    /** Builds a [EmbeddedTransportConfig]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var colorScheme: List<EmbeddedColorScheme>? = null
+
+        public var delegate: List<String>? = null
+
+        public fun colorScheme(value: List<EmbeddedColorScheme>?): Builder = apply { this.colorScheme = value }
+
+        public fun delegate(value: List<String>?): Builder = apply { this.delegate = value }
+
+        public fun build(): EmbeddedTransportConfig = EmbeddedTransportConfig(colorScheme = colorScheme, delegate = delegate)
+    }
+
+    public companion object {
+        /** Builds a [EmbeddedTransportConfig]: `EmbeddedTransportConfig(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): EmbeddedTransportConfig =
+            Builder().apply(configure).build()
+    }
+}
+
+@Serializable(with = EmbeddedColorSchemeSerializer::class)
+public class EmbeddedColorScheme private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Dark: EmbeddedColorScheme = EmbeddedColorScheme("dark")
+        @JvmField public val Light: EmbeddedColorScheme = EmbeddedColorScheme("light")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, EmbeddedColorScheme> = listOf(Dark, Light).associateBy { it.value }
+
+        internal fun fromWire(value: String): EmbeddedColorScheme = known[value] ?: EmbeddedColorScheme(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is EmbeddedColorScheme && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object EmbeddedColorSchemeSerializer : KSerializer<EmbeddedColorScheme> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.EmbeddedColorScheme", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): EmbeddedColorScheme {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for EmbeddedColorScheme")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return EmbeddedColorScheme.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: EmbeddedColorScheme): Unit = encoder.encodeString(value.value)
 }
 
 /**
  * Transport protocol for this service binding.
  */
-@Serializable
-public enum class Transport(public val value: String) {
-    @SerialName("a2a") A2A("a2a"),
-    @SerialName("embedded") Embedded("embedded"),
-    @SerialName("mcp") MCP("mcp"),
-    @SerialName("rest") REST("rest");
+@Serializable(with = TransportSerializer::class)
+public class Transport private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val A2A: Transport = Transport("a2a")
+        @JvmField public val Embedded: Transport = Transport("embedded")
+        @JvmField public val MCP: Transport = Transport("mcp")
+        @JvmField public val REST: Transport = Transport("rest")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, Transport> = listOf(A2A, Embedded, MCP, REST).associateBy { it.value }
+
+        internal fun fromWire(value: String): Transport = known[value] ?: Transport(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is Transport && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object TransportSerializer : KSerializer<Transport> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.Transport", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Transport {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for Transport")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return Transport.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: Transport): Unit = encoder.encodeString(value.value)
 }
 
 /**
  * Application-level status of the UCP operation.
  */
-@Serializable
-public enum class UCPCheckoutResponseSchemaStatus(public val value: String) {
-    @SerialName("error") Error("error"),
-    @SerialName("success") Success("success");
+@Serializable(with = UCPCheckoutResponseSchemaStatusSerializer::class)
+public class UCPCheckoutResponseSchemaStatus private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Error: UCPCheckoutResponseSchemaStatus = UCPCheckoutResponseSchemaStatus("error")
+        @JvmField public val Success: UCPCheckoutResponseSchemaStatus = UCPCheckoutResponseSchemaStatus("success")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, UCPCheckoutResponseSchemaStatus> = listOf(Error, Success).associateBy { it.value }
+
+        internal fun fromWire(value: String): UCPCheckoutResponseSchemaStatus = known[value] ?: UCPCheckoutResponseSchemaStatus(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is UCPCheckoutResponseSchemaStatus && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object UCPCheckoutResponseSchemaStatusSerializer : KSerializer<UCPCheckoutResponseSchemaStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): UCPCheckoutResponseSchemaStatus {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for UCPCheckoutResponseSchemaStatus")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return UCPCheckoutResponseSchemaStatus.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: UCPCheckoutResponseSchemaStatus): Unit = encoder.encodeString(value.value)
 }
 
 /**
  * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
  */
 @Serializable
-public data class Order (
+public class Order internal constructor (
     /**
      * Post-order events (refunds, returns, credits, disputes, cancellations, etc.) that exist
      * independently of fulfillment.
@@ -1695,7 +3938,93 @@ public data class Order (
     public val totals: List<CheckoutTotal>,
 
     public val ucp: UCPOrderResponseSchema
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Order &&
+            adjustments == other.adjustments &&
+            attribution == other.attribution &&
+            checkoutID == other.checkoutID &&
+            currency == other.currency &&
+            fulfillment == other.fulfillment &&
+            id == other.id &&
+            label == other.label &&
+            lineItems == other.lineItems &&
+            messages == other.messages &&
+            permalinkURL == other.permalinkURL &&
+            policies == other.policies &&
+            totals == other.totals &&
+            ucp == other.ucp)
+
+    override fun hashCode(): Int = java.util.Objects.hash(adjustments, attribution, checkoutID, currency, fulfillment, id, label, lineItems, messages, permalinkURL, policies, totals, ucp)
+
+    override fun toString(): String = "Order(adjustments=$adjustments, attribution=$attribution, checkoutID=$checkoutID, currency=$currency, fulfillment=$fulfillment, id=$id, label=$label, lineItems=$lineItems, messages=$messages, permalinkURL=$permalinkURL, policies=$policies, totals=$totals, ucp=$ucp)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(checkoutID, currency, fulfillment, id, lineItems, permalinkURL, totals, ucp).also { builder ->
+        builder.adjustments = this.adjustments
+        builder.attribution = this.attribution
+        builder.label = this.label
+        builder.messages = this.messages
+        builder.policies = this.policies
+    }
+
+    /** Builds a [Order]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var checkoutID: String,
+        public var currency: String,
+        public var fulfillment: Fulfillment,
+        public var id: String,
+        public var lineItems: List<OrderLineItem>,
+        public var permalinkURL: String,
+        public var totals: List<CheckoutTotal>,
+        public var ucp: UCPOrderResponseSchema,
+    ) {
+        public var adjustments: List<Adjustment>? = null
+
+        public var attribution: Map<String, String>? = null
+
+        public var label: String? = null
+
+        public var messages: List<Message>? = null
+
+        public var policies: List<Policy>? = null
+
+        public fun adjustments(value: List<Adjustment>?): Builder = apply { this.adjustments = value }
+
+        public fun attribution(value: Map<String, String>?): Builder = apply { this.attribution = value }
+
+        public fun checkoutID(value: String): Builder = apply { this.checkoutID = value }
+
+        public fun currency(value: String): Builder = apply { this.currency = value }
+
+        public fun fulfillment(value: Fulfillment): Builder = apply { this.fulfillment = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun label(value: String?): Builder = apply { this.label = value }
+
+        public fun lineItems(value: List<OrderLineItem>): Builder = apply { this.lineItems = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun permalinkURL(value: String): Builder = apply { this.permalinkURL = value }
+
+        public fun policies(value: List<Policy>?): Builder = apply { this.policies = value }
+
+        public fun totals(value: List<CheckoutTotal>): Builder = apply { this.totals = value }
+
+        public fun ucp(value: UCPOrderResponseSchema): Builder = apply { this.ucp = value }
+
+        public fun build(): Order = Order(adjustments = adjustments, attribution = attribution, checkoutID = checkoutID, currency = currency, fulfillment = fulfillment, id = id, label = label, lineItems = lineItems, messages = messages, permalinkURL = permalinkURL, policies = policies, totals = totals, ucp = ucp)
+    }
+
+    public companion object {
+        /** Builds a [Order]: `Order(required = …) { optional = … }`. */
+        public operator fun invoke(checkoutID: String, currency: String, fulfillment: Fulfillment, id: String, lineItems: List<OrderLineItem>, permalinkURL: String, totals: List<CheckoutTotal>, ucp: UCPOrderResponseSchema, configure: Builder.() -> Unit = {}): Order =
+            Builder(checkoutID, currency, fulfillment, id, lineItems, permalinkURL, totals, ucp).apply(configure).build()
+    }
+}
 
 /**
  * Post-order event that exists independently of fulfillment. Typically represents money
@@ -1703,7 +4032,7 @@ public data class Order (
  * reference line items.
  */
 @Serializable
-public data class Adjustment (
+public class Adjustment internal constructor (
     /**
      * Human-readable reason or description (e.g., 'Defective item', 'Customer requested').
      */
@@ -1743,10 +4072,68 @@ public data class Adjustment (
      * merchant's business.
      */
     public val type: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Adjustment &&
+            description == other.description &&
+            id == other.id &&
+            lineItems == other.lineItems &&
+            occurredAt == other.occurredAt &&
+            status == other.status &&
+            totals == other.totals &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(description, id, lineItems, occurredAt, status, totals, type)
+
+    override fun toString(): String = "Adjustment(description=$description, id=$id, lineItems=$lineItems, occurredAt=$occurredAt, status=$status, totals=$totals, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, occurredAt, status, type).also { builder ->
+        builder.description = this.description
+        builder.lineItems = this.lineItems
+        builder.totals = this.totals
+    }
+
+    /** Builds a [Adjustment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var occurredAt: String,
+        public var status: AdjustmentStatus,
+        public var type: String,
+    ) {
+        public var description: String? = null
+
+        public var lineItems: List<AdjustmentLineItem>? = null
+
+        public var totals: List<LineItemTotal>? = null
+
+        public fun description(value: String?): Builder = apply { this.description = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItems(value: List<AdjustmentLineItem>?): Builder = apply { this.lineItems = value }
+
+        public fun occurredAt(value: String): Builder = apply { this.occurredAt = value }
+
+        public fun status(value: AdjustmentStatus): Builder = apply { this.status = value }
+
+        public fun totals(value: List<LineItemTotal>?): Builder = apply { this.totals = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun build(): Adjustment = Adjustment(description = description, id = id, lineItems = lineItems, occurredAt = occurredAt, status = status, totals = totals, type = type)
+    }
+
+    public companion object {
+        /** Builds a [Adjustment]: `Adjustment(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, occurredAt: String, status: AdjustmentStatus, type: String, configure: Builder.() -> Unit = {}): Adjustment =
+            Builder(id, occurredAt, status, type).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class AdjustmentLineItem (
+public class AdjustmentLineItem internal constructor (
     /**
      * Line item ID reference.
      */
@@ -1767,23 +4154,93 @@ public data class AdjustmentLineItem (
      * exchanges).
      */
     public val quantity: Long
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AdjustmentLineItem &&
+            id == other.id &&
+            measure == other.measure &&
+            quantity == other.quantity)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, measure, quantity)
+
+    override fun toString(): String = "AdjustmentLineItem(id=$id, measure=$measure, quantity=$quantity)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, quantity).also { builder ->
+        builder.measure = this.measure
+    }
+
+    /** Builds a [AdjustmentLineItem]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var quantity: Long,
+    ) {
+        public var measure: Measure? = null
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun measure(value: Measure?): Builder = apply { this.measure = value }
+
+        public fun quantity(value: Long): Builder = apply { this.quantity = value }
+
+        public fun build(): AdjustmentLineItem = AdjustmentLineItem(id = id, measure = measure, quantity = quantity)
+    }
+
+    public companion object {
+        /** Builds a [AdjustmentLineItem]: `AdjustmentLineItem(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, quantity: Long, configure: Builder.() -> Unit = {}): AdjustmentLineItem =
+            Builder(id, quantity).apply(configure).build()
+    }
+}
 
 /**
  * Adjustment status.
  */
-@Serializable
-public enum class AdjustmentStatus(public val value: String) {
-    @SerialName("completed") Completed("completed"),
-    @SerialName("failed") Failed("failed"),
-    @SerialName("pending") Pending("pending");
+@Serializable(with = AdjustmentStatusSerializer::class)
+public class AdjustmentStatus private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Completed: AdjustmentStatus = AdjustmentStatus("completed")
+        @JvmField public val Failed: AdjustmentStatus = AdjustmentStatus("failed")
+        @JvmField public val Pending: AdjustmentStatus = AdjustmentStatus("pending")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, AdjustmentStatus> = listOf(Completed, Failed, Pending).associateBy { it.value }
+
+        internal fun fromWire(value: String): AdjustmentStatus = known[value] ?: AdjustmentStatus(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is AdjustmentStatus && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object AdjustmentStatusSerializer : KSerializer<AdjustmentStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.AdjustmentStatus", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): AdjustmentStatus {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for AdjustmentStatus")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return AdjustmentStatus.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: AdjustmentStatus): Unit = encoder.encodeString(value.value)
 }
 
 /**
  * Fulfillment data: buyer expectations and what actually happened.
  */
 @Serializable
-public data class Fulfillment (
+public class Fulfillment internal constructor (
     /**
      * Append-only event log of actual shipments. Each event references line items by ID.
      */
@@ -1794,14 +4251,49 @@ public data class Fulfillment (
      * or adjusted post-order.
      */
     public val expectations: List<Expectation>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Fulfillment &&
+            events == other.events &&
+            expectations == other.expectations)
+
+    override fun hashCode(): Int = java.util.Objects.hash(events, expectations)
+
+    override fun toString(): String = "Fulfillment(events=$events, expectations=$expectations)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.events = this.events
+        builder.expectations = this.expectations
+    }
+
+    /** Builds a [Fulfillment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var events: List<FulfillmentEvent>? = null
+
+        public var expectations: List<Expectation>? = null
+
+        public fun events(value: List<FulfillmentEvent>?): Builder = apply { this.events = value }
+
+        public fun expectations(value: List<Expectation>?): Builder = apply { this.expectations = value }
+
+        public fun build(): Fulfillment = Fulfillment(events = events, expectations = expectations)
+    }
+
+    public companion object {
+        /** Builds a [Fulfillment]: `Fulfillment(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Fulfillment =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Append-only fulfillment event representing an actual shipment. References line items by
  * ID.
  */
 @Serializable
-public data class FulfillmentEvent (
+public class FulfillmentEvent internal constructor (
     /**
      * Carrier name (e.g., 'FedEx', 'USPS').
      */
@@ -1849,10 +4341,74 @@ public data class FulfillmentEvent (
      * (cannot be delivered), returned_to_sender (returned to merchant).
      */
     public val type: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is FulfillmentEvent &&
+            carrier == other.carrier &&
+            description == other.description &&
+            id == other.id &&
+            lineItems == other.lineItems &&
+            occurredAt == other.occurredAt &&
+            trackingNumber == other.trackingNumber &&
+            trackingURL == other.trackingURL &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(carrier, description, id, lineItems, occurredAt, trackingNumber, trackingURL, type)
+
+    override fun toString(): String = "FulfillmentEvent(carrier=$carrier, description=$description, id=$id, lineItems=$lineItems, occurredAt=$occurredAt, trackingNumber=$trackingNumber, trackingURL=$trackingURL, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, lineItems, occurredAt, type).also { builder ->
+        builder.carrier = this.carrier
+        builder.description = this.description
+        builder.trackingNumber = this.trackingNumber
+        builder.trackingURL = this.trackingURL
+    }
+
+    /** Builds a [FulfillmentEvent]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var lineItems: List<EventLineItem>,
+        public var occurredAt: String,
+        public var type: String,
+    ) {
+        public var carrier: String? = null
+
+        public var description: String? = null
+
+        public var trackingNumber: String? = null
+
+        public var trackingURL: String? = null
+
+        public fun carrier(value: String?): Builder = apply { this.carrier = value }
+
+        public fun description(value: String?): Builder = apply { this.description = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItems(value: List<EventLineItem>): Builder = apply { this.lineItems = value }
+
+        public fun occurredAt(value: String): Builder = apply { this.occurredAt = value }
+
+        public fun trackingNumber(value: String?): Builder = apply { this.trackingNumber = value }
+
+        public fun trackingURL(value: String?): Builder = apply { this.trackingURL = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun build(): FulfillmentEvent = FulfillmentEvent(carrier = carrier, description = description, id = id, lineItems = lineItems, occurredAt = occurredAt, trackingNumber = trackingNumber, trackingURL = trackingURL, type = type)
+    }
+
+    public companion object {
+        /** Builds a [FulfillmentEvent]: `FulfillmentEvent(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, lineItems: List<EventLineItem>, occurredAt: String, type: String, configure: Builder.() -> Unit = {}): FulfillmentEvent =
+            Builder(id, lineItems, occurredAt, type).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class EventLineItem (
+public class EventLineItem internal constructor (
     /**
      * Line item ID reference.
      */
@@ -1863,7 +4419,38 @@ public data class EventLineItem (
      * `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
      */
     public val quantity: Long
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is EventLineItem &&
+            id == other.id &&
+            quantity == other.quantity)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, quantity)
+
+    override fun toString(): String = "EventLineItem(id=$id, quantity=$quantity)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, quantity)
+
+    /** Builds a [EventLineItem]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var quantity: Long,
+    ) {
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun quantity(value: Long): Builder = apply { this.quantity = value }
+
+        public fun build(): EventLineItem = EventLineItem(id = id, quantity = quantity)
+    }
+
+    public companion object {
+        /** Builds a [EventLineItem]: `EventLineItem(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, quantity: Long, configure: Builder.() -> Unit = {}): EventLineItem =
+            Builder(id, quantity).apply(configure).build()
+    }
+}
 
 /**
  * Buyer-facing fulfillment expectation representing logical groupings of items (e.g.,
@@ -1871,7 +4458,7 @@ public data class EventLineItem (
  * when/how items arrive.
  */
 @Serializable
-public data class Expectation (
+public class Expectation internal constructor (
     /**
      * Human-readable delivery description (e.g., 'Arrives in 5-8 business days').
      */
@@ -1906,10 +4493,62 @@ public data class Expectation (
      */
     @SerialName("method_type")
     public val methodType: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Expectation &&
+            description == other.description &&
+            destination == other.destination &&
+            fulfillableOn == other.fulfillableOn &&
+            id == other.id &&
+            lineItems == other.lineItems &&
+            methodType == other.methodType)
+
+    override fun hashCode(): Int = java.util.Objects.hash(description, destination, fulfillableOn, id, lineItems, methodType)
+
+    override fun toString(): String = "Expectation(description=$description, destination=$destination, fulfillableOn=$fulfillableOn, id=$id, lineItems=$lineItems, methodType=$methodType)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(destination, id, lineItems, methodType).also { builder ->
+        builder.description = this.description
+        builder.fulfillableOn = this.fulfillableOn
+    }
+
+    /** Builds a [Expectation]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var destination: PostalAddress,
+        public var id: String,
+        public var lineItems: List<ExpectationLineItem>,
+        public var methodType: String,
+    ) {
+        public var description: String? = null
+
+        public var fulfillableOn: String? = null
+
+        public fun description(value: String?): Builder = apply { this.description = value }
+
+        public fun destination(value: PostalAddress): Builder = apply { this.destination = value }
+
+        public fun fulfillableOn(value: String?): Builder = apply { this.fulfillableOn = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun lineItems(value: List<ExpectationLineItem>): Builder = apply { this.lineItems = value }
+
+        public fun methodType(value: String): Builder = apply { this.methodType = value }
+
+        public fun build(): Expectation = Expectation(description = description, destination = destination, fulfillableOn = fulfillableOn, id = id, lineItems = lineItems, methodType = methodType)
+    }
+
+    public companion object {
+        /** Builds a [Expectation]: `Expectation(required = …) { optional = … }`. */
+        public operator fun invoke(destination: PostalAddress, id: String, lineItems: List<ExpectationLineItem>, methodType: String, configure: Builder.() -> Unit = {}): Expectation =
+            Builder(destination, id, lineItems, methodType).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class ExpectationLineItem (
+public class ExpectationLineItem internal constructor (
     /**
      * Line item ID reference.
      */
@@ -1920,10 +4559,41 @@ public data class ExpectationLineItem (
      * `unit`); when `quantity_unit` is absent, it counts whole items (`each`).
      */
     public val quantity: Long
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ExpectationLineItem &&
+            id == other.id &&
+            quantity == other.quantity)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, quantity)
+
+    override fun toString(): String = "ExpectationLineItem(id=$id, quantity=$quantity)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, quantity)
+
+    /** Builds a [ExpectationLineItem]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var quantity: Long,
+    ) {
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun quantity(value: Long): Builder = apply { this.quantity = value }
+
+        public fun build(): ExpectationLineItem = ExpectationLineItem(id = id, quantity = quantity)
+    }
+
+    public companion object {
+        /** Builds a [ExpectationLineItem]: `ExpectationLineItem(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, quantity: Long, configure: Builder.() -> Unit = {}): ExpectationLineItem =
+            Builder(id, quantity).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class OrderLineItem (
+public class OrderLineItem internal constructor (
     /**
      * Line item identifier.
      */
@@ -1959,7 +4629,57 @@ public data class OrderLineItem (
      * Line item totals breakdown.
      */
     public val totals: List<LineItemTotal>
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is OrderLineItem &&
+            id == other.id &&
+            item == other.item &&
+            parentID == other.parentID &&
+            quantity == other.quantity &&
+            status == other.status &&
+            totals == other.totals)
+
+    override fun hashCode(): Int = java.util.Objects.hash(id, item, parentID, quantity, status, totals)
+
+    override fun toString(): String = "OrderLineItem(id=$id, item=$item, parentID=$parentID, quantity=$quantity, status=$status, totals=$totals)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, item, quantity, status, totals).also { builder ->
+        builder.parentID = this.parentID
+    }
+
+    /** Builds a [OrderLineItem]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var item: Item,
+        public var quantity: LineItemQuantity,
+        public var status: LineItemStatus,
+        public var totals: List<LineItemTotal>,
+    ) {
+        public var parentID: String? = null
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun item(value: Item): Builder = apply { this.item = value }
+
+        public fun parentID(value: String?): Builder = apply { this.parentID = value }
+
+        public fun quantity(value: LineItemQuantity): Builder = apply { this.quantity = value }
+
+        public fun status(value: LineItemStatus): Builder = apply { this.status = value }
+
+        public fun totals(value: List<LineItemTotal>): Builder = apply { this.totals = value }
+
+        public fun build(): OrderLineItem = OrderLineItem(id = id, item = item, parentID = parentID, quantity = quantity, status = status, totals = totals)
+    }
+
+    public companion object {
+        /** Builds a [OrderLineItem]: `OrderLineItem(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, item: Item, quantity: LineItemQuantity, status: LineItemStatus, totals: List<LineItemTotal>, configure: Builder.() -> Unit = {}): OrderLineItem =
+            Builder(id, item, quantity, status, totals).apply(configure).build()
+    }
+}
 
 /**
  * Tracks the line item's original, current active, and fulfilled quantities. All three
@@ -1968,7 +4688,7 @@ public data class OrderLineItem (
  * default.
  */
 @Serializable
-public data class LineItemQuantity (
+public class LineItemQuantity internal constructor (
     /**
      * Quantity fulfilled so far, expressed as an integer step count.
      */
@@ -1984,19 +4704,89 @@ public data class LineItemQuantity (
      * as an integer step count.
      */
     public val total: Long
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is LineItemQuantity &&
+            fulfilled == other.fulfilled &&
+            original == other.original &&
+            total == other.total)
+
+    override fun hashCode(): Int = java.util.Objects.hash(fulfilled, original, total)
+
+    override fun toString(): String = "LineItemQuantity(fulfilled=$fulfilled, original=$original, total=$total)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(fulfilled, total).also { builder ->
+        builder.original = this.original
+    }
+
+    /** Builds a [LineItemQuantity]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var fulfilled: Long,
+        public var total: Long,
+    ) {
+        public var original: Long? = null
+
+        public fun fulfilled(value: Long): Builder = apply { this.fulfilled = value }
+
+        public fun original(value: Long?): Builder = apply { this.original = value }
+
+        public fun total(value: Long): Builder = apply { this.total = value }
+
+        public fun build(): LineItemQuantity = LineItemQuantity(fulfilled = fulfilled, original = original, total = total)
+    }
+
+    public companion object {
+        /** Builds a [LineItemQuantity]: `LineItemQuantity(required = …) { optional = … }`. */
+        public operator fun invoke(fulfilled: Long, total: Long, configure: Builder.() -> Unit = {}): LineItemQuantity =
+            Builder(fulfilled, total).apply(configure).build()
+    }
+}
 
 /**
  * Derived status: removed if quantity.total == 0, fulfilled if quantity.total > 0 and
  * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
  * quantity.fulfilled > 0, otherwise processing.
  */
-@Serializable
-public enum class LineItemStatus(public val value: String) {
-    @SerialName("fulfilled") Fulfilled("fulfilled"),
-    @SerialName("partial") Partial("partial"),
-    @SerialName("processing") Processing("processing"),
-    @SerialName("removed") Removed("removed");
+@Serializable(with = LineItemStatusSerializer::class)
+public class LineItemStatus private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Fulfilled: LineItemStatus = LineItemStatus("fulfilled")
+        @JvmField public val Partial: LineItemStatus = LineItemStatus("partial")
+        @JvmField public val Processing: LineItemStatus = LineItemStatus("processing")
+        @JvmField public val Removed: LineItemStatus = LineItemStatus("removed")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, LineItemStatus> = listOf(Fulfilled, Partial, Processing, Removed).associateBy { it.value }
+
+        internal fun fromWire(value: String): LineItemStatus = known[value] ?: LineItemStatus(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is LineItemStatus && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object LineItemStatusSerializer : KSerializer<LineItemStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.LineItemStatus", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): LineItemStatus {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for LineItemStatus")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return LineItemStatus.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: LineItemStatus): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -2005,7 +4795,7 @@ public enum class LineItemStatus(public val value: String) {
  * Base UCP metadata with shared properties for all schema types.
  */
 @Serializable
-public data class UCPOrderResponseSchema (
+public class UCPOrderResponseSchema internal constructor (
     /**
      * Capability registry keyed by reverse-domain name.
      */
@@ -2035,13 +4825,71 @@ public data class UCPOrderResponseSchema (
     public val status: UCPCheckoutResponseSchemaStatus? = null,
 
     public val version: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is UCPOrderResponseSchema &&
+            capabilities == other.capabilities &&
+            mapOrder == other.mapOrder &&
+            paymentHandlers == other.paymentHandlers &&
+            services == other.services &&
+            status == other.status &&
+            version == other.version)
+
+    override fun hashCode(): Int = java.util.Objects.hash(capabilities, mapOrder, paymentHandlers, services, status, version)
+
+    override fun toString(): String = "UCPOrderResponseSchema(capabilities=$capabilities, mapOrder=$mapOrder, paymentHandlers=$paymentHandlers, services=$services, status=$status, version=$version)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version).also { builder ->
+        builder.capabilities = this.capabilities
+        builder.mapOrder = this.mapOrder
+        builder.paymentHandlers = this.paymentHandlers
+        builder.services = this.services
+        builder.status = this.status
+    }
+
+    /** Builds a [UCPOrderResponseSchema]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+    ) {
+        public var capabilities: Map<String, List<CapabilityResponseSchema>>? = null
+
+        public var mapOrder: Map<String, List<String>>? = null
+
+        public var paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>? = null
+
+        public var services: Map<String, List<Service>>? = null
+
+        public var status: UCPCheckoutResponseSchemaStatus? = null
+
+        public fun capabilities(value: Map<String, List<CapabilityResponseSchema>>?): Builder = apply { this.capabilities = value }
+
+        public fun mapOrder(value: Map<String, List<String>>?): Builder = apply { this.mapOrder = value }
+
+        public fun paymentHandlers(value: Map<String, List<PaymentHandlerResponseSchema>>?): Builder = apply { this.paymentHandlers = value }
+
+        public fun services(value: Map<String, List<Service>>?): Builder = apply { this.services = value }
+
+        public fun status(value: UCPCheckoutResponseSchemaStatus?): Builder = apply { this.status = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun build(): UCPOrderResponseSchema = UCPOrderResponseSchema(capabilities = capabilities, mapOrder = mapOrder, paymentHandlers = paymentHandlers, services = services, status = status, version = version)
+    }
+
+    public companion object {
+        /** Builds a [UCPOrderResponseSchema]: `UCPOrderResponseSchema(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, configure: Builder.() -> Unit = {}): UCPOrderResponseSchema =
+            Builder(version).apply(configure).build()
+    }
+}
 
 /**
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class Service (
+public class Service internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2077,14 +4925,76 @@ public data class Service (
      * Transport protocol for this service binding.
      */
     public val transport: Transport
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Service &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            endpoint == other.endpoint &&
+            transport == other.transport)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, endpoint, transport)
+
+    override fun toString(): String = "Service(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, endpoint=$endpoint, transport=$transport)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version, transport).also { builder ->
+        builder.config = this.config
+        builder.id = this.id
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.endpoint = this.endpoint
+    }
+
+    /** Builds a [Service]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+        public var transport: Transport,
+    ) {
+        public var config: JsonObject? = null
+
+        public var id: String? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var endpoint: String? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String?): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun endpoint(value: String?): Builder = apply { this.endpoint = value }
+
+        public fun transport(value: Transport): Builder = apply { this.transport = value }
+
+        public fun build(): Service = Service(config = config, id = id, schema = schema, spec = spec, version = version, endpoint = endpoint, transport = transport)
+    }
+
+    public companion object {
+        /** Builds a [Service]: `Service(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, transport: Transport, configure: Builder.() -> Unit = {}): Service =
+            Builder(version, transport).apply(configure).build()
+    }
+}
 
 /**
  * Generic error response when business logic prevents resource creation or failed to
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class ErrorResponse (
+public class ErrorResponse internal constructor (
     /**
      * URL for buyer handoff or session recovery.
      */
@@ -2100,7 +5010,45 @@ public data class ErrorResponse (
      * UCP protocol metadata. Status MUST be 'error' for error response.
      */
     public val ucp: ErrorResponseUcp
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ErrorResponse &&
+            continueURL == other.continueURL &&
+            messages == other.messages &&
+            ucp == other.ucp)
+
+    override fun hashCode(): Int = java.util.Objects.hash(continueURL, messages, ucp)
+
+    override fun toString(): String = "ErrorResponse(continueURL=$continueURL, messages=$messages, ucp=$ucp)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(messages, ucp).also { builder ->
+        builder.continueURL = this.continueURL
+    }
+
+    /** Builds a [ErrorResponse]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var messages: List<Message>,
+        public var ucp: ErrorResponseUcp,
+    ) {
+        public var continueURL: String? = null
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>): Builder = apply { this.messages = value }
+
+        public fun ucp(value: ErrorResponseUcp): Builder = apply { this.ucp = value }
+
+        public fun build(): ErrorResponse = ErrorResponse(continueURL = continueURL, messages = messages, ucp = ucp)
+    }
+
+    public companion object {
+        /** Builds a [ErrorResponse]: `ErrorResponse(required = …) { optional = … }`. */
+        public operator fun invoke(messages: List<Message>, ucp: ErrorResponseUcp, configure: Builder.() -> Unit = {}): ErrorResponse =
+            Builder(messages, ucp).apply(configure).build()
+    }
+}
 
 /**
  * UCP protocol metadata. Status MUST be 'error' for error response.
@@ -2111,7 +5059,7 @@ public data class ErrorResponse (
  * Base UCP metadata with shared properties for all schema types.
  */
 @Serializable
-public data class ErrorResponseUcp (
+public class ErrorResponseUcp internal constructor (
     /**
      * Capability registry keyed by reverse-domain name.
      */
@@ -2141,14 +5089,102 @@ public data class ErrorResponseUcp (
     public val status: ErrorStatus,
 
     public val version: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ErrorResponseUcp &&
+            capabilities == other.capabilities &&
+            mapOrder == other.mapOrder &&
+            paymentHandlers == other.paymentHandlers &&
+            services == other.services &&
+            status == other.status &&
+            version == other.version)
+
+    override fun hashCode(): Int = java.util.Objects.hash(capabilities, mapOrder, paymentHandlers, services, status, version)
+
+    override fun toString(): String = "ErrorResponseUcp(capabilities=$capabilities, mapOrder=$mapOrder, paymentHandlers=$paymentHandlers, services=$services, status=$status, version=$version)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(status, version).also { builder ->
+        builder.capabilities = this.capabilities
+        builder.mapOrder = this.mapOrder
+        builder.paymentHandlers = this.paymentHandlers
+        builder.services = this.services
+    }
+
+    /** Builds a [ErrorResponseUcp]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var status: ErrorStatus,
+        public var version: String,
+    ) {
+        public var capabilities: Map<String, List<CapabilityResponseSchema>>? = null
+
+        public var mapOrder: Map<String, List<String>>? = null
+
+        public var paymentHandlers: Map<String, List<PaymentHandlerResponseSchema>>? = null
+
+        public var services: Map<String, List<Service>>? = null
+
+        public fun capabilities(value: Map<String, List<CapabilityResponseSchema>>?): Builder = apply { this.capabilities = value }
+
+        public fun mapOrder(value: Map<String, List<String>>?): Builder = apply { this.mapOrder = value }
+
+        public fun paymentHandlers(value: Map<String, List<PaymentHandlerResponseSchema>>?): Builder = apply { this.paymentHandlers = value }
+
+        public fun services(value: Map<String, List<Service>>?): Builder = apply { this.services = value }
+
+        public fun status(value: ErrorStatus): Builder = apply { this.status = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun build(): ErrorResponseUcp = ErrorResponseUcp(capabilities = capabilities, mapOrder = mapOrder, paymentHandlers = paymentHandlers, services = services, status = status, version = version)
+    }
+
+    public companion object {
+        /** Builds a [ErrorResponseUcp]: `ErrorResponseUcp(required = …) { optional = … }`. */
+        public operator fun invoke(status: ErrorStatus, version: String, configure: Builder.() -> Unit = {}): ErrorResponseUcp =
+            Builder(status, version).apply(configure).build()
+    }
+}
 
 /**
  * Application-level status of the UCP operation.
  */
-@Serializable
-public enum class ErrorStatus(public val value: String) {
-    @SerialName("error") Error("error");
+@Serializable(with = ErrorStatusSerializer::class)
+public class ErrorStatus private constructor(public val value: String) {
+    public companion object {
+        @JvmField public val Error: ErrorStatus = ErrorStatus("error")
+
+        /** Values defined by the pinned protocol version. */
+        internal val known: Map<String, ErrorStatus> = listOf(Error).associateBy { it.value }
+
+        internal fun fromWire(value: String): ErrorStatus = known[value] ?: ErrorStatus(value)
+    }
+
+    override fun equals(other: Any?): Boolean = this === other || (other is ErrorStatus && value == other.value)
+
+    override fun hashCode(): Int = value.hashCode()
+
+    override fun toString(): String = value
+}
+
+internal object ErrorStatusSerializer : KSerializer<ErrorStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("com.shopify.ucp.embedded.checkout.ErrorStatus", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): ErrorStatus {
+        val value = if (decoder is JsonDecoder) {
+            val primitive = decoder.decodeJsonElement() as? JsonPrimitive
+            if (primitive?.isString != true) {
+                throw SerializationException("Expected a string for ErrorStatus")
+            }
+            primitive.content
+        } else {
+            decoder.decodeString()
+        }
+        return ErrorStatus.fromWire(value)
+    }
+
+    override fun serialize(encoder: Encoder, value: ErrorStatus): Unit = encoder.encodeString(value.value)
 }
 
 /**
@@ -2158,7 +5194,7 @@ public enum class ErrorStatus(public val value: String) {
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class InstrumentsChangeResult (
+public class InstrumentsChangeResult internal constructor (
     /**
      * Partial checkout update with payment instrument selection.
      */
@@ -2179,18 +5215,93 @@ public data class InstrumentsChangeResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is InstrumentsChangeResult &&
+            checkout == other.checkout &&
+            ucp == other.ucp &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(checkout, ucp, continueURL, messages)
+
+    override fun toString(): String = "InstrumentsChangeResult(checkout=$checkout, ucp=$ucp, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.checkout = this.checkout
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [InstrumentsChangeResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var checkout: InstrumentsChangeCheckout? = null
+
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun checkout(value: InstrumentsChangeCheckout?): Builder = apply { this.checkout = value }
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): InstrumentsChangeResult = InstrumentsChangeResult(checkout = checkout, ucp = ucp, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [InstrumentsChangeResult]: `InstrumentsChangeResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): InstrumentsChangeResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 /**
  * Partial checkout update with payment instrument selection.
  */
 @Serializable
-public data class InstrumentsChangeCheckout (
+public class InstrumentsChangeCheckout internal constructor (
     /**
      * Payment instruments with selected instrument ID.
      */
     public val payment: InstrumentsChangePayment? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is InstrumentsChangeCheckout &&
+            payment == other.payment)
+
+    override fun hashCode(): Int = java.util.Objects.hash(payment)
+
+    override fun toString(): String = "InstrumentsChangeCheckout(payment=$payment)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.payment = this.payment
+    }
+
+    /** Builds a [InstrumentsChangeCheckout]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var payment: InstrumentsChangePayment? = null
+
+        public fun payment(value: InstrumentsChangePayment?): Builder = apply { this.payment = value }
+
+        public fun build(): InstrumentsChangeCheckout = InstrumentsChangeCheckout(payment = payment)
+    }
+
+    public companion object {
+        /** Builds a [InstrumentsChangeCheckout]: `InstrumentsChangeCheckout(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): InstrumentsChangeCheckout =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Payment instruments with selected instrument ID.
@@ -2198,7 +5309,7 @@ public data class InstrumentsChangeCheckout (
  * Payment configuration containing handlers.
  */
 @Serializable
-public data class InstrumentsChangePayment (
+public class InstrumentsChangePayment internal constructor (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
@@ -2211,7 +5322,42 @@ public data class InstrumentsChangePayment (
      */
     @SerialName("selected_instrument_id")
     public val selectedInstrumentID: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is InstrumentsChangePayment &&
+            instruments == other.instruments &&
+            selectedInstrumentID == other.selectedInstrumentID)
+
+    override fun hashCode(): Int = java.util.Objects.hash(instruments, selectedInstrumentID)
+
+    override fun toString(): String = "InstrumentsChangePayment(instruments=$instruments, selectedInstrumentID=$selectedInstrumentID)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.instruments = this.instruments
+        builder.selectedInstrumentID = this.selectedInstrumentID
+    }
+
+    /** Builds a [InstrumentsChangePayment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var instruments: List<SelectedPaymentInstrument>? = null
+
+        public var selectedInstrumentID: String? = null
+
+        public fun instruments(value: List<SelectedPaymentInstrument>?): Builder = apply { this.instruments = value }
+
+        public fun selectedInstrumentID(value: String?): Builder = apply { this.selectedInstrumentID = value }
+
+        public fun build(): InstrumentsChangePayment = InstrumentsChangePayment(instruments = instruments, selectedInstrumentID = selectedInstrumentID)
+    }
+
+    public companion object {
+        /** Builds a [InstrumentsChangePayment]: `InstrumentsChangePayment(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): InstrumentsChangePayment =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * UCP metadata with status 'success'. Use for response branches that carry the expected
@@ -2224,7 +5370,7 @@ public data class InstrumentsChangePayment (
  * UCP metadata with status 'error'. Use for response branches that carry error information.
  */
 @Serializable
-public data class InstrumentsChangeResultUcp (
+public class InstrumentsChangeResultUcp internal constructor (
     /**
      * Capability registry keyed by reverse-domain name.
      */
@@ -2254,7 +5400,63 @@ public data class InstrumentsChangeResultUcp (
     public val status: UCPCheckoutResponseSchemaStatus,
 
     public val version: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is InstrumentsChangeResultUcp &&
+            capabilities == other.capabilities &&
+            mapOrder == other.mapOrder &&
+            paymentHandlers == other.paymentHandlers &&
+            services == other.services &&
+            status == other.status &&
+            version == other.version)
+
+    override fun hashCode(): Int = java.util.Objects.hash(capabilities, mapOrder, paymentHandlers, services, status, version)
+
+    override fun toString(): String = "InstrumentsChangeResultUcp(capabilities=$capabilities, mapOrder=$mapOrder, paymentHandlers=$paymentHandlers, services=$services, status=$status, version=$version)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(status, version).also { builder ->
+        builder.capabilities = this.capabilities
+        builder.mapOrder = this.mapOrder
+        builder.paymentHandlers = this.paymentHandlers
+        builder.services = this.services
+    }
+
+    /** Builds a [InstrumentsChangeResultUcp]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var status: UCPCheckoutResponseSchemaStatus,
+        public var version: String,
+    ) {
+        public var capabilities: Map<String, List<CapabilityElement>>? = null
+
+        public var mapOrder: Map<String, List<String>>? = null
+
+        public var paymentHandlers: Map<String, List<PaymentHandlerElement>>? = null
+
+        public var services: Map<String, List<EmbeddedService>>? = null
+
+        public fun capabilities(value: Map<String, List<CapabilityElement>>?): Builder = apply { this.capabilities = value }
+
+        public fun mapOrder(value: Map<String, List<String>>?): Builder = apply { this.mapOrder = value }
+
+        public fun paymentHandlers(value: Map<String, List<PaymentHandlerElement>>?): Builder = apply { this.paymentHandlers = value }
+
+        public fun services(value: Map<String, List<EmbeddedService>>?): Builder = apply { this.services = value }
+
+        public fun status(value: UCPCheckoutResponseSchemaStatus): Builder = apply { this.status = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun build(): InstrumentsChangeResultUcp = InstrumentsChangeResultUcp(capabilities = capabilities, mapOrder = mapOrder, paymentHandlers = paymentHandlers, services = services, status = status, version = version)
+    }
+
+    public companion object {
+        /** Builds a [InstrumentsChangeResultUcp]: `InstrumentsChangeResultUcp(required = …) { optional = … }`. */
+        public operator fun invoke(status: UCPCheckoutResponseSchemaStatus, version: String, configure: Builder.() -> Unit = {}): InstrumentsChangeResultUcp =
+            Builder(status, version).apply(configure).build()
+    }
+}
 
 /**
  * Shared foundation for all UCP entities.
@@ -2263,7 +5465,7 @@ public data class InstrumentsChangeResultUcp (
  * capabilities.
  */
 @Serializable
-public data class CapabilityElement (
+public class CapabilityElement internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2295,7 +5497,65 @@ public data class CapabilityElement (
      * Use array for multi-parent extensions.
      */
     public val extends: Extends? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CapabilityElement &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            extends == other.extends)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, extends)
+
+    override fun toString(): String = "CapabilityElement(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, extends=$extends)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version).also { builder ->
+        builder.config = this.config
+        builder.id = this.id
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.extends = this.extends
+    }
+
+    /** Builds a [CapabilityElement]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+    ) {
+        public var config: JsonObject? = null
+
+        public var id: String? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var extends: Extends? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String?): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun extends(value: Extends?): Builder = apply { this.extends = value }
+
+        public fun build(): CapabilityElement = CapabilityElement(config = config, id = id, schema = schema, spec = spec, version = version, extends = extends)
+    }
+
+    public companion object {
+        /** Builds a [CapabilityElement]: `CapabilityElement(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, configure: Builder.() -> Unit = {}): CapabilityElement =
+            Builder(version).apply(configure).build()
+    }
+}
 
 /**
  * Shared foundation for all UCP entities.
@@ -2304,7 +5564,7 @@ public data class CapabilityElement (
  * handler.
  */
 @Serializable
-public data class PaymentHandlerElement (
+public class PaymentHandlerElement internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2337,13 +5597,69 @@ public data class PaymentHandlerElement (
      */
     @SerialName("available_instruments")
     public val availableInstruments: List<PaymentHandlerAvailableInstrument>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PaymentHandlerElement &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            availableInstruments == other.availableInstruments)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, availableInstruments)
+
+    override fun toString(): String = "PaymentHandlerElement(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, availableInstruments=$availableInstruments)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(id, version).also { builder ->
+        builder.config = this.config
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.availableInstruments = this.availableInstruments
+    }
+
+    /** Builds a [PaymentHandlerElement]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var id: String,
+        public var version: String,
+    ) {
+        public var config: JsonObject? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var availableInstruments: List<PaymentHandlerAvailableInstrument>? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun availableInstruments(value: List<PaymentHandlerAvailableInstrument>?): Builder = apply { this.availableInstruments = value }
+
+        public fun build(): PaymentHandlerElement = PaymentHandlerElement(config = config, id = id, schema = schema, spec = spec, version = version, availableInstruments = availableInstruments)
+    }
+
+    public companion object {
+        /** Builds a [PaymentHandlerElement]: `PaymentHandlerElement(required = …) { optional = … }`. */
+        public operator fun invoke(id: String, version: String, configure: Builder.() -> Unit = {}): PaymentHandlerElement =
+            Builder(id, version).apply(configure).build()
+    }
+}
 
 /**
  * An instrument type available from a payment handler with optional constraints.
  */
 @Serializable
-public data class PaymentHandlerAvailableInstrument (
+public class PaymentHandlerAvailableInstrument internal constructor (
     /**
      * A Constraint Expression describing the instrument this entry makes available. Keys in
      * `properties` name members of the `constraint_target` declared by the instrument schema
@@ -2357,13 +5673,47 @@ public data class PaymentHandlerAvailableInstrument (
      * schema's type constant.
      */
     public val type: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is PaymentHandlerAvailableInstrument &&
+            constraints == other.constraints &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(constraints, type)
+
+    override fun toString(): String = "PaymentHandlerAvailableInstrument(constraints=$constraints, type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(type).also { builder ->
+        builder.constraints = this.constraints
+    }
+
+    /** Builds a [PaymentHandlerAvailableInstrument]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var type: String,
+    ) {
+        public var constraints: ConstraintExpression? = null
+
+        public fun constraints(value: ConstraintExpression?): Builder = apply { this.constraints = value }
+
+        public fun type(value: String): Builder = apply { this.type = value }
+
+        public fun build(): PaymentHandlerAvailableInstrument = PaymentHandlerAvailableInstrument(constraints = constraints, type = type)
+    }
+
+    public companion object {
+        /** Builds a [PaymentHandlerAvailableInstrument]: `PaymentHandlerAvailableInstrument(required = …) { optional = … }`. */
+        public operator fun invoke(type: String, configure: Builder.() -> Unit = {}): PaymentHandlerAvailableInstrument =
+            Builder(type).apply(configure).build()
+    }
+}
 
 /**
  * Shared foundation for all UCP entities.
  */
 @Serializable
-public data class EmbeddedService (
+public class EmbeddedService internal constructor (
     /**
      * Entity-specific configuration. Structure defined by each entity's schema.
      */
@@ -2399,7 +5749,69 @@ public data class EmbeddedService (
      * Transport protocol for this service binding.
      */
     public val transport: Transport
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is EmbeddedService &&
+            config == other.config &&
+            id == other.id &&
+            schema == other.schema &&
+            spec == other.spec &&
+            version == other.version &&
+            endpoint == other.endpoint &&
+            transport == other.transport)
+
+    override fun hashCode(): Int = java.util.Objects.hash(config, id, schema, spec, version, endpoint, transport)
+
+    override fun toString(): String = "EmbeddedService(config=$config, id=$id, schema=$schema, spec=$spec, version=$version, endpoint=$endpoint, transport=$transport)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(version, transport).also { builder ->
+        builder.config = this.config
+        builder.id = this.id
+        builder.schema = this.schema
+        builder.spec = this.spec
+        builder.endpoint = this.endpoint
+    }
+
+    /** Builds a [EmbeddedService]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var version: String,
+        public var transport: Transport,
+    ) {
+        public var config: JsonObject? = null
+
+        public var id: String? = null
+
+        public var schema: String? = null
+
+        public var spec: String? = null
+
+        public var endpoint: String? = null
+
+        public fun config(value: JsonObject?): Builder = apply { this.config = value }
+
+        public fun id(value: String?): Builder = apply { this.id = value }
+
+        public fun schema(value: String?): Builder = apply { this.schema = value }
+
+        public fun spec(value: String?): Builder = apply { this.spec = value }
+
+        public fun version(value: String): Builder = apply { this.version = value }
+
+        public fun endpoint(value: String?): Builder = apply { this.endpoint = value }
+
+        public fun transport(value: Transport): Builder = apply { this.transport = value }
+
+        public fun build(): EmbeddedService = EmbeddedService(config = config, id = id, schema = schema, spec = spec, version = version, endpoint = endpoint, transport = transport)
+    }
+
+    public companion object {
+        /** Builds a [EmbeddedService]: `EmbeddedService(required = …) { optional = … }`. */
+        public operator fun invoke(version: String, transport: Transport, configure: Builder.() -> Unit = {}): EmbeddedService =
+            Builder(version, transport).apply(configure).build()
+    }
+}
 
 /**
  * Checkout state with payment credential ready for completion.
@@ -2408,7 +5820,7 @@ public data class EmbeddedService (
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class CredentialResult (
+public class CredentialResult internal constructor (
     /**
      * Partial checkout update with payment credential.
      */
@@ -2429,15 +5841,90 @@ public data class CredentialResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CredentialResult &&
+            checkout == other.checkout &&
+            ucp == other.ucp &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(checkout, ucp, continueURL, messages)
+
+    override fun toString(): String = "CredentialResult(checkout=$checkout, ucp=$ucp, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.checkout = this.checkout
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [CredentialResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var checkout: CredentialCheckout? = null
+
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun checkout(value: CredentialCheckout?): Builder = apply { this.checkout = value }
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): CredentialResult = CredentialResult(checkout = checkout, ucp = ucp, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [CredentialResult]: `CredentialResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): CredentialResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 /**
  * Partial checkout update with payment credential.
  */
 @Serializable
-public data class CredentialCheckout (
+public class CredentialCheckout internal constructor (
     public val payment: Payment? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CredentialCheckout &&
+            payment == other.payment)
+
+    override fun hashCode(): Int = java.util.Objects.hash(payment)
+
+    override fun toString(): String = "CredentialCheckout(payment=$payment)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.payment = this.payment
+    }
+
+    /** Builds a [CredentialCheckout]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var payment: Payment? = null
+
+        public fun payment(value: Payment?): Builder = apply { this.payment = value }
+
+        public fun build(): CredentialCheckout = CredentialCheckout(payment = payment)
+    }
+
+    public companion object {
+        /** Builds a [CredentialCheckout]: `CredentialCheckout(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): CredentialCheckout =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Checkout state after address selection.
@@ -2446,7 +5933,7 @@ public data class CredentialCheckout (
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class AddressChangeResult (
+public class AddressChangeResult internal constructor (
     /**
      * Partial checkout update with fulfillment address selection.
      */
@@ -2467,18 +5954,93 @@ public data class AddressChangeResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AddressChangeResult &&
+            checkout == other.checkout &&
+            ucp == other.ucp &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(checkout, ucp, continueURL, messages)
+
+    override fun toString(): String = "AddressChangeResult(checkout=$checkout, ucp=$ucp, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.checkout = this.checkout
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [AddressChangeResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var checkout: AddressChangeCheckout? = null
+
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun checkout(value: AddressChangeCheckout?): Builder = apply { this.checkout = value }
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): AddressChangeResult = AddressChangeResult(checkout = checkout, ucp = ucp, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [AddressChangeResult]: `AddressChangeResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): AddressChangeResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 /**
  * Partial checkout update with fulfillment address selection.
  */
 @Serializable
-public data class AddressChangeCheckout (
+public class AddressChangeCheckout internal constructor (
     /**
      * Updated fulfillment with new selected destination and destinations.
      */
     public val fulfillment: CheckoutFulfillmentClass? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AddressChangeCheckout &&
+            fulfillment == other.fulfillment)
+
+    override fun hashCode(): Int = java.util.Objects.hash(fulfillment)
+
+    override fun toString(): String = "AddressChangeCheckout(fulfillment=$fulfillment)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.fulfillment = this.fulfillment
+    }
+
+    /** Builds a [AddressChangeCheckout]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var fulfillment: CheckoutFulfillmentClass? = null
+
+        public fun fulfillment(value: CheckoutFulfillmentClass?): Builder = apply { this.fulfillment = value }
+
+        public fun build(): AddressChangeCheckout = AddressChangeCheckout(fulfillment = fulfillment)
+    }
+
+    public companion object {
+        /** Builds a [AddressChangeCheckout]: `AddressChangeCheckout(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): AddressChangeCheckout =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Updated fulfillment with new selected destination and destinations.
@@ -2486,7 +6048,7 @@ public data class AddressChangeCheckout (
  * Container for fulfillment methods and availability.
  */
 @Serializable
-public data class CheckoutFulfillmentClass (
+public class CheckoutFulfillmentClass internal constructor (
     /**
      * Inventory availability hints.
      */
@@ -2497,22 +6059,120 @@ public data class CheckoutFulfillmentClass (
      * Fulfillment methods for cart items.
      */
     public val methods: List<FulfillmentMethod>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CheckoutFulfillmentClass &&
+            availableMethods == other.availableMethods &&
+            methods == other.methods)
+
+    override fun hashCode(): Int = java.util.Objects.hash(availableMethods, methods)
+
+    override fun toString(): String = "CheckoutFulfillmentClass(availableMethods=$availableMethods, methods=$methods)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.availableMethods = this.availableMethods
+        builder.methods = this.methods
+    }
+
+    /** Builds a [CheckoutFulfillmentClass]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var availableMethods: List<FulfillmentAvailableMethod>? = null
+
+        public var methods: List<FulfillmentMethod>? = null
+
+        public fun availableMethods(value: List<FulfillmentAvailableMethod>?): Builder = apply { this.availableMethods = value }
+
+        public fun methods(value: List<FulfillmentMethod>?): Builder = apply { this.methods = value }
+
+        public fun build(): CheckoutFulfillmentClass = CheckoutFulfillmentClass(availableMethods = availableMethods, methods = methods)
+    }
+
+    public companion object {
+        /** Builds a [CheckoutFulfillmentClass]: `CheckoutFulfillmentClass(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): CheckoutFulfillmentClass =
+            Builder().apply(configure).build()
+    }
+}
 
 @Serializable
-public data class ReadyRequest (
+public class ReadyRequest internal constructor (
     public val auth: Auth? = null,
 
     /**
      * Delegation types the merchant accepts. Must be subset of checkout.embedded.delegations.
      */
     public val delegate: List<String>
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ReadyRequest &&
+            auth == other.auth &&
+            delegate == other.delegate)
+
+    override fun hashCode(): Int = java.util.Objects.hash(auth, delegate)
+
+    override fun toString(): String = "ReadyRequest(auth=$auth, delegate=$delegate)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(delegate).also { builder ->
+        builder.auth = this.auth
+    }
+
+    /** Builds a [ReadyRequest]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var delegate: List<String>,
+    ) {
+        public var auth: Auth? = null
+
+        public fun auth(value: Auth?): Builder = apply { this.auth = value }
+
+        public fun delegate(value: List<String>): Builder = apply { this.delegate = value }
+
+        public fun build(): ReadyRequest = ReadyRequest(auth = auth, delegate = delegate)
+    }
+
+    public companion object {
+        /** Builds a [ReadyRequest]: `ReadyRequest(required = …) { optional = … }`. */
+        public operator fun invoke(delegate: List<String>, configure: Builder.() -> Unit = {}): ReadyRequest =
+            Builder(delegate).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class Auth (
+public class Auth internal constructor (
     public val type: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Auth &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(type)
+
+    override fun toString(): String = "Auth(type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.type = this.type
+    }
+
+    /** Builds a [Auth]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var type: String? = null
+
+        public fun type(value: String?): Builder = apply { this.type = value }
+
+        public fun build(): Auth = Auth(type = type)
+    }
+
+    public companion object {
+        /** Builds a [Auth]: `Auth(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Auth =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Handshake response from host.
@@ -2521,7 +6181,7 @@ public data class Auth (
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class ReadyResult (
+public class ReadyResult internal constructor (
     /**
      * Initial delegation state from host. Fields are permitted only when the corresponding
      * delegation is accepted.
@@ -2553,21 +6213,114 @@ public data class ReadyResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ReadyResult &&
+            checkout == other.checkout &&
+            credential == other.credential &&
+            ucp == other.ucp &&
+            upgrade == other.upgrade &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(checkout, credential, ucp, upgrade, continueURL, messages)
+
+    override fun toString(): String = "ReadyResult(checkout=$checkout, credential=$credential, ucp=$ucp, upgrade=$upgrade, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.checkout = this.checkout
+        builder.credential = this.credential
+        builder.upgrade = this.upgrade
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [ReadyResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var checkout: ReadyCheckout? = null
+
+        public var credential: String? = null
+
+        public var upgrade: Upgrade? = null
+
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun checkout(value: ReadyCheckout?): Builder = apply { this.checkout = value }
+
+        public fun credential(value: String?): Builder = apply { this.credential = value }
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun upgrade(value: Upgrade?): Builder = apply { this.upgrade = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): ReadyResult = ReadyResult(checkout = checkout, credential = credential, ucp = ucp, upgrade = upgrade, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [ReadyResult]: `ReadyResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): ReadyResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 /**
  * Initial delegation state from host. Fields are permitted only when the corresponding
  * delegation is accepted.
  */
 @Serializable
-public data class ReadyCheckout (
+public class ReadyCheckout internal constructor (
     public val fulfillment: CheckoutFulfillmentClass? = null,
 
     /**
      * Payment instruments with selected instrument ID.
      */
     public val payment: ReadyPayment? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ReadyCheckout &&
+            fulfillment == other.fulfillment &&
+            payment == other.payment)
+
+    override fun hashCode(): Int = java.util.Objects.hash(fulfillment, payment)
+
+    override fun toString(): String = "ReadyCheckout(fulfillment=$fulfillment, payment=$payment)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.fulfillment = this.fulfillment
+        builder.payment = this.payment
+    }
+
+    /** Builds a [ReadyCheckout]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var fulfillment: CheckoutFulfillmentClass? = null
+
+        public var payment: ReadyPayment? = null
+
+        public fun fulfillment(value: CheckoutFulfillmentClass?): Builder = apply { this.fulfillment = value }
+
+        public fun payment(value: ReadyPayment?): Builder = apply { this.payment = value }
+
+        public fun build(): ReadyCheckout = ReadyCheckout(fulfillment = fulfillment, payment = payment)
+    }
+
+    public companion object {
+        /** Builds a [ReadyCheckout]: `ReadyCheckout(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): ReadyCheckout =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Payment instruments with selected instrument ID.
@@ -2575,7 +6328,7 @@ public data class ReadyCheckout (
  * Payment configuration containing handlers.
  */
 @Serializable
-public data class ReadyPayment (
+public class ReadyPayment internal constructor (
     /**
      * The payment instruments available for this payment. Each instrument is associated with a
      * specific handler via the handler_id field. Handlers can extend the base
@@ -2588,23 +6341,116 @@ public data class ReadyPayment (
      */
     @SerialName("selected_instrument_id")
     public val selectedInstrumentID: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is ReadyPayment &&
+            instruments == other.instruments &&
+            selectedInstrumentID == other.selectedInstrumentID)
+
+    override fun hashCode(): Int = java.util.Objects.hash(instruments, selectedInstrumentID)
+
+    override fun toString(): String = "ReadyPayment(instruments=$instruments, selectedInstrumentID=$selectedInstrumentID)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.instruments = this.instruments
+        builder.selectedInstrumentID = this.selectedInstrumentID
+    }
+
+    /** Builds a [ReadyPayment]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var instruments: List<SelectedPaymentInstrument>? = null
+
+        public var selectedInstrumentID: String? = null
+
+        public fun instruments(value: List<SelectedPaymentInstrument>?): Builder = apply { this.instruments = value }
+
+        public fun selectedInstrumentID(value: String?): Builder = apply { this.selectedInstrumentID = value }
+
+        public fun build(): ReadyPayment = ReadyPayment(instruments = instruments, selectedInstrumentID = selectedInstrumentID)
+    }
+
+    public companion object {
+        /** Builds a [ReadyPayment]: `ReadyPayment(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): ReadyPayment =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Channel upgrade instructions. If present, switch to provided MessagePort.
  */
 @Serializable
-public data class Upgrade (
+public class Upgrade internal constructor (
     /**
      * MessagePort for upgraded channel. Runtime type is MessagePort.
      */
     public val port: JsonObject? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Upgrade &&
+            port == other.port)
+
+    override fun hashCode(): Int = java.util.Objects.hash(port)
+
+    override fun toString(): String = "Upgrade(port=$port)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.port = this.port
+    }
+
+    /** Builds a [Upgrade]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var port: JsonObject? = null
+
+        public fun port(value: JsonObject?): Builder = apply { this.port = value }
+
+        public fun build(): Upgrade = Upgrade(port = port)
+    }
+
+    public companion object {
+        /** Builds a [Upgrade]: `Upgrade(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): Upgrade =
+            Builder().apply(configure).build()
+    }
+}
 
 @Serializable
-public data class AuthRequest (
+public class AuthRequest internal constructor (
     public val type: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AuthRequest &&
+            type == other.type)
+
+    override fun hashCode(): Int = java.util.Objects.hash(type)
+
+    override fun toString(): String = "AuthRequest(type=$type)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder().also { builder ->
+        builder.type = this.type
+    }
+
+    /** Builds a [AuthRequest]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder {
+        public var type: String? = null
+
+        public fun type(value: String?): Builder = apply { this.type = value }
+
+        public fun build(): AuthRequest = AuthRequest(type = type)
+    }
+
+    public companion object {
+        /** Builds a [AuthRequest]: `AuthRequest(required = …) { optional = … }`. */
+        public operator fun invoke(configure: Builder.() -> Unit = {}): AuthRequest =
+            Builder().apply(configure).build()
+    }
+}
 
 /**
  * Auth response from host containing the requested authorization data.
@@ -2613,7 +6459,7 @@ public data class AuthRequest (
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class AuthResult (
+public class AuthResult internal constructor (
     /**
      * Requested authorization. Some common examples include API key and OAuth token.
      */
@@ -2634,15 +6480,88 @@ public data class AuthResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is AuthResult &&
+            credential == other.credential &&
+            ucp == other.ucp &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(credential, ucp, continueURL, messages)
+
+    override fun toString(): String = "AuthResult(credential=$credential, ucp=$ucp, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.credential = this.credential
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [AuthResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var credential: String? = null
+
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun credential(value: String?): Builder = apply { this.credential = value }
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): AuthResult = AuthResult(credential = credential, ucp = ucp, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [AuthResult]: `AuthResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): AuthResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 @Serializable
-public data class WindowOpenRequest (
+public class WindowOpenRequest internal constructor (
     /**
      * The URL of the resource to present.
      */
     public val url: String
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is WindowOpenRequest &&
+            url == other.url)
+
+    override fun hashCode(): Int = java.util.Objects.hash(url)
+
+    override fun toString(): String = "WindowOpenRequest(url=$url)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(url)
+
+    /** Builds a [WindowOpenRequest]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var url: String,
+    ) {
+        public fun url(value: String): Builder = apply { this.url = value }
+
+        public fun build(): WindowOpenRequest = WindowOpenRequest(url = url)
+    }
+
+    public companion object {
+        /** Builds a [WindowOpenRequest]: `WindowOpenRequest(required = …) { optional = … }`. */
+        public operator fun invoke(url: String, configure: Builder.() -> Unit = {}): WindowOpenRequest =
+            Builder(url).apply(configure).build()
+    }
+}
 
 /**
  * Acknowledgement that the host handled the request.
@@ -2651,7 +6570,7 @@ public data class WindowOpenRequest (
  * retrieve resource. Used when no valid resource can be established.
  */
 @Serializable
-public data class WindowOpenResult (
+public class WindowOpenResult internal constructor (
     /**
      * UCP protocol metadata. Status MUST be 'error' for error response.
      */
@@ -2667,7 +6586,47 @@ public data class WindowOpenResult (
      * Array of messages describing why the operation failed.
      */
     public val messages: List<Message>? = null
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is WindowOpenResult &&
+            ucp == other.ucp &&
+            continueURL == other.continueURL &&
+            messages == other.messages)
+
+    override fun hashCode(): Int = java.util.Objects.hash(ucp, continueURL, messages)
+
+    override fun toString(): String = "WindowOpenResult(ucp=$ucp, continueURL=$continueURL, messages=$messages)"
+
+    /** Returns a builder initialized with every field of this model. Nested values are shared. */
+    public fun toBuilder(): Builder = Builder(ucp).also { builder ->
+        builder.continueURL = this.continueURL
+        builder.messages = this.messages
+    }
+
+    /** Builds a [WindowOpenResult]. Required fields are constructor parameters; all fields have properties and setters. */
+    @ProtocolModelDsl
+    public class Builder(
+        public var ucp: InstrumentsChangeResultUcp,
+    ) {
+        public var continueURL: String? = null
+
+        public var messages: List<Message>? = null
+
+        public fun ucp(value: InstrumentsChangeResultUcp): Builder = apply { this.ucp = value }
+
+        public fun continueURL(value: String?): Builder = apply { this.continueURL = value }
+
+        public fun messages(value: List<Message>?): Builder = apply { this.messages = value }
+
+        public fun build(): WindowOpenResult = WindowOpenResult(ucp = ucp, continueURL = continueURL, messages = messages)
+    }
+
+    public companion object {
+        /** Builds a [WindowOpenResult]: `WindowOpenResult(required = …) { optional = … }`. */
+        public operator fun invoke(ucp: InstrumentsChangeResultUcp, configure: Builder.() -> Unit = {}): WindowOpenResult =
+            Builder(ucp).apply(configure).build()
+    }
+}
 
 public object CheckoutSerializer : KSerializer<Checkout> {
     override val descriptor: SerialDescriptor =

@@ -1,12 +1,12 @@
 package com.shopify.checkoutkit.androiddemo
 
-import com.shopify.checkoutkit.Checkout
-import com.shopify.checkoutkit.CheckoutCompleteEvent
-import com.shopify.checkoutkit.CheckoutErrorCode
-import com.shopify.checkoutkit.CheckoutException
-import com.shopify.checkoutkit.CheckoutFailureEvent
-import com.shopify.checkoutkit.CheckoutStartEvent
-import com.shopify.checkoutkit.CheckoutUpdateEvent
+import com.shopify.checkoutkit.checkout.Checkout
+import com.shopify.checkoutkit.checkout.CheckoutCompleteEvent
+import com.shopify.checkoutkit.checkout.CheckoutErrorCode
+import com.shopify.checkoutkit.checkout.CheckoutException
+import com.shopify.checkoutkit.checkout.CheckoutFailureEvent
+import com.shopify.checkoutkit.checkout.CheckoutStartEvent
+import com.shopify.checkoutkit.checkout.CheckoutUpdateEvent
 import com.shopify.ucp.embedded.checkout.CheckoutStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

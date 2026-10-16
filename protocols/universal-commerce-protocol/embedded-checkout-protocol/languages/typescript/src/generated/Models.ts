@@ -297,7 +297,7 @@ export interface DiscountAllocation {
  * Allocation method. 'each' = applied independently per item. 'across' = split
  * proportionally by value.
  */
-export type DiscountMethod = "each" | "across";
+export type DiscountMethod = "each" | "across" | (string & {});
 
 /**
  * Fulfillment details.
@@ -896,7 +896,7 @@ export interface Message {
 /**
  * Content format, default = plain.
  */
-export type ContentType = "plain" | "markdown";
+export type ContentType = "plain" | "markdown" | (string & {});
 
 /**
  * Reflects the resource state and recommended action. 'recoverable': platform can resolve
@@ -908,9 +908,9 @@ export type ContentType = "plain" | "markdown";
  * retry with new resource or inputs. Errors with 'requires_*' severity contribute to
  * 'status: requires_escalation'.
  */
-export type Severity = "recoverable" | "requires_buyer_input" | "requires_buyer_review" | "unrecoverable";
+export type Severity = "recoverable" | "requires_buyer_input" | "requires_buyer_review" | "unrecoverable" | (string & {});
 
-export type MessageType = "error" | "warning" | "info";
+export type MessageType = "error" | "warning" | "info" | (string & {});
 
 /**
  * Details about an order created for this checkout session.
@@ -1054,7 +1054,7 @@ export interface Policy {
  * Checkout state indicating the current phase and required processing. See Checkout Status
  * lifecycle documentation for state transition details.
  */
-export type CheckoutStatus = "incomplete" | "requires_escalation" | "ready_for_complete" | "complete_in_progress" | "completed" | "canceled";
+export type CheckoutStatus = "incomplete" | "requires_escalation" | "ready_for_complete" | "complete_in_progress" | "completed" | "canceled" | (string & {});
 
 /**
  * Different cart totals.
@@ -1341,17 +1341,17 @@ export interface EmbeddedTransportConfig {
     [property: string]: any;
 }
 
-export type EmbeddedColorScheme = "light" | "dark";
+export type EmbeddedColorScheme = "light" | "dark" | (string & {});
 
 /**
  * Transport protocol for this service binding.
  */
-export type Transport = "rest" | "mcp" | "a2a" | "embedded";
+export type Transport = "rest" | "mcp" | "a2a" | "embedded" | (string & {});
 
 /**
  * Application-level status of the UCP operation.
  */
-export type UcpCheckoutResponseSchemaStatus = "success" | "error";
+export type UcpCheckoutResponseSchemaStatus = "success" | "error" | (string & {});
 
 /**
  * Order schema with line items, buyer-facing fulfillment expectations, and event logs.
@@ -1478,7 +1478,7 @@ export interface AdjustmentLineItem {
 /**
  * Adjustment status.
  */
-export type AdjustmentStatus = "pending" | "completed" | "failed";
+export type AdjustmentStatus = "pending" | "completed" | "failed" | (string & {});
 
 /**
  * Fulfillment data: buyer expectations and what actually happened.
@@ -1662,7 +1662,7 @@ export interface LineItemQuantity {
  * quantity.fulfilled == quantity.total, partial if quantity.total > 0 and
  * quantity.fulfilled > 0, otherwise processing.
  */
-export type LineItemStatus = "processing" | "partial" | "fulfilled" | "removed";
+export type LineItemStatus = "processing" | "partial" | "fulfilled" | "removed" | (string & {});
 
 /**
  * UCP metadata for order responses. No payment handlers needed post-purchase.
@@ -1787,7 +1787,7 @@ export interface ErrorResponseUcp {
 /**
  * Application-level status of the UCP operation.
  */
-export type ErrorStatus = "error";
+export type ErrorStatus = "error" | (string & {});
 
 /**
  * Checkout state after instrument selection.
@@ -2998,59 +2998,15 @@ const typeMap: any = {
         { json: "continue_url", js: "continueUrl", typ: u(undefined, "") },
         { json: "messages", js: "messages", typ: u(undefined, a(r("Message"))) },
     ], "any"),
-    "DiscountMethod": [
-        "across",
-        "each",
-    ],
-    "ContentType": [
-        "markdown",
-        "plain",
-    ],
-    "Severity": [
-        "recoverable",
-        "requires_buyer_input",
-        "requires_buyer_review",
-        "unrecoverable",
-    ],
-    "MessageType": [
-        "error",
-        "info",
-        "warning",
-    ],
-    "CheckoutStatus": [
-        "canceled",
-        "complete_in_progress",
-        "completed",
-        "incomplete",
-        "ready_for_complete",
-        "requires_escalation",
-    ],
-    "EmbeddedColorScheme": [
-        "dark",
-        "light",
-    ],
-    "Transport": [
-        "a2a",
-        "embedded",
-        "mcp",
-        "rest",
-    ],
-    "UcpCheckoutResponseSchemaStatus": [
-        "error",
-        "success",
-    ],
-    "AdjustmentStatus": [
-        "completed",
-        "failed",
-        "pending",
-    ],
-    "LineItemStatus": [
-        "fulfilled",
-        "partial",
-        "processing",
-        "removed",
-    ],
-    "ErrorStatus": [
-        "error",
-    ],
+    "DiscountMethod": "",
+    "ContentType": "",
+    "Severity": "",
+    "MessageType": "",
+    "CheckoutStatus": "",
+    "EmbeddedColorScheme": "",
+    "Transport": "",
+    "UcpCheckoutResponseSchemaStatus": "",
+    "AdjustmentStatus": "",
+    "LineItemStatus": "",
+    "ErrorStatus": "",
 };

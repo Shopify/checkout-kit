@@ -42,8 +42,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
-import com.shopify.checkoutkit.CheckoutAppearance
-import com.shopify.checkoutkit.ColorScheme
 import com.shopify.checkoutkit.androiddemo.accessibility.AccessibilityIdentifiers
 import com.shopify.checkoutkit.androiddemo.cart.AppOwnedCheckoutSheet
 import com.shopify.checkoutkit.androiddemo.cart.CartViewModel
@@ -58,6 +56,8 @@ import com.shopify.checkoutkit.androiddemo.e2e.E2ENavigationEffect
 import com.shopify.checkoutkit.androiddemo.logs.LogsViewModel
 import com.shopify.checkoutkit.androiddemo.settings.SettingsUiState
 import com.shopify.checkoutkit.androiddemo.settings.SettingsViewModel
+import com.shopify.checkoutkit.checkout.CheckoutAppearance
+import com.shopify.checkoutkit.checkout.ColorScheme
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

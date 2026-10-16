@@ -18,12 +18,21 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     private func resetShopifyCheckoutKitDefaults() {
-        ShopifyCheckoutKit.configuration.appearance = .storefront
-        ShopifyCheckoutKit.configuration.closeButtonTintColor = nil
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.warn
-        ShopifyCheckoutKit.configuration.preloading.enabled = true
-        ShopifyCheckoutKit.configuration.allowedMessageOrigins = []
-        ShopifyCheckoutKit.configuration.telemetry.enabled = true
+        configureShopifyCheckoutKit {
+            $0.appearance = .storefront
+            $0.closeButtonTintColor = nil
+            $0.logLevel = LogLevel.warn
+            $0.preloading.enabled = true
+            $0.allowedMessageOrigins = []
+            $0.telemetry.enabled = true
+        }
+    }
+
+    /// XCTest runs these synchronous tests on the main thread, which is what `configure` requires.
+    private func configureShopifyCheckoutKit(_ block: (inout Configuration) -> Void) {
+        MainActor.assumeIsolated {
+            ShopifyCheckoutKit.configure(block)
+        }
     }
 
     private func getShopifyCheckoutKit() -> RCTShopifyCheckoutKit {
@@ -237,7 +246,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func testConfigureWithInvalidLogLevelKeepsTheCurrentLevel() {
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.debug
+        configureShopifyCheckoutKit { $0.logLevel = LogLevel.debug }
 
         let configuration: [AnyHashable: Any] = [
             "logLevel": "invalid"
@@ -279,13 +288,39 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func testSetConfigWithoutLogLevelKeepsTheNativeLevel() {
-        ShopifyCheckoutKit.configuration.logLevel = LogLevel.debug
+        configureShopifyCheckoutKit { $0.logLevel = LogLevel.debug }
 
         let configuration: [AnyHashable: Any] = [:]
 
         shopifyCheckoutKit.setConfig(configuration)
 
         XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, LogLevel.debug)
+    }
+
+    func testSetConfigFromABackgroundQueueAppliesUpdatesOnTheMainThreadInOrder() {
+        let updatesApplied = expectation(description: "both configuration updates applied")
+        updatesApplied.expectedFulfillmentCount = 2
+        var observedTitles: [String] = []
+        var observedOnMainThread: [Bool] = []
+        let observer = NotificationCenter.default.addObserver(
+            forName: Notification.Name("CheckoutKitConfigurationUpdated"),
+            object: nil,
+            queue: nil
+        ) { _ in
+            observedOnMainThread.append(Thread.isMainThread)
+            observedTitles.append(ShopifyCheckoutKit.configuration.title)
+            updatesApplied.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        DispatchQueue.global().async { [shopifyCheckoutKit] in
+            shopifyCheckoutKit?.setConfig(["title": "First title"])
+            shopifyCheckoutKit?.setConfig(["title": "Second title"])
+        }
+
+        wait(for: [updatesApplied], timeout: 5)
+        XCTAssertEqual(observedTitles, ["First title", "Second title"])
+        XCTAssertEqual(observedOnMainThread, [true, true])
     }
 
     func testGetConfigIncludesLogLevel() {

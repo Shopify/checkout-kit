@@ -11,10 +11,9 @@ class CheckoutViewControllerTests: XCTestCase {
         try await super.setUp()
         ShopifyCheckoutKit.configure {
             $0 = Configuration()
-            $0.appearance = .app(.dark)
+            $0.appearance = .app(.dark())
             $0.preloading.enabled = false
         }
-        CheckoutWebView.invalidate()
         checkoutURL = URL(string: "https://www.shopify.com?key=cart_token")
         checkoutViewController = CheckoutViewController(checkout: checkoutURL)
     }
@@ -76,7 +75,7 @@ class ShopifyCheckoutTests: XCTestCase {
         try await super.setUp()
         ShopifyCheckoutKit.configure {
             $0 = Configuration()
-            $0.appearance = .app(.dark)
+            $0.appearance = .app(.dark())
             $0.preloading.enabled = false
         }
         checkoutURL = URL(string: "https://www.shopify.com?key=cart_token")
@@ -138,7 +137,7 @@ class ShopifyCheckoutTests: XCTestCase {
     }
 
     func testCheckoutViewControllerDecoratesCheckoutURLAfterAppearanceModifierRuns() async throws {
-        let sheet = shopifyCheckout.appearance(.storefront)
+        let sheet = shopifyCheckout.appearance(.storefront())
         let hostingController = UIHostingController(rootView: sheet)
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = hostingController
@@ -187,20 +186,9 @@ class CheckoutConfigurableTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testBackgroundColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.backgroundColor
-        let color = UIColor.red
-
-        let sheet = shopifyCheckout.backgroundColor(color)
-
-        XCTAssertEqual(sheet.configuration.backgroundColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.backgroundColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, globalColor)
-    }
-
     func testAppearanceIsCapturedWithoutChangingGlobalConfiguration() {
         let globalAppearance = ShopifyCheckoutKit.configuration.appearance
-        let appearance = ShopifyCheckoutKit.Configuration.Appearance.app(.light)
+        let appearance = CheckoutAppearance.app(.light())
 
         let sheet = shopifyCheckout.appearance(appearance)
 
@@ -209,15 +197,23 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
     }
 
-    func testTintColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.tintColor
-        let color = UIColor.blue
+    func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
+        let sheet = shopifyCheckout.appearance(.app(.dark()))
+        let decoratedURL = CheckoutURLDecorator.decorate(checkoutURL, configuration: sheet.configuration)
+        let items = try XCTUnwrap(URLComponents(url: decoratedURL, resolvingAgainstBaseURL: false)?.queryItems)
 
-        let sheet = shopifyCheckout.tintColor(color)
+        XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "dark")
+        XCTAssertEqual(items.first(where: { $0.name == "ck_branding" })?.value, "app")
+    }
 
-        XCTAssertEqual(sheet.configuration.tintColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.tintColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, globalColor)
+    func testAppearanceColorsAreCapturedWithoutChangingGlobalConfiguration() {
+        let globalAppearance = ShopifyCheckoutKit.configuration.appearance
+        let colors = CheckoutColors(webViewBackground: .red, progressIndicator: .blue, closeIconTint: .green)
+
+        let sheet = shopifyCheckout.appearance(.app(.light(colors: colors)))
+
+        XCTAssertEqual(sheet.configuration.appearance.effectiveColorScheme.colors(isDark: false), colors)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
     }
 
     func testTitleIsCapturedWithoutChangingGlobalConfiguration() {
@@ -231,36 +227,13 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.title, globalTitle)
     }
 
-    func testCloseButtonTintColorIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalColor = ShopifyCheckoutKit.configuration.closeButtonTintColor
-        let color = UIColor.green
-
-        let sheet = shopifyCheckout.closeButtonTintColor(color)
-
-        XCTAssertEqual(sheet.configuration.closeButtonTintColor, color)
-        XCTAssertEqual(shopifyCheckout.configuration.closeButtonTintColor, globalColor)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, globalColor)
-    }
-
-    func testCloseButtonTintColorCanBeClearedOnInstance() {
-        let sheet = shopifyCheckout
-            .closeButtonTintColor(.green)
-            .closeButtonTintColor(nil)
-
-        XCTAssertNil(sheet.configuration.closeButtonTintColor)
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-    }
-
     func testModifiersDoNotInvalidatePreload() {
         ShopifyCheckoutKit.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
         _ = shopifyCheckout
-            .backgroundColor(.red)
-            .appearance(.app(.dark))
-            .tintColor(.blue)
+            .appearance(.app(.dark(colors: CheckoutColors(webViewBackground: .red))))
             .title("Instance checkout")
-            .closeButtonTintColor(.green)
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
     }

@@ -16,15 +16,16 @@
 > - [ ] I have read and agree with the [Contribution Guidelines](./CONTRIBUTING.md)
 > - [ ] I have read and agree with the [Code of Conduct](./CODE_OF_CONDUCT.md)
 > - [ ] I've updated the relevant platform README (`platforms/swift/README.md` and/or `platforms/android/README.md`)
+> - [ ] I've added a changeset (`pnpm changeset <platform>`) for each affected platform, or an empty one (`--empty`) if no release note is needed
 
 ---
 
 <details>
-<summary>Releasing a new Swift version?</summary>
+<summary>Merging a platform release pull request?</summary>
 
-- [ ] I have bumped the version in `ShopifyCheckoutKit.podspec`
-- [ ] I have bumped the version in `platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`
-- [ ] I have updated the SwiftPM/CocoaPods version snippets in `platforms/swift/README.md` (major version only)
+- [ ] I've reviewed the generated `CHANGELOG.md` entry
+- [ ] I've updated the platform's installation snippets and the root README version table
+- [ ] React Native: I've regenerated both React Native `Podfile.lock` files without `--local`
 
 </details>
 
@@ -38,20 +39,11 @@
 </details>
 
 <details>
-<summary>Releasing a new Android version?</summary>
+<summary>Adopting new native SDK or protocol versions?</summary>
 
-- [ ] I have bumped `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`
-- [ ] I have updated the Gradle/Maven version snippets in `platforms/android/README.md`
-- [ ] The ECP version in `embeddedCheckoutProtocolAndroid` is published, and normal Android CI passes against it
-
-</details>
-
-<details>
-<summary>Releasing a new React Native version?</summary>
-
-- [ ] I have bumped `version` in `platforms/react-native/package.json`
-- [ ] Any updated `checkoutKit.nativeSdkVersions` pins are available on Maven Central/CocoaPods
-- [ ] Normal RN Android tests and the sample build pass against the published SDK, without `--local` or `USE_LOCAL_SDK=1`
+- [ ] Android: the ECP version in `embeddedCheckoutProtocolAndroid` is published, and normal Android CI passes against it
+- [ ] React Native: updated `checkoutKit.nativeSdkVersions` pins are available on Maven Central/CocoaPods
+- [ ] React Native: normal RN Android tests and the sample build pass against the published SDK, without `--local` or `USE_LOCAL_SDK=1`
 
 </details>
 

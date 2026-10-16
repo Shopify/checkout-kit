@@ -1,0 +1,9 @@
+{
+  "description": "A simulated additive protocol change. The compatibility check applies it to the vendored schemas, regenerates the models, and requires existing consumer code to keep compiling and running.",
+  "edits": [
+    {"file": "shopping/checkout.json", "pointer": "/properties/gift_note", "value": {"type": "string", "description": "Simulated optional field on an inbound model."}},
+    {"file": "shopping/checkout.json", "pointer": "/properties/status/enum/-", "value": "on_hold"},
+    {"file": "shopping/types/line_item.json", "pointer": "/properties/note", "value": {"type": "string", "description": "Simulated optional field on a nested inbound model."}},
+    {"file": "common/types/postal_address.json", "pointer": "/properties/building_name", "value": {"type": "string", "description": "Simulated optional field on an outbound model."}}
+  ]
+}

@@ -8,19 +8,16 @@ public enum EmbeddedCheckoutProtocol {
 
     /// Options controlling the query parameters appended to a checkout URL when
     /// initiating the Embedded Checkout Protocol handshake.
+    ///
+    /// Configure with `Options { $0.colorScheme = "dark" }`. New handshake parameters become new
+    /// properties, so they don't change the initializer's signature.
     public struct Options: Sendable {
-        public var delegations: [Delegation]
+        public var delegations: [Delegation] = []
         public var colorScheme: String?
         public var auth: String?
 
-        public init(
-            delegations: [Delegation] = [],
-            colorScheme: String? = nil,
-            auth: String? = nil
-        ) {
-            self.delegations = delegations
-            self.colorScheme = colorScheme
-            self.auth = auth
+        public init(configure: (inout Self) -> Void = { _ in }) {
+            configure(&self)
         }
     }
 

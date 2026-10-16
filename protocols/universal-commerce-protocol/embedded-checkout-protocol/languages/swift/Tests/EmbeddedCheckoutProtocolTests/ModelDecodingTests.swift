@@ -32,7 +32,7 @@ struct ModelDecodingTests {
         #expect(reDecoded.currency == checkout.currency)
         #expect(reDecoded.lineItems.count == checkout.lineItems.count)
 
-        let updated = reDecoded.with(currency: "EUR")
+        let updated = reDecoded.with { $0.currency = "EUR" }
         let copied = try EmbeddedCheckoutProtocol.Checkout(data: updated.jsonData())
         #expect(copied.currency == "EUR")
         #expect(copied.id == checkout.id)

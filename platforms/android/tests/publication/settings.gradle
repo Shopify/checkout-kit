@@ -1,0 +1,22 @@
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url = uri('../../build/verification-repository')
+                    if (providers.gradleProperty('pomOnly').getOrElse('false').toBoolean()) {
+                        metadataSources { mavenPom(); ignoreGradleMetadataRedirection() }
+                    }
+                }
+            }
+            filter { includeModule('com.shopify', 'checkout-kit') }
+        }
+        google()
+        mavenCentral()
+    }
+    versionCatalogs { libs { from(files('../../gradle/libs.versions.toml')) } }
+}
+rootProject.name = 'checkout-kit-publication-consumer'

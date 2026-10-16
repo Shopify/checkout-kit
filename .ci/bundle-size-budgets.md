@@ -109,6 +109,9 @@ The evaluator, comment commands, and aggregate check need no platform-specific p
 
 **Package Size** builds the explicit PR head and base SHAs with a read-only token,
 including on drafts. It uploads measurements and the informational file breakdown.
+When no packages are affected, detection uploads an empty report and skips the
+measurement job, avoiding a second runner and the head/base build checkouts.
+The empty report still completes **Size budgets** through the same publisher.
 **Bundle Size Budgets** runs trusted default-branch code to read that data, check
 commenter permissions, and publish the report and **Size budgets** check. It never
 executes code from a PR in the job with write permissions. Saved acceptances are

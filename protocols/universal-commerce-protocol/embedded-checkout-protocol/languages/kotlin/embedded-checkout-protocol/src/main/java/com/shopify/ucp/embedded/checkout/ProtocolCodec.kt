@@ -18,7 +18,14 @@ internal val embeddedProtocolJson: Json = Json { ignoreUnknownKeys = true }
 
 public fun decodeProtocolRequest(message: String): EcpRequest {
     val requestObject = embeddedProtocolJson.decodeFromString<JsonObject>(message)
-    return embeddedProtocolJson.decodeFromJsonElement<EcpRequest>(requestObject).copy(id = requestObject["id"])
+    val request = embeddedProtocolJson.decodeFromJsonElement<EcpRequest>(requestObject)
+    // Keep the raw id element, including an explicit null, which JSON-RPC distinguishes from an absent id.
+    return EcpRequest(
+        jsonrpc = request.jsonrpc,
+        method = request.method,
+        id = requestObject["id"],
+        params = request.params
+    )
 }
 
 public fun jsonRpcRequestId(id: JsonElement?): JsonElement? =
@@ -59,10 +66,25 @@ public fun encodeJsonRpcError(id: JsonElement?, code: Int, message: String): Str
 
 private val JSON_RPC_INTEGER: Regex = Regex("-?(0|[1-9]\\d*)")
 
+/** A decoded JSON-RPC request or notification. Produced by [decodeProtocolRequest]. */
 @Serializable
-public data class EcpRequest(
+public class EcpRequest internal constructor(
     public val jsonrpc: String = "2.0",
     public val method: String,
     public val id: JsonElement? = null,
     public val params: JsonElement? = null,
-)
+) {
+    override fun equals(other: Any?): Boolean =
+        this === other ||
+            (
+                other is EcpRequest &&
+                    jsonrpc == other.jsonrpc &&
+                    method == other.method &&
+                    id == other.id &&
+                    params == other.params
+                )
+
+    override fun hashCode(): Int = java.util.Objects.hash(jsonrpc, method, id, params)
+
+    override fun toString(): String = "EcpRequest(jsonrpc=$jsonrpc, method=$method, id=$id, params=$params)"
+}

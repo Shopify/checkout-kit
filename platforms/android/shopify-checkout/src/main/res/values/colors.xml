@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="checkout_light_bg">#fff</color>
+    <color name="checkout_light_font">#1d1d1f</color>
+    <color name="checkout_light_header_border">#e1e3e5</color>
+    <color name="checkout_dark_bg">#1d1d1f</color>
+    <color name="checkout_dark_font">#fff</color>
+    <color name="checkout_dark_header_border">#454545</color>
+    <color name="checkout_light_progress_indicator">#1773b0</color>
+    <color name="checkout_dark_progress_indicator">#1e8cc8</color>
+</resources>

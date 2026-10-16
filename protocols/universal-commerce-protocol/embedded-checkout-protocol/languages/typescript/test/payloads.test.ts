@@ -5,6 +5,9 @@ import {EmbeddedCheckoutProtocol} from '../src/embedded_checkout_protocol';
 import {Convert} from '../src/generated/Models';
 import {decodeCheckout, decodeErrorResponse} from '../src/generated/ProtocolCodecs';
 import {encodeProtocolObject} from '../src/protocol_codec_runtime';
+import {Client} from '../src/client';
+import {notificationDescriptors} from '../src/generated/ProtocolNotifications';
+import type {Checkout} from '../src/generated/Models';
 
 function fixture(name: string) {
   const bytes = readFileSync(new URL('./fixtures/' + name + '.json', import.meta.url), 'utf8');
@@ -20,6 +23,26 @@ function fixture(name: string) {
 }
 
 describe('pinned protocol payloads', () => {
+  test.each(['completed', 'on_hold'])('delivers completion with unknown strings and status %s', async status => {
+    const message = fixture('checkout-unknown-values');
+    message.params.checkout.status = status;
+    const wire = message.params.checkout;
+    let received: Checkout | undefined;
+    const errors: unknown[] = [];
+    const client = new Client()
+      .onDecodeError(context => errors.push(context))
+      .on(notificationDescriptors.complete, event => { received = event.params.checkout; });
+
+    await client.process(JSON.stringify(message));
+
+    expect(errors).toEqual([]);
+    expect(received!.status).toBe(status);
+    expect(received!.discounts!.applied![0].method).toBe('future_method');
+    expect(encodeProtocolObject(received!, 'Checkout')).toEqual(wire);
+    const converted = Convert.toCheckout(JSON.stringify(wire));
+    expect(JSON.parse(Convert.checkoutToJson(converted))).toEqual(wire);
+  });
+
   test.each(['checkout-shipping', 'checkout-custom-fulfillment'])('decodes and preserves %s', (name) => {
     const customFulfillment = name === 'checkout-custom-fulfillment';
     const wire = fixture(name).params.checkout;

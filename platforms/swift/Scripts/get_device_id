@@ -2,10 +2,10 @@
 
 # Check if device type was provided
 if [ $# -lt 1 ]; then
-  echo "Usage: $0 <device_type> [model_keywords...]"
-  echo "Example: $0 iPhone 16"
-  echo "Example: $0 iPad Pro"
-  echo "Example: $0 iPad Pro 11-inch"
+  echo "Usage: $0 <device_type> [model_keywords...]" >&2
+  echo "Example: $0 iPhone 16" >&2
+  echo "Example: $0 iPad Pro" >&2
+  echo "Example: $0 iPad Pro 11-inch" >&2
   exit 1
 fi
 
@@ -37,7 +37,7 @@ fi
 
 # Check if identifier was found
 if [ -z "$DEVICE_ID" ]; then
-  echo "Device not found: $DEVICE_TYPE $SEARCH"
+  echo "Device not found: $DEVICE_TYPE $SEARCH" >&2
   exit 1
 fi
 

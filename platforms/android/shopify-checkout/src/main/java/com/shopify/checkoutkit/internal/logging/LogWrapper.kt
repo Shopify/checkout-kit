@@ -1,0 +1,34 @@
+package com.shopify.checkoutkit.internal.logging
+
+import android.util.Log
+import com.shopify.checkoutkit.checkout.LogLevel
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+
+/**
+ * Wrap Log class static methods to allow testing and/or disabling debug logs
+ */
+internal class LogWrapper {
+    public fun d(tag: String, msg: String) {
+        if (ShopifyCheckoutKit.configuration.logLevel == LogLevel.DEBUG) {
+            Log.d(tag, msg)
+        }
+    }
+
+    public fun w(tag: String, msg: String) {
+        if (listOf(LogLevel.DEBUG, LogLevel.WARN).contains(ShopifyCheckoutKit.configuration.logLevel)) {
+            Log.w(tag, msg)
+        }
+    }
+
+    public fun e(tag: String, msg: String) {
+        if (ShopifyCheckoutKit.configuration.logLevel != LogLevel.NONE) {
+            Log.e(tag, msg)
+        }
+    }
+
+    public fun e(tag: String, msg: String, throwable: Throwable) {
+        if (ShopifyCheckoutKit.configuration.logLevel != LogLevel.NONE) {
+            Log.e(tag, msg, throwable)
+        }
+    }
+}

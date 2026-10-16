@@ -49,7 +49,7 @@ class PreferencesManagerTest {
     fun `uses safe defaults when no settings have been saved`() = runBlocking {
         val settings = preferences.userPreferencesFlow.first()
 
-        assertTrue(settings.appearance is com.shopify.checkoutkit.CheckoutAppearance.Storefront)
+        assertTrue(settings.appearance is com.shopify.checkoutkit.checkout.CheckoutAppearance.Storefront)
         assertFalse(settings.buyerIdentityDemoEnabled)
         assertTrue(settings.checkoutPreloadingEnabled)
         assertEquals(CheckoutPresentationMode.CheckoutKitSheet, settings.checkoutPresentationMode)
@@ -93,7 +93,7 @@ class PreferencesManagerTest {
 
         val settings = preferences.userPreferencesFlow.first()
 
-        assertTrue(settings.appearance is com.shopify.checkoutkit.CheckoutAppearance.Storefront)
+        assertTrue(settings.appearance is com.shopify.checkoutkit.checkout.CheckoutAppearance.Storefront)
         assertEquals(CheckoutPresentationMode.CheckoutKitSheet, settings.checkoutPresentationMode)
         assertEquals(WindowOpenHandler.Default, settings.windowOpenHandler)
         assertEquals(CheckoutSheetPreset.NewDefaults, settings.checkoutSheetPreset)

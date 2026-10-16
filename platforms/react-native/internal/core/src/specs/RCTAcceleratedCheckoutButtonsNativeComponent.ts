@@ -1,11 +1,14 @@
-import {codegenNativeComponent, type ViewProps} from 'react-native';
+import {
+  codegenNativeComponent,
+  type HostComponent,
+  type ViewProps,
+} from 'react-native';
 import type {
   BubblingEventHandler,
   DirectEventHandler,
   Double,
   Float,
-  // eslint-disable-next-line @react-native/no-deep-imports -- codegen parser requires these type names to be imported directly (not via aliases) so it can match them statically during AST traversal
-} from 'react-native/Libraries/Types/CodegenTypes';
+} from './codegen-types';
 
 type RenderStateChangeEvent = Readonly<{
   state: string;
@@ -36,4 +39,4 @@ interface NativeProps extends ViewProps {
 
 export default codegenNativeComponent<NativeProps>(
   'RCTAcceleratedCheckoutButtons',
-);
+) as HostComponent<NativeProps>;

@@ -159,7 +159,7 @@ final class WalletControllerTests: XCTestCase {
 
     func testPresentedCheckoutForwardsPublicEventsWithoutProtocolClient() async throws {
         var events: [String] = []
-        let buttons = AcceleratedCheckoutButtons(cartID: "gid://shopify/Cart/test-cart-id")
+        let buttons = ShopifyAcceleratedCheckoutButtons(cartID: "gid://shopify/Cart/test-cart-id")
             .onStart { _ in events.append("start") }
             .onUpdate { event in
                 events.append("update")

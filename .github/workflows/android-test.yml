@@ -31,6 +31,9 @@ jobs:
       - name: Run Tests
         run: ./gradlew test --console=plain
 
+      - name: Verify single SDK publication
+        run: ./scripts/check_publication
+
       - name: Run Protocol Unit Tests
         working-directory: protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin
         run: ./gradlew test --console=plain
@@ -64,7 +67,7 @@ jobs:
           end
 
           result_files = Dir[
-            "platforms/android/shopify-checkout-kit/build/test-results/testDebugUnitTest/TEST-*.xml",
+            "platforms/android/shopify-checkout/build/test-results/testDebugUnitTest/TEST-*.xml",
             "platforms/android/samples/CheckoutKitAndroidDemo/app/build/test-results/testDebugUnitTest/TEST-*.xml",
             "protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/build/test-results/test/TEST-*.xml",
           ]

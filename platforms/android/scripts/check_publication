@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+./gradlew :shopify-checkout-kit:verifyFusedPublication --console=plain
+./gradlew -p tests/publication assembleDebug --console=plain
+# Exercise Maven POM consumers too, without Gradle module metadata.
+./gradlew -p tests/publication clean assembleDebug -PpomOnly=true --console=plain

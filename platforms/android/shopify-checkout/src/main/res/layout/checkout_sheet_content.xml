@@ -1,0 +1,46 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/checkout_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <View
+        android:id="@+id/checkout_outside_touch_target"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:importantForAccessibility="no" />
+
+    <!-- Gesture-only sheet wrapper. Keep it out of keyboard and accessibility focus; close and back are the accessible dismiss paths. -->
+    <com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheetLayout
+        android:id="@+id/checkout_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="bottom|center_horizontal"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:importantForAccessibility="no"
+        android:visibility="invisible"
+        tools:ignore="KeyboardInaccessibleWidget">
+
+        <FrameLayout
+            android:id="@+id/checkout_view_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <View
+            android:id="@+id/checkout_drag_handle"
+            android:layout_width="@dimen/checkout_sheet_drag_handle_width"
+            android:layout_height="@dimen/checkout_sheet_drag_handle_height"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="@dimen/checkout_sheet_drag_handle_top_margin"
+            android:background="@android:color/transparent"
+            android:clickable="false"
+            android:focusable="false"
+            android:importantForAccessibility="no"
+            android:visibility="gone" />
+
+    </com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheetLayout>
+</FrameLayout>

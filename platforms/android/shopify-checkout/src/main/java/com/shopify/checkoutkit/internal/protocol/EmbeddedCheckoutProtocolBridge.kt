@@ -1,0 +1,413 @@
+package com.shopify.checkoutkit.internal.protocol
+import androidx.core.net.toUri
+import com.shopify.checkoutkit.checkout.CheckoutException
+import com.shopify.checkoutkit.checkout.CheckoutLink
+import com.shopify.checkoutkit.checkout.CheckoutLinkAction
+import com.shopify.checkoutkit.checkout.PreloadState
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.internal.concurrent.onMainThread
+import com.shopify.checkoutkit.internal.telemetry.CheckoutTelemetry
+import com.shopify.checkoutkit.internal.telemetry.TelemetryDecodeFailureType
+import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolDecodeErrorMetric
+import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolMethod
+import com.shopify.checkoutkit.internal.web.CheckoutWebView
+import com.shopify.checkoutkit.internal.web.CheckoutWebViewListener
+import com.shopify.checkoutkit.internal.web.ExternalUriLauncher
+import com.shopify.checkoutkit.internal.web.UnsupportedWebViewException
+import com.shopify.checkoutkit.internal.web.WebMessageTransport
+import com.shopify.checkoutkit.internal.web.redactedUrlForLogging
+import com.shopify.ucp.embedded.checkout.InstrumentsChangeResultUcp
+import com.shopify.ucp.embedded.checkout.ReadyResult
+import com.shopify.ucp.embedded.checkout.UCPCheckoutResponseSchemaStatus
+import com.shopify.ucp.embedded.checkout.decodeProtocolRequest
+import com.shopify.ucp.embedded.checkout.jsonRpcRequestId
+import com.shopify.ucp.embedded.checkout.windowOpenRejected
+import com.shopify.ucp.embedded.checkout.windowOpenSuccess
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import java.net.URI
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+
+private object ProtocolMessageExecutor {
+    // WebMessageListener invokes callbacks on the UI thread; keep protocol parsing off it
+    // to prevent potentially freezing the application UI with an "app not responding" (ANR) error.
+    val executor: Executor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "ShopifyCheckoutKit-ECP").apply {
+            isDaemon = true
+        }
+    }
+}
+
+internal const val ECP_LOG_TAG = "ECP"
+
+/**
+ * Connects the checkout WebView to an Embedded Checkout Protocol (ECP) client.
+ *
+ * Messages arrive through [webMessageTransport] and responses are sent back via
+ * `window.EmbeddedCheckoutProtocol.postMessage(responseString)`.
+ */
+@Suppress("TooManyFunctions")
+internal class EmbeddedCheckoutProtocolBridge(
+    private val view: CheckoutWebView,
+    private val webMessageTransport: WebMessageTransport,
+    @Volatile private var client: CheckoutProtocol.Client? = null,
+    private val protocolMessageExecutor: Executor = ProtocolMessageExecutor.executor,
+) {
+    private var isTransportAttached = false
+
+    @Volatile private var eventAdapter: CheckoutEventAdapter? = null
+
+    /**
+     * True once a decode-error metric was recorded for the message currently
+     * being processed. The contract counts undecodable messages, not decode
+     * attempts, so a message decoded by several clients (merchant + kit
+     * default) or failing at both the envelope and params layer records once.
+     * Only touched on [protocolMessageExecutor]'s single thread.
+     */
+    private var decodeErrorRecordedForMessage = false
+    private val defaultClient: CheckoutProtocol.Client =
+        defaultDelegationClient().withDecodeErrorObserver(::recordParamsDecodeErrorOnce)
+    private val defaultClientBindings: Map<String, DefaultClientBinding> = mapOf(
+        CheckoutProtocol.ready.method to DefaultClientBinding(
+            client = defaultClient,
+            policy = DefaultClientPolicy.KitOwned,
+        ),
+    )
+    private val composedClient: ComposedCheckoutProtocolClient
+        get() = ComposedCheckoutProtocolClient(
+            merchant = client?.withDecodeErrorObserver(::recordParamsDecodeErrorOnce),
+            defaults = defaultClientBindings,
+        )
+
+    internal fun attach() {
+        if (isTransportAttached) return
+
+        log.d(LOG_TAG, "Attaching ECP message transport.")
+        val attached = webMessageTransport.attach(
+            webView = view,
+            jsObjectName = INTERFACE_NAME,
+            allowedOriginRules = ALLOWED_MESSAGE_ORIGIN_RULES,
+        ) { message, sourceOrigin, isMainFrame ->
+            receiveWebMessage(message, sourceOrigin, isMainFrame)
+        }
+        if (!attached) throw UnsupportedWebViewException()
+        isTransportAttached = true
+    }
+
+    internal fun detach() {
+        if (!isTransportAttached) return
+
+        webMessageTransport.detach(view, INTERFACE_NAME)
+        isTransportAttached = false
+    }
+
+    internal fun setClient(client: CheckoutProtocol.Client?) {
+        this.client = client
+    }
+
+    internal fun setPresentationListener(listener: CheckoutWebViewListener) {
+        invalidateEventAdapter()
+        eventAdapter = if (listener.isNoop) null else CheckoutEventAdapter(listener, ::recordParamsDecodeErrorOnce)
+    }
+
+    internal fun invalidateEventAdapter() {
+        eventAdapter?.invalidate()
+        eventAdapter = null
+    }
+
+    private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
+        val incomingMessage = IncomingCheckoutMessage(
+            origin = sourceOrigin,
+            isMainFrame = isMainFrame,
+        )
+        val ingressPolicy = CheckoutMessageIngressPolicy(
+            configuredOrigins = ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            checkoutOrigin = view.checkoutOrigin,
+        )
+
+        when (val decision = ingressPolicy.evaluate(incomingMessage)) {
+            CheckoutMessageIngressPolicy.Decision.Accepted -> receiveMessage(message)
+            is CheckoutMessageIngressPolicy.Decision.Rejected -> handleMessageRejection(decision.rejection)
+        }
+    }
+
+    /** Rejected messages are untrusted input, not checkout lifecycle failures. */
+    private fun handleMessageRejection(rejection: CheckoutMessageRejection) {
+        // Child frames are expected ambient traffic during payment flows. Keep them at debug
+        // while warning for origin-validation failures that integrators may need to diagnose.
+        when (rejection.reason) {
+            CheckoutMessageRejection.Reason.CHILD_FRAME ->
+                log.d(LOG_TAG, "Ignoring ECP WebMessage from a child frame.")
+            CheckoutMessageRejection.Reason.UNSUPPORTED_PORT,
+            CheckoutMessageRejection.Reason.ORIGIN_NOT_ALLOWED,
+            -> log.w(LOG_TAG, "Rejected ECP WebMessage from ${rejection.origin}: ${rejection.reason.logDescription}")
+        }
+    }
+
+    internal fun receiveMessage(message: String) {
+        // Bind queued messages to the presentation that received them. Preload messages are not replayed.
+        val adapter = eventAdapter
+        protocolMessageExecutor.execute {
+            processMessage(message, adapter)
+        }
+    }
+
+    private fun processMessage(message: String, adapter: CheckoutEventAdapter?) {
+        decodeErrorRecordedForMessage = false
+        try {
+            val request = decodeProtocolRequest(message)
+            val method = CheckoutProtocol.supportedProtocolMethod(request)
+            val requestId = jsonRpcRequestId(request.id)
+            log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
+            when (method) {
+                CheckoutProtocol.ready.method -> requestId?.let { handleClientMessage(method, message) }
+                CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message, adapter) }
+                CheckoutProtocol.start.method -> handleStart(message, adapter)
+                CheckoutProtocol.complete.method -> handleComplete(message, adapter)
+                CheckoutProtocol.error.method -> handleTerminalError(message, request.params)
+                null -> handleUnsupportedOrMalformedTerminalError(
+                    method = request.method,
+                    message = message,
+                    params = request.params,
+                    requestId = requestId,
+                )
+                else -> {
+                    adapter?.process(message)
+                    handleClientMessage(method, message)
+                }
+            }
+        } catch (e: SerializationException) {
+            log.d(LOG_TAG, "Failed to decode ECP message: $e  raw=$message")
+            val decodedMethod = runCatching {
+                Json.parseToJsonElement(message).jsonObject["method"]?.jsonPrimitive?.content
+            }.getOrNull()
+            recordDecodeErrorOnce(decodedMethod.orEmpty(), TelemetryDecodeFailureType.Envelope)
+            val isTerminalError = decodedMethod == CheckoutProtocol.error.method
+            if (isTerminalError) {
+                handleTerminalError(message, null)
+            } else {
+                sendError(null, CODE_PARSE_ERROR, "Parse error")
+            }
+        }
+    }
+
+    private fun handleUnsupportedOrMalformedTerminalError(
+        method: String,
+        message: String,
+        params: JsonElement?,
+        requestId: JsonElement?,
+    ) {
+        if (method == CheckoutProtocol.error.method) {
+            handleTerminalError(message, params)
+            return
+        }
+
+        log.d(LOG_TAG, "Ignoring unsupported ECP method: $method.")
+        if (requestId != null) {
+            sendError(requestId, CODE_METHOD_NOT_FOUND, "Method not found")
+        }
+    }
+
+    private fun handleStart(message: String, adapter: CheckoutEventAdapter?) {
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.start.method}: hiding progress bar and bubbling up.")
+        onMainThread {
+            view.listener.onCheckoutViewLoadComplete()
+        }
+        adapter?.process(message)
+        composedClient.process(message)
+    }
+
+    private fun handleComplete(message: String, adapter: CheckoutEventAdapter?) {
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.complete.method}: bubbling up.")
+        var wasPresented = false
+        onMainThread { wasPresented = view.isPresented }
+        adapter?.process(message)
+        val completionClient = CheckoutProtocol.Client().on(CheckoutProtocol.complete) {
+            // The callback may remove its presentation before requesting a replacement preload.
+            CheckoutWebView.evictForCompletion(view, wasPresented)
+        }
+        processWithDefault(
+            message,
+            CheckoutProtocol.complete.method,
+            completionClient,
+            DefaultClientPolicy.AlwaysRunAfterMerchant
+        )
+    }
+
+    /**
+     * Handle `ec.window.open_request`.
+     *
+     * Tries the merchant's [client] first — if they registered a handler via
+     * `.on(CheckoutProtocol.windowOpen) { ... }`, their response wins. Otherwise
+     * falls back to the kit-owned [defaultClient], which launches web URLs in a
+     * Custom Tab and other URLs via `Intent.ACTION_VIEW` (see [windowOpenClient]).
+     */
+    private fun handleWindowOpenRequest(message: String, adapter: CheckoutEventAdapter?) {
+        log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
+        processWithDefault(
+            message,
+            CheckoutProtocol.windowOpen.method,
+            windowOpenClient(adapter),
+            DefaultClientPolicy.RunIfUnhandled
+        )
+            ?.let { sendRaw(it) }
+    }
+
+    private fun processWithDefault(
+        message: String,
+        method: String,
+        defaultClient: CheckoutProtocol.Client,
+        policy: DefaultClientPolicy,
+    ): String? =
+        ComposedCheckoutProtocolClient(
+            merchant = client?.withDecodeErrorObserver(::recordParamsDecodeErrorOnce),
+            defaults = mapOf(
+                method to DefaultClientBinding(defaultClient.withDecodeErrorObserver(::recordParamsDecodeErrorOnce), policy),
+            ),
+        ).process(message)
+
+    /** Dispatch a supported protocol message through the consumer client. */
+    private fun handleClientMessage(method: String, message: String) {
+        log.d(LOG_TAG, "Delegating $method to client.")
+        val response = composedClient.process(message)
+        log.d(LOG_TAG, "  client response: $response")
+        response?.let { sendRaw(it) }
+    }
+
+    private fun handleTerminalError(message: String, params: JsonElement?) {
+        // Direct protocol subscribers receive the complete terminal ECP payload before lifecycle handling.
+        handleClientMessage(CheckoutProtocol.error.method, message)
+
+        val failure = runCatching { CheckoutProtocol.error.decode(params) }
+            .onFailure {
+                // A terminal error with a valid envelope but undecodable params is a
+                // malformed message even when nothing subscribes to `ec.error`.
+                recordParamsDecodeErrorOnce(CheckoutProtocol.error.method)
+            }
+            .getOrNull()
+            ?.let(CheckoutException::terminalProtocol)
+            ?: CheckoutException.sdk("Embedded checkout sent an invalid terminal error.")
+
+        onMainThread {
+            if (view.hasHandledTerminalFailure) {
+                log.d(LOG_TAG, "Ignoring duplicate terminal ec.error after the session ended.")
+                return@onMainThread
+            }
+            view.hasHandledTerminalFailure = true
+            invalidateEventAdapter()
+
+            // `ec.error` denotes a terminal session error. Message severity selects the public
+            // lifecycle code, but does not keep the embedded session alive.
+            log.d(LOG_TAG, "Terminal ec.error received; ending checkout presentation.")
+            if (
+                CheckoutWebView.evictForTerminalFailure(
+                    view,
+                    PreloadState.FailureReason.ProtocolError,
+                    "Checkout sent a terminal protocol error.",
+                )
+            ) {
+                return@onMainThread
+            }
+            view.recordTerminalProtocolFailureTelemetry()
+            view.listener.onCheckoutViewFailedWithError(failure)
+        }
+    }
+
+    private fun recordParamsDecodeErrorOnce(method: String) {
+        recordDecodeErrorOnce(method, TelemetryDecodeFailureType.Params)
+    }
+
+    private fun recordDecodeErrorOnce(method: String, failureType: TelemetryDecodeFailureType) {
+        if (decodeErrorRecordedForMessage) return
+        decodeErrorRecordedForMessage = true
+        CheckoutTelemetry.recorder.recordProtocolDecodeError(
+            TelemetryProtocolDecodeErrorMetric(
+                method = TelemetryProtocolMethod.fromMethod(method),
+                failureType = failureType,
+            ),
+        )
+    }
+
+    private fun sendError(id: JsonElement?, code: Int, message: String) {
+        sendRaw("""{"jsonrpc":"2.0","id":${id ?: "null"},"error":{"code":$code,"message":"$message"}}""")
+    }
+
+    private fun sendRaw(responseJson: String) {
+        log.d(LOG_TAG, "Sending bridge response: $responseJson")
+        webMessageTransport.send(view, ECP_RESPONSE_GLOBAL, responseJson)
+    }
+
+    /**
+     * Kit-owned client that acknowledges the ready handshake.
+     *
+     * Terminal `ec.error` is delivered to consumer protocol handlers before its separate
+     * lifecycle failure mapping.
+     */
+    private fun defaultDelegationClient(): CheckoutProtocol.Client =
+        CheckoutProtocol.Client()
+            .on(CheckoutProtocol.ready) { request ->
+                log.d(
+                    LOG_TAG,
+                    "${CheckoutProtocol.ready.method} event received: accepted delegations=${request.delegate}",
+                )
+                ReadyResult(
+                    ucp = InstrumentsChangeResultUcp(
+                        status = UCPCheckoutResponseSchemaStatus.Success,
+                        version = CheckoutProtocol.SPEC_VERSION,
+                    ),
+                )
+            }
+
+    /** Capture the requesting presentation so a queued link cannot invoke a later host's callback. */
+    private fun windowOpenClient(adapter: CheckoutEventAdapter?): CheckoutProtocol.Client =
+        CheckoutProtocol.Client()
+            .on(CheckoutProtocol.windowOpen) { request ->
+                val url = request.url
+                if (url.isBlank() || runCatching { URI(url) }.isFailure) {
+                    log.d(LOG_TAG, "window.open rejected: malformed URL ${url.redactedUrlForLogging()}")
+                    return@on windowOpenRejected(reason = "malformed URL")
+                }
+                if (view.hasHandledTerminalFailure) {
+                    return@on windowOpenRejected(reason = "checkout session ended")
+                }
+                when (adapter?.actionForLink(CheckoutLink(url.toUri())) ?: CheckoutLinkAction.Open) {
+                    CheckoutLinkAction.Handled -> return@on windowOpenSuccess()
+                    CheckoutLinkAction.Cancel -> return@on windowOpenRejected(reason = "link opening canceled")
+                    CheckoutLinkAction.Open -> Unit
+                }
+                when (val result = ExternalUriLauncher.launch(view.context, url.toUri())) {
+                    is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()
+                    is ExternalUriLauncher.Result.Rejected -> {
+                        log.d(
+                            LOG_TAG,
+                            "window.open rejected for ${url.redactedUrlForLogging()}: ${result.reason}"
+                        )
+                        windowOpenRejected(reason = result.reason)
+                    }
+                }
+            }
+    companion object {
+        private const val LOG_TAG = ECP_LOG_TAG
+
+        /** Name of the JavaScript object registered to receive messages from checkout. */
+        internal const val INTERFACE_NAME = "EmbeddedCheckoutProtocolConsumer"
+
+        /** Global JS object the checkout uses to receive responses. */
+        private const val ECP_RESPONSE_GLOBAL = "EmbeddedCheckoutProtocol"
+
+        /**
+         * Keep the transport open to every origin so AndroidX WebKit delivers each message with
+         * its verified source origin. [CheckoutMessageIngressPolicy] owns admission; narrowing
+         * this rule would silently discard messages before the policy can validate or log them.
+         */
+        private val ALLOWED_MESSAGE_ORIGIN_RULES = setOf("*")
+
+        private const val CODE_PARSE_ERROR = -32700
+        private const val CODE_METHOD_NOT_FOUND = -32601
+    }
+}

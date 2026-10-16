@@ -1,6 +1,7 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
 pluginManagement {
+    includeBuild('../../build-logic')
     repositories {
         gradlePluginPortal()
         google()
@@ -26,9 +27,9 @@ dependencyResolutionManagement {
 }
 rootProject.name = "CheckoutKitAndroidDemo"
 include ':app'
-include ':shopify-checkout-kit'
+include ':shopify-checkout'
 if (providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()) {
     include ':embedded-checkout-protocol'
     project(':embedded-checkout-protocol').projectDir = new File(settingsDir, '../../../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol')
 }
-project(':shopify-checkout-kit').projectDir = new File(settingsDir, '../../shopify-checkout-kit')
+project(':shopify-checkout').projectDir = new File(settingsDir, '../../shopify-checkout')

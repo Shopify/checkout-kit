@@ -10,10 +10,10 @@ enum CheckoutURLDecorator {
     ) -> URL {
         let decorated = EmbeddedCheckoutProtocol.url(
             for: url,
-            options: .init(
-                delegations: CheckoutProtocol.defaultDelegations,
-                colorScheme: configuration.appearance.colorSchemeValue
-            )
+            options: .init {
+                $0.delegations = CheckoutProtocol.defaultDelegations
+                $0.colorScheme = configuration.appearance.colorSchemeValue
+            }
         )
 
         guard var components = URLComponents(url: decorated, resolvingAgainstBaseURL: false) else {
@@ -31,14 +31,9 @@ enum CheckoutURLDecorator {
     private static let brandingQueryItemName = "ck_branding"
 }
 
-extension Configuration.Appearance {
+extension CheckoutAppearance {
     fileprivate var colorSchemeValue: String {
-        switch self {
-        case let .app(colorScheme):
-            return colorScheme.rawValue
-        case .storefront:
-            return Configuration.ColorScheme.light.rawValue
-        }
+        effectiveColorScheme.id
     }
 
     fileprivate var brandingValue: String {

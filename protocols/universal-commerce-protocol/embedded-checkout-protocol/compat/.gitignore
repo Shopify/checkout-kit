@@ -1,0 +1,6 @@
+kotlin-consumer/.gradle/
+kotlin-consumer/.kotlin/
+kotlin-consumer/build/
+swift-consumer/.build/
+swift-consumer/.swiftpm/
+swift-consumer/Package.resolved

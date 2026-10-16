@@ -1,6 +1,6 @@
 package com.shopify.checkoutkit.androiddemo.settings.data
 
-import com.shopify.checkoutkit.CheckoutSheetTitleAlignment
+import com.shopify.checkoutkit.checkout.CheckoutSheetTitleAlignment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

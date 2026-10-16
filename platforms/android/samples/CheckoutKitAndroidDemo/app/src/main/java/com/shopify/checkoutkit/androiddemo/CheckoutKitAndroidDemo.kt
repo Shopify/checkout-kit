@@ -1,13 +1,13 @@
 package com.shopify.checkoutkit.androiddemo
 
 import android.app.Application
-import com.shopify.checkoutkit.LogLevel
-import com.shopify.checkoutkit.Preloading
-import com.shopify.checkoutkit.ShopifyCheckoutKit
 import com.shopify.checkoutkit.androiddemo.common.di.setupDI
 import com.shopify.checkoutkit.androiddemo.common.withCustomCloseIcon
 import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
 import com.shopify.checkoutkit.androiddemo.settings.data.toCheckoutSheetOptions
+import com.shopify.checkoutkit.checkout.LogLevel
+import com.shopify.checkoutkit.checkout.Preloading
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
