@@ -54,16 +54,22 @@ class CheckoutTest {
         val protocolCheckout = json.decodeFromString<ProtocolCheckout>(minimalCheckout)
         val absent = Checkout.fromProtocol(protocolCheckout)
         val empty = Checkout.fromProtocol(
-            protocolCheckout.copy(
-                actions = emptyMap(),
-                attribution = emptyMap(),
-                discounts = CheckoutDiscounts(applied = emptyList(), codes = emptyList()),
-                fulfillment = CheckoutFulfillment(availableMethods = emptyList(), methods = emptyList()),
-                messages = emptyList(),
-                payment = Payment(instruments = emptyList()),
-                policies = emptyList(),
-                signals = JsonObject(emptyMap()),
-            ),
+            protocolCheckout.toBuilder().apply {
+                actions = emptyMap()
+                attribution = emptyMap()
+                discounts = CheckoutDiscounts {
+                    applied = emptyList()
+                    codes = emptyList()
+                }
+                fulfillment = CheckoutFulfillment {
+                    availableMethods = emptyList()
+                    methods = emptyList()
+                }
+                messages = emptyList()
+                payment = Payment { instruments = emptyList() }
+                policies = emptyList()
+                signals = JsonObject(emptyMap())
+            }.build(),
         )
 
         assertThat(absent.messages).isNull()
@@ -121,12 +127,16 @@ class CheckoutTest {
     }
 
     @Test
-    fun `unknown checkout statuses are not coerced to known defaults`() {
+    fun `unknown checkout statuses round trip without being coerced to known defaults`() {
         val fields = json.parseToJsonElement(minimalCheckout).jsonObject
+        val futureStatus = JsonPrimitive("future_status")
+        val wire = JsonObject(fields + ("status" to futureStatus))
+        val checkout = json.decodeFromJsonElement<Checkout>(wire)
+        val projected = Checkout.fromProtocol(json.decodeFromJsonElement<ProtocolCheckout>(wire))
 
-        assertThatThrownBy {
-            json.decodeFromJsonElement<Checkout>(JsonObject(fields + ("status" to JsonPrimitive("future_status"))))
-        }.isInstanceOf(SerializationException::class.java)
+        assertThat(checkout.status.value).isEqualTo("future_status")
+        assertThat(projected).isEqualTo(checkout)
+        assertThat(json.encodeToJsonElement(checkout).jsonObject["status"]).isEqualTo(futureStatus)
     }
 
     @Test
@@ -142,7 +152,7 @@ class CheckoutTest {
             "com.example.empty" to JsonNull,
         )
 
-        val projected = Checkout.fromProtocol(protocolCheckout.copy(additionalProperties = extensions))
+        val projected = Checkout.fromProtocol(protocolCheckout.toBuilder().additionalProperties(extensions).build())
         val constructed = projected.toBuilder().additionalProperties(extensions).build()
         val encoded = json.encodeToJsonElement(constructed).jsonObject
 
@@ -159,10 +169,14 @@ class CheckoutTest {
     fun `snapshot equality includes nested values and extensions but excludes protocol metadata`() {
         val protocolCheckout = json.decodeFromString<ProtocolCheckout>(fullCheckout)
         val checkout = Checkout.fromProtocol(protocolCheckout)
-        val newProtocolVersion = protocolCheckout.copy(ucp = protocolCheckout.ucp.copy(version = "different-version"))
-        val newLineItem = protocolCheckout.lineItems.first().copy(quantity = 3)
-        val changedItems = protocolCheckout.copy(lineItems = listOf(newLineItem))
-        val changedExtension = protocolCheckout.copy(additionalProperties = mapOf("com.example.extension" to JsonNull))
+        val newProtocolVersion = protocolCheckout.toBuilder()
+            .ucp(protocolCheckout.ucp.toBuilder().version("different-version").build())
+            .build()
+        val newLineItem = protocolCheckout.lineItems.first().toBuilder().quantity(3).build()
+        val changedItems = protocolCheckout.toBuilder().lineItems(listOf(newLineItem)).build()
+        val changedExtension = protocolCheckout.toBuilder()
+            .additionalProperties(mapOf("com.example.extension" to JsonNull))
+            .build()
 
         assertThat(Checkout.fromProtocol(newProtocolVersion)).isEqualTo(checkout)
         assertThat(Checkout.fromProtocol(changedItems)).isNotEqualTo(checkout)

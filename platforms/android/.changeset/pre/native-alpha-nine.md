@@ -6,6 +6,8 @@ Move the public checkout APIs into `com.shopify.checkoutkit.checkout`. Update Ko
 
 Replace configuration data-class constructors and `copy()` calls with builders or Kotlin configuration blocks for preloading, telemetry, sheet options, snap points, dismissal, and drag handles. For example, replace `Preloading(enabled = false)` with `Preloading { enabled = false }`. Java callers can obtain `Preloading.builder()`, call `setEnabled(false)`, and then call `build()`.
 
+Update the published Embedded Checkout Protocol dependency to `2026.08.25.1-alpha.2`. Protocol models now use builders or Kotlin configuration blocks instead of data-class constructors and `copy()`, and protocol string enums become open value types. Recompile consumers and follow the [protocol migration notes](https://github.com/Shopify/checkout-kit/releases/tag/embedded-checkout-protocol/2026.08.25.1-alpha.2). The wire protocol remains `2026-08-25`.
+
 Rename checkout resources to use the `checkout_` prefix. Apps that override SDK resources or select them in UI tests must update those references; the close button ID is now `checkout_close_button`.
 
 Notify `onDismiss` after a Checkout Kit-managed presentation closes, including closure following a terminal failure. `onFail` runs before `onDismiss` in that case. Order completion remains separate from dismissal, and caller-controlled `CheckoutHandle.dismiss()` does not invoke `onDismiss`.

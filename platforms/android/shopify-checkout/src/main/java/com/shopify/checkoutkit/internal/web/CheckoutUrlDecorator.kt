@@ -15,10 +15,10 @@ internal object CheckoutUrlDecorator {
     ): String {
         val decorated = EmbeddedCheckoutProtocol.url(
             checkoutUrl,
-            options = EmbeddedCheckoutProtocol.Options(
-                delegations = CheckoutProtocol.defaultDelegations,
-                colorScheme = configuration.appearance.effectiveColorScheme.id,
-            ),
+            options = EmbeddedCheckoutProtocol.Options {
+                delegations = CheckoutProtocol.defaultDelegations
+                colorScheme = configuration.appearance.effectiveColorScheme.id
+            },
         )
 
         val uri = decorated.toUri()
