@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+HOSTING_BASE_PATH="${1-checkout-kit}"
+# The release workflow keeps this script on main while building tagged sources.
+SOURCE_ROOT="$(cd "${2-$REPO_ROOT}" && pwd)"
+BUILD_DIR="$REPO_ROOT/.build/swift-docs"
+DERIVED_DATA="$BUILD_DIR/DerivedData"
+PRODUCTS="$DERIVED_DATA/Build/Products/Release-iphoneos"
+ARCHIVE="$BUILD_DIR/CheckoutKit.doccarchive"
+SITE="$BUILD_DIR/site"
+
+mkdir -p "$BUILD_DIR"
+rm -rf "$ARCHIVE" "$SITE"
+
+cd "$SOURCE_ROOT"
+for scheme in ShopifyCheckoutKit ShopifyAcceleratedCheckouts; do
+    xcodebuild docbuild \
+        -scheme "$scheme" \
+        -configuration Release \
+        -destination 'generic/platform=iOS' \
+        -derivedDataPath "$DERIVED_DATA" \
+        -disableAutomaticPackageResolution \
+        CODE_SIGNING_ALLOWED=NO \
+        DOCC_HOSTING_BASE_PATH="$HOSTING_BASE_PATH"
+done
+
+xcrun docc merge \
+    "$PRODUCTS/ShopifyCheckoutKit.doccarchive" \
+    "$PRODUCTS/ShopifyAcceleratedCheckouts.doccarchive" \
+    --synthesized-landing-page-name "CheckoutKit" \
+    --output-path "$ARCHIVE"
+
+xcrun docc process-archive transform-for-static-hosting "$ARCHIVE" \
+    --hosting-base-path "$HOSTING_BASE_PATH" \
+    --output-path "$SITE"
+
+# DocC's synthesized package landing page lives beneath /documentation.
+cat > "$SITE/index.html" <<'HTML'
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Checkout Kit for Swift</title>
+    <meta http-equiv="refresh" content="0; url=documentation/">
+  </head>
+  <body>
+    <a href="documentation/">Checkout Kit for Swift API reference</a>
+  </body>
+</html>
+HTML
+
+echo "Swift API reference: $SITE"
