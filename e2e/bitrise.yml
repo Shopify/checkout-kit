@@ -40,15 +40,49 @@ pipelines:
   e2e:
     # The required ci/bitrise/e2e/pr check must report for every ready PR.
     # Select applications in the run plan so unrelated changes still finish
-    # the pipeline successfully without starting builds or BrowserStack runs.
+    # the pipeline successfully without starting simulators or emulators.
     triggers:
       pull_request:
         - source_branch: "*"
           draft_enabled: false
-    # Bitrise's default report name is ci/bitrise/<project_slug>/<event_type>,
-    # which is identical for every pipeline on this app. A second triggered
-    # pipeline would then overwrite this one's commit status. <target_id>
-    # expands to the pipeline id, so each pipeline owns its own check.
+    # Each pipeline reports its own status; the direct Maestro pipeline keeps
+    # the existing required ci/bitrise/e2e/pr check after the cutover.
+    status_report_name: "ci/bitrise/<target_id>/<event_type>"
+    workflows:
+      e2e-plan: {}
+      e2e-maestro-swift-ios:
+        run_if:
+          expression: '{{ enveq "E2E_RUN_SWIFT_IOS" "true" }}'
+        depends_on:
+          - e2e-plan
+      e2e-maestro-kotlin-android:
+        run_if:
+          expression: '{{ enveq "E2E_RUN_KOTLIN_ANDROID" "true" }}'
+        depends_on:
+          - e2e-plan
+      e2e-maestro-react-native-android:
+        run_if:
+          expression: '{{ enveq "E2E_RUN_REACT_NATIVE_ANDROID" "true" }}'
+        depends_on:
+          - e2e-plan
+      e2e-maestro-react-native-ios:
+        run_if:
+          expression: '{{ enveq "E2E_RUN_REACT_NATIVE_IOS" "true" }}'
+        depends_on:
+          - e2e-plan
+      # Always publish the required check, including an empty native E2E plan.
+      e2e-report:
+        depends_on:
+          - e2e-plan
+          - e2e-maestro-swift-ios
+          - e2e-maestro-kotlin-android
+          - e2e-maestro-react-native-android
+          - e2e-maestro-react-native-ios
+        should_always_run: workflow
+
+  # Real-device coverage remains available on demand after the default cutover.
+  # No automatic triggers: start this pipeline manually or through the API.
+  e2e-browserstack:
     status_report_name: "ci/bitrise/<target_id>/<event_type>"
     workflows:
       e2e-produce-browserstack-run-plan: {}
@@ -82,15 +116,14 @@ pipelines:
           - e2e-build-kotlin-android
           - e2e-build-swift-ios
         parallel: $E2E_BROWSERSTACK_RUN_PLAN_PARALLEL_COUNT
-      # Always publish the required check, including an empty native E2E plan.
-      e2e-report:
+      e2e-browserstack-report:
         depends_on:
           - e2e-produce-browserstack-run-plan
           - e2e-execute-browserstack-run
         should_always_run: workflow
 
   # The macOS merge gate. Bitrise reports one status per pipeline, so keep
-  # macOS CI and BrowserStack E2E results separate.
+  # macOS CI and Maestro E2E results separate.
   ci-ios:
     # Deliberately unfiltered. ci-ios is a required check, and a required check that
     # never posts leaves a pull request permanently unmergeable. The cheap Linux
@@ -186,6 +219,74 @@ step_bundles:
             - api_token: $SLACK_AUTH_TOKEN
             - channel: C069N25R7EH
           is_always_run: false
+  # Linux workers provide hardware acceleration for x86_64 Android emulators.
+  create-android-emulator:
+    steps:
+      - avd-manager@2:
+          inputs:
+            - api_level: "35"
+            - profile: pixel_7
+            - tag: google_apis
+            - abi: x86_64
+            - emulator_id: checkout-kit-e2e
+            - headless_mode: "yes"
+            - disable_animations: "yes"
+
+  install-maestro:
+    steps:
+      - restore-cache@3:
+          inputs:
+            - key: &maestro_cli_cache_key |-
+                maestro-cli-{{ .OS }}-{{ .Arch }}-{{ checksum "e2e/.maestro-version" }}
+      - script@1:
+          title: Install Maestro and report tooling
+          timeout: 600
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./scripts/install_maestro --check || ./scripts/install_maestro
+                gem install rexml --version 3.4.4 --install-dir "$HOME/.maestro-report-gems" --no-document
+                export GEM_PATH="$HOME/.maestro-report-gems${GEM_PATH:+:$GEM_PATH}"
+                ruby -rrexml/document -e 'puts "REXML #{REXML::VERSION}"'
+                envman add --key GEM_PATH --value "$GEM_PATH"
+      - save-cache@1:
+          inputs:
+            - key: *maestro_cli_cache_key
+            - paths: ~/.maestro-versions
+
+  export-maestro-results:
+    inputs:
+      - result_variable: ""
+    steps:
+      - script@1:
+          title: Publish Maestro retry count and runtime
+          is_always_run: true
+          inputs:
+            - content: |-
+                set -euo pipefail
+                : "${result_variable:?result_variable is required}"
+                summary='{}'
+                if [ -f "$E2E_JUNIT_REPORT.summary.json" ]; then
+                  summary="$(cat "$E2E_JUNIT_REPORT.summary.json")"
+                fi
+                envman add --key "$result_variable" --value "$summary"
+      - share-pipeline-variable@1:
+          is_always_run: true
+          run_if: '{{getenv "BITRISEIO_PIPELINE_ID" | ne ""}}'
+          inputs:
+            - variables: $result_variable
+      - custom-test-results-export@1:
+          is_always_run: true
+          inputs:
+            - test_name: Maestro
+            - base_path: "$E2E_JUNIT_REPORT"
+            - search_pattern: "*"
+      - deploy-to-bitrise-io@2:
+          is_always_run: true
+          inputs:
+            - deploy_path: "$HOME/.maestro/tests"
+            - is_compress: "true"
+
   install-node-modules:
     steps:
       - restore-cache@3:
@@ -499,6 +600,35 @@ workflows:
                 e2e_log "Reporting iOS CI results to GitHub"
                 ruby e2e/scripts/report_ios_ci_results
 
+  e2e-plan:
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Select direct Maestro workflows
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                changed_files="$(e2e_changed_files_file)"
+                branch_config="$(e2e_branch_bitrise_config)"
+                bitrise_env_file="$(e2e_deploy_dir)/maestro-env.txt"
+                ruby e2e/scripts/bitrise_e2e_run_plan --changed-files-file "$changed_files" --pipeline-config "$branch_config" > "$bitrise_env_file"
+                while IFS='=' read -r key value; do
+                  envman add --key "$key" --value "$value"
+                done < "$bitrise_env_file"
+      - share-pipeline-variable@1:
+          inputs:
+            - variables: |-
+                E2E_DIRECT_PLAN_READY
+                E2E_DIRECT_SELECTED_APPLICATIONS
+                E2E_RUN_SWIFT_IOS
+                E2E_RUN_KOTLIN_ANDROID
+                E2E_RUN_REACT_NATIVE_ANDROID
+                E2E_RUN_REACT_NATIVE_IOS
+
+  # Plans the optional BrowserStack real-device pipeline.
   e2e-produce-browserstack-run-plan:
     steps:
       - git-clone@8: {}
@@ -515,7 +645,7 @@ workflows:
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan validate --changed-files-file "$changed_files"
                 e2e_log "Asserting the pipeline can build every selected target"
                 branch_config="$(e2e_branch_bitrise_config)"
-                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan assert-pipeline-coverage --pipeline-config "$branch_config" --changed-files-file "$changed_files"
+                ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan assert-pipeline-coverage --pipeline e2e-browserstack --pipeline-config "$branch_config" --changed-files-file "$changed_files"
                 e2e_log "Producing BrowserStack run plan"
                 ruby e2e/scripts/e2e_matrix_to_browserstack_run_plan expand --changed-files-file "$changed_files" > "$BITRISE_DEPLOY_DIR/browserstack-run-plan.json"
                 e2e_log "Publishing BrowserStack run plan environment"
@@ -633,6 +763,163 @@ workflows:
                 ~/.gradle/caches
                 ~/.gradle/wrapper
 
+  # These workflows also support manual runs of each complete target suite.
+  e2e-maestro-swift-ios:
+    status_report_name: "ci/bitrise/maestro-swift-ios/<event_type>"
+    envs: &maestro_envs
+      - E2E_JUNIT_REPORT: "$HOME/.maestro/tests/maestro-junit.xml"
+      - E2E_MAESTRO_TEST_RETRIES: "2"
+      # Keep first-run notices out of the installer's exact version check.
+      - MAESTRO_CLI_NO_ANALYTICS: "1"
+      - MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - bundle::bootstrap-mint:
+          inputs:
+            - mintfile_dir: platforms/swift
+      - bundle::install-maestro: {}
+      - script@1:
+          title: Build and run the Swift Maestro suite on the simulator
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source ./e2e/scripts/bitrise_ci_helpers
+                e2e_configure_storefront
+                ./e2e/scripts/run_local_e2e swift-ios
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_SWIFT_IOS_RESULT
+
+  e2e-maestro-kotlin-android:
+    status_report_name: "ci/bitrise/maestro-kotlin-android/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-android-emulator: {}
+      - bundle::install-maestro: {}
+      - restore-cache@3:
+          inputs:
+            - key: *kotlin_gradle_cache_key
+      - script@1:
+          title: Build the Kotlin E2E app
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/build_kotlin_android
+      - save-cache@1:
+          inputs:
+            - key: *kotlin_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - script@1:
+          title: Run the Kotlin Maestro suite on the emulator
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro kotlin-android "$E2E_KOTLIN_ANDROID_APP_PATH"
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_KOTLIN_ANDROID_RESULT
+
+  e2e-maestro-react-native-android:
+    status_report_name: "ci/bitrise/maestro-react-native-android/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *android_stack
+        machine_type_id: g2.linux.large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-android-emulator: {}
+      - bundle::install-maestro: {}
+      - bundle::install-node-modules: {}
+      - restore-cache@3:
+          inputs:
+            - key: *rn_gradle_cache_key
+      - script@1:
+          title: Build the React Native E2E app for x86_64
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./platforms/react-native/scripts/check_no_local_sdk_default
+                E2E_REACT_NATIVE_ANDROID_ARCHITECTURES=x86_64 ./e2e/scripts/build_react_native_android
+      - save-cache@1:
+          inputs:
+            - key: *rn_gradle_cache_key
+            - paths: |-
+                ~/.gradle/caches
+                ~/.gradle/wrapper
+      - script@1:
+          title: Run the React Native Android Maestro suite
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro react-native-android "$E2E_REACT_NATIVE_ANDROID_APP_PATH"
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_REACT_NATIVE_ANDROID_RESULT
+
+  e2e-maestro-react-native-ios:
+    status_report_name: "ci/bitrise/maestro-react-native-ios/<event_type>"
+    envs: *maestro_envs
+    meta:
+      bitrise.io:
+        stack: *macos_stack
+        machine_type_id: g2.mac.4large
+    steps:
+      - git-clone@8: {}
+      - bundle::create-ios-simulator: {}
+      - bundle::install-maestro: {}
+      - bundle::install-node-modules: {}
+      - script@1:
+          title: Verify React Native resolves the published native SDKs
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./platforms/react-native/scripts/check_no_local_sdk_default
+                ./platforms/react-native/scripts/check_published_podfile_lock platforms/react-native/sample/ios/Podfile.lock
+      - bundle::install-ruby-gems: {}
+      - bundle::install-cocoapods: {}
+      - script@1:
+          title: Build the React Native Release simulator app
+          timeout: 5400
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                E2E_IOS_SIMULATOR_ONLY=1 ./e2e/scripts/build_react_native_ios
+      - script@1:
+          title: Run the React Native iOS Maestro suite
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro react-native-ios "$E2E_REACT_NATIVE_IOS_SIMULATOR_APP_BUNDLE"
+      - bundle::export-maestro-results:
+          inputs:
+            - result_variable: E2E_MAESTRO_REACT_NATIVE_IOS_RESULT
+
   e2e-build-swift-ios:
     meta:
       bitrise.io:
@@ -700,6 +987,20 @@ workflows:
   e2e-report:
     steps:
       - git-clone@8: {}
+      - script@1:
+          title: Report direct Maestro results
+          timeout: 900
+          no_output_timeout: 450
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                e2e_export_github_token
+                ruby e2e/scripts/report_bitrise_e2e_results
+
+  e2e-browserstack-report:
+    steps:
+      - git-clone@8: {}
       # An empty plan has no execution artifacts; the shared run count is enough
       # for the reporter to publish a successful no-runs result.
       - pull-intermediate-files@1:
@@ -714,15 +1015,17 @@ workflows:
             - content: |-
                 set -euo pipefail
                 source e2e/scripts/bitrise_ci_helpers
-                e2e_export_github_token
-                : "${BITRISE_GIT_COMMIT:?BITRISE_GIT_COMMIT is required}"
                 results_root="${E2E_BROWSERSTACK_RESULTS_DIR:-$BITRISE_DEPLOY_DIR/e2e/results}"
                 # The report names the stages that failed from this roster. Bitrise documents no
                 # enum for its status field, so log the payload to confirm the literals it uses.
                 e2e_log "Pipeline stage roster"
                 printf '%s\n' "${BITRISEIO_FINISHED_WORKFLOWS:-<unset>}"
-                e2e_log "Reporting E2E results to GitHub"
-                e2e/scripts/report_e2e_results --results-root "$results_root"
+                e2e_log "Saving BrowserStack results to Bitrise"
+                e2e/scripts/report_e2e_results --no-publish --results-root "$results_root" | tee "$BITRISE_DEPLOY_DIR/browserstack-summary.md"
+      - deploy-to-bitrise-io@2:
+          is_always_run: true
+          inputs:
+            - deploy_path: "$BITRISE_DEPLOY_DIR/browserstack-summary.md"
 
   # Shared by every nightly pipeline. Runs on the cheap default Linux stack so a
   # night with no new commits never boots a macOS machine at all.

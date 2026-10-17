@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "../lib/bitrise_e2e_run_plan"
+
+options = {config: File.expand_path("../config/matrix.yml", __dir__)}
+OptionParser.new do |opts|
+  opts.on("--config PATH") { |path| options[:config] = path }
+  opts.on("--changed-files-file PATH") { |path| options[:changed_files_file] = path }
+  opts.on("--pipeline-config PATH") { |path| options[:pipeline_config] = path }
+end.parse!
+
+changed_files = File.readlines(options[:changed_files_file], chomp: true) if options[:changed_files_file]
+plan = BitriseE2ERunPlan.load(options.fetch(:config), changed_files: changed_files)
+config = YAML.safe_load_file(options.fetch(:pipeline_config), aliases: true)
+plan.ensure_pipeline_coverage!(config)
+plan.bitrise_env.each { |key, value| puts "#{key}=#{value}" }
