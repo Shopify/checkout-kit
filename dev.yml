@@ -15,10 +15,10 @@ up:
       - ejson2env
   - ruby
   - xcode:
-      version: "26.2"
+      version: "26.6"
       runtimes:
         ios:
-          - version: 23C54 # 26.2
+          - version: 23F77 # 26.5, the iOS SDK in Xcode 26.6
             architecture_variant: arm64
   - node:
       version: v22.14.0
