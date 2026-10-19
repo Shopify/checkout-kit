@@ -16,7 +16,7 @@ final class MockCheckoutDelegate: CheckoutDelegate {
     private(set) var updateEvents: [CheckoutUpdateEvent] = []
     private(set) var completeEvents: [CheckoutCompleteEvent] = []
     private(set) var clickedLinks: [CheckoutLink] = []
-    var linkAction: CheckoutLinkAction = .open
+    var linkAction: CheckoutLinkAction = .unhandled
     private(set) var didDismissCount = 0
     private(set) var failureEvents: [CheckoutFailureEvent] = []
 

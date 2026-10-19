@@ -563,7 +563,7 @@ Checkout Kit opens delegated external HTTP(S) links in `SFSafariViewController` 
 default. Deep links, `mailto:`, and `tel:` links open through `UIApplication.shared.open(_:)`.
 
 Use `checkoutAction(for:)` on your UIKit delegate or `.onLinkClick` in SwiftUI to
-customize this behavior. Return `.open` to use the default handling, `.handled`
+customize this behavior. Return `.unhandled` when your app does not handle the link, so Checkout Kit uses its default handling; return `.handled`
 when your app handled the link, or `.cancel` to prevent it from opening. For example,
 to open delegated links through the system:
 

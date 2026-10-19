@@ -61,7 +61,7 @@ class WalletController: ObservableObject, CheckoutDelegate {
     }
 
     func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
-        eventHandlers.checkoutAction?(link) ?? .open
+        eventHandlers.checkoutAction?(link) ?? .unhandled
     }
 
     func checkoutDidFail(_ event: CheckoutFailureEvent) {

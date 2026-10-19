@@ -383,12 +383,12 @@ class CheckoutWebView: WKWebView {
                 return .rejected(reason: "failed to open URL")
             }
 
-            switch self?.linkActionProvider?(CheckoutLink(url: target)) ?? .open {
+            switch self?.linkActionProvider?(CheckoutLink(url: target)) ?? .unhandled {
             case .handled:
                 return .success()
             case .cancel:
                 return .rejected(reason: "link opening canceled")
-            case .open:
+            case .unhandled:
                 break
             }
 
@@ -881,12 +881,12 @@ extension CheckoutWebView: WKNavigationDelegate {
         //
         if CheckoutURL(from: url).isDeepLink() {
             Task { @MainActor [externalURLHandler, linkActionProvider] in
-                switch linkActionProvider?(CheckoutLink(url: url)) ?? .open {
+                switch linkActionProvider?(CheckoutLink(url: url)) ?? .unhandled {
                 case .handled:
                     OSLogger.shared.debug("Raw navigation link handled by host")
                 case .cancel:
                     OSLogger.shared.debug("Raw navigation link canceled by host")
-                case .open:
+                case .unhandled:
                     if await externalURLHandler.open(url) {
                         OSLogger.shared.debug("Raw navigation link opened with SDK default handler")
                     } else {

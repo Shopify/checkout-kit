@@ -80,8 +80,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         super.init(nibName: nil, bundle: nil)
 
         checkoutView.linkActionProvider = { [weak self] link in
-            guard let self else { return .open }
-            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .open
+            guard let self else { return .unhandled }
+            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .unhandled
         }
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)

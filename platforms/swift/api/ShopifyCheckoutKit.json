@@ -5786,8 +5786,8 @@
         "children": [
           {
             "kind": "Var",
-            "name": "open",
-            "printedName": "open",
+            "name": "unhandled",
+            "printedName": "unhandled",
             "children": [
               {
                 "kind": "TypeFunc",
@@ -5817,8 +5817,8 @@
               }
             ],
             "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B10LinkActionO4openyA2CmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B10LinkActionO4openyA2CmF",
+            "usr": "s:18ShopifyCheckoutKit0B10LinkActionO9unhandledyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B10LinkActionO9unhandledyA2CmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
