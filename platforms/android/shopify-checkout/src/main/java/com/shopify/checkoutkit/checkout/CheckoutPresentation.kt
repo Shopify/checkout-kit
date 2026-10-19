@@ -46,7 +46,7 @@ public class CheckoutPresentation internal constructor() {
         onComplete = handler
     }
 
-    /** Chooses how Checkout Kit handles links. Defaults to [CheckoutLinkAction.Open]. */
+    /** Chooses how Checkout Kit handles links. Defaults to [CheckoutLinkAction.Unhandled]. */
     public fun onLinkClick(handler: (CheckoutLink) -> CheckoutLinkAction) {
         onLinkClick = handler
     }
@@ -121,7 +121,7 @@ public class CheckoutPresentation internal constructor() {
             }
 
             override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction =
-                onLinkClick?.invoke(link) ?: CheckoutLinkAction.Open
+                onLinkClick?.invoke(link) ?: CheckoutLinkAction.Unhandled
 
             override fun onCheckoutFailed(event: CheckoutFailureEvent) {
                 onFail?.invoke(event)

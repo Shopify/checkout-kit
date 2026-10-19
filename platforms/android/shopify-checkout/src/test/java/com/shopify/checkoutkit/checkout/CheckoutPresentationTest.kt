@@ -173,7 +173,7 @@ class CheckoutPresentationTest {
 
         assertThat(handled).isFalse()
         assertThat(listener.onCheckoutLinkClicked(CheckoutLink(Uri.parse("https://example.com"))))
-            .isEqualTo(CheckoutLinkAction.Open)
+            .isEqualTo(CheckoutLinkAction.Unhandled)
     }
 
     private fun presentation(configure: CheckoutPresentation.() -> Unit): CheckoutPresentation =

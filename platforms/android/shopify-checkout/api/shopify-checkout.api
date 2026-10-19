@@ -165,7 +165,7 @@ public final class com/shopify/checkoutkit/checkout/CheckoutLink {
 public final class com/shopify/checkoutkit/checkout/CheckoutLinkAction : java/lang/Enum {
 	public static final field Cancel Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static final field Handled Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
-	public static final field Open Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
+	public static final field Unhandled Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static fun values ()[Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;

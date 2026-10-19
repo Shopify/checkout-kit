@@ -655,7 +655,7 @@ Start, update, and completion callbacks receive event wrappers with `event.check
 payload. Use the Kit-owned `Checkout` type for the snapshot. Failure callbacks receive `event.error`, so existing
 recovery code can continue to inspect the same `CheckoutErrorCode` and optional HTTP status.
 
-Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `CheckoutLinkAction.Open`,
+Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `CheckoutLinkAction.Unhandled`,
 `CheckoutLinkAction.Handled`, or `CheckoutLinkAction.Cancel` instead of a protocol response.
 
 ## Browser and system callbacks
@@ -712,7 +712,7 @@ Some payment providers redirect buyers to external banking apps or web pages. Co
 Checkout Kit opens delegated external HTTPS links in Android Custom Tabs by default. `mailto:`, `tel:`, and
 custom-scheme links open through Android intents. Register `onLinkClick` to choose the action for a link:
 
-- Return `CheckoutLinkAction.Open` to use Checkout Kit's default handling.
+- Return `CheckoutLinkAction.Unhandled` when your app does not handle the link, so Checkout Kit uses its default handling.
 - Return `CheckoutLinkAction.Handled` after your app has opened or routed the link itself.
 - Return `CheckoutLinkAction.Cancel` to prevent the link from opening.
 

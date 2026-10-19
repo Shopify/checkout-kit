@@ -375,10 +375,10 @@ internal class EmbeddedCheckoutProtocolBridge(
                 if (view.hasHandledTerminalFailure) {
                     return@on windowOpenRejected(reason = "checkout session ended")
                 }
-                when (adapter?.actionForLink(CheckoutLink(url.toUri())) ?: CheckoutLinkAction.Open) {
+                when (adapter?.actionForLink(CheckoutLink(url.toUri())) ?: CheckoutLinkAction.Unhandled) {
                     CheckoutLinkAction.Handled -> return@on windowOpenSuccess()
                     CheckoutLinkAction.Cancel -> return@on windowOpenRejected(reason = "link opening canceled")
-                    CheckoutLinkAction.Open -> Unit
+                    CheckoutLinkAction.Unhandled -> Unit
                 }
                 when (val result = ExternalUriLauncher.launch(view.context, url.toUri())) {
                     is ExternalUriLauncher.Result.Launched -> windowOpenSuccess()

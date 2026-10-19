@@ -461,7 +461,7 @@ internal class CheckoutWebView private constructor(
                 uri.isContactLink() || uri.isDeepLink() -> {
                     log.d(LOG_TAG, "Raw navigation link intercepted: ${uri.redactedForLogging()}")
                     when (listener.onCheckoutLinkClicked(CheckoutLink(uri))) {
-                        CheckoutLinkAction.Open -> {
+                        CheckoutLinkAction.Unhandled -> {
                             log.d(LOG_TAG, "Raw navigation link delegated to SDK default handler")
                             when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
                                 is ExternalUriLauncher.Result.Launched ->
