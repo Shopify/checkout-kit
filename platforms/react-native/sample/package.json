@@ -32,7 +32,7 @@
     "react-native-quick-base64": "^3.0.1",
     "react-native-quick-crypto": "1.1.7",
     "react-native-safe-area-context": "^5.10.1",
-    "react-native-screens": "4.28.0",
+    "react-native-screens": "4.29.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-webview": "^13.16.0"
   },
