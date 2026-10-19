@@ -26,7 +26,7 @@
     "graphql": "^16.8.2",
     "jotai": "^2.13.1",
     "react-native-config": "1.7.2",
-    "react-native-dotenv": "^3.4.11",
+    "react-native-dotenv": "^3.4.12",
     "react-native-encrypted-storage": "^4.0.3",
     "react-native-nitro-modules": "^0.37.1",
     "react-native-quick-base64": "^3.0.1",
