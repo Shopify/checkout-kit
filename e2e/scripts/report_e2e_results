@@ -21,6 +21,7 @@ options = {
 }
 
 OptionParser.new do |opts|
+  opts.on("--no-publish") { options[:no_publish] = true }
   opts.on("--results-root PATH") { |path| options[:results_root] = path }
   opts.on("--repository REPOSITORY") { |repository| options[:repository] = repository }
   opts.on("--sha SHA") { |sha| options[:sha] = sha }
@@ -33,20 +34,23 @@ OptionParser.new do |opts|
 end.parse!
 
 pr_number = options[:pr_number].to_s.strip
-if pr_number.empty? || pr_number == "false" || pr_number == "0"
+has_pr = !["", "false", "0"].include?(pr_number)
+if !options[:no_publish] && !has_pr
   warn "No pull request associated with this build; skipping GitHub E2E report"
   exit 0
 end
 
 %i[sha token].each do |key|
+  next if options[:no_publish]
   next unless options[key].nil? || options[key].to_s.strip.empty?
 
   abort "#{key} is required"
 end
-options[:pr_number] = Integer(options[:pr_number])
+options[:pr_number] = has_pr ? Integer(pr_number) : nil
 
 expected_raw = options[:expected]
 expected = expected_raw.nil? || expected_raw.to_s.strip.empty? ? nil : Integer(expected_raw)
+abort "Expected BrowserStack run count is required" if options[:no_publish] && expected.nil?
 
 result_paths = Dir.glob(File.join(options.fetch(:results_root), "**", "result.json"))
 if result_paths.empty?
@@ -81,5 +85,6 @@ reporter = E2EGitHubReporter.new(
   stages: stages,
   pipeline_url: options[:pipeline_url]
 )
-reporter.publish!
+reporter.publish! unless options[:no_publish]
 puts reporter.markdown_summary
+exit(reporter.check_run_payload.fetch(:conclusion) == "success" ? 0 : 1) if options[:no_publish]

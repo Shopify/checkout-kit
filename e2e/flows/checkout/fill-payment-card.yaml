@@ -7,18 +7,16 @@ appId: ${E2E_APP_ID}
       FIELD_LABEL: "Card number"
       SCROLL_TO_FIELD: "true"
       TEXT_TO_INPUT: "${CARD_NUMBER}"
-- runFlow:
-    when:
-      platform: ios
-    commands:
-      - runFlow: dismiss-active-field.yaml
+# On Android the keyboard can cover the next field; tapping its offscreen label
+# can leave the card number focused and send the expiration digits there instead.
+- runFlow: dismiss-active-field.yaml
 
 # Enter expiration in two pairs so Checkout has time to format the separator.
 - runFlow:
     file: fill-hosted-text-field.yaml
     env:
       FIELD_LABEL: "Expiration date \\(MM / YY\\)"
-      SCROLL_TO_FIELD: "false"
+      SCROLL_TO_FIELD: "true"
       TEXT_TO_INPUT: "1"
 - inputText: "2"
 - waitForAnimationToEnd
@@ -30,7 +28,7 @@ appId: ${E2E_APP_ID}
     file: fill-hosted-text-field.yaml
     env:
       FIELD_LABEL: "Security code"
-      SCROLL_TO_FIELD: "false"
+      SCROLL_TO_FIELD: "true"
       TEXT_TO_INPUT: "${CARD_SECURITY_CODE}"
 - runFlow: dismiss-active-field.yaml
 

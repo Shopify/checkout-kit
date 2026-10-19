@@ -120,13 +120,17 @@ class E2EGitHubReporter
   end
 
   def pipeline_builds_markdown
-    links = PIPELINE_CHECKS.keys.filter_map do |label|
-      url = @pipeline_urls[label]
-      "[#{label}](#{url})" unless blank?(url)
-    end
+    links = pipeline_links
     return nil if links.empty?
 
     ["## Bitrise builds", links.join(" · ")].join("\n\n")
+  end
+
+  def pipeline_links
+    PIPELINE_CHECKS.keys.filter_map do |label|
+      url = @pipeline_urls[label]
+      "[#{label}](#{url})" unless blank?(url)
+    end
   end
 
   def results_table

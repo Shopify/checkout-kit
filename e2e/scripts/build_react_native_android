@@ -14,7 +14,9 @@ pnpm module build
 
 e2e_log "Building Android E2E APK"
 cd sample/android
-./gradlew assembleE2e --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a
+# Physical-device builds default to arm64; the Linux emulator workflow selects x86_64.
+./gradlew assembleE2e --no-daemon --console=plain \
+  -PreactNativeArchitectures="${E2E_REACT_NATIVE_ANDROID_ARCHITECTURES:-arm64-v8a}"
 
 android_apk="$PWD/app/build/outputs/apk/e2e/app-e2e.apk"
 test -f "$android_apk"
