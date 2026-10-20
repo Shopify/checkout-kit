@@ -384,7 +384,7 @@ describe('AcceleratedCheckoutButtons', () => {
       });
       nativeComponent = getByTestId('accelerated-checkout-buttons');
       expect(nativeComponent.props.style).toEqual({
-        flex: 1,
+        flexGrow: 1,
         height: 42,
       });
     });
