@@ -39,17 +39,28 @@ struct CartView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(preloadStateTestId)
 
-                // Expose preload reuse state to accessibility-based diagnostic tooling only when
-                // preload observability is enabled. Keep this marker separate because stacking
-                // identifiers on one accessibility element hides one from the tooling.
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .allowsHitTesting(false)
-                    .accessibilityElement()
-                    .accessibilityHidden(!preloadObservabilityEnabled)
-                    .accessibilityIdentifier(
-                        PreloadCacheHitMarker.testId(observed: preloadCacheHitLog.observed)
-                    )
+                // Keep diagnostic markers beside each other so accessibility does not merge them.
+                HStack(spacing: 1) {
+                    // Expose preload reuse state to accessibility-based diagnostic tooling only when
+                    // preload observability is enabled. Keep this marker separate because stacking
+                    // identifiers on one accessibility element hides one from the tooling.
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .allowsHitTesting(false)
+                        .accessibilityElement()
+                        .accessibilityHidden(!preloadObservabilityEnabled)
+                        .accessibilityIdentifier(
+                            PreloadCacheHitMarker.testId(observed: preloadCacheHitLog.observed)
+                        )
+
+                    // A passive SDK callback probe; it does not infer events from host navigation.
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .allowsHitTesting(false)
+                        .accessibilityElement()
+                        .accessibilityLabel("Checkout SDK callback counts")
+                        .accessibilityIdentifier(checkoutPresentation.callbackCountsIdentifier)
+                }
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
                     if let cartID = cartManager.cart?.id {

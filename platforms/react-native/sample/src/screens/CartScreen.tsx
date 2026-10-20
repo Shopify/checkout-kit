@@ -47,10 +47,25 @@ function CartScreen(): React.JSX.Element {
   } = useCart();
   const {queries} = useShopify();
   const {appConfig} = useConfig();
+  // Preserve raw SDK callback counts across presentations; never infer them from cart state.
+  const [callbackCounts, setCallbackCounts] = React.useState({
+    dismissed: 0,
+    completed: 0,
+    failed: 0,
+  });
+  const recordCallback = useCallback(
+    (event: keyof typeof callbackCounts) => {
+      setCallbackCounts(counts => ({...counts, [event]: counts[event] + 1}));
+    },
+    [],
+  );
+  const callbackCountsTestId = `checkout-callbacks-dismissed-${callbackCounts.dismissed}-completed-${callbackCounts.completed}-failed-${callbackCounts.failed}`;
+
   // Wait for dismissal before removing the cart and its accelerated buttons.
   const sheetEventHandlers = useShopifyEventHandlers(
     'Cart - CheckoutSheet',
     clearCart,
+    recordCallback,
   );
   const acceleratedCheckoutEventHandlers = useShopifyEventHandlers(
     'Cart - AcceleratedCheckoutButtons',
@@ -151,6 +166,13 @@ function CartScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView>
+      <View
+        accessible
+        accessibilityLabel="Checkout SDK callback counts"
+        testID={callbackCountsTestId}
+        pointerEvents="none"
+        style={styles.callbackProbe}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollView}
@@ -322,6 +344,7 @@ function CartItem({
 
 function createStyles(colors: Colors, cornerRadius: number) {
   return StyleSheet.create({
+    callbackProbe: {width: 1, height: 1},
     loading: {
       flex: 1,
       padding: 2,

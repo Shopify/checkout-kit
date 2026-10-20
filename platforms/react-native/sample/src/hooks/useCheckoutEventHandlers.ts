@@ -12,6 +12,7 @@ type EventHandlers = CheckoutEventHandlers & {
 export function useShopifyEventHandlers(
   name?: string,
   onCompletedCheckout?: () => void,
+  onCallback?: (event: 'dismissed' | 'completed' | 'failed') => void,
 ): EventHandlers {
   const log = createDebugLogger(name ?? '');
   const completed = useRef(false);
@@ -28,14 +29,17 @@ export function useShopifyEventHandlers(
     },
     onUpdate: () => log('onUpdate'),
     onComplete: () => {
+      onCallback?.('completed');
       completed.current = true;
       log('onComplete');
     },
     onFail: ({error}) => {
+      onCallback?.('failed');
       log('onFail', error);
       finishCheckout();
     },
     onDismiss: () => {
+      onCallback?.('dismissed');
       log('onDismiss');
       finishCheckout();
     },

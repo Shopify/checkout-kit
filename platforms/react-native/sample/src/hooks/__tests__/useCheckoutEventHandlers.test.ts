@@ -40,4 +40,26 @@ describe('completed checkout cleanup', () => {
     act(() => result.current.onFail?.(failure));
     expect(clearCart).not.toHaveBeenCalled();
   });
+
+  it('reports every SDK terminal callback across rerenders, including duplicates', () => {
+    const onCallback = jest.fn();
+    const {result, rerender} = renderHook(() =>
+      useShopifyEventHandlers('test', undefined, onCallback),
+    );
+
+    act(() => result.current.onDismiss?.());
+    rerender({});
+    act(() => result.current.onDismiss?.());
+    act(() => result.current.onDismiss?.());
+    act(() => result.current.onComplete?.({} as CheckoutCompleteEvent));
+    act(() => result.current.onFail?.(failure));
+
+    expect(onCallback.mock.calls).toEqual([
+      ['dismissed'],
+      ['dismissed'],
+      ['dismissed'],
+      ['completed'],
+      ['failed'],
+    ]);
+  });
 });

@@ -7,6 +7,15 @@ import UIKit
 final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
     @Published var showCheckoutSheet = false
 
+    // Count SDK callbacks without deduplication or resets between presentations.
+    @Published private(set) var dismissalCount = 0
+    @Published private(set) var completionCount = 0
+    @Published private(set) var failureCount = 0
+
+    var callbackCountsIdentifier: String {
+        "checkout-callbacks-dismissed-\(dismissalCount)-completed-\(completionCount)-failed-\(failureCount)"
+    }
+
     @AppStorage(AppStorageKeys.windowOpenHandler.rawValue)
     private var windowOpenHandler: WindowOpenHandlerOption = .default
 
@@ -70,6 +79,7 @@ final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
     }
 
     func checkoutDidComplete(_ event: CheckoutCompleteEvent) {
+        completionCount += 1
         print("[CheckoutKitSwiftDemo] Completed: \(event.checkout.order?.id ?? "unknown")")
         recordCompletion()
     }
@@ -88,12 +98,14 @@ final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
     }
 
     func checkoutDidDismiss() {
+        dismissalCount += 1
         print("[CheckoutKitSwiftDemo] Dismissed")
         showCheckoutSheet = false
         resetCompletedCart()
     }
 
     func checkoutDidFail(_ event: CheckoutFailureEvent) {
+        failureCount += 1
         showCheckoutSheet = false
         print("[CheckoutKitSwiftDemo] Failed: \(event.error)")
     }

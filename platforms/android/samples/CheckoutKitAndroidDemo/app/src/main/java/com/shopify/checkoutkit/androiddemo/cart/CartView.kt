@@ -65,6 +65,7 @@ fun CartView(
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
     val preloadStateTestId = cartViewModel.preloadStateTestId.collectAsState().value
     val preloadCacheHitTestId = cartViewModel.preloadCacheHitTestId.collectAsState().value
+    val callbackCountsTestId = cartViewModel.callbackCountsTestId.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -104,6 +105,12 @@ fun CartView(
                         modifier = Modifier
                             .size(1.dp)
                             .testTag(preloadCacheHitTestId)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(1.dp)
+                            .testTag(callbackCountsTestId)
                     )
 
                     CartLines(

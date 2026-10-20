@@ -91,6 +91,24 @@ class CartCheckoutPresentationTests: XCTestCase {
         XCTAssertEqual(cartResetCount, 0)
     }
 
+    func testCallbackProbePreservesEverySDKCallbackAcrossPresentations() {
+        let presentation = makePresentation()
+        XCTAssertEqual(presentation.callbackCountsIdentifier, "checkout-callbacks-dismissed-0-completed-0-failed-0")
+
+        presentation.present(checkout: makeCheckoutURL(), using: .swiftUI, from: nil)
+        presentation.checkoutDidDismiss()
+        presentation.present(checkout: makeCheckoutURL(), using: .swiftUI, from: nil)
+        presentation.checkoutDidDismiss()
+        // Duplicate SDK delivery must remain visible to Maestro, not be deduplicated by the host.
+        presentation.checkoutDidDismiss()
+        presentation.checkoutDidComplete(CheckoutCompleteEvent(checkout: makeCheckout()))
+        presentation.checkoutDidFail(
+            CheckoutFailureEvent(error: CheckoutError(code: .networkError, message: "Network unavailable"))
+        )
+
+        XCTAssertEqual(presentation.callbackCountsIdentifier, "checkout-callbacks-dismissed-3-completed-1-failed-1")
+    }
+
     private func makePresentation(resetCart: @escaping @MainActor () -> Void = {}) -> CartCheckoutPresentation {
         CartCheckoutPresentation(resetCart: resetCart)
     }

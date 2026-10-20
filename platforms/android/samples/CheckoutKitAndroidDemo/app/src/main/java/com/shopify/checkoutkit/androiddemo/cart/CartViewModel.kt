@@ -85,6 +85,16 @@ class CartViewModel(
             PreloadCacheHitMarker.testId(false)
         )
 
+    // Count only SDK callbacks, including duplicates, for the presentation smoke test.
+    private var dismissalCount = 0
+    private var completionCount = 0
+    private var failureCount = 0
+    private val _callbackCountsTestId = MutableStateFlow(callbackCountsIdentifier())
+    val callbackCountsTestId: StateFlow<String> = _callbackCountsTestId.asStateFlow()
+
+    private fun callbackCountsIdentifier(): String =
+        "checkout-callbacks-dismissed-$dismissalCount-completed-$completionCount-failed-$failureCount"
+
     private var demoBuyerIdentityEnabled = false
     private var checkoutPreloadingEnabled = true
     private var windowOpenHandler = WindowOpenHandler.Default
@@ -183,14 +193,20 @@ class CartViewModel(
             recordSdkEvent("Checkout updated", event.checkout)
         }
         onComplete { event ->
+            completionCount += 1
+            _callbackCountsTestId.value = callbackCountsIdentifier()
             recordSdkEvent("Checkout completed", event.checkout)
             handleCheckoutCompleted(navController)
         }
         onFail { event ->
+            failureCount += 1
+            _callbackCountsTestId.value = callbackCountsIdentifier()
             dismissPresentation()
             handleCheckoutFailed(event.error)
         }
         onDismiss {
+            dismissalCount += 1
+            _callbackCountsTestId.value = callbackCountsIdentifier()
             dismissPresentation()
             handleCheckoutDismissed()
         }
