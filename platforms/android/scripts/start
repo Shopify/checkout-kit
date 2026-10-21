@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Builds the Android sample app and installs it with installDebug. It does not
+# launch the app.
+# Usage: dev android start [--local] [--device ID]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+# shellcheck source=../../../scripts/lib/device_option
+source "$REPO_ROOT/scripts/lib/device_option"
+# shellcheck source=parse_local_protocol_flag
+source "$SCRIPT_DIR/parse_local_protocol_flag"
+
+cd "$REPO_ROOT"
+
+report_missing_device_id() {
+  echo "--device needs an adb serial, such as emulator-5556." >&2
+}
+
+local_flag_args=()
+REQUESTED_DEVICE_ID=""
+while [ "$#" -gt 0 ]; do
+  if parse_device_option report_missing_device_id "$@"; then
+    shift "$DEVICE_OPTION_ARG_COUNT"
+    continue
+  fi
+  case "$1" in
+    --local)
+      local_flag_args+=("$1")
+      shift
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      echo "Usage: dev android start [--local] [--device ID]" >&2
+      exit 1
+      ;;
+  esac
+done
+parse_local_protocol_flag ${local_flag_args[@]+"${local_flag_args[@]}"}
+
+if [ -z "$REQUESTED_DEVICE_ID" ]; then
+  platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
+  exit
+fi
+
+attached_device_ids=$(adb devices | awk '$2 == "device" { print $1 }')
+if ! printf '%s\n' "$attached_device_ids" | awk -v serial="$REQUESTED_DEVICE_ID" '$0 == serial { found = 1 } END { exit !found }'; then
+  echo "$REQUESTED_DEVICE_ID is not listed by adb devices in state device." >&2
+  echo "Attached Android devices:" >&2
+  printf '%s\n' "${attached_device_ids:-(none)}" | sed 's/^/  /' >&2
+  exit 1
+fi
+echo "Using device: $REQUESTED_DEVICE_ID"
+ANDROID_SERIAL="$REQUESTED_DEVICE_ID" platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug

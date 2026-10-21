@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Exercise adding a sibling feature without keeping a fake component in the SDK.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export PUBLICATION_FIXTURE_DIR
+PUBLICATION_FIXTURE_DIR="$(mktemp -d "$PWD/.publication-fixture.XXXXXX")"
+trap 'rm -rf "$PUBLICATION_FIXTURE_DIR"' EXIT
+
+mkdir -p "$PUBLICATION_FIXTURE_DIR/src/main/java/com/shopify/checkoutkit/publicationfixture" \
+  "$PUBLICATION_FIXTURE_DIR/src/main/res/values"
+cat > "$PUBLICATION_FIXTURE_DIR/build.gradle" <<'GRADLE'
+plugins { id 'shopify.android-feature' }
+android {
+    namespace = 'com.shopify.checkoutkit.publicationfixture'
+    resourcePrefix = 'publication_fixture_'
+}
+GRADLE
+cat > "$PUBLICATION_FIXTURE_DIR/proguard-rules.pro" <<'RULES'
+-keep class com.shopify.checkoutkit.publicationfixture.PublicationFixture { *; }
+RULES
+cat > "$PUBLICATION_FIXTURE_DIR/src/main/res/values/strings.xml" <<'XML'
+<resources><string name="publication_fixture_label">Publication fixture</string></resources>
+XML
+cat > "$PUBLICATION_FIXTURE_DIR/src/main/java/com/shopify/checkoutkit/publicationfixture/PublicationFixture.kt" <<'KOTLIN'
+package com.shopify.checkoutkit.publicationfixture
+
+public class PublicationFixture {
+    public fun ready(): Boolean = true
+
+    public fun label(context: android.content.Context): String = context.getString(R.string.publication_fixture_label)
+}
+KOTLIN
+cat > "$PUBLICATION_FIXTURE_DIR/include-feature.gradle" <<'GRADLE'
+settingsEvaluated { settings ->
+    // Init scripts also visit build-logic; only extend the SDK build itself.
+    if (settings.settingsDir.canonicalFile != new File(System.getenv('PUBLICATION_FIXTURE_DIR')).parentFile.canonicalFile) return
+    settings.include ':publication-fixture'
+    settings.project(':publication-fixture').projectDir = new File(System.getenv('PUBLICATION_FIXTURE_DIR'))
+}
+gradle.beforeProject { candidate ->
+    if (candidate.path == ':shopify-checkout-kit') {
+        candidate.afterEvaluate {
+            candidate.dependencies.add('include', candidate.project(':publication-fixture'))
+        }
+    }
+}
+GRADLE
+
+init_script="$PUBLICATION_FIXTURE_DIR/include-feature.gradle"
+./gradlew -I "$init_script" :publication-fixture:apiDump --console=plain
+test -s "$PUBLICATION_FIXTURE_DIR/api/publication-fixture.api"
+./gradlew -I "$init_script" :shopify-checkout-kit:verifyFusedPublication apiCheck --console=plain
+
+# A sibling's API drift must fail the platform aggregate, not just its own task.
+echo 'public class UnexpectedPublicApi' >> \
+  "$PUBLICATION_FIXTURE_DIR/src/main/java/com/shopify/checkoutkit/publicationfixture/PublicationFixture.kt"
+if ./gradlew -I "$init_script" apiCheck --console=plain > "$PUBLICATION_FIXTURE_DIR/api-check.log" 2>&1; then
+    echo "Expected the platform API check to reject the sibling feature's API drift." >&2
+    exit 1
+fi
+if ! grep -q ':publication-fixture:apiCheck FAILED' "$PUBLICATION_FIXTURE_DIR/api-check.log"; then
+    echo "API check failed for a reason other than the sibling feature's API drift." >&2
+    exit 1
+fi
+echo "Sibling feature publication and platform API validation verified."

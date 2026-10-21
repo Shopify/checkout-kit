@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Builds the Swift sample app, installs it on a simulator, and launches it.
+# Usage: dev swift start [--device ID]
+
+set -eo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+# shellcheck source=../../../scripts/lib/device_option
+source "$REPO_ROOT/scripts/lib/device_option"
+
+cd "$REPO_ROOT/platforms/swift"
+
+report_missing_device_id() {
+  echo "--device needs a simulator UDID." >&2
+}
+
+REQUESTED_DEVICE_ID=""
+while [ "$#" -gt 0 ]; do
+  if parse_device_option report_missing_device_id "$@"; then
+    shift "$DEVICE_OPTION_ARG_COUNT"
+    continue
+  fi
+  echo "Unknown argument: $1" >&2
+  echo "Usage: dev swift start [--device ID]" >&2
+  exit 1
+done
+
+BOOTED_DEVICE_IDS=$(xcrun simctl list devices booted | awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36) }')
+if [ -n "$REQUESTED_DEVICE_ID" ]; then
+  if ! printf '%s\n' "$BOOTED_DEVICE_IDS" | awk -v udid="$REQUESTED_DEVICE_ID" '$0 == udid { found = 1 } END { exit !found }'; then
+    echo "$REQUESTED_DEVICE_ID is not a booted iOS simulator." >&2
+    echo "Booted iOS simulators:" >&2
+    printf '%s\n' "${BOOTED_DEVICE_IDS:-(none)}" | sed 's/^/  /' >&2
+    exit 1
+  fi
+  DEVICE_ID="$REQUESTED_DEVICE_ID"
+  echo "Using booted simulator: $DEVICE_ID"
+else
+  DEVICE_ID="${BOOTED_DEVICE_IDS%%$'\n'*}"
+  if [ -n "$DEVICE_ID" ]; then
+    echo "Using booted simulator: $DEVICE_ID"
+  else
+    DEVICE_ID=$(./Scripts/get_device_id "iPhone 16" 2>/dev/null || ./Scripts/get_device_id "iPhone" 2>/dev/null || true)
+    if [ -z "$DEVICE_ID" ]; then
+      echo "No iOS simulator found." >&2
+      exit 1
+    fi
+    echo "No booted simulator found. Booting simulator: $DEVICE_ID"
+    xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
+    xcrun simctl bootstatus "$DEVICE_ID" -b
+  fi
+fi
+
+./Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
+
+DERIVED_DATA="$PWD/../../.build/swift-start-simulator"
+cd Samples/CheckoutKitSwiftDemo
+build_command=(
+  xcodebuild build
+  -project CheckoutKitSwiftDemo.xcodeproj
+  -scheme CheckoutKitSwiftDemo
+  -sdk iphonesimulator
+  -destination "id=$DEVICE_ID"
+  -derivedDataPath "$DERIVED_DATA"
+  -skipPackagePluginValidation
+  -disableAutomaticPackageResolution
+  CODE_SIGNING_ALLOWED=NO
+)
+if command -v xcbeautify >/dev/null 2>&1; then
+  "${build_command[@]}" | xcbeautify
+else
+  "${build_command[@]}"
+fi
+
+APP_PATH=$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "CheckoutKitSwiftDemo.app" -print -quit)
+if [ -z "$APP_PATH" ]; then
+  echo "The build created no CheckoutKitSwiftDemo.app bundle." >&2
+  exit 1
+fi
+
+xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+echo "Launching CheckoutKitSwiftDemo on simulator: $DEVICE_ID"
+echo "Press Ctrl-C to stop the app."
+
+colorize_logs() {
+  if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ] || [ "${TERM:-}" = "dumb" ]; then
+    cat
+    return
+  fi
+
+  awk '
+    BEGIN {
+      escape = sprintf("%c", 27)
+      reset = escape "[0m"
+      dim = escape "[2m"
+      green = escape "[32m"
+      yellow = escape "[33m"
+      blue = escape "[34m"
+      magenta = escape "[35m"
+      cyan = escape "[36m"
+    }
+    /^\[CheckoutKitSwiftDemo\]/ { print green $0 reset; next }
+    /^\[UCP\]/ { print cyan $0 reset; next }
+    /^\[Preload\]/ { print magenta $0 reset; next }
+    /^\[AcceleratedCheckout\]/ { print yellow $0 reset; next }
+    /^\[E2E\]/ { print blue $0 reset; next }
+    /^objc\[/ { print dim $0 reset; next }
+    { print }
+  '
+}
+
+xcrun simctl launch --terminate-running-process --console-pty "$DEVICE_ID" com.shopify.checkoutkit.swiftdemo | colorize_logs

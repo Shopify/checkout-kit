@@ -301,17 +301,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     @objc func appearanceChanged() {
         window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
     }
-
-    private func getRootViewController() -> UINavigationController? {
-        return window?.rootViewController as? UINavigationController
-    }
-
-    private func getNavigationController(forTab index: Int) -> UINavigationController? {
-        guard let tabBarVC = window?.rootViewController as? UITabBarController else {
-            return nil
-        }
-        return tabBarVC.viewControllers?[index] as? UINavigationController
-    }
 }
 
 extension Notification.Name {

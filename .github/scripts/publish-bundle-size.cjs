@@ -90,8 +90,14 @@ async function latestRun(github, repo, pr) {
     head_sha: pr.head.sha,
     per_page: 100,
   });
+  // Title and body edits create skipped runs that measure nothing.
   return runs
-    .filter((run) => run.head_repository?.id === pr.head.repo.id && run.head_branch === pr.head.ref)
+    .filter(
+      (run) =>
+        run.head_repository?.id === pr.head.repo.id &&
+        run.head_branch === pr.head.ref &&
+        run.conclusion !== "skipped",
+    )
     .sort((a, b) => b.id - a.id)[0];
 }
 
@@ -203,7 +209,10 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
   if (pr.state !== "open") return;
   const run = await latestRun(github, repo, pr);
   if (!run) return; // A comment cannot create an approval before measurements exist.
-  if (context.eventName === "workflow_run" && context.payload.workflow_run.id !== run.id) return;
+  // A skipped run may have set the check to pending when it was requested, so
+  // it republishes the latest measurement instead of returning.
+  const trigger = context.eventName === "workflow_run" ? context.payload.workflow_run : null;
+  if (trigger && trigger.id !== run.id && trigger.conclusion !== "skipped") return;
   const processingReactions = [];
   const react = async (method, params) => {
     try {

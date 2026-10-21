@@ -5,10 +5,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# shellcheck source=../../platforms/react-native/scripts/metro_port
+source "$REPO_ROOT/platforms/react-native/scripts/metro_port"
+# shellcheck source=../../scripts/lib/device_option
+source "$REPO_ROOT/scripts/lib/device_option"
+
 usage() {
   if [ -n "${DEV_COMMAND:-}" ]; then
+    local metro_port_syntax=""
+    [ "$IS_REACT_NATIVE" = true ] && metro_port_syntax=" [--metro-port PORT]"
     cat <<EOF >&2
-Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]
+Usage: $DEV_COMMAND [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]$metro_port_syntax
 
 Runs the Maestro tests enabled for $TARGET in e2e/config/matrix.yml. Coverage tags
 select enabled behaviors. Positional test files directly select exact flows.
@@ -22,10 +29,17 @@ Options:
                                 emulator-5556 on Android. Without it, the first
                                 booted simulator or attached device is used.
 EOF
+    if [ "$IS_REACT_NATIVE" = true ]; then
+      cat <<EOF >&2
+  --metro-port PORT             Run the app against Metro on this port, and start
+                                Metro there when nothing answers. Without it,
+                                port $DEFAULT_METRO_PORT is used.
+EOF
+    fi
     return
   fi
 
-  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]" >&2
+  echo "Usage: run_local_e2e {swift-ios|kotlin-android|react-native-ios|react-native-android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID] [--metro-port PORT]" >&2
 }
 
 configure_target() {
@@ -58,7 +72,6 @@ configure_target() {
       APP_ID="com.shopify.checkoutkit.reactnativedemo"
       ROOT_DIR="$REPO_ROOT/platforms/react-native"
       IS_REACT_NATIVE=true
-      METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-ios-metro.log"
       DEV_COMMAND="dev rn e2e ios"
       TARGET_DESCRIPTION="React Native iOS"
       TEST_NAMESPACE="react-native"
@@ -68,7 +81,6 @@ configure_target() {
       APP_ID="com.shopify.checkoutkit.reactnativedemo"
       ROOT_DIR="$REPO_ROOT/platforms/react-native"
       IS_REACT_NATIVE=true
-      METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-android-metro.log"
       DEV_COMMAND="dev rn e2e android"
       TARGET_DESCRIPTION="React Native Android"
       TEST_NAMESPACE="react-native"
@@ -81,38 +93,51 @@ configure_target() {
   esac
 }
 
+report_missing_device_id() {
+  usage
+  echo "--device needs a simulator UDID or an adb serial" >&2
+}
+
 parse_arguments() {
   while [ "$#" -gt 0 ]; do
-    case "$1" in
-      --device)
-        REQUESTED_DEVICE_ID="${2:-}"
-        if [ -z "$REQUESTED_DEVICE_ID" ]; then
-          usage
-          echo "--device needs a simulator UDID or an adb serial" >&2
-          exit 1
-        fi
-        shift 2
-        continue
-        ;;
-      --device=*)
-        REQUESTED_DEVICE_ID="${1#--device=}"
-        if [ -z "$REQUESTED_DEVICE_ID" ]; then
-          usage
-          echo "--device needs a simulator UDID or an adb serial" >&2
-          exit 1
-        fi
-        shift
-        continue
-        ;;
-    esac
+    if parse_device_option report_missing_device_id "$@"; then
+      shift "$DEVICE_OPTION_ARG_COUNT"
+      continue
+    fi
 
-    # Every argument except --device selects or filters tests, so it bypasses the picker.
-    SELECTOR_COUNT=$((SELECTOR_COUNT + 1))
     case "$1" in
       --skip-build)
         SKIP_BUILD=true
         shift
+        continue
         ;;
+      --metro-port | --metro-port=*)
+        if [ "${IS_REACT_NATIVE:-false}" != true ]; then
+          usage
+          echo "--metro-port applies only to React Native targets" >&2
+          exit 1
+        fi
+        if [ "$1" = "--metro-port" ]; then
+          if [ "$#" -lt 2 ]; then
+            usage
+            echo "--metro-port needs a port number, such as 8082" >&2
+            exit 1
+          fi
+          REQUESTED_METRO_PORT="$2"
+          shift 2
+        else
+          REQUESTED_METRO_PORT="${1#--metro-port=}"
+          shift
+        fi
+        validate_metro_port "$REQUESTED_METRO_PORT" || exit 1
+        continue
+        ;;
+    esac
+
+    # Build and device options leave the picker available. Test selectors and
+    # filters bypass it.
+    SELECTOR_COUNT=$((SELECTOR_COUNT + 1))
+    case "$1" in
       --tags)
         INCLUDE_TAGS="${2:-}"
         if [ -z "$INCLUDE_TAGS" ]; then
@@ -348,6 +373,8 @@ print_reproducible_command() {
   done
   [ "$HAS_EXPLICIT_TAGS" = true ] && printf ' --tags %q' "$INCLUDE_TAGS"
   [ -n "$REQUESTED_DEVICE_ID" ] && printf ' --device %q' "$REQUESTED_DEVICE_ID"
+  [ -n "$REQUESTED_METRO_PORT" ] && printf ' --metro-port %q' "$REQUESTED_METRO_PORT"
+  [ "${SKIP_BUILD:-false}" = true ] && printf ' --skip-build'
   printf '\n\n'
 }
 
@@ -394,8 +421,13 @@ run_picker() {
   print_reproducible_command
 }
 
+configure_metro() {
+  METRO_PORT="${REQUESTED_METRO_PORT:-$DEFAULT_METRO_PORT}"
+  METRO_LOG="${TMPDIR:-/tmp}/checkout-kit-rn-${PLATFORM}-metro-${METRO_PORT}.log"
+}
+
 metro_running() {
-  curl --silent --fail http://localhost:8081/status | grep -q "packager-status:running"
+  curl --silent --fail "http://localhost:${METRO_PORT}/status" | grep -q "packager-status:running"
 }
 
 cleanup() {
@@ -428,8 +460,11 @@ wait_for_metro() {
 prepare_react_native_environment() {
   cd "$ROOT_DIR"
 
-  if ! metro_running; then
-    /opt/dev/bin/dev react-native start >"$METRO_LOG" 2>&1 &
+  if metro_running; then
+    echo "Using Metro on port $METRO_PORT"
+  else
+    echo "Starting Metro on port $METRO_PORT. Log: $METRO_LOG"
+    /opt/dev/bin/dev react-native start --metro-port "$METRO_PORT" >"$METRO_LOG" 2>&1 &
     METRO_PID="$!"
   fi
 
@@ -547,12 +582,13 @@ build_and_install() {
       ;;
     react-native-ios)
       cd "$ROOT_DIR"
-      ENVFILE="$E2E_ENV_FILE" pnpm sample ios --udid "$DEVICE_ID"
+      ENVFILE="$E2E_ENV_FILE" pnpm sample ios --udid "$DEVICE_ID" --port "$METRO_PORT"
       ;;
     react-native-android)
       cd "$ROOT_DIR"
       ENVFILE="$E2E_ENV_FILE" pnpm sample android \
         --device "$DEVICE_ID" \
+        --port "$METRO_PORT" \
         --extra-params "--refresh-dependencies"
       ;;
   esac
@@ -569,6 +605,7 @@ main() {
   shift
   SELECTOR_COUNT=0
   REQUESTED_DEVICE_ID="${E2E_DEVICE_ID:-}"
+  REQUESTED_METRO_PORT=""
 
   INCLUDE_TAGS=""
   EXCLUDE_TAGS=""
@@ -582,6 +619,7 @@ main() {
   E2E_ENV_FILE=""
 
   parse_arguments "$@"
+  configure_metro
   load_application_tags
   load_eligible_test_files
   load_enabled_tags

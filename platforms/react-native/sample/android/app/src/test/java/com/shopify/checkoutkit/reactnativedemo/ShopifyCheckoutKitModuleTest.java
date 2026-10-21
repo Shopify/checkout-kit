@@ -12,21 +12,24 @@ import com.facebook.react.bridge.JavaOnlyArray;
 import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.shopify.checkoutkit.CheckoutAppearance;
-import com.shopify.checkoutkit.CheckoutErrorCode;
-import com.shopify.checkoutkit.CheckoutException;
-import com.shopify.checkoutkit.CheckoutFailureEvent;
-import com.shopify.checkoutkit.CheckoutHandle;
-import com.shopify.checkoutkit.CheckoutLink;
-import com.shopify.checkoutkit.CheckoutLinkAction;
-import com.shopify.checkoutkit.CheckoutPreload;
-import com.shopify.checkoutkit.LogLevel;
-import com.shopify.checkoutkit.PreloadState;
-import com.shopify.checkoutkit.PreloadStateListener;
-import com.shopify.checkoutkit.Preloading;
-import com.shopify.checkoutkit.ShopifyCheckoutKit;
-import com.shopify.checkoutkit.Telemetry;
+import com.shopify.checkoutkit.checkout.CheckoutAppearance;
+import com.shopify.checkoutkit.checkout.CheckoutErrorCode;
+import com.shopify.checkoutkit.checkout.CheckoutException;
+import com.shopify.checkoutkit.checkout.CheckoutFailureEvent;
+import com.shopify.checkoutkit.checkout.CheckoutHandle;
+import com.shopify.checkoutkit.checkout.CheckoutLink;
+import com.shopify.checkoutkit.checkout.CheckoutLinkAction;
+import com.shopify.checkoutkit.checkout.CheckoutPreload;
+import com.shopify.checkoutkit.checkout.Color;
+import com.shopify.checkoutkit.checkout.ColorScheme;
+import com.shopify.checkoutkit.checkout.LogLevel;
+import com.shopify.checkoutkit.checkout.PreloadState;
+import com.shopify.checkoutkit.checkout.PreloadStateListener;
+import com.shopify.checkoutkit.checkout.Preloading;
+import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit;
+import com.shopify.checkoutkit.checkout.Telemetry;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
 import com.shopify.reactnative.checkoutkit.DispatchCallback;
@@ -50,6 +53,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -79,18 +83,6 @@ public class ShopifyCheckoutKitModuleTest {
 
   // Mock for Arguments.createMap() to avoid native library loading
   private MockedStatic<Arguments> mockedArguments;
-
-  // Test constants for color configuration
-  private static final String BACKGROUND_COLOR = "#FFFFFF";
-  private static final String PROGRESS_INDICATOR = "#000000";
-  private static final String HEADER_BACKGROUND_COLOR = "#FFFFFF";
-  private static final String HEADER_TEXT_COLOR = "#000000";
-
-  // Dark theme colors
-  private static final String DARK_BACKGROUND_COLOR = "#000000";
-  private static final String DARK_PROGRESS_INDICATOR = "#FFFFFF";
-  private static final String DARK_HEADER_BACKGROUND_COLOR = "#000000";
-  private static final String DARK_HEADER_TEXT_COLOR = "#FFFFFF";
 
   private static final class TestShopifyCheckoutKitModule extends ShopifyCheckoutKitModule {
     private String preloadStateEvent;
@@ -259,8 +251,42 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testPresentFromFailCallbackIsIgnoredWhileClosing() {
-    assertPresentWhileClosingIsIgnored("fail");
+  public void testPresentFromFailCallbackIsIgnoredUntilDismissal() {
+    doAnswer(invocation -> {
+      ((Runnable) invocation.getArgument(0)).run();
+      return null;
+    }).when(mockComponentActivity).runOnUiThread(any());
+
+    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+      CheckoutHandle sheet = mock(CheckoutHandle.class);
+      ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
+      Callback ignoredResult = mock(Callback.class);
+      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+          .thenReturn(sheet);
+      shopifyCheckoutKitModule.present("https://example.com/first", "open", presentationResult);
+      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+          eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
+      CustomCheckoutListener listener = listeners.getValue();
+      shopifyCheckoutKitModule.onDispatch = event -> {
+        shopifyCheckoutKitModule.onDispatch = null;
+        shopifyCheckoutKitModule.present("https://example.com/ignored", "open", ignoredResult);
+      };
+
+      listener.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
+
+      verify(ignoredResult).invoke(false);
+      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+          eq("https://example.com/ignored"), any(), any()), never());
+      assertThat(listener.isReleased()).isFalse();
+
+      // Native closes a failed checkout and then reports dismissal.
+      listener.onCheckoutDismissed();
+
+      assertThat(listener.isReleased()).isTrue();
+      assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
+      assertThat(shopifyCheckoutKitModule.dispatchEvents.get(0)).contains("\"type\":\"fail\"");
+      assertThat(shopifyCheckoutKitModule.dispatchEvents.get(1)).contains("\"type\":\"dismiss\"");
+    }
   }
 
   @Test
@@ -290,8 +316,7 @@ public class ShopifyCheckoutKitModuleTest {
         shopifyCheckoutKitModule.present("https://example.com/ignored", "open", ignoredResult);
       };
 
-      if (terminal.equals("fail")) listeners.getValue().onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
-      else if (terminal.equals("buyer")) listeners.getValue().onCheckoutDismissed();
+      if (terminal.equals("buyer")) listeners.getValue().onCheckoutDismissed();
       else shopifyCheckoutKitModule.dismiss();
       shadowOf(Looper.getMainLooper()).idle();
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
@@ -319,7 +344,7 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testSynchronousInitializationFailureStillEmitsFailure() {
+  public void testSynchronousInitializationFailureEmitsFailureThenDismissal() {
     doAnswer(invocation -> {
       ((Runnable) invocation.getArgument(0)).run();
       return null;
@@ -333,8 +358,9 @@ public class ShopifyCheckoutKitModuleTest {
           });
       shopifyCheckoutKitModule.present("https://example.com/failing", "open", presentationResult);
       verify(presentationResult).invoke(true);
-      assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
+      assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
       assertThat(shopifyCheckoutKitModule.dispatchEvents.get(0)).contains("\"type\":\"fail\"");
+      assertThat(shopifyCheckoutKitModule.dispatchEvents.get(1)).contains("\"type\":\"dismiss\"");
     }
   }
 
@@ -578,9 +604,8 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testCanSetDarkColorScheme() {
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "dark");
+  public void testCanSetDarkAppAppearance() {
+    JavaOnlyMap config = appAppearanceConfig("dark");
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -590,12 +615,9 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testUnknownColorSchemeKeepsTheCurrentAppearance() {
-    JavaOnlyMap darkConfig = new JavaOnlyMap();
-    darkConfig.putString("colorScheme", "dark");
-    shopifyCheckoutKitModule.setConfig(darkConfig);
+    shopifyCheckoutKitModule.setConfig(appAppearanceConfig("dark"));
 
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "sepia");
+    JavaOnlyMap config = appAppearanceConfig("sepia");
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -605,8 +627,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testUnknownColorSchemeKeepsTheNativeDefaultAppearance() {
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "sepia");
+    JavaOnlyMap config = appAppearanceConfig("sepia");
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -631,120 +652,48 @@ public class ShopifyCheckoutKitModuleTest {
   }
 
   @Test
-  public void testCanConfigureLightColorSchemeWithValidColors() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
+  public void testAppearanceColorsSurviveUnrelatedUpdatesUntilTheAppearanceIsReplaced() {
+    JavaOnlyMap appearance = JavaOnlyMap.of("type", "app", "colorScheme", "dark");
+    appearance.putMap("colors", JavaOnlyMap.of(
+        "android", JavaOnlyMap.of("progressIndicatorColor", "#112233")));
+    shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("appearance", appearance));
 
-    shopifyCheckoutKitModule.setConfig(config);
+    shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("logLevel", "debug", "preloading", false));
 
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()).isEqualTo(new CheckoutAppearance.App(
+        new ColorScheme.Dark().customize(colors -> {
+          colors.setProgressIndicator(new Color.SRGB(0xFF112233));
+          return kotlin.Unit.INSTANCE;
+        })));
+
+    shopifyCheckoutKitModule.setConfig(appAppearanceConfig("dark"));
+
+    assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAppearance())
+        .isEqualTo(new CheckoutAppearance.App(new ColorScheme.Dark()));
   }
 
   @Test
-  public void testCanConfigureDarkColorSchemeWithValidColors() {
-    JavaOnlyMap androidColors = createValidDarkColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("dark", androidColors);
+  public void testGetConfigReturnsTheAppearanceWithoutColors() {
+    for (String scheme : new String[] {"light", "dark", "automatic", "storefront"}) {
+      JavaOnlyMap appearance = scheme.equals("storefront")
+          ? JavaOnlyMap.of("type", "storefront")
+          : JavaOnlyMap.of("type", "app", "colorScheme", scheme);
+      appearance.putMap("colors", JavaOnlyMap.of(
+          "android", JavaOnlyMap.of("progressIndicatorColor", "#112233")));
 
-    shopifyCheckoutKitModule.setConfig(config);
+      shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("appearance", appearance));
 
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("dark");
-  }
+      ReadableMap result = shopifyCheckoutKitModule.getConfig();
 
-  @Test
-  public void testCanConfigureAutomaticColorSchemeWithLightAndDarkColors() {
-    JavaOnlyMap lightColors = createValidLightColors();
-    JavaOnlyMap darkColors = createValidDarkColors();
-
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putMap("light", lightColors);
-    androidColors.putMap("dark", darkColors);
-
-    JavaOnlyMap colorsConfig = new JavaOnlyMap();
-    colorsConfig.putMap("android", androidColors);
-
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "automatic");
-    config.putMap("colors", colorsConfig);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("automatic");
-  }
-
-  @Test
-  public void testInvalidColorConfigurationFallsBackToBasicScheme() {
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putString("backgroundColor", "invalid-color");
-    androidColors.putString("progressIndicator", PROGRESS_INDICATOR);
-    androidColors.putString("headerBackgroundColor", HEADER_BACKGROUND_COLOR);
-    androidColors.putString("headerTextColor", HEADER_TEXT_COLOR);
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    // Should not throw exception
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Should fall back to basic light scheme without custom colors
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testPartialColorConfigurationIsRejected() {
-    JavaOnlyMap androidColors = new JavaOnlyMap();
-    androidColors.putString("backgroundColor", BACKGROUND_COLOR);
-    // Missing other required colors
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Should fall back to basic scheme since colors are incomplete
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithCloseButtonColor() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    androidColors.putString("closeButtonColor", "#FF0000");
-
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithMissingCloseButtonColor() {
-    // Missing closeButtonColor - should not crash
-    JavaOnlyMap androidColors = createValidLightColors();
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    shopifyCheckoutKitModule.setConfig(config);
-
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
-  }
-
-  @Test
-  public void testCanSetConfigWithInvalidCloseButtonColor() {
-    JavaOnlyMap androidColors = createValidLightColors();
-    androidColors.putString("closeButtonColor", "invalid-color");
-    JavaOnlyMap config = createConfigWithAndroidColors("light", androidColors);
-
-    // The method should not throw an exception when given invalid close button
-    // color
-    shopifyCheckoutKitModule.setConfig(config);
-
-    // Verify the color scheme was set correctly despite invalid close button color
-    assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
-        .isEqualTo("light");
+      assertThat(result.toHashMap()).containsOnlyKeys(
+          "appearance", "preloading", "telemetry", "title", "logLevel", "allowedMessageOrigins");
+      if (scheme.equals("storefront")) {
+        assertThat(result.getMap("appearance").toHashMap()).containsOnly(entry("type", "storefront"));
+      } else {
+        assertThat(result.getMap("appearance").toHashMap())
+            .containsOnly(entry("type", "app"), entry("colorScheme", scheme));
+      }
+    }
   }
 
   /**
@@ -1059,17 +1008,6 @@ public class ShopifyCheckoutKitModuleTest {
     }
   }
 
-  @Test
-  public void testOnFailCallbackIsSingleShot() {
-    DispatchCallback dispatch = mock(DispatchCallback.class);
-    CustomCheckoutListener processor = new CustomCheckoutListener(dispatch);
-
-    processor.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
-    processor.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
-
-    verify(dispatch, times(1)).invoke(anyString());
-  }
-
   /**
    * Integration
    */
@@ -1077,8 +1015,7 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testCompleteConfigurationAndEventFlow() {
     // Set up configuration
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", "dark");
+    JavaOnlyMap config = appAppearanceConfig("dark");
 
     shopifyCheckoutKitModule.setConfig(config);
 
@@ -1102,32 +1039,8 @@ public class ShopifyCheckoutKitModuleTest {
     return "storefront";
   }
 
-  private JavaOnlyMap createValidLightColors() {
-    JavaOnlyMap colors = new JavaOnlyMap();
-    colors.putString("backgroundColor", BACKGROUND_COLOR);
-    colors.putString("progressIndicator", PROGRESS_INDICATOR);
-    colors.putString("headerBackgroundColor", HEADER_BACKGROUND_COLOR);
-    colors.putString("headerTextColor", HEADER_TEXT_COLOR);
-    return colors;
-  }
-
-  private JavaOnlyMap createValidDarkColors() {
-    JavaOnlyMap colors = new JavaOnlyMap();
-    colors.putString("backgroundColor", DARK_BACKGROUND_COLOR);
-    colors.putString("progressIndicator", DARK_PROGRESS_INDICATOR);
-    colors.putString("headerBackgroundColor", DARK_HEADER_BACKGROUND_COLOR);
-    colors.putString("headerTextColor", DARK_HEADER_TEXT_COLOR);
-    return colors;
-  }
-
-  private JavaOnlyMap createConfigWithAndroidColors(String colorScheme, JavaOnlyMap androidColors) {
-    JavaOnlyMap colorsConfig = new JavaOnlyMap();
-    colorsConfig.putMap("android", androidColors);
-
-    JavaOnlyMap config = new JavaOnlyMap();
-    config.putString("colorScheme", colorScheme);
-    config.putMap("colors", colorsConfig);
-    return config;
+  private static JavaOnlyMap appAppearanceConfig(String colorScheme) {
+    return JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", colorScheme));
   }
 
   private static class PromiseMock implements Promise {

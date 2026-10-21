@@ -76,6 +76,18 @@ class IOSCIRunPlanTest < Minitest::Test
     )
   end
 
+  def test_root_podspec_selects_swift_jobs_in_the_real_config
+    assert_equal ["swift-package-tests", "swift-samples"],
+      IOSCIRunPlan.load(CONFIG_PATH, changed_files: ["ShopifyCheckoutKit.podspec"]).selected_job_ids
+  end
+
+  def test_shared_protocol_change_selects_all_jobs_in_the_real_config
+    assert_equal ["swift-package-tests", "swift-samples", "react-native-build-ios", "react-native-test-ios"],
+      IOSCIRunPlan.load(CONFIG_PATH, changed_files: [
+        "protocols/universal-commerce-protocol/embedded-checkout-protocol/scripts/generate_models.sh"
+      ]).selected_job_ids
+  end
+
   def test_docs_only_change_selects_no_job
     assert_empty selected_ids(["platforms/swift/docs/usage.md"])
   end

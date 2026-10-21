@@ -11,12 +11,12 @@ final class AppearanceOptionTests: XCTestCase {
     }
 
     func testCustomNativeColorsDoNotChangeTheSelectedAppearanceOption() {
-        let colors = CheckoutColors(webViewBackground: .red, progressIndicator: .green, closeIconTint: .blue)
+        let colors = CheckoutColors(webViewBackgroundColor: .red, progressIndicatorColor: .green, closeIconTintColor: .blue)
         let appearances: [(CheckoutAppearance, AppearanceOption)] = [
             (.storefront(colors: colors), .storefront),
             (.app(.light(colors: colors)), .appLight),
             (.app(.dark(colors: colors)), .appDark),
-            (.app(.automatic(lightColors: colors, darkColors: CheckoutColors(progressIndicator: .purple))), .appAutomatic)
+            (.app(.automatic(lightColors: colors, darkColors: CheckoutColors(progressIndicatorColor: .purple))), .appAutomatic)
         ]
 
         for (appearance, option) in appearances {

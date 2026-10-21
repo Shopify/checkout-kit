@@ -154,7 +154,7 @@ struct CartView: View {
     .sheet(isPresented: $isPresented) {
       ShopifyCheckout(checkout: checkoutURL)
         .title("Checkout")
-        .appearance(.storefront(colors: CheckoutColors(progressIndicator: .systemBlue)))
+        .appearance(.storefront(colors: CheckoutColors(progressIndicatorColor: .systemBlue)))
         .onDismiss {
           isPresented = false
         }
@@ -256,7 +256,7 @@ Configure global presentation defaults before presenting checkout. `ShopifyCheck
 import ShopifyCheckoutKit
 
 ShopifyCheckoutKit.configure {
-  $0.appearance = .storefront(colors: CheckoutColors(progressIndicator: .systemBlue))
+  $0.appearance = .storefront(colors: CheckoutColors(progressIndicatorColor: .systemBlue))
   $0.logLevel = .debug
   $0.telemetry.enabled = false
 }
@@ -290,12 +290,12 @@ To localize the title, add `shopify_checkout_kit_title` to your app's `Localizab
 
 | `CheckoutColors` property | Default | Purpose |
 | --- | --- | --- |
-| `webViewBackground` | `.systemBackground` | Background behind the WebView and its overscroll area. |
-| `headerBackground` | `.clear` | Navigation-bar background. |
-| `headerFont` | `.label` | Navigation-title color. |
-| `progressIndicator` | Shopify blue | Progress indicator while checkout loads. |
+| `webViewBackgroundColor` | `.systemBackground` | Background behind the WebView and its overscroll area. |
+| `headerBackgroundColor` | `.clear` | Navigation-bar background. |
+| `headerTitleColor` | `.label` | Navigation-bar title color. |
+| `progressIndicatorColor` | Shopify blue | Progress indicator while checkout loads. |
 | `closeIcon` | `nil` | Optional native image for the close button. |
-| `closeIconTint` | `nil` | Optional close-button tint. With no icon or tint override, iOS supplies the system close button. |
+| `closeIconTintColor` | `nil` | Optional close-button tint. With no icon or tint override, iOS supplies the system close button. |
 | `headerBorderColor` | `nil` | Optional navigation-bar shadow color. |
 
 Light and dark schemes each own one palette. Automatic appearance owns independent `lightColors` and `darkColors`, and switches natively when the system appearance changes:
@@ -303,8 +303,8 @@ Light and dark schemes each own one palette. Automatic appearance owns independe
 ```swift
 ShopifyCheckoutKit.configure {
   $0.appearance = .app(.automatic(
-    lightColors: CheckoutColors(progressIndicator: .systemBlue, closeIconTint: .systemBlue),
-    darkColors: CheckoutColors(progressIndicator: .systemTeal, closeIconTint: .systemTeal)
+    lightColors: CheckoutColors(progressIndicatorColor: .systemBlue, closeIconTintColor: .systemBlue),
+    darkColors: CheckoutColors(progressIndicatorColor: .systemTeal, closeIconTintColor: .systemTeal)
   ))
 }
 ```
@@ -314,8 +314,8 @@ Use `customize` to derive a modified copy without changing the original palette 
 ```swift
 let appearance = CheckoutAppearance.app(
   .automatic().customize(
-    light: { $0.progressIndicator = .systemBlue },
-    dark: { $0.progressIndicator = .systemTeal }
+    light: { $0.progressIndicatorColor = .systemBlue },
+    dark: { $0.progressIndicatorColor = .systemTeal }
   )
 )
 
@@ -326,7 +326,19 @@ ShopifyCheckoutKit.configure {
 
 Set appearance before presenting checkout. Replacing it with `.storefront()`, `.app(.light())`, `.app(.dark())`, or `.app(.automatic())` restores that appearance's default colors. Updating unrelated settings such as logging, preloading, or the checkout title preserves the configured palette. A presented checkout uses the native colors of the configuration it was created with, including a reused preloaded WebView.
 
-The previous configuration-level `backgroundColor`, `tintColor`, and `closeButtonTintColor` properties, and the corresponding SwiftUI color modifiers, have been removed. Use `CheckoutColors.webViewBackground`, `CheckoutColors.progressIndicator`, and `CheckoutColors.closeIconTint` through `appearance` instead. `CheckoutAppearance` replaces `Configuration.Appearance`, and `CheckoutColorScheme` replaces `Configuration.ColorScheme`. The new types are prefixed with `Checkout` so they do not clash with `SwiftUI.ColorScheme`.
+The previous configuration-level `backgroundColor`, `tintColor`, and `closeButtonTintColor` properties, and the corresponding SwiftUI color modifiers, have been removed. Use `CheckoutColors.webViewBackgroundColor`, `CheckoutColors.progressIndicatorColor`, and `CheckoutColors.closeIconTintColor` through `appearance` instead. `CheckoutAppearance` replaces `Configuration.Appearance`, and `CheckoutColorScheme` replaces `Configuration.ColorScheme`. The new types are prefixed with `Checkout` so they do not clash with `SwiftUI.ColorScheme`.
+
+The `CheckoutColors` color properties and their `init` labels were renamed in this release so that each color name ends in `Color`. The old names were removed without deprecated aliases:
+
+| Old name | New name |
+| --- | --- |
+| `webViewBackground` | `webViewBackgroundColor` |
+| `headerBackground` | `headerBackgroundColor` |
+| `headerFont` | `headerTitleColor` |
+| `progressIndicator` | `progressIndicatorColor` |
+| `closeIconTint` | `closeIconTintColor` |
+
+`closeIcon` and `headerBorderColor` keep their names.
 
 ### Incoming message origin validation
 
@@ -563,9 +575,9 @@ Checkout Kit opens delegated external HTTP(S) links in `SFSafariViewController` 
 default. Deep links, `mailto:`, and `tel:` links open through `UIApplication.shared.open(_:)`.
 
 Use `checkoutAction(for:)` on your UIKit delegate or `.onLinkClick` in SwiftUI to
-customize this behavior. Return `.open` to use the default handling, `.handled`
-when your app handled the link, or `.cancel` to prevent it from opening. For example,
-to open delegated links through the system:
+customize this behavior. Return `.cancel` to prevent the link from opening, `.default`
+to let Checkout Kit use its default handling, or `.handled` after your app opens or
+routes the link itself. For example, to open delegated links through the system:
 
 ```swift
 ShopifyCheckout(checkout: checkoutURL)
@@ -677,14 +689,22 @@ ShopifyAcceleratedCheckoutButtons(cartID: cartID)
 
 `AcceleratedCheckoutButtons` remains available as a deprecated typealias. Use `ShopifyAcceleratedCheckoutButtons` in new code.
 
-You can also render buttons for a single product variant:
+Checkout always starts from a Storefront cart that your app owns. For a product page, provide the cart when the buyer taps a wallet button; Checkout Kit calls the closure once per accepted tap and never while rendering:
 
 ```swift
-ShopifyAcceleratedCheckoutButtons(
-  variantID: "gid://shopify/ProductVariant/...",
-  quantity: 1
-)
+ShopifyAcceleratedCheckoutButtons(variantID: selection.variantID) { request in
+  // Create, reuse, or update a buy-now cart. Return its ID.
+  // `request.wallet` is the wallet the buyer tapped.
+  .cart(try await cartStore.prepareBuyNowCart(
+    variantID: selection.variantID,
+    quantity: selection.quantity
+  ))
+}
 ```
+
+If the cart should use an authenticated buyer's identity, create or update it with that identity, including the customer access token, before returning its ID. This ensures customer-specific cart state is resolved before wallet presentation. `Configuration.customer` remains available for wallet buyer-identity updates, but it does not initialize a cart returned by `getCart`.
+
+Return `.failed` when the app has already handled a cart-creation failure; no wallet opens and `onFail` is not called. If the closure throws, including a thrown `CancellationError`, `.onFail` receives the error and no wallet opens.
 
 Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
 

@@ -471,9 +471,6 @@ extension StorefrontAPI {
         let userErrors: [CartUserError]
     }
 
-    /// Cart create payload
-    typealias CartCreatePayload = CartPayload
-
     /// Cart buyer identity update payload
     typealias CartBuyerIdentityUpdatePayload = CartPayload
 

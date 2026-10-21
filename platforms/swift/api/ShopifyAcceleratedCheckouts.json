@@ -208,11 +208,146 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "NSObjectProtocol",
+            "printedName": "NSObjectProtocol",
+            "usr": "c:objc(pl)NSObject"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
             "name": "Sendable",
             "printedName": "Sendable",
             "usr": "s:s8SendableP",
             "mangledName": "$ss8SendableP"
           },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CartRequest",
+        "printedName": "CartRequest",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "wallet",
+            "printedName": "wallet",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Wallet",
+                "printedName": "ShopifyAcceleratedCheckouts.Wallet",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts11CartRequestV6walletAA6WalletVvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts11CartRequestV6walletAA6WalletVvp",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Wallet",
+                    "printedName": "ShopifyAcceleratedCheckouts.Wallet",
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts11CartRequestV6walletAA6WalletVvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts11CartRequestV6walletAA6WalletVvg",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:27ShopifyAcceleratedCheckouts11CartRequestV",
+        "mangledName": "$s27ShopifyAcceleratedCheckouts11CartRequestV",
+        "moduleName": "ShopifyAcceleratedCheckouts",
+        "conformances": [
           {
             "kind": "Conformance",
             "name": "Copyable",
@@ -229,44 +364,125 @@
           },
           {
             "kind": "Conformance",
-            "name": "NSObjectProtocol",
-            "printedName": "NSObjectProtocol",
-            "usr": "c:objc(pl)NSObject"
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          }
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "CartResult",
+        "printedName": "CartResult",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "failed",
+            "printedName": "failed",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CartResult",
+                "printedName": "ShopifyAcceleratedCheckouts.CartResult",
+                "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV6failedACvpZ",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts10CartResultV6failedACvpZ",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CartResult",
+                    "printedName": "ShopifyAcceleratedCheckouts.CartResult",
+                    "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV6failedACvgZ",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts10CartResultV6failedACvgZ",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Function",
+            "name": "cart",
+            "printedName": "cart(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CartResult",
+                "printedName": "ShopifyAcceleratedCheckouts.CartResult",
+                "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV4cartyACSSFZ",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts10CartResultV4cartyACSSFZ",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "static": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Struct",
+        "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV",
+        "mangledName": "$s27ShopifyAcceleratedCheckouts10CartResultV",
+        "moduleName": "ShopifyAcceleratedCheckouts",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
-            "name": "CVarArg",
-            "printedName": "CVarArg",
-            "usr": "s:s7CVarArgP",
-            "mangledName": "$ss7CVarArgP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CustomDebugStringConvertible",
-            "printedName": "CustomDebugStringConvertible",
-            "usr": "s:s28CustomDebugStringConvertibleP",
-            "mangledName": "$ss28CustomDebugStringConvertibleP"
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",
@@ -479,17 +695,17 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
             "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
           },
           {
             "kind": "Conformance",
@@ -1871,37 +2087,9 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "NSObjectProtocol",
             "printedName": "NSObjectProtocol",
             "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -1912,10 +2100,10 @@
           },
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -1923,6 +2111,34 @@
             "printedName": "CustomDebugStringConvertible",
             "usr": "s:s28CustomDebugStringConvertibleP",
             "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           }
         ]
       },
@@ -1950,37 +2166,9 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "NSObjectProtocol",
             "printedName": "NSObjectProtocol",
             "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -1991,10 +2179,10 @@
           },
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -2002,6 +2190,34 @@
             "printedName": "CustomDebugStringConvertible",
             "usr": "s:s28CustomDebugStringConvertibleP",
             "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           }
         ]
       },
@@ -2030,37 +2246,9 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "NSObjectProtocol",
             "printedName": "NSObjectProtocol",
             "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -2071,10 +2259,10 @@
           },
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -2082,6 +2270,34 @@
             "printedName": "CustomDebugStringConvertible",
             "usr": "s:s28CustomDebugStringConvertibleP",
             "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           }
         ]
       },
@@ -2110,37 +2326,9 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "NSObjectProtocol",
             "printedName": "NSObjectProtocol",
             "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -2151,10 +2339,10 @@
           },
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -2162,6 +2350,34 @@
             "printedName": "CustomDebugStringConvertible",
             "usr": "s:s28CustomDebugStringConvertibleP",
             "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           }
         ]
       },
@@ -2190,37 +2406,9 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "NSObjectProtocol",
             "printedName": "NSObjectProtocol",
             "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -2231,10 +2419,10 @@
           },
           {
             "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -2242,6 +2430,34 @@
             "printedName": "CustomDebugStringConvertible",
             "usr": "s:s28CustomDebugStringConvertibleP",
             "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           }
         ]
       },
@@ -2412,7 +2628,8 @@
             "static": true,
             "implicit": true,
             "declAttributes": [
-              "Implements"
+              "Implements",
+              "Semantics"
             ],
             "funcSelfKind": "NonMutating"
           }
@@ -2425,17 +2642,17 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
             "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
           },
           {
             "kind": "Conformance",
@@ -2465,15 +2682,15 @@
                     "kind": "TypeNominal",
                     "name": "Wallet",
                     "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                   }
                 ],
                 "usr": "s:Sa"
               }
             ],
             "declKind": "Var",
-            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvp",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvp",
+            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvp",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "HasInitialValue",
@@ -2497,15 +2714,15 @@
                         "kind": "TypeNominal",
                         "name": "Wallet",
                         "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
+                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                       }
                     ],
                     "usr": "s:Sa"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvg",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvg",
+                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvg",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -2532,15 +2749,15 @@
                         "kind": "TypeNominal",
                         "name": "Wallet",
                         "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
+                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                       }
                     ],
                     "usr": "s:Sa"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvs",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletOGvs",
+                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvs",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsSayAA6WalletVGvs",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "implicit": true,
                 "declAttributes": [
@@ -2581,7 +2798,7 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(variantID:quantity:)",
+            "printedName": "init(variantID:getCart:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2596,15 +2813,28 @@
                 "usr": "s:SS"
               },
               {
-                "kind": "TypeNominal",
-                "name": "Int",
-                "printedName": "Swift.Int",
-                "usr": "s:Si"
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyAcceleratedCheckouts.CartRequest) async throws -> ShopifyAcceleratedCheckouts.CartResult",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CartResult",
+                    "printedName": "ShopifyAcceleratedCheckouts.CartResult",
+                    "usr": "s:27ShopifyAcceleratedCheckouts10CartResultV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CartRequest",
+                    "printedName": "ShopifyAcceleratedCheckouts.CartRequest",
+                    "usr": "s:27ShopifyAcceleratedCheckouts11CartRequestV"
+                  }
+                ]
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV9variantID8quantityACSS_Sitcfc",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV9variantID8quantityACSS_Sitcfc",
+            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV9variantID7getCartACSS_AA0I6ResultVAA0I7RequestVYaKctcfc",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV9variantID7getCartACSS_AA0I6ResultVAA0I7RequestVYaKctcfc",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",
@@ -3048,15 +3278,15 @@
                     "kind": "TypeNominal",
                     "name": "Wallet",
                     "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                   }
                 ],
                 "usr": "s:Sa"
               }
             ],
             "declKind": "Func",
-            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsyACSayAA6WalletOGF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsyACSayAA6WalletOGF",
+            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsyACSayAA6WalletVGF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV7walletsyACSayAA6WalletVGF",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "declAttributes": [
               "Preconcurrency",
@@ -3163,6 +3393,34 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
             "name": "View",
             "printedName": "View",
             "children": [
@@ -3189,34 +3447,6 @@
             ],
             "usr": "s:7SwiftUI4ViewP",
             "mangledName": "$s7SwiftUI4ViewP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -3521,10 +3751,10 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
               },
               {
                 "kind": "Conformance",
@@ -3535,24 +3765,24 @@
               },
               {
                 "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Escapable",
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           },
@@ -3891,10 +4121,10 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
               },
               {
                 "kind": "Conformance",
@@ -3905,24 +4135,24 @@
               },
               {
                 "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Escapable",
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           },
@@ -4224,10 +4454,10 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
               },
               {
                 "kind": "Conformance",
@@ -4238,24 +4468,24 @@
               },
               {
                 "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Escapable",
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           },
@@ -4449,10 +4679,24 @@
             "conformances": [
               {
                 "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
                 "name": "Equatable",
                 "printedName": "Equatable",
                 "usr": "s:SQ",
                 "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
               },
               {
                 "kind": "Conformance",
@@ -4496,20 +4740,6 @@
                 "printedName": "SendableMetatype",
                 "usr": "s:s16SendableMetatypeP",
                 "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Escapable",
-                "printedName": "Escapable",
-                "usr": "s:s9EscapableP",
-                "mangledName": "$ss9EscapableP"
               }
             ]
           },
@@ -4606,40 +4836,98 @@
         "children": [
           {
             "kind": "Var",
+            "name": "rawValue",
+            "printedName": "rawValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8rawValueSSvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8rawValueSSvp",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8rawValueSSvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8rawValueSSvg",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "applePay",
             "printedName": "applePay",
             "children": [
               {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyAcceleratedCheckouts.Wallet.Type) -> ShopifyAcceleratedCheckouts.Wallet",
+                "kind": "TypeNominal",
+                "name": "Wallet",
+                "printedName": "ShopifyAcceleratedCheckouts.Wallet",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8applePayACvpZ",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8applePayACvpZ",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Wallet",
                     "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyAcceleratedCheckouts.Wallet.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Wallet",
-                        "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
-                      }
-                    ]
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                   }
-                ]
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8applePayACvgZ",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8applePayACvgZ",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
               }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:27ShopifyAcceleratedCheckouts6WalletO8applePayyA2CmF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO8applePayyA2CmF",
-            "moduleName": "ShopifyAcceleratedCheckouts"
+            ]
           },
           {
             "kind": "Var",
@@ -4647,36 +4935,48 @@
             "printedName": "shopPay",
             "children": [
               {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyAcceleratedCheckouts.Wallet.Type) -> ShopifyAcceleratedCheckouts.Wallet",
+                "kind": "TypeNominal",
+                "name": "Wallet",
+                "printedName": "ShopifyAcceleratedCheckouts.Wallet",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts6WalletV7shopPayACvpZ",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV7shopPayACvpZ",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "static": true,
+            "declAttributes": [
+              "HasInitialValue",
+              "HasStorage"
+            ],
+            "isLet": true,
+            "hasStorage": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
                 "children": [
                   {
                     "kind": "TypeNominal",
                     "name": "Wallet",
                     "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyAcceleratedCheckouts.Wallet.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "Wallet",
-                        "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                        "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
-                      }
-                    ]
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                   }
-                ]
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts6WalletV7shopPayACvgZ",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV7shopPayACvgZ",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "static": true,
+                "implicit": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
+                "accessorKind": "get"
               }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:27ShopifyAcceleratedCheckouts6WalletO7shopPayyA2CmF",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO7shopPayyA2CmF",
-            "moduleName": "ShopifyAcceleratedCheckouts"
+            ]
           },
           {
             "kind": "Constructor",
@@ -4692,7 +4992,7 @@
                     "kind": "TypeNominal",
                     "name": "Wallet",
                     "printedName": "ShopifyAcceleratedCheckouts.Wallet",
-                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletO"
+                    "usr": "s:27ShopifyAcceleratedCheckouts6WalletV"
                   }
                 ],
                 "usr": "s:Sq"
@@ -4705,13 +5005,9 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:27ShopifyAcceleratedCheckouts6WalletO8rawValueACSgSS_tcfc",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO8rawValueACSgSS_tcfc",
+            "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8rawValueACSgSS_tcfc",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8rawValueACSgSS_tcfc",
             "moduleName": "ShopifyAcceleratedCheckouts",
-            "implicit": true,
-            "declAttributes": [
-              "Inlinable"
-            ],
             "init_kind": "Designated"
           },
           {
@@ -4727,67 +5023,37 @@
               }
             ],
             "declKind": "TypeAlias",
-            "usr": "s:27ShopifyAcceleratedCheckouts6WalletO8RawValuea",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO8RawValuea",
+            "usr": "s:27ShopifyAcceleratedCheckouts6WalletV8RawValuea",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV8RawValuea",
             "moduleName": "ShopifyAcceleratedCheckouts",
             "implicit": true
-          },
-          {
-            "kind": "Var",
-            "name": "rawValue",
-            "printedName": "rawValue",
-            "children": [
-              {
-                "kind": "TypeNominal",
-                "name": "String",
-                "printedName": "Swift.String",
-                "usr": "s:SS"
-              }
-            ],
-            "declKind": "Var",
-            "usr": "s:27ShopifyAcceleratedCheckouts6WalletO8rawValueSSvp",
-            "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO8rawValueSSvp",
-            "moduleName": "ShopifyAcceleratedCheckouts",
-            "implicit": true,
-            "accessors": [
-              {
-                "kind": "Accessor",
-                "name": "Get",
-                "printedName": "Get()",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "String",
-                    "printedName": "Swift.String",
-                    "usr": "s:SS"
-                  }
-                ],
-                "declKind": "Accessor",
-                "usr": "s:27ShopifyAcceleratedCheckouts6WalletO8rawValueSSvg",
-                "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO8rawValueSSvg",
-                "moduleName": "ShopifyAcceleratedCheckouts",
-                "implicit": true,
-                "declAttributes": [
-                  "Inlinable"
-                ],
-                "accessorKind": "get"
-              }
-            ]
           }
         ],
-        "declKind": "Enum",
-        "usr": "s:27ShopifyAcceleratedCheckouts6WalletO",
-        "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletO",
+        "declKind": "Struct",
+        "usr": "s:27ShopifyAcceleratedCheckouts6WalletV",
+        "mangledName": "$s27ShopifyAcceleratedCheckouts6WalletV",
         "moduleName": "ShopifyAcceleratedCheckouts",
-        "enumRawTypeName": "String",
-        "isEnumExhaustive": true,
         "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
           {
             "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -4820,17 +5086,17 @@
           },
           {
             "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       }

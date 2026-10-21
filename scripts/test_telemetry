@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Runs the telemetry tests for every language, or a single one.
+# Usage: dev telemetry test [typescript|swift|kotlin]
+
+set -e
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+cd "$ROOT_DIR"
+run_typescript() { (cd platforms/web/internal/telemetry && pnpm test); }
+run_swift() {
+  # xcode_run only auto-discovers test targets under
+  # platforms/swift/Tests, so pass the telemetry target/suite
+  # pair explicitly.
+  (cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package CheckoutKitTelemetryTests/CheckoutKitTelemetryTests)
+}
+run_kotlin() {
+  platforms/android/gradlew -p platforms/android :shopify-checkout:testDebugUnitTest \
+    --tests "com.shopify.checkoutkit.checkout.telemetry.*" \
+    --tests "com.shopify.checkoutkit.checkout.Telemetry*" \
+    --console=plain
+}
+case "${1:-all}" in
+  typescript|ts) run_typescript ;;
+  swift|ios) run_swift ;;
+  kotlin|android) run_kotlin ;;
+  all) run_typescript; run_swift; run_kotlin ;;
+  *) echo "Usage: dev telemetry test [typescript|swift|kotlin]"; exit 1 ;;
+esac

@@ -7,10 +7,39 @@ android:
   - &exclude-docs-directory '!**/docs/**'
 swift:
   - 'platforms/swift/**'
+  - 'ShopifyCheckoutKit.podspec'
   - *exclude-markdown
   - *exclude-docs-directory
 reactNative:
   - 'platforms/react-native/**'
+  - *exclude-markdown
+  - *exclude-docs-directory
+# React Native without its iOS-only files. JavaScript, dependencies, and codegen
+# specs feed the Android Gradle build, so they stay included.
+reactNativeAndroid:
+  - 'platforms/react-native/**'
+  - '!platforms/react-native/ios/**'
+  - '!platforms/react-native/sample/ios/**'
+  - '!platforms/react-native/sample/Gemfile'
+  - '!platforms/react-native/sample/Gemfile.lock'
+  - '!platforms/react-native/test/rct-integration-app/**'
+  - '!platforms/react-native/*.podspec'
+  - *exclude-markdown
+  - *exclude-docs-directory
+# Inputs to the React Native Swift lint jobs: the Swift sources that
+# scripts/lint_swift checks, the lint configuration, the lint scripts, and the
+# shared scripts and Mint pins that lint_swift runs.
+reactNativeSwift:
+  - 'platforms/react-native/ios/**'
+  - 'platforms/react-native/sample/ios/**'
+  - 'platforms/react-native/test/rct-integration-app/**'
+  - 'platforms/react-native/.swiftlint.yml'
+  - 'platforms/react-native/.swiftformat'
+  - 'platforms/react-native/scripts/**'
+  - 'platforms/react-native/sample/scripts/**'
+  - 'scripts/swift_mint'
+  - 'scripts/check_xcodebuild_package_resolution'
+  - 'platforms/swift/Mintfile'
   - *exclude-markdown
   - *exclude-docs-directory
 web:
@@ -26,8 +55,8 @@ telemetry:
   - 'platforms/swift/Sources/Internal/Telemetry/**'
   - 'platforms/swift/Tests/Internal/CheckoutKitTelemetryTests/**'
   - 'platforms/web/internal/telemetry/**'
-  - 'platforms/android/shopify-checkout-kit/src/main/java/com/shopify/checkoutkit/telemetry/**'
-  - 'platforms/android/shopify-checkout-kit/src/test/java/com/shopify/checkoutkit/telemetry/**'
+  - 'platforms/android/shopify-checkout/src/main/java/com/shopify/checkoutkit/internal/telemetry/**'
+  - 'platforms/android/shopify-checkout/src/test/java/com/shopify/checkoutkit/checkout/telemetry/**'
   - *exclude-docs-directory
 protocol:
   - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/**'

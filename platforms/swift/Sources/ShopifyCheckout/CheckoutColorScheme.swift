@@ -3,7 +3,8 @@ import UIKit
 /// The color scheme to use when presenting checkout.
 ///
 /// This determines the color of both the web content displayed in the web view and
-/// the native elements around it, such as the header background and header font.
+/// the native elements around it, such as the header background color and header
+/// title color.
 public enum CheckoutColorScheme: Equatable, Sendable {
     /// Always show checkout in a light color scheme, using the provided colors for
     /// native elements.

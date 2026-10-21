@@ -41,13 +41,13 @@ class CheckoutColorSchemeTests: XCTestCase {
         let original = CheckoutColorScheme.dark()
 
         let customized = original.customize {
-            $0.closeIconTint = .red
+            $0.closeIconTintColor = .red
         }
 
         XCTAssertEqual(customized.id, original.id)
-        XCTAssertNil(original.colors(isDark: true).closeIconTint)
-        XCTAssertEqual(customized.colors(isDark: true).closeIconTint, .red)
-        XCTAssertEqual(customized.colors(isDark: true).webViewBackground, original.colors(isDark: true).webViewBackground)
+        XCTAssertNil(original.colors(isDark: true).closeIconTintColor)
+        XCTAssertEqual(customized.colors(isDark: true).closeIconTintColor, .red)
+        XCTAssertEqual(customized.colors(isDark: true).webViewBackgroundColor, original.colors(isDark: true).webViewBackgroundColor)
     }
 
     func testCustomizeAppliesSharedOverridesToBothAutomaticPalettes() {
@@ -57,47 +57,47 @@ class CheckoutColorSchemeTests: XCTestCase {
         )
 
         let customized = original.customize {
-            $0.closeIconTint = .red
+            $0.closeIconTintColor = .red
         }
 
-        XCTAssertNil(original.colors(isDark: false).closeIconTint)
-        XCTAssertNil(original.colors(isDark: true).closeIconTint)
-        XCTAssertEqual(customized.colors(isDark: false).closeIconTint, .red)
-        XCTAssertEqual(customized.colors(isDark: true).closeIconTint, .red)
-        XCTAssertEqual(customized.colors(isDark: false).webViewBackground, .white)
-        XCTAssertEqual(customized.colors(isDark: true).webViewBackground, .black)
+        XCTAssertNil(original.colors(isDark: false).closeIconTintColor)
+        XCTAssertNil(original.colors(isDark: true).closeIconTintColor)
+        XCTAssertEqual(customized.colors(isDark: false).closeIconTintColor, .red)
+        XCTAssertEqual(customized.colors(isDark: true).closeIconTintColor, .red)
+        XCTAssertEqual(customized.colors(isDark: false).webViewBackgroundColor, .white)
+        XCTAssertEqual(customized.colors(isDark: true).webViewBackgroundColor, .black)
     }
 
     func testCustomizeSupportsIndependentAutomaticOverrides() {
         let original = CheckoutColorScheme.automatic()
 
         let customized = original.customize(
-            light: { $0.closeIconTint = .red },
-            dark: { $0.closeIconTint = .blue }
+            light: { $0.closeIconTintColor = .red },
+            dark: { $0.closeIconTintColor = .blue }
         )
 
-        XCTAssertEqual(customized.colors(isDark: false).closeIconTint, .red)
-        XCTAssertEqual(customized.colors(isDark: true).closeIconTint, .blue)
+        XCTAssertEqual(customized.colors(isDark: false).closeIconTintColor, .red)
+        XCTAssertEqual(customized.colors(isDark: true).closeIconTintColor, .blue)
         XCTAssertEqual(original, .automatic())
     }
 
     func testCustomizeWithSeparateClosuresAppliesOnlyTheDarkClosureToDark() {
         let customized = CheckoutColorScheme.dark().customize(
-            light: { $0.closeIconTint = .red },
-            dark: { $0.closeIconTint = .blue }
+            light: { $0.closeIconTintColor = .red },
+            dark: { $0.closeIconTintColor = .blue }
         )
 
-        XCTAssertEqual(customized.colors(isDark: true).closeIconTint, .blue)
+        XCTAssertEqual(customized.colors(isDark: true).closeIconTintColor, .blue)
         XCTAssertEqual(customized.id, "dark")
     }
 
     func testCustomizeWithSeparateClosuresAppliesOnlyTheLightClosureToLight() {
         let customized = CheckoutColorScheme.light().customize(
-            light: { $0.closeIconTint = .red },
-            dark: { $0.closeIconTint = .blue }
+            light: { $0.closeIconTintColor = .red },
+            dark: { $0.closeIconTintColor = .blue }
         )
 
-        XCTAssertEqual(customized.colors(isDark: false).closeIconTint, .red)
+        XCTAssertEqual(customized.colors(isDark: false).closeIconTintColor, .red)
         XCTAssertEqual(customized.id, "light")
     }
 
@@ -106,7 +106,7 @@ class CheckoutColorSchemeTests: XCTestCase {
             lightColors: makeColors(background: .red),
             darkColors: makeColors(background: .blue)
         )
-        let color = scheme.color { $0.webViewBackground }
+        let color = scheme.color { $0.webViewBackgroundColor }
 
         XCTAssertEqual(color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)), .red)
         XCTAssertEqual(color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)), .blue)
@@ -117,8 +117,8 @@ class CheckoutColorSchemeTests: XCTestCase {
             traits.userInterfaceStyle == .dark ? .blue : .red
         }
         let colors = makeColors(background: dynamicColor)
-        let lightColor = CheckoutColorScheme.light(colors: colors).color { $0.webViewBackground }
-        let darkColor = CheckoutColorScheme.dark(colors: colors).color { $0.webViewBackground }
+        let lightColor = CheckoutColorScheme.light(colors: colors).color { $0.webViewBackgroundColor }
+        let darkColor = CheckoutColorScheme.dark(colors: colors).color { $0.webViewBackgroundColor }
 
         XCTAssertEqual(lightColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)), .red)
         XCTAssertEqual(darkColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)), .blue)
@@ -129,7 +129,7 @@ class CheckoutColorSchemeTests: XCTestCase {
             traits.accessibilityContrast == .high ? .green : .red
         }
         let scheme = CheckoutColorScheme.dark(colors: makeColors(background: dynamicColor))
-        let color = scheme.color { $0.webViewBackground }
+        let color = scheme.color { $0.webViewBackgroundColor }
         let traits = UITraitCollection(traitsFrom: [
             UITraitCollection(userInterfaceStyle: .light),
             UITraitCollection(accessibilityContrast: .high)
@@ -153,6 +153,6 @@ class CheckoutColorSchemeTests: XCTestCase {
     }
 
     private func makeColors(background: UIColor) -> CheckoutColors {
-        CheckoutColors(webViewBackground: background)
+        CheckoutColors(webViewBackgroundColor: background)
     }
 }

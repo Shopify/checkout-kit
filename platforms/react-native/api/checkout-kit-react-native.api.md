@@ -62,19 +62,12 @@ export enum AcceleratedCheckoutWallet {
     shopPay = "shopPay"
 }
 
-// @public (undocumented)
-export interface AndroidAutomaticColors {
-    dark: AndroidColors;
-    light: AndroidColors;
-}
+// @public
+export type AndroidAutomaticColors = AutomaticColors<AndroidColors>;
 
-// @public (undocumented)
-export interface AndroidColors {
-    backgroundColor: string;
-    closeButtonColor?: string;
-    headerBackgroundColor: string;
-    headerTextColor: string;
-    progressIndicator: string;
+// @public
+export interface AndroidColors extends CheckoutColors {
+    dragHandleColor?: string | null;
 }
 
 // @public (undocumented)
@@ -136,6 +129,12 @@ export enum ApplePayStyle {
 }
 
 // @public
+export type AutomaticColors<Palette extends CheckoutColors = CheckoutColors> = Palette & {
+    light?: Palette | null;
+    dark?: Palette | null;
+};
+
+// @public
 export interface Checkout {
     [key: string]: unknown;
     // (undocumented)
@@ -178,6 +177,43 @@ export interface Checkout {
     totals: CheckoutTotal[];
 }
 
+// @public
+export type CheckoutAppearance = {
+    type: CheckoutAppearanceType.app;
+    colorScheme: CheckoutColorScheme.light | CheckoutColorScheme.dark;
+    colors?: PlatformColors<IosColors, AndroidColors> | null;
+} | {
+    type: CheckoutAppearanceType.app;
+    colorScheme?: CheckoutColorScheme.automatic;
+    colors?: PlatformColors<IosAutomaticColors, AndroidAutomaticColors> | null;
+} | {
+    type: CheckoutAppearanceType.storefront;
+    colors?: PlatformColors<IosColors, AndroidColors> | null;
+};
+
+// @public
+export enum CheckoutAppearanceType {
+    app = "app",
+    storefront = "storefront"
+}
+
+// @public
+export interface CheckoutColors {
+    closeIconTintColor?: string | null;
+    headerBackgroundColor?: string;
+    headerBorderColor?: string | null;
+    headerTitleColor?: string;
+    progressIndicatorColor?: string;
+    webViewBackgroundColor?: string;
+}
+
+// @public
+export enum CheckoutColorScheme {
+    automatic = "automatic",
+    dark = "dark",
+    light = "light"
+}
+
 // @public (undocumented)
 export interface CheckoutCompleteEvent {
     // (undocumented)
@@ -203,9 +239,7 @@ export enum CheckoutErrorCode {
 export interface CheckoutEventHandlers {
     linkAction?: CheckoutLinkAction;
     onComplete?: (event: CheckoutCompleteEvent) => void;
-    // (undocumented)
     onDismiss?: () => void;
-    // (undocumented)
     onFail?: (event: CheckoutFailureEvent) => void;
     onLinkClick?: (link: CheckoutLink) => void;
     // (undocumented)
@@ -267,36 +301,13 @@ export interface CheckoutUpdateEvent {
     checkout: Checkout;
 }
 
-// @public (undocumented)
-export enum ColorScheme {
-    // (undocumented)
-    automatic = "automatic",
-    // (undocumented)
-    dark = "dark",
-    // (undocumented)
-    light = "light",
-    // (undocumented)
-    storefront = "storefront"
-}
-
 // Warning: (ae-forgotten-export) The symbol "CommonConfiguration" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
 export type Configuration = CommonConfiguration & {
     acceleratedCheckouts?: AcceleratedCheckoutConfiguration;
-} & ({
-    colorScheme?: ColorScheme.storefront | ColorScheme.light | ColorScheme.dark;
-    colors?: {
-        ios?: IosColors;
-        android?: AndroidColors;
-    };
-} | {
-    colorScheme?: ColorScheme.automatic;
-    colors?: {
-        ios?: IosColors;
-        android?: AndroidAutomaticColors;
-    };
-});
+    appearance?: CheckoutAppearance;
+};
 
 // @public
 export class DispatchEventParityError extends Error {
@@ -314,12 +325,11 @@ export interface GeolocationRequestEvent {
     respond: (allow: boolean) => void;
 }
 
-// @public (undocumented)
-export interface IosColors {
-    backgroundColor?: string;
-    closeButtonColor?: string;
-    tintColor?: string;
-}
+// @public
+export type IosAutomaticColors = AutomaticColors<IosColors>;
+
+// @public
+export type IosColors = CheckoutColors;
 
 // @public (undocumented)
 export class LifecycleEventParseError extends Error {
@@ -332,6 +342,12 @@ export enum LogLevel {
     error = "error",
     none = "none",
     warn = "warn"
+}
+
+// @public
+export interface PlatformColors<Ios, Android> {
+    android?: Android | null;
+    ios?: Ios | null;
 }
 
 // @public

@@ -42,7 +42,7 @@ final class WalletControllerTests: XCTestCase {
             configuration: .testConfiguration
         )
 
-        let result = try await controller.fetchCartByCheckoutIdentifier()
+        let result = try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)
         XCTAssertEqual(result.id, expectedCart.id)
     }
 
@@ -55,16 +55,10 @@ final class WalletControllerTests: XCTestCase {
             configuration: .testConfiguration
         )
 
-        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier()) { error in
-            guard case let ShopifyAcceleratedCheckouts.Error.cartAcquisition(identifier) = error else {
+        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)) { error in
+            guard case ShopifyAcceleratedCheckouts.Error.cartAcquisition = error else {
                 XCTFail("Expected cartAcquisition error, got: \(error)")
                 return
-            }
-
-            if case let .cart(cartID) = identifier {
-                XCTAssertEqual(cartID, "gid://Shopify/Cart/test-cart-id")
-            } else {
-                XCTFail("Expected cart identifier, got: \(identifier)")
             }
         }
     }
@@ -79,55 +73,60 @@ final class WalletControllerTests: XCTestCase {
             configuration: .testConfiguration
         )
 
-        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier()) { error in
+        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)) { error in
             XCTAssertEqual((error as NSError).domain, "StorefrontError")
             XCTAssertEqual((error as NSError).code, 500)
         }
     }
 
-    // MARK: - fetchCartByCheckoutIdentifier Tests - Variant Identifier
+    // MARK: - fetchCartByCheckoutIdentifier Tests - Cart Provider
 
-    func test_fetchCartByCheckoutIdentifier_withVariantIdentifier_shouldSucceed() async throws {
+    func test_fetchCartByCheckoutIdentifier_withCartProvider_shouldResolveAndLoadCart() async throws {
         let expectedCart = StorefrontAPI.Cart.testCart
-        mockStorefront.cartCreateResult = Result<StorefrontAPI.Cart, Error>.success(expectedCart)
+        mockStorefront.cartResult = .success(expectedCart)
+        var providerCalls = 0
 
         controller = MockWalletController(
-            identifier: .variant(variantID: "gid://Shopify/ProductVariant/test-variant-id", quantity: 2),
+            cartSource: .provider { _ in
+                providerCalls += 1
+                return .cart("gid://Shopify/Cart/test-cart-id")
+            },
             storefront: mockStorefront,
             configuration: .testConfiguration
         )
 
-        let result = try await controller.fetchCartByCheckoutIdentifier()
+        let result = try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)
         XCTAssertEqual(result.id, expectedCart.id)
+        XCTAssertEqual(providerCalls, 1)
     }
 
-    func test_fetchCartByCheckoutIdentifier_withVariantIdentifierZeroQuantity_shouldSucceed() async throws {
-        let expectedCart = StorefrontAPI.Cart.testCart
-        mockStorefront.cartCreateResult = Result<StorefrontAPI.Cart, Error>.success(expectedCart)
+    func test_fetchCartByCheckoutIdentifier_withCartProviderReturningInvalidID_shouldThrowCartAcquisition() async throws {
+        mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart)
 
         controller = MockWalletController(
-            identifier: .variant(variantID: "gid://Shopify/ProductVariant/test-variant-id", quantity: 0),
+            cartSource: .provider { _ in .cart("gid://Shopify/ProductVariant/test-variant-id") },
             storefront: mockStorefront,
             configuration: .testConfiguration
         )
 
-        let result = try await controller.fetchCartByCheckoutIdentifier()
-        XCTAssertEqual(result.id, expectedCart.id)
+        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)) { error in
+            guard case ShopifyAcceleratedCheckouts.Error.cartAcquisition = error else {
+                XCTFail("Expected cartAcquisition error, got: \(error)")
+                return
+            }
+        }
     }
 
-    func test_fetchCartByCheckoutIdentifier_withVariantIdentifierCartCreateFails_shouldThrowError() async throws {
-        let cartCreateError = NSError(domain: "CartCreateError", code: 400, userInfo: nil)
-        mockStorefront.cartCreateResult = Result<StorefrontAPI.Cart, Error>.failure(cartCreateError)
-
+    func test_fetchCartByCheckoutIdentifier_whenCartProviderThrows_shouldRethrowItsError() async throws {
         controller = MockWalletController(
-            identifier: .variant(variantID: "gid://Shopify/ProductVariant/test-variant-id", quantity: 2),
+            cartSource: .provider { _ in throw NSError(domain: "CartProviderError", code: 400, userInfo: nil) },
             storefront: mockStorefront,
             configuration: .testConfiguration
         )
 
-        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier()) { error in
+        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)) { error in
             let nsError = error as NSError
-            XCTAssertEqual(nsError.domain, "CartCreateError")
+            XCTAssertEqual(nsError.domain, "CartProviderError")
             XCTAssertEqual(nsError.code, 400)
         }
     }
@@ -141,16 +140,50 @@ final class WalletControllerTests: XCTestCase {
             configuration: .testConfiguration
         )
 
-        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier()) { error in
-            guard case let ShopifyAcceleratedCheckouts.Error.cartAcquisition(identifier) = error else {
+        await XCTAssertThrowsErrorAsync(try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)) { error in
+            guard case ShopifyAcceleratedCheckouts.Error.cartAcquisition = error else {
                 XCTFail("Expected cartAcquisition error, got: \(error)")
                 return
             }
+        }
+    }
 
-            if case let .invariant(reason) = identifier {
-                XCTAssertEqual(reason, "Invalid identifier")
-            } else {
-                XCTFail("Expected invariant identifier, got: \(identifier)")
+    func test_cartAcquisition_withProviderAccessKey_shouldRetainOnlyDiagnosticCartID() async {
+        let secret = "synthetic-cart-secret"
+        for cartID in [
+            "gid://shopify/Cart/missing?key=\(secret)#synthetic-fragment",
+            "invalid-cart?key=\(secret)"
+        ] {
+            mockStorefront.cartResult = .success(nil)
+            controller = MockWalletController(
+                cartSource: .provider { _ in .cart(cartID) },
+                storefront: mockStorefront,
+                configuration: .testConfiguration
+            )
+            do {
+                _ = try await controller.fetchCartByCheckoutIdentifier(wallet: .applePay)
+                XCTFail("Expected cart acquisition to fail")
+            } catch {
+                guard let acquisitionError = error as? ShopifyAcceleratedCheckouts.Error else {
+                    XCTFail("Expected cart acquisition error")
+                    continue
+                }
+                guard case let .cartAcquisition(diagnosticID) = acquisitionError else {
+                    XCTFail("Expected cart acquisition error")
+                    continue
+                }
+                XCTAssertEqual(diagnosticID, cartID.hasPrefix("gid://shopify/Cart/") ? "gid://shopify/Cart/missing" : nil)
+                let diagnostics = [
+                    String(describing: error),
+                    String(reflecting: error),
+                    error.localizedDescription,
+                    acquisitionError.toString()
+                ]
+                for diagnostic in diagnostics {
+                    XCTAssertFalse(diagnostic.contains(secret))
+                    XCTAssertFalse(diagnostic.contains("synthetic-fragment"))
+                    XCTAssertFalse(diagnostic.contains(cartID))
+                }
             }
         }
     }

@@ -32,6 +32,6 @@ extension CheckoutDelegate {
     public func checkoutDidUpdate(_: CheckoutUpdateEvent) {}
     public func checkoutDidComplete(_: CheckoutCompleteEvent) {}
     public func checkoutAction(for _: CheckoutLink) -> CheckoutLinkAction {
-        .open
+        .default
     }
 }

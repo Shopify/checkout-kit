@@ -66,7 +66,8 @@ signing {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom('../../../../../../platforms/android/gradle/detekt.config.yml')
-    autoCorrect = true
+    // Lint is read-only; formatting commands opt in with --auto-correct.
+    autoCorrect = false
 }
 
 // Generated protocol files are checked through codegen review, not detekt style rules.

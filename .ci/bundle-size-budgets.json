@@ -2,7 +2,7 @@
   "web": {
     "javascript": {
       "measurement": "bundle",
-      "softKiB": 35,
+      "softKiB": 37,
       "hardKiB": 50
     }
   },

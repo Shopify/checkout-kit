@@ -1,39 +1,43 @@
 import ShopifyCheckoutKit
 import SwiftUI
 
+/// Retains the active controller across button redraws and shares its in-flight state between tap actions.
+@available(iOS 16.0, *)
+@MainActor
+final class WalletButtonAttempt {
+    var controller: WalletController?
+}
+
 @available(iOS 16.0, *)
 @MainActor
 class WalletController: ObservableObject, CheckoutDelegate {
     var eventHandlers: EventHandlers = .init()
-    @Published var identifier: CheckoutIdentifier
+    @Published var cartSource: CartSource
     @Published var storefront: StorefrontAPIProtocol
     @Published var checkoutViewController: CheckoutViewController?
     @Published var configuration: ShopifyAcceleratedCheckouts.Configuration
+    /// True while an accepted tap is resolving the app's cart, so repeated taps don't call the provider again.
+    var isStartingCheckout = false
 
-    init(identifier: CheckoutIdentifier, storefront: StorefrontAPIProtocol, configuration: ShopifyAcceleratedCheckouts.Configuration) {
-        self.identifier = identifier
+    init(cartSource: CartSource, storefront: StorefrontAPIProtocol, configuration: ShopifyAcceleratedCheckouts.Configuration) {
+        self.cartSource = cartSource
         self.storefront = storefront
         self.configuration = configuration
     }
 
-    func fetchCartByCheckoutIdentifier() async throws -> StorefrontAPI.Types.Cart {
-        switch identifier {
-        case let .cart(id):
-            guard let cart = try await storefront.cart(by: GraphQLScalars.ID(id)) else {
-                throw ShopifyAcceleratedCheckouts.Error.cartAcquisition(identifier: identifier)
-            }
-            return cart
+    convenience init(identifier: CheckoutIdentifier, storefront: StorefrontAPIProtocol, configuration: ShopifyAcceleratedCheckouts.Configuration) {
+        self.init(cartSource: .cart(identifier), storefront: storefront, configuration: configuration)
+    }
 
-        case let .variant(id, quantity):
-            let items = Array(repeating: GraphQLScalars.ID(id), count: quantity)
-            return try await storefront.cartCreate(
-                with: items,
-                customer: configuration.customer
-            )
-
-        case .invariant:
-            throw ShopifyAcceleratedCheckouts.Error.cartAcquisition(identifier: identifier)
+    /// Resolves the app's cart for this attempt (calling its provider once, if any) and loads it.
+    func fetchCartByCheckoutIdentifier(wallet: Wallet) async throws -> StorefrontAPI.Types.Cart {
+        let resolved = try await cartSource.resolve(for: CartRequest(wallet: wallet))
+        guard case let .cart(id) = resolved,
+              let cart = try await storefront.cart(by: GraphQLScalars.ID(id))
+        else {
+            throw ShopifyAcceleratedCheckouts.Error.cartAcquisition(cartID: resolved.diagnosticCartID)
         }
+        return cart
     }
 
     func present(url: URL) async throws {
@@ -61,7 +65,7 @@ class WalletController: ObservableObject, CheckoutDelegate {
     }
 
     func checkoutAction(for link: CheckoutLink) -> CheckoutLinkAction {
-        eventHandlers.checkoutAction?(link) ?? .open
+        eventHandlers.checkoutAction?(link) ?? .default
     }
 
     func checkoutDidFail(_ event: CheckoutFailureEvent) {

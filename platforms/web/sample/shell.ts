@@ -1,4 +1,5 @@
 export const SAMPLE_SHELL = `
+  <p id="checkout-kit-provenance">SDK loading…</p>
   <main id="layout">
     <section class="panel settings-panel"></section>
     <section class="panel runtime-panel"></section>

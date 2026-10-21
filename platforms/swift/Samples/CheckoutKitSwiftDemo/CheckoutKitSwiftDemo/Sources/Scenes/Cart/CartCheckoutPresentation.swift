@@ -79,7 +79,7 @@ final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
         switch windowOpenHandler {
         case .default:
             print("[CheckoutKitSwiftDemo] Checkout link delegated to Checkout Kit: \(link.url)")
-            return .open
+            return .default
         case .externalApp:
             print("[CheckoutKitSwiftDemo] Checkout link handled by sample: \(link.url)")
             UIApplication.shared.open(link.url)

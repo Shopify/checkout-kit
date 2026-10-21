@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs the native Android unit tests for the React Native module. They resolve
+# the published Android SDK unless --local is passed.
+# Usage: dev rn test android [--local]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "$SCRIPT_DIR/.."
+for arg in "$@"; do
+  if [ "$arg" = "--local" ]; then
+    export USE_LOCAL_SDK=1
+  fi
+done
+./scripts/publish_android_snapshot
+cd sample/android
+./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies

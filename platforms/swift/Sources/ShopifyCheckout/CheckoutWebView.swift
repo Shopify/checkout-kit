@@ -383,12 +383,12 @@ class CheckoutWebView: WKWebView {
                 return .rejected(reason: "failed to open URL")
             }
 
-            switch self?.linkActionProvider?(CheckoutLink(url: target)) ?? .open {
+            switch self?.linkActionProvider?(CheckoutLink(url: target)) ?? .default {
             case .handled:
                 return .success()
             case .cancel:
                 return .rejected(reason: "link opening canceled")
-            case .open:
+            case .default:
                 break
             }
 
@@ -585,7 +585,7 @@ class CheckoutWebView: WKWebView {
     func applyColorScheme(_ colorScheme: CheckoutColorScheme) {
         overrideUserInterfaceStyle = colorScheme.userInterfaceStyle
         isOpaque = false
-        backgroundColor = colorScheme.color { $0.webViewBackground }
+        backgroundColor = colorScheme.color { $0.webViewBackgroundColor }
         setUnderPageBackgroundColor()
     }
 
@@ -881,12 +881,12 @@ extension CheckoutWebView: WKNavigationDelegate {
         //
         if CheckoutURL(from: url).isDeepLink() {
             Task { @MainActor [externalURLHandler, linkActionProvider] in
-                switch linkActionProvider?(CheckoutLink(url: url)) ?? .open {
+                switch linkActionProvider?(CheckoutLink(url: url)) ?? .default {
                 case .handled:
                     OSLogger.shared.debug("Raw navigation link handled by host")
                 case .cancel:
                     OSLogger.shared.debug("Raw navigation link canceled by host")
-                case .open:
+                case .default:
                     if await externalURLHandler.open(url) {
                         OSLogger.shared.debug("Raw navigation link opened with SDK default handler")
                     } else {

@@ -27,31 +27,6 @@ final class GraphQLDocumentTests: XCTestCase {
         )
     }
 
-    func testDetectsMultipleDirectFragmentUsage() {
-        let document = GraphQLDocument.build(operation: .cartCreate)
-
-        // Should include both CartFragment and CartUserErrorFragment
-        XCTAssertTrue(
-            document.contains("fragment CartFragment"), "Document should contain CartFragment"
-        )
-        XCTAssertTrue(
-            document.contains("fragment CartUserErrorFragment"),
-            "Document should contain CartUserErrorFragment"
-        )
-
-        // Should also include nested fragments
-        XCTAssertTrue(
-            document.contains("fragment CartDeliveryGroupFragment"),
-            "Document should contain CartDeliveryGroupFragment"
-        )
-        XCTAssertTrue(
-            document.contains("fragment CartLineFragment"),
-            "Document should contain CartLineFragment"
-        )
-    }
-
-    // MARK: - Mutation Tests
-
     func testMutationFragments() {
         let document = GraphQLDocument.build(operation: .cartBuyerIdentityUpdate)
 
@@ -184,36 +159,6 @@ final class GraphQLDocumentTests: XCTestCase {
         XCTAssertTrue(
             firstFragmentLine.contains("fragment CartFragment"),
             "First fragment should be CartFragment (the directly referenced one)"
-        )
-    }
-
-    func testFragmentOrderingForMultipleDirectReferences() throws {
-        let document = GraphQLDocument.build(operation: .cartCreate)
-
-        // Both CartFragment and CartUserErrorFragment are directly referenced
-        let cartFragmentRange = try XCTUnwrap(document.range(of: "fragment CartFragment"))
-        let userErrorFragmentRange = try XCTUnwrap(document.range(of: "fragment CartUserErrorFragment"))
-        let cartLineFragmentRange = try XCTUnwrap(document.range(of: "fragment CartLineFragment"))
-        let cartDeliveryGroupFragmentRange = try XCTUnwrap(document.range(
-            of: "fragment CartDeliveryGroupFragment"
-        ))
-
-        // Direct references should come before their dependencies
-        XCTAssertTrue(
-            cartFragmentRange.lowerBound < cartLineFragmentRange.lowerBound,
-            "CartFragment should come before CartLineFragment"
-        )
-        XCTAssertTrue(
-            cartFragmentRange.lowerBound < cartDeliveryGroupFragmentRange.lowerBound,
-            "CartFragment should come before CartDeliveryGroupFragment"
-        )
-        XCTAssertTrue(
-            userErrorFragmentRange.lowerBound < cartLineFragmentRange.lowerBound,
-            "CartUserErrorFragment should come before CartLineFragment"
-        )
-        XCTAssertTrue(
-            userErrorFragmentRange.lowerBound < cartDeliveryGroupFragmentRange.lowerBound,
-            "CartUserErrorFragment should come before CartDeliveryGroupFragment"
         )
     }
 

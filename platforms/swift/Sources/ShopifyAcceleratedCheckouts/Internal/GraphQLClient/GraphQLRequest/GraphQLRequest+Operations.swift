@@ -1,15 +1,5 @@
 @available(iOS 16.0, *)
 enum Operations {
-    static func cartCreate(
-        variables: [String: Any] = [:]
-    ) -> GraphQLRequest<StorefrontAPI.CartCreateResponse> {
-        return GraphQLRequest(
-            operation: .cartCreate,
-            responseType: StorefrontAPI.CartCreateResponse.self,
-            variables: variables
-        )
-    }
-
     static func cartBuyerIdentityUpdate(
         variables: [String: Any] = [:]
     ) -> GraphQLRequest<StorefrontAPI.CartBuyerIdentityUpdateResponse> {

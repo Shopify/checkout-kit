@@ -222,21 +222,4 @@ final class ApplePayViewModifierTests: XCTestCase {
 
         XCTAssertNotNil(view, "View should be created successfully with negative corner radius")
     }
-
-    // MARK: - Helper Methods
-
-    private func extractEnvironmentValue<T>(from _: Mirror, keyPath _: KeyPath<EnvironmentValues, T>) -> T? {
-        // This is a simplified helper - in real tests you might use ViewInspector or similar
-        // For demonstration purposes, we're showing the test structure
-        // In production, you'd need proper reflection or test utilities
-
-        // Note: This would require actual implementation to extract environment values
-        // from SwiftUI views, which is complex due to SwiftUI's opaque types
-
-        // For the purpose of these tests, we're demonstrating the test structure
-        // In practice, you might test this through UI tests or by testing the
-        // underlying ApplePayViewController directly
-
-        return nil
-    }
 }

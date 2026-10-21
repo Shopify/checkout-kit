@@ -1,23 +1,58 @@
 // MARK: Identifier helpers
 
-/// Type of identifier used for checkout
+/// Names the closure that supplies the app's Storefront cart result for one accepted checkout attempt.
+typealias CartProvider = @MainActor (CartRequest) async throws -> CartResult
+
+/// Signals that an app has handled its cart-request failure and the wallet attempt should end quietly.
+struct HandledCartRequestFailure: Error {}
+
+/// Resolves the Storefront cart a checkout attempt starts from.
+enum CartSource {
+    /// A cart ID for a cart page, where the cart already exists when the buttons are created.
+    case cart(CheckoutIdentifier)
+    /// A cart ID resolved by the app after the buyer taps a wallet button, such as on a product Buy Now page.
+    case provider(CartProvider)
+
+    func isValid() -> Bool {
+        guard case let .cart(identifier) = self else { return true }
+        return identifier.isValid()
+    }
+
+    /// Resolves the cart for one checkout attempt.
+    /// A provider is called exactly once per call; its cart ID is validated like a fixed cart ID.
+    @MainActor
+    func resolve(for request: CartRequest) async throws -> CheckoutIdentifier {
+        switch self {
+        case let .cart(identifier):
+            return identifier.parse()
+        case let .provider(provider):
+            let result = try await provider(request)
+            guard let cartID = result.resolvedCartID else {
+                throw HandledCartRequestFailure()
+            }
+            return CheckoutIdentifier.cart(cartID: cartID).parse()
+        }
+    }
+}
+
+/// Identifies a Storefront cart.
 enum CheckoutIdentifier {
-    case variant(variantID: String, quantity: Int)
     case cart(cartID: String)
     case invariant(reason: String)
 
-    var prefix: String {
-        switch self {
-        case .cart: "gid://Shopify/Cart/"
-        case .variant: "gid://Shopify/ProductVariant/"
-        default: "invariant"
-        }
+    static let cartPrefix = "gid://Shopify/Cart/"
+
+    var diagnosticCartID: String? {
+        guard case let .cart(cartID) = parse() else { return nil }
+        return String(cartID.prefix { $0 != "?" && $0 != "#" })
     }
 
     /// Checks for valid ID signature,
-    /// Returns .invariant if validation fails
+    /// Returns false if validation fails. A provider is validated when it is resolved.
     func isValid() -> Bool {
-        if case .invariant = parse() { return false }
+        if case .invariant = parse() {
+            return false
+        }
         return true
     }
 
@@ -27,30 +62,16 @@ enum CheckoutIdentifier {
     func parse() -> CheckoutIdentifier {
         switch self {
         case let .cart(cartID):
-            guard cartID.lowercased().hasPrefix(prefix.lowercased()) else {
+            guard cartID.lowercased().hasPrefix(Self.cartPrefix.lowercased()) else {
                 return .invariant(
                     reason:
-                    "[invariant_violation] Invalid 'cartID' format. Expected to start with '\(prefix)', received: '\(cartID)'"
+                    "[invariant_violation] Invalid 'cartID' format. Expected to start with '\(Self.cartPrefix)'"
                 )
             }
             return self
 
-        case let .variant(variantID, quantity):
-            guard variantID.lowercased().hasPrefix(prefix.lowercased()) else {
-                return .invariant(
-                    reason:
-                    "[invariant_violation] Invalid 'variantID' format. Expected to start with '\(prefix)', received: '\(variantID)'"
-                )
-            }
-            guard quantity > 0 else {
-                return .invariant(
-                    reason:
-                    "[invariant_violation] Quantity must be greater than 0, received: \(quantity)"
-                )
-            }
+        case .invariant:
             return self
-
-        default: return self
         }
     }
 }

@@ -46,7 +46,7 @@ const StyleSheet = {
 };
 
 const exampleConfig = {
-  colorScheme: 'automatic',
+  appearance: {type: 'app', colorScheme: 'automatic'},
   logLevel: 'error',
   preloading: true,
   telemetry: true,

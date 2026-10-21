@@ -354,10 +354,10 @@ colors to match the merchant's storefront branding:
 ```kotlin
 ShopifyCheckoutKit.configure {
     it.appearance = CheckoutAppearance.Storefront().customize {
-        headerBackground = Color.ResourceId(R.color.storefront_header)
-        headerFont = Color.ResourceId(R.color.storefront_header_text)
-        webViewBackground = Color.ResourceId(R.color.storefront_background)
-        progressIndicator = Color.ResourceId(R.color.storefront_progress)
+        headerBackgroundColor = Color.ResourceId(R.color.storefront_header)
+        headerTitleColor = Color.ResourceId(R.color.storefront_header_text)
+        webViewBackgroundColor = Color.ResourceId(R.color.storefront_background)
+        progressIndicatorColor = Color.ResourceId(R.color.storefront_progress)
         dragHandleColor = Color.ResourceId(R.color.storefront_drag_handle)
     }
 }
@@ -369,17 +369,17 @@ Customize automatic app colors with separate light and dark palettes:
 ShopifyCheckoutKit.configure {
     it.appearance = CheckoutAppearance.App(ColorScheme.Automatic().customize(
         light = {
-            headerBackground = Color.ResourceId(R.color.checkout_header_light)
-            headerFont = Color.ResourceId(R.color.checkout_header_text_light)
-            webViewBackground = Color.ResourceId(R.color.checkout_background_light)
-            progressIndicator = Color.ResourceId(R.color.checkout_progress_light)
+            headerBackgroundColor = Color.ResourceId(R.color.checkout_header_light)
+            headerTitleColor = Color.ResourceId(R.color.checkout_header_text_light)
+            webViewBackgroundColor = Color.ResourceId(R.color.checkout_background_light)
+            progressIndicatorColor = Color.ResourceId(R.color.checkout_progress_light)
             dragHandleColor = Color.ResourceId(R.color.checkout_drag_handle_light)
         },
         dark = {
-            headerBackground = Color.ResourceId(R.color.checkout_header_dark)
-            headerFont = Color.ResourceId(R.color.checkout_header_text_dark)
-            webViewBackground = Color.ResourceId(R.color.checkout_background_dark)
-            progressIndicator = Color.ResourceId(R.color.checkout_progress_dark)
+            headerBackgroundColor = Color.ResourceId(R.color.checkout_header_dark)
+            headerTitleColor = Color.ResourceId(R.color.checkout_header_text_dark)
+            webViewBackgroundColor = Color.ResourceId(R.color.checkout_background_dark)
+            progressIndicatorColor = Color.ResourceId(R.color.checkout_progress_dark)
             dragHandleColor = Color.ResourceId(R.color.checkout_drag_handle_dark)
         },
     ))
@@ -403,7 +403,7 @@ ShopifyCheckoutKit.configure {
         maxWidthDp = 640f
         titleAlignment = CheckoutSheetTitleAlignment.CENTER
         toolbarElevationDp = 0f
-        closeIconTint = Color.ResourceId(R.color.checkout_close)
+        closeIconTintColor = Color.ResourceId(R.color.checkout_close)
         dismissal = CheckoutSheetDismissal {
             dragToDismissEnabled = true
             tapAwayToDismissEnabled = true
@@ -423,11 +423,11 @@ very narrow widths: they can make checkout unusable. The SDK handles system bar 
 overlap the status bar.
 
 Use `closeIcon = DrawableResource(R.drawable.ic_checkout_close)` to provide a custom close drawable. If both
-`closeIcon` and `closeIconTint` are set, the custom drawable takes precedence.
+`closeIcon` and `closeIconTintColor` are set, the custom drawable takes precedence.
 
 Set `dragHandle.visible = true` to show a fixed, visual-only drag handle at the top of the sheet. The handle is hidden
 when `dismissal.dragToDismissEnabled = false` so disabled drag gestures are not presented as available. Configure
-`dragHandleColor` in `ColorScheme` to override the default header-font-derived handle color.
+`dragHandleColor` in `ColorScheme` to override the default handle color derived from the header title color.
 
 ### Title localization
 
@@ -655,7 +655,7 @@ Start, update, and completion callbacks receive event wrappers with `event.check
 payload. Use the Kit-owned `Checkout` type for the snapshot. Failure callbacks receive `event.error`, so existing
 recovery code can continue to inspect the same `CheckoutErrorCode` and optional HTTP status.
 
-Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `CheckoutLinkAction.Open`,
+Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `CheckoutLinkAction.Default`,
 `CheckoutLinkAction.Handled`, or `CheckoutLinkAction.Cancel` instead of a protocol response.
 
 ## Browser and system callbacks
@@ -712,9 +712,9 @@ Some payment providers redirect buyers to external banking apps or web pages. Co
 Checkout Kit opens delegated external HTTPS links in Android Custom Tabs by default. `mailto:`, `tel:`, and
 custom-scheme links open through Android intents. Register `onLinkClick` to choose the action for a link:
 
-- Return `CheckoutLinkAction.Open` to use Checkout Kit's default handling.
-- Return `CheckoutLinkAction.Handled` after your app has opened or routed the link itself.
 - Return `CheckoutLinkAction.Cancel` to prevent the link from opening.
+- Return `CheckoutLinkAction.Default` when your app does not handle the link, so Checkout Kit uses its default handling.
+- Return `CheckoutLinkAction.Handled` after your app has opened or routed the link itself.
 
 For example, open links with Android intent handling instead of Custom Tabs:
 

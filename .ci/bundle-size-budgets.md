@@ -7,9 +7,10 @@ shipped JavaScript under `dist`.
 Limits are KiB (1,024 bytes), including fractions. Comparisons use exact
 bytes, not the rounded numbers displayed in PR reports.
 
-Web starts with a 35 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
-using `"measurement": "bundle"`. This currently measures `dist/index.js`
-and will include any additional JavaScript chunks shipped in `dist`. Declarations,
+Web has a 37 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
+using `"measurement": "bundle"`. This measures all entry points and shared chunks
+in `dist`. The shared-checkout extraction measures 36.1 KiB, compared with
+35.8 KiB before extraction. Declarations,
 source maps, and other package contents are excluded from this measurement.
 Web's deterministic gzip bundle size and npm package size remain informational.
 
@@ -109,6 +110,9 @@ The evaluator, comment commands, and aggregate check need no platform-specific p
 
 **Package Size** builds the explicit PR head and base SHAs with a read-only token,
 including on drafts. It uploads measurements and the informational file breakdown.
+Title and body edits skip every job and do not cancel a running measurement;
+**Size budgets** ignores those skipped runs and republishes the latest
+measurement. Changing the PR base still measures again.
 When no packages are affected, detection uploads an empty report and skips the
 measurement job, avoiding a second runner and the head/base build checkouts.
 The empty report still completes **Size budgets** through the same publisher.

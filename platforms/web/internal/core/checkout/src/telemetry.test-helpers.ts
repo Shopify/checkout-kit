@@ -8,9 +8,10 @@ import { overrideTelemetryFactoryForTesting } from "./telemetry";
 
 // Stub the transport so an unmocked flush can never reach the
 // production OTLP endpoint from a test run.
-export function createTestTelemetry(): CheckoutKitTelemetry {
+export function createTestTelemetry(protocolMethods: readonly string[] = []): CheckoutKitTelemetry {
   return createCheckoutKitTelemetryForTesting({
     sdkVersion: "test",
+    protocolMethods,
     fetch: () => Promise.resolve({ ok: true, status: 200 }),
   });
 }

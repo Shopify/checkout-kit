@@ -61,9 +61,9 @@ class CheckoutViewDelegateTests: XCTestCase {
     func testInstanceConfigurationIsAppliedToCheckoutChrome() throws {
         var configuration = Configuration()
         configuration.appearance = .app(.light(colors: CheckoutColors(
-            webViewBackground: .red,
-            progressIndicator: .blue,
-            closeIconTint: .green
+            webViewBackgroundColor: .red,
+            progressIndicatorColor: .blue,
+            closeIconTintColor: .green
         )))
         configuration.title = "Instance checkout"
 
@@ -141,7 +141,7 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertFalse(viewController.progressBar.isHidden)
     }
 
-    func testCloseButtonUsesSystemDefaultWhenCloseIconTintIsNil() {
+    func testCloseButtonUsesSystemDefaultWhenCloseIconTintColorIsNil() {
         ShopifyCheckoutKit.configure { $0.appearance = .storefront() }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
@@ -152,9 +152,9 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(closeButton?.accessibilityIdentifier, expectedCloseButtonIdentifier)
     }
 
-    func testCloseButtonUsesCustomImageAndTintWhenCloseIconTintIsSet() {
+    func testCloseButtonUsesCustomImageAndTintWhenCloseIconTintColorIsSet() {
         let customColor = UIColor.red
-        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTint: customColor)) }
+        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: customColor)) }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem
@@ -165,8 +165,8 @@ class CheckoutViewDelegateTests: XCTestCase {
         XCTAssertEqual(closeButton?.accessibilityIdentifier, expectedCloseButtonIdentifier)
     }
 
-    func testCloseButtonHasAnImageWhenCloseIconTintIsSet() {
-        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTint: .blue)) }
+    func testCloseButtonHasAnImageWhenCloseIconTintColorIsSet() {
+        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: .blue)) }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem

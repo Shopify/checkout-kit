@@ -132,6 +132,36 @@ class RunLocalE2ETest < Minitest::Test
     assert_includes error, "--device needs a simulator UDID or an adb serial"
   end
 
+  def test_main_preserves_environment_device_and_metro_options
+    [
+      [nil, [], ["", "8081"]],
+      ["emulator-5556", [], ["emulator-5556", "8081"]],
+      ["emulator-5556", ["--metro-port", "8082"], ["emulator-5556", "8082"]],
+      ["emulator-5556", ["--device", "emulator-5554", "--metro-port", "8082"], ["emulator-5554", "8082"]]
+    ].each do |device, arguments, expected|
+      output, error, status = Open3.capture3(
+        { "E2E_DEVICE_ID" => device },
+        "bash",
+        "-c",
+        <<~'SH',
+          source "$1"
+          shift
+          load_application_tags() {
+            printf '%s\n%s\n' "$REQUESTED_DEVICE_ID" "$METRO_PORT"
+            exit 0
+          }
+          main react-native-android "$@"
+        SH
+        "run-local-e2e-test",
+        RUNNER,
+        *arguments
+      )
+
+      assert status.success?, error
+      assert_equal expected, output.lines.map(&:chomp)
+    end
+  end
+
   def test_resolve_device_selects_the_requested_device
     {
       "swift-ios" => SECOND_SIMULATOR,
@@ -181,6 +211,73 @@ class RunLocalE2ETest < Minitest::Test
     refute status.success?
     assert_includes error, "No booted iOS simulator found."
     refute_includes output, "resolved:"
+  end
+
+  def test_metro_port_option_is_not_a_test_selector
+    [["--metro-port", "8082"], ["--metro-port=8082"]].each do |arguments|
+      output, error, status = metro_setup("react-native-ios", *arguments)
+
+      assert status.success?, error
+      port, _log, selector_count, = output.lines.map(&:chomp)
+      assert_equal ["8082", "0"], [port, selector_count], arguments.join(" ")
+    end
+  end
+
+  def test_metro_port_option_selects_the_metro_that_runs_the_app
+    {
+      "react-native-ios" => "/tmp/run-local-e2e-test/checkout-kit-rn-ios-metro-8082.log",
+      "react-native-android" => "/tmp/run-local-e2e-test/checkout-kit-rn-android-metro-8082.log"
+    }.each do |target, log|
+      output, error, status = metro_setup(target, "--metro-port", "8082", running_ports: ["8081"])
+
+      assert status.success?, error
+      assert_equal ["8082", log, "0", "stopped"], output.lines.map(&:chomp), target
+
+      output, error, status = metro_setup(target, "--metro-port", "8082", running_ports: ["8081", "8082"])
+
+      assert status.success?, error
+      assert_equal "running", output.lines.last.chomp, target
+    end
+  end
+
+  def test_metro_port_defaults_to_8081_without_the_option
+    {
+      "react-native-ios" => "/tmp/run-local-e2e-test/checkout-kit-rn-ios-metro-8081.log",
+      "react-native-android" => "/tmp/run-local-e2e-test/checkout-kit-rn-android-metro-8081.log"
+    }.each do |target, log|
+      output, error, status = metro_setup(target, running_ports: ["8081"])
+
+      assert status.success?, error
+      assert_equal ["8081", log, "0", "running"], output.lines.map(&:chomp), target
+    end
+  end
+
+  def test_metro_port_rejects_a_value_that_is_not_a_port_number
+    ["abc", "0", "65536", "08082", "80 82", ""].each do |value|
+      output, error, status = metro_setup("react-native-ios", "--metro-port=#{value}")
+
+      refute status.success?, value
+      assert_includes error, "Invalid --metro-port value: #{value}.", value
+      assert_empty output, value
+    end
+  end
+
+  def test_metro_port_option_requires_a_value
+    output, error, status = metro_setup("react-native-android", "--metro-port")
+
+    refute status.success?
+    assert_includes error, "--metro-port needs a port number, such as 8082"
+    assert_empty output
+  end
+
+  def test_metro_port_option_is_rejected_for_native_targets
+    ["swift-ios", "kotlin-android"].each do |target|
+      output, error, status = metro_setup(target, "--metro-port", "8082")
+
+      refute status.success?, target
+      assert_includes error, "--metro-port applies only to React Native targets", target
+      assert_empty output, target
+    end
   end
 
   def test_matrix_exclusions_remain_separate_from_explicit_exclusions
@@ -319,6 +416,21 @@ class RunLocalE2ETest < Minitest::Test
     assert_includes output, "dev swift e2e --tags preload --device emulator-5556"
   end
 
+  def test_picker_reproducible_command_includes_the_requested_metro_port
+    command = <<~'SH'
+      fzf() {
+        command cat >/dev/null
+        printf 'tag\tpreload\tTAG       preload\n'
+      }
+      REQUESTED_METRO_PORT="8082"
+      run_picker
+    SH
+    output, error, status = picker_script(command, target: "react-native-ios")
+
+    assert status.success?, error
+    assert_includes output, "dev rn e2e ios --tags preload --metro-port 8082"
+  end
+
   def test_maestro_runs_shared_and_target_specific_test_files
     react_native_arguments = maestro_arguments("react-native")
     swift_arguments = maestro_arguments("swift")
@@ -379,15 +491,55 @@ class RunLocalE2ETest < Minitest::Test
     end
   end
 
+  def test_skip_build_keeps_the_interactive_picker_and_reproducible_command
+    output, error, status = Open3.capture3("bash", "-c", <<~'SH', "skip-build-picker-test", RUNNER)
+      source "$1"
+      load_application_tags() { :; }
+      load_eligible_test_files() { :; }
+      load_enabled_tags() { :; }
+      interactive_terminal() { return 0; }
+      run_picker() {
+        TEST_FILES=(tests/shared/launch-smoke.yaml)
+        print_reproducible_command
+        exit 0
+      }
+      select_test_files() { echo unexpected-picker-bypass >&2; exit 1; }
+      main react-native-android --skip-build --device emulator-5556 --metro-port 8082
+    SH
+
+    assert status.success?, error
+    assert_includes output, "dev rn e2e android tests/shared/launch-smoke.yaml --device emulator-5556 --metro-port 8082 --skip-build"
+  end
+
+  def test_skip_build_with_test_selectors_bypasses_the_interactive_picker
+    [["--tags", "launch"], ["launch-smoke"], ["--exclude-tags", "flaky"]].each do |arguments|
+      output, error, status = Open3.capture3("bash", "-c", <<~'SH', "skip-build-selector-test", RUNNER, *arguments)
+        source "$1"
+        shift
+        load_application_tags() { :; }
+        load_eligible_test_files() { :; }
+        load_enabled_tags() { :; }
+        interactive_terminal() { return 0; }
+        run_picker() { echo unexpected-picker >&2; exit 1; }
+        validate_explicit_tags() { :; }
+        select_test_files() { echo selected; exit 0; }
+        main react-native-android --skip-build "$@"
+      SH
+
+      assert status.success?, error
+      assert_equal "selected\n", output
+    end
+  end
+
   private
 
-  def picker_script(command)
+  def picker_script(command, target: "swift-ios")
     Open3.capture3(
       "bash",
       "-c",
       <<~SH,
         source "$1"
-        configure_target swift-ios
+        configure_target "$2"
         MATRIX_INCLUDE_TAGS="presentation,preload"
         ENABLED_TAGS="presentation,smoke,preload"
         ELIGIBLE_TEST_FILES=(tests/shared/presentation.yaml tests/swift/preload.yaml)
@@ -395,10 +547,12 @@ class RunLocalE2ETest < Minitest::Test
         HAS_EXPLICIT_TAGS=false
         TEST_FILES=()
         REQUESTED_DEVICE_ID=""
+        REQUESTED_METRO_PORT=""
         #{command}
       SH
       "run-local-e2e-test",
-      RUNNER
+      RUNNER,
+      target
     )
   end
 
@@ -489,6 +643,48 @@ class RunLocalE2ETest < Minitest::Test
       RUNNER,
       target,
       requested_device
+    )
+  end
+
+  # Prints the Metro port, the Metro log path, the selector count, and whether
+  # metro_running finds Metro. curl answers only for the ports in running_ports.
+  def metro_setup(target, *arguments, running_ports: [])
+    Open3.capture3(
+      { "RUNNING_METRO_PORTS" => running_ports.join(" "), "TMPDIR" => "/tmp/run-local-e2e-test" },
+      "bash",
+      "-c",
+      <<~'SH',
+        source "$1"
+        configure_target "$2"
+        shift 2
+        INCLUDE_TAGS=""
+        EXCLUDE_TAGS=""
+        HAS_EXPLICIT_TAGS=false
+        TEST_FILES=()
+        SELECTOR_COUNT=0
+        REQUESTED_DEVICE_ID=""
+        REQUESTED_METRO_PORT=""
+        curl() {
+          local url
+          local port
+          for url; do :; done
+          for port in $RUNNING_METRO_PORTS; do
+            if [ "$url" = "http://localhost:$port/status" ]; then
+              echo "packager-status:running"
+              return 0
+            fi
+          done
+          return 7
+        }
+        parse_arguments "$@"
+        configure_metro
+        printf '%s\n%s\n%s\n' "$METRO_PORT" "$METRO_LOG" "$SELECTOR_COUNT"
+        if metro_running; then echo running; else echo stopped; fi
+      SH
+      "run-local-e2e-test",
+      RUNNER,
+      target,
+      *arguments
     )
   end
 

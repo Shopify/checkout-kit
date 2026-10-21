@@ -9,8 +9,8 @@ import {
   createTestTelemetry,
   installTestTelemetryFactory,
   mockTelemetry,
-} from "./telemetry.test-helpers";
-import { overrideTelemetryFactoryForTesting } from "./telemetry";
+} from "@shopify/checkout-kit-core/checkout/testing";
+import { overrideTelemetryFactoryForTesting } from "@shopify/checkout-kit-core/checkout/telemetry";
 
 const EMBED_PROTOCOL_VERSION = EmbeddedCheckoutProtocol.specVersion;
 

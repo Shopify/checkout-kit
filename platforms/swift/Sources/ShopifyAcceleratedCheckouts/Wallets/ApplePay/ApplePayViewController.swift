@@ -60,7 +60,7 @@ class ApplePayViewController: WalletController, PayController {
         configuration: ApplePayConfigurationWrapper
     ) {
         super.init(
-            identifier: identifier,
+            cartSource: .cart(identifier),
             storefront: StorefrontAPI(
                 storefrontDomain: configuration.common.storefrontDomain,
                 storefrontAccessToken: configuration.common.storefrontAccessToken
@@ -73,13 +73,29 @@ class ApplePayViewController: WalletController, PayController {
         )
     }
 
+    convenience init(
+        cartSource: CartSource,
+        configuration: ApplePayConfigurationWrapper
+    ) {
+        self.init(
+            identifier: .invariant(reason: "Cart source has not been resolved"),
+            configuration: configuration
+        )
+        self.cartSource = cartSource
+    }
+
     func onPress() async {
+        guard !isStartingCheckout else { return }
+        isStartingCheckout = true
+        defer { isStartingCheckout = false }
         do {
             let cart = try await createOrfetchCart()
 
             self.cart = cart
 
             return try await authorizationDelegate.transition(to: .startPaymentRequest)
+        } catch is HandledCartRequestFailure {
+            ShopifyAcceleratedCheckouts.logger.debug("[startPayment] Cart request was handled by the app")
         } catch {
             ShopifyAcceleratedCheckouts.logger.error(
                 "[startPayment] Failed to setup cart: \(error)"
@@ -104,9 +120,12 @@ class ApplePayViewController: WalletController, PayController {
 
     func createOrfetchCart() async throws -> StorefrontAPI.Types.Cart {
         do {
-            return try await fetchCartByCheckoutIdentifier()
+            return try await fetchCartByCheckoutIdentifier(wallet: .applePay)
         } catch let error as StorefrontAPI.Errors {
             return try await handleStorefrontError(error)
+        } catch is HandledCartRequestFailure {
+            // The app already handled the failure (for example, it told the buyer the item sold out).
+            throw HandledCartRequestFailure()
         } catch {
             try? await authorizationDelegate.transition(to: .terminalError(error: error))
             throw error

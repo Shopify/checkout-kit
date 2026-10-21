@@ -239,13 +239,13 @@ public class ShopifyCheckout @MainThread internal constructor(
         val sheet = ShopifyCheckoutKit.configuration.sheet
         val isDarkTheme = context.isDarkTheme()
         val headerBackgroundColor = colorScheme.headerBackgroundColor(isDarkTheme).getValue(context)
-        val headerFontColor = colorScheme.headerFontColor(isDarkTheme).getValue(context)
+        val headerTitleColor = colorScheme.headerTitleColor(isDarkTheme).getValue(context)
         webViewBackgroundColor = colorScheme.webViewBackgroundColor(isDarkTheme).getValue(context)
 
         findViewById<Toolbar>(R.id.checkout_header).apply {
             background = headerBackgroundColor.toDrawable()
             elevation = sheet.toolbarElevationDp.dpToPx(context)
-            setTitleTextColor(headerFontColor)
+            setTitleTextColor(headerTitleColor)
             inflateMenu(R.menu.checkout_menu)
             menu.findItem(R.id.checkout_close_button).setupCheckoutCloseButton(
                 context = context,
@@ -257,7 +257,7 @@ public class ShopifyCheckout @MainThread internal constructor(
 
         findViewById<TextView>(R.id.checkout_header_title).apply {
             text = ShopifyCheckoutKit.configuration.resolveCheckoutTitle(context)
-            setTextColor(headerFontColor)
+            setTextColor(headerTitleColor)
             (layoutParams as? Toolbar.LayoutParams)?.let { params ->
                 params.topMargin = 0
                 params.gravity = when (sheet.titleAlignment) {
@@ -450,7 +450,7 @@ private fun MenuItem.setupCheckoutCloseButton(
     if (customCloseIcon != null) {
         icon = AppCompatResources.getDrawable(context, customCloseIcon.id)
     } else {
-        val customTint = sheet.closeIconTint ?: colorScheme.closeIconTint(isDarkTheme)
+        val customTint = sheet.closeIconTintColor ?: colorScheme.closeIconTintColor(isDarkTheme)
         val closeIcon = icon
         if (customTint != null && closeIcon != null) {
             val wrappedDrawable = DrawableCompat.wrap(closeIcon)

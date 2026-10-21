@@ -120,5 +120,9 @@ if [[ "$MODE" == "check" ]]; then
 
     echo "✅ All linting checks passed!"
 else
+    if [ $LINT_STATUS -ne 0 ] || [ $FORMAT_STATUS -ne 0 ]; then
+        echo "❌ Linting fixes could not be completed."
+        exit 1
+    fi
     echo "✅ Linting fixes applied!"
 fi

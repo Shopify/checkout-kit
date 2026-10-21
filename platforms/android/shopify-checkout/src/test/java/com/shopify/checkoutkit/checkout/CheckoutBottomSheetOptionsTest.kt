@@ -216,13 +216,13 @@ class CheckoutBottomSheetOptionsTest {
     }
 
     @Test
-    fun `drag handle derives its color from a customized header font`() {
-        val customHeaderFont = Color.SRGB(0xFF336699.toInt())
+    fun `drag handle derives its color from a customized header title color`() {
+        val customHeaderTitleColor = Color.SRGB(0xFF336699.toInt())
         ShopifyCheckoutKit.configure {
             it.appearance = CheckoutAppearance.App(
                 colorScheme = ColorScheme.Light().customize {
-                    headerBackground = Color.SRGB(0xFF000000.toInt())
-                    headerFont = customHeaderFont
+                    headerBackgroundColor = Color.SRGB(0xFF000000.toInt())
+                    headerTitleColor = customHeaderTitleColor
                 },
             )
             it.sheet = CheckoutSheetOptions(dragHandle = CheckoutSheetDragHandle(visible = true))

@@ -24,9 +24,6 @@ enum DispatchEventType: String, CaseIterable {
 
 @objc(RCTShopifyCheckoutKit)
 class RCTShopifyCheckoutKit: NSObject {
-    /// The JavaScript name for `Configuration.Appearance.storefront`, which has no native raw value.
-    private static let storefrontColorScheme = "storefront"
-
     internal var checkoutSheet: UIViewController?
     private var checkoutEvents: CheckoutEventBridge?
     private weak var closingCheckoutSheet: UIViewController?
@@ -148,7 +145,7 @@ class RCTShopifyCheckoutKit: NSObject {
                 self?.emitDispatchEvent(json)
             }, onTerminal: { [weak self] ended in
                 guard let self, self.checkoutEvents === ended else { return }
-                // Native dismissal/failure can arrive before UIKit starts animating.
+                // Keep tracking the sheet until UIKit detaches it.
                 if let sheet = self.checkoutSheet { self.closingCheckoutSheet = sheet }
                 self.checkoutEvents = nil
                 self.checkoutSheet = nil
@@ -195,32 +192,8 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    private func appearanceFor(_ colorScheme: String) -> Configuration.Appearance? {
-        if colorScheme == Self.storefrontColorScheme {
-            return .storefront
-        }
-
-        guard let scheme = Configuration.ColorScheme(rawValue: colorScheme) else {
-            return nil
-        }
-
-        return .app(scheme)
-    }
-
-    private func colorSchemeStringFor(_ appearance: Configuration.Appearance) -> String {
-        switch appearance {
-        case let .app(colorScheme):
-            return colorScheme.rawValue
-        case .storefront:
-            return Self.storefrontColorScheme
-        }
-    }
-
     @objc func setConfig(_ configuration: [AnyHashable: Any]) {
-        let colorConfig = configuration["colors"] as? [AnyHashable: Any]
-        let iosConfig = colorConfig?["ios"] as? [String: String]
-
-        Self.performOnMainActor { [self] in
+        Self.performOnMainActor {
             ShopifyCheckoutKit.configure { config in
                 if let title = configuration["title"] as? String {
                     config.title = title
@@ -238,23 +211,7 @@ class RCTShopifyCheckoutKit: NSObject {
                     config.telemetry.enabled = telemetry
                 }
 
-                if let colorScheme = configuration["colorScheme"] as? String,
-                   let appearance = appearanceFor(colorScheme)
-                {
-                    config.appearance = appearance
-                }
-
-                if let tintColorHex = iosConfig?["tintColor"] {
-                    config.tintColor = UIColor(hex: tintColorHex)
-                }
-
-                if let backgroundColorHex = iosConfig?["backgroundColor"] {
-                    config.backgroundColor = UIColor(hex: backgroundColorHex)
-                }
-
-                if let closeButtonColorHex = iosConfig?["closeButtonColor"] {
-                    config.closeButtonTintColor = UIColor(hex: closeButtonColorHex)
-                }
+                config.appearance = CheckoutAppearanceConfiguration.update(config.appearance, configuration: configuration)
 
                 if let logLevel = configuration["logLevel"] as? String,
                    let parsedLogLevel = LogLevel(rawValue: logLevel.lowercased())
@@ -268,16 +225,14 @@ class RCTShopifyCheckoutKit: NSObject {
     }
 
     @objc func getConfig() -> NSDictionary {
+        let configuration = ShopifyCheckoutKit.configuration
         return [
-            "title": ShopifyCheckoutKit.configuration.title,
-            "colorScheme": colorSchemeStringFor(ShopifyCheckoutKit.configuration.appearance),
-            "preloading": ShopifyCheckoutKit.configuration.preloading.enabled,
-            "telemetry": ShopifyCheckoutKit.configuration.telemetry.enabled,
-            "tintColor": ShopifyCheckoutKit.configuration.tintColor,
-            "backgroundColor": ShopifyCheckoutKit.configuration.backgroundColor,
-            "closeButtonColor": ShopifyCheckoutKit.configuration.closeButtonTintColor,
-            "allowedMessageOrigins": ShopifyCheckoutKit.configuration.allowedMessageOrigins,
-            "logLevel": logLevelToString(ShopifyCheckoutKit.configuration.logLevel)
+            "title": configuration.title,
+            "appearance": CheckoutAppearanceConfiguration.appearanceResultFor(configuration.appearance),
+            "preloading": configuration.preloading.enabled,
+            "telemetry": configuration.telemetry.enabled,
+            "allowedMessageOrigins": configuration.allowedMessageOrigins,
+            "logLevel": logLevelToString(configuration.logLevel)
         ]
     }
 

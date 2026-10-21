@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Opens platforms/react-native in the editor set by DEV_EDITOR in .dev.env at
+# the repo root, otherwise `open`. --ios and --android open the sample app's
+# native projects.
+# Usage: dev rn open [--ios|--android]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+cd "$REPO_ROOT"
+
+if [ "$#" -gt 1 ]; then
+  echo "Usage: dev rn open [--ios|--android]" >&2
+  exit 1
+fi
+
+case "${1:-}" in
+  "")
+    if [ -f .dev.env ]; then
+      # shellcheck source=/dev/null
+      . ./.dev.env
+    fi
+    "${DEV_EDITOR:-open}" platforms/react-native
+    ;;
+  --ios)
+    xed platforms/react-native/sample/ios/CheckoutKitReactNativeDemo.xcworkspace
+    ;;
+  --android)
+    open -a "Android Studio" platforms/react-native/sample/android
+    ;;
+  *)
+    echo "Usage: dev rn open [--ios|--android]" >&2
+    exit 1
+    ;;
+esac

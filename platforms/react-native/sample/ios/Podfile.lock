@@ -1902,8 +1902,8 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-    - ShopifyCheckoutKit (= 4.0.0-alpha.8)
-    - ShopifyCheckoutKit/AcceleratedCheckouts (= 4.0.0-alpha.8)
+    - ShopifyCheckoutKit (= 4.0.0-alpha.9)
+    - ShopifyCheckoutKit/AcceleratedCheckouts (= 4.0.0-alpha.9)
     - Yoga
   - RNVectorIcons (10.3.0):
     - hermes-engine
@@ -1927,11 +1927,11 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ShopifyCheckoutKit (4.0.0-alpha.8):
-    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.8)
-  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.8):
+  - ShopifyCheckoutKit (4.0.0-alpha.9):
+    - ShopifyCheckoutKit/Core (= 4.0.0-alpha.9)
+  - ShopifyCheckoutKit/AcceleratedCheckouts (4.0.0-alpha.9):
     - ShopifyCheckoutKit/Core
-  - ShopifyCheckoutKit/Core (4.0.0-alpha.8)
+  - ShopifyCheckoutKit/Core (4.0.0-alpha.9)
   - SocketRocket (0.7.1):
     - ReactNativeDependencies
   - Yoga (0.0.0):
@@ -2332,9 +2332,9 @@ SPEC CHECKSUMS:
   RNCMaskedView: d4884d6b3b256bd1830a211db3d5f551def82e36
   RNGestureHandler: c7a5370fc94f6b072d35dd22ef7310870ec7b36c
   RNScreens: 038dc998fe1ab34778d9e8f4a33318a6c7a5bde8
-  RNShopifyCheckoutKit: 4406a2818aff62b35b17acf6ac7e41237fe0b9d1
+  RNShopifyCheckoutKit: 08de38b6e6c35996fc201fe2b2f9c74850472856
   RNVectorIcons: 4f353aed7dde2ecfc77da4130afce046d147ae8a
-  ShopifyCheckoutKit: 119e1a5a7eb5deefbb6d5fce95089c745d0794f6
+  ShopifyCheckoutKit: e5521b9a15ca2f4d443f616ab970ebea7c82cbc7
   SocketRocket: 37aec555668fb852ec12e3c0de59a86ca58f0871
   Yoga: d1c536142c5ff8ec8cd856ab2a7c227a1d875c8e
 

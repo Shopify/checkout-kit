@@ -31,7 +31,13 @@ export type {
   CheckoutErrorCode,
   LogLevel,
   MessageRejectedDetail,
-} from "./checkout.types";
+} from "@shopify/checkout-kit-core/checkout/types";
 
 // Shared domain types used by the Kit-owned checkout snapshot.
-export type { Buyer, LineItem, Message, OrderConfirmation, CheckoutTotal } from "./checkout.types";
+export type {
+  Buyer,
+  LineItem,
+  Message,
+  OrderConfirmation,
+  CheckoutTotal,
+} from "@shopify/checkout-kit-core/checkout/types";

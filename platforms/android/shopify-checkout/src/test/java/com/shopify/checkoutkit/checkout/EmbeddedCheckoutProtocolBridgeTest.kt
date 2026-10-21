@@ -54,7 +54,7 @@ class EmbeddedCheckoutProtocolBridgeTest {
         shadowOf(activity.application).checkActivities(true)
         viewSpy = Mockito.spy(CheckoutWebView(activity, webMessageTransport))
         mockListener = mock()
-        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Open)
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Default)
         whenever(viewSpy.listener).thenReturn(mockListener)
         ecp = EmbeddedCheckoutProtocolBridge(
             viewSpy,

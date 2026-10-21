@@ -1,0 +1,438 @@
+@testable import RNShopifyCheckoutKit
+import ShopifyCheckoutKit
+import UIKit
+import XCTest
+
+@MainActor
+final class CheckoutAppearanceConfigurationTests: XCTestCase {
+    private var module: RCTShopifyCheckoutKit!
+    private var originalConfiguration: Configuration!
+
+    private var customAppearance: CheckoutAppearance {
+        .app(.dark(colors: CheckoutColors(progressIndicator: .red, closeIconTint: .blue)))
+    }
+
+    override func setUp() async throws {
+        try await super.setUp()
+        originalConfiguration = ShopifyCheckoutKit.configuration
+        ShopifyCheckoutKit.configure {
+            $0.appearance = .storefront()
+            $0.preloading.enabled = true
+            $0.logLevel = .warn
+        }
+        module = RCTShopifyCheckoutKit()
+    }
+
+    override func tearDown() async throws {
+        ShopifyCheckoutKit.configure { configuration in configuration = originalConfiguration }
+        module = nil
+        try await super.tearDown()
+    }
+
+    func testEveryAppearanceMapsToTheNativeAppearance() {
+        let appearances: [([AnyHashable: Any], CheckoutAppearance)] = [
+            (makeConfiguration(type: "app", colorScheme: "light"), .app(.light())),
+            (makeConfiguration(type: "app", colorScheme: "dark"), .app(.dark())),
+            (makeConfiguration(type: "app", colorScheme: "automatic"), .app(.automatic())),
+            (makeConfiguration(type: "storefront"), .storefront())
+        ]
+
+        for (configuration, appearance) in appearances {
+            module.setConfig(configuration)
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
+        }
+    }
+
+    func testAppWithoutColorSchemeDefaultsToAutomatic() {
+        module.setConfig(makeConfiguration(type: "app"))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.automatic()))
+    }
+
+    func testAppWithoutColorSchemeAppliesAutomaticPalettes() {
+        module.setConfig(makeConfiguration(type: "app", colors: [
+            "progressIndicatorColor": "#FF0000",
+            "dark": ["progressIndicatorColor": "#0000FF"]
+        ]))
+
+        let expected = CheckoutAppearance.app(.automatic(
+            lightColors: CheckoutColors(progressIndicator: makeColor(rgb: 0xFF0000)),
+            darkColors: CheckoutColors(progressIndicator: makeColor(rgb: 0x0000FF))
+        ))
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, expected)
+    }
+
+    func testModuleInitializationPreservesHostAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module = RCTShopifyCheckoutKit()
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+    }
+
+    func testExplicitSchemesApplySharedColorFields() {
+        let appearances: [(String, CheckoutAppearance)] = [
+            ("light", .app(.light(colors: makeExpectedColors()))),
+            ("dark", .app(.dark(colors: makeExpectedColors())))
+        ]
+
+        for (colorScheme, appearance) in appearances {
+            module.setConfig(makeConfiguration(type: "app", colorScheme: colorScheme, colors: makeColorsConfiguration()))
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, appearance)
+        }
+    }
+
+    func testStorefrontAppliesSharedColorFields() {
+        module.setConfig(makeConfiguration(type: "storefront", colors: makeColorsConfiguration()))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront(colors: makeExpectedColors()))
+    }
+
+    func testAutomaticAppliesIndependentPalettes() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: [
+            "light": ["webViewBackgroundColor": "#FFFFFF", "progressIndicatorColor": "#FF0000"],
+            "dark": ["webViewBackgroundColor": "#000000", "progressIndicatorColor": "#0000FF"]
+        ]))
+
+        XCTAssertEqual(colors(isDark: false).webViewBackground, makeColor(rgb: 0xFFFFFF))
+        XCTAssertEqual(colors(isDark: false).progressIndicator, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: true).webViewBackground, makeColor(rgb: 0x000000))
+        XCTAssertEqual(colors(isDark: true).progressIndicator, makeColor(rgb: 0x0000FF))
+    }
+
+    func testAutomaticPreservesDefaultsForAnOmittedPalette() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: [
+            "light": ["webViewBackgroundColor": "#FF0000"]
+        ]))
+
+        XCTAssertEqual(colors(isDark: false).webViewBackground, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: false).progressIndicator, CheckoutColors().progressIndicator)
+        XCTAssertEqual(colors(isDark: true), CheckoutColors())
+    }
+
+    func testAutomaticAppliesSharedOverridesToBothPalettes() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: ["progressIndicatorColor": "#FF0000"]))
+
+        for isDark in [false, true] {
+            XCTAssertEqual(colors(isDark: isDark).progressIndicator, makeColor(rgb: 0xFF0000))
+            XCTAssertEqual(colors(isDark: isDark).webViewBackground, CheckoutColors().webViewBackground)
+        }
+    }
+
+    func testAutomaticPaletteOverridesTakePrecedenceOverSharedOverrides() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: [
+            "progressIndicatorColor": "#FF0000",
+            "light": ["progressIndicatorColor": "#00FF00"]
+        ]))
+
+        XCTAssertEqual(colors(isDark: false).progressIndicator, makeColor(rgb: 0x00FF00))
+        XCTAssertEqual(colors(isDark: true).progressIndicator, makeColor(rgb: 0xFF0000))
+    }
+
+    func testResetColorsDoNotDiscardValidOverrides() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "light", colors: [
+            "webViewBackgroundColor": "#0000FF",
+            "resetColors": ["closeIconTintColor", "headerBorderColor"]
+        ]))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light(colors: CheckoutColors(
+            webViewBackground: makeColor(rgb: 0x0000FF)
+        ))))
+    }
+
+    func testAutomaticPaletteCanResetSharedOptionalOverrides() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: [
+            "closeIconTintColor": "#FF0000",
+            "headerBorderColor": "#FF0000",
+            "light": ["resetColors": ["closeIconTintColor", "headerBorderColor"]]
+        ]))
+
+        XCTAssertNil(colors(isDark: false).closeIconTint)
+        XCTAssertNil(colors(isDark: false).headerBorderColor)
+        XCTAssertEqual(colors(isDark: true).closeIconTint, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: true).headerBorderColor, makeColor(rgb: 0xFF0000))
+    }
+
+    func testUnrelatedConfigurationUpdatesPreserveAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(["logLevel": "debug", "preloading": false, "title": "Custom Checkout"])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .debug)
+        XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, "Custom Checkout")
+    }
+
+    func testEmptyConfigurationPreservesAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig([:])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+    }
+
+    func testRemovedTopLevelColorKeysAreIgnored() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig([
+            "colorScheme": "light",
+            "colors": ["ios": ["progressIndicatorColor": "#00FF00", "tintColor": "#00FF00"]]
+        ])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+    }
+
+    func testReplacingTheAppearanceRestoresNativeDefaults() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic"))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.automatic()))
+    }
+
+    func testADifferentAppearanceWithoutColorsDropsEarlierColors() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "dark", colors: makeColorsConfiguration()))
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark(colors: makeExpectedColors())))
+
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "light"))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light()))
+    }
+
+    func testTheSameAppearanceWithoutColorsDropsEarlierColors() {
+        let appearances: [((type: String, colorScheme: String?), CheckoutAppearance)] = [
+            (("app", "light"), .app(.light())),
+            (("app", "dark"), .app(.dark())),
+            (("app", "automatic"), .app(.automatic())),
+            (("storefront", nil), .storefront())
+        ]
+
+        for ((type, colorScheme), defaultAppearance) in appearances {
+            module.setConfig(makeConfiguration(type: type, colorScheme: colorScheme, colors: makeColorsConfiguration()))
+            XCTAssertNotEqual(ShopifyCheckoutKit.configuration.appearance, defaultAppearance)
+
+            module.setConfig(makeConfiguration(type: type, colorScheme: colorScheme))
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, defaultAppearance)
+        }
+    }
+
+    func testStorefrontAfterAutomaticPalettesDropsEarlierColors() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: [
+            "progressIndicatorColor": "#FF0000",
+            "closeIconTintColor": "#FF0000",
+            "light": ["webViewBackgroundColor": "#FFFFFF"],
+            "dark": ["webViewBackgroundColor": "#000000", "headerBorderColor": "#00FF00"]
+        ]))
+        XCTAssertNotEqual(ShopifyCheckoutKit.configuration.appearance, .app(.automatic()))
+
+        module.setConfig(makeConfiguration(type: "storefront"))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
+    }
+
+    func testNullColorsRestoreNativeDefaults() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(["appearance": ["type": "app", "colorScheme": "dark", "colors": NSNull()]])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark()))
+    }
+
+    func testNullIosColorsRestoreNativeDefaults() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(["appearance": ["type": "app", "colorScheme": "dark", "colors": ["ios": NSNull()]]])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark()))
+    }
+
+    func testEmptyColorsRestoreNativeDefaults() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(["appearance": ["type": "app", "colorScheme": "dark", "colors": [String: Any]()]])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark()))
+    }
+
+    func testColorsForTheOtherPlatformRestoreNativeDefaults() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        module.setConfig(["appearance": [
+            "type": "app",
+            "colorScheme": "dark",
+            "colors": ["android": ["progressIndicatorColor": "#FF0000"]]
+        ]])
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark()))
+    }
+
+    func testInvalidAppearancesPreserveTheCurrentAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        for appearance: Any in [NSNull(), "storefront", 42, ["light"]] {
+            module.setConfig(["appearance": appearance])
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+        }
+    }
+
+    func testInvalidAppearanceTypesPreserveTheCurrentAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+        let appearances: [[String: Any]] = [
+            ["colorScheme": "light"],
+            ["type": NSNull(), "colorScheme": "light"],
+            ["type": 42, "colorScheme": "light"],
+            ["type": "light"],
+            ["type": "automatic"],
+            ["type": "sepia"]
+        ]
+
+        for appearance in appearances {
+            module.setConfig(["appearance": appearance])
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+        }
+    }
+
+    func testInvalidColorSchemesPreserveTheCurrentAppearance() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        for colorScheme: Any in ["storefront", "sepia", NSNull(), 42] {
+            module.setConfig(["appearance": [
+                "type": "app",
+                "colorScheme": colorScheme,
+                "colors": ["ios": makeColorsConfiguration()]
+            ]])
+
+            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, customAppearance)
+        }
+    }
+
+    func testInvalidColorsDoNotDiscardValidOverrides() {
+        let invalidColors: [Any] = ["", "red", "#12345", "#123456789", "##112233", "#GG0000", "0x112233", 42, NSNull()]
+        for invalidColor in invalidColors {
+            module.setConfig(makeConfiguration(type: "app", colorScheme: "light", colors: [
+                "webViewBackgroundColor": "#AABBCC",
+                "progressIndicatorColor": invalidColor,
+                "headerTitleColor": 42
+            ]))
+
+            XCTAssertEqual(colors().webViewBackground, makeColor(rgb: 0xAABBCC))
+            XCTAssertEqual(colors().progressIndicator, CheckoutColors().progressIndicator)
+            XCTAssertEqual(colors().headerFont, CheckoutColors().headerFont)
+        }
+    }
+
+    func testInvalidOptionalColorsKeepTheirDefaults() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "light", colors: [
+            "closeIconTintColor": "red",
+            "headerBorderColor": 42
+        ]))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light()))
+    }
+
+    func testHexColorsSupportOpacityAndSurroundingWhitespace() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "light", colors: [
+            "webViewBackgroundColor": "  #80112233  ",
+            "progressIndicatorColor": "aabbcc"
+        ]))
+
+        XCTAssertEqual(colors().webViewBackground, makeColor(rgb: 0x112233, alpha: 0x80))
+        XCTAssertEqual(colors().progressIndicator, makeColor(rgb: 0xAABBCC))
+    }
+
+    func testAndroidOnlyColorFieldsDoNotChangeIosColors() {
+        module.setConfig(makeConfiguration(type: "app", colorScheme: "light", colors: ["dragHandleColor": "#FF0000"]))
+
+        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light()))
+    }
+
+    func testGetConfigReturnsOnlyJsonCompatibleCommonSettings() {
+        ShopifyCheckoutKit.configure { configuration in configuration.appearance = customAppearance }
+
+        let configuration = module.getConfig()
+
+        XCTAssertTrue(JSONSerialization.isValidJSONObject(configuration))
+        XCTAssertEqual(Set(configuration.allKeys.compactMap { $0 as? String }), [
+            "title", "appearance", "preloading", "telemetry", "allowedMessageOrigins", "logLevel"
+        ])
+    }
+
+    func testGetConfigReturnsTheAppearanceWithoutColors() {
+        let appearances: [(CheckoutAppearance, [String: String])] = [
+            (.app(.light(colors: makeExpectedColors())), ["type": "app", "colorScheme": "light"]),
+            (.app(.dark(colors: makeExpectedColors())), ["type": "app", "colorScheme": "dark"]),
+            (
+                .app(.automatic(lightColors: makeExpectedColors(), darkColors: makeExpectedColors())),
+                ["type": "app", "colorScheme": "automatic"]
+            ),
+            (.storefront(colors: makeExpectedColors()), ["type": "storefront"])
+        ]
+
+        for (appearance, expected) in appearances {
+            ShopifyCheckoutKit.configure { configuration in configuration.appearance = appearance }
+
+            XCTAssertEqual(module.getConfig()["appearance"] as? [String: String], expected)
+        }
+    }
+
+    private func makeConfiguration(
+        type: String,
+        colorScheme: String? = nil,
+        colors: [String: Any]? = nil
+    ) -> [AnyHashable: Any] {
+        var appearance: [String: Any] = ["type": type]
+        if let colorScheme {
+            appearance["colorScheme"] = colorScheme
+        }
+        if let colors {
+            appearance["colors"] = ["ios": colors]
+        }
+        return ["appearance": appearance]
+    }
+
+    private func makeColorsConfiguration() -> [String: Any] {
+        [
+            "webViewBackgroundColor": "#112233",
+            "headerBackgroundColor": "#445566",
+            "headerTitleColor": "#778899",
+            "progressIndicatorColor": "#AABBCC",
+            "closeIconTintColor": "#DDEEFF",
+            "headerBorderColor": "#123456"
+        ]
+    }
+
+    private func makeExpectedColors() -> CheckoutColors {
+        CheckoutColors(
+            webViewBackground: makeColor(rgb: 0x112233),
+            headerBackground: makeColor(rgb: 0x445566),
+            headerFont: makeColor(rgb: 0x778899),
+            progressIndicator: makeColor(rgb: 0xAABBCC),
+            closeIconTint: makeColor(rgb: 0xDDEEFF),
+            headerBorderColor: makeColor(rgb: 0x123456)
+        )
+    }
+
+    private func makeColor(rgb: Int, alpha: Int = 0xFF) -> UIColor {
+        UIColor(
+            red: CGFloat((rgb >> 16) & 0xFF) / 255,
+            green: CGFloat((rgb >> 8) & 0xFF) / 255,
+            blue: CGFloat(rgb & 0xFF) / 255,
+            alpha: CGFloat(alpha) / 255
+        )
+    }
+
+    private func colors(isDark: Bool = false) -> CheckoutColors {
+        switch ShopifyCheckoutKit.configuration.appearance {
+        case let .storefront(colors), let .app(.light(colors)), let .app(.dark(colors)):
+            return colors
+        case let .app(.automatic(lightColors, darkColors)):
+            return isDark ? darkColors : lightColors
+        }
+    }
+}

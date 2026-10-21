@@ -205,16 +205,18 @@ struct ProductView: View {
     private func acceleratedCheckoutButton(
         for variant: Product.Variants.Node
     ) -> some View {
-        ShopifyAcceleratedCheckoutButtons(variantID: variant.id, quantity: 1)
-            .wallets([.applePay])
-            .applePayButtonStyle(applePayStyle.style)
-            .onFail { error in
-                addToCartError = "We couldn't start accelerated checkout. Please try again."
-                print("[AcceleratedCheckout] Failed: \(error)")
-            }
-            .onDismiss {
-                print("[AcceleratedCheckout] Dismissed")
-            }
+        ShopifyAcceleratedCheckoutButtons(variantID: variant.id) { _ in
+            try .cart(await CartManager.shared.prepareBuyNowCart(variantID: variant.id))
+        }
+        .wallets([.applePay])
+        .applePayButtonStyle(applePayStyle.style)
+        .onFail { error in
+            addToCartError = "We couldn't start accelerated checkout. Please try again."
+            print("[AcceleratedCheckout] Failed: \(error)")
+        }
+        .onDismiss {
+            print("[AcceleratedCheckout] Dismissed")
+        }
     }
 
     private func addToCart() {
@@ -247,12 +249,6 @@ struct ProductView: View {
                     "Failed to add item to cart: \(error.localizedDescription)"
                 )
             }
-        }
-    }
-
-    private func setProduct(_ product: Product?) {
-        if let product {
-            self.product = product
         }
     }
 }

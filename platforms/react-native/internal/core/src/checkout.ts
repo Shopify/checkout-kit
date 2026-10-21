@@ -63,7 +63,9 @@ export interface CheckoutEventHandlers {
   onUpdate?: (event: CheckoutUpdateEvent) => void;
   /** Completion leaves the confirmation UI visible until dismissal. */
   onComplete?: (event: CheckoutCompleteEvent) => void;
+  /** Checkout cannot continue. When the failure closes checkout, `onDismiss` follows. */
   onFail?: (event: CheckoutFailureEvent) => void;
+  /** The presentation closed, independently of checkout outcome. Programmatic `dismiss()` does not fire it. */
   onDismiss?: () => void;
   /** Notification only; use linkAction to choose the native response. */
   onLinkClick?: (link: CheckoutLink) => void;

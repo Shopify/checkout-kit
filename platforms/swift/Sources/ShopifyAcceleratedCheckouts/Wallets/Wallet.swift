@@ -1,10 +1,33 @@
 import ShopifyCheckoutKit
 import SwiftUI
 
-/// Possible Wallets `AcceleratedCheckouts` can render via the `.wallets` modifier.
-public enum Wallet: String {
-    case applePay
-    case shopPay
+/// A wallet that `ShopifyAcceleratedCheckoutButtons` can render via the `.wallets` modifier.
+///
+/// Use the provided wallet constants, such as ``applePay`` and ``shopPay``. New wallet constants may be
+/// added in future releases without requiring existing apps to update exhaustive `switch` statements.
+public struct Wallet: RawRepresentable, Hashable, Sendable {
+    /// The stable wallet name used for persistence and bridge interoperability.
+    public let rawValue: String
+
+    /// Apple Pay.
+    public static let applePay: Wallet = .init(identifier: "applePay")
+
+    /// Shop Pay.
+    public static let shopPay: Wallet = .init(identifier: "shopPay")
+
+    /// Creates a supported wallet from its stable name, returning nil for unknown names.
+    public init?(rawValue: String) {
+        switch rawValue {
+        case Self.applePay.rawValue, Self.shopPay.rawValue:
+            self.rawValue = rawValue
+        default:
+            return nil
+        }
+    }
+
+    private init(identifier: String) {
+        rawValue = identifier
+    }
 }
 
 /// Event handlers for wallet buttons

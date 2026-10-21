@@ -935,14 +935,14 @@ class CheckoutBottomSheetTest {
     fun `storefront appearance applies customized native colors`() {
         val customColors = customColors()
         ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.Storefront().customize {
-            headerBackground = customColors.headerBackground
+            headerBackgroundColor = customColors.headerBackgroundColor
         }
 
         val sheet = presentBottomSheet()
 
         val header = sheet.findViewById<Toolbar>(R.id.checkout_header)!!
         val headerBackgroundColor = backgroundColor(header)
-        val configuredColor = customColors.headerBackground.getValue(activity)
+        val configuredColor = customColors.headerBackgroundColor.getValue(activity)
 
         assertThat(headerBackgroundColor).isEqualTo(configuredColor)
     }
@@ -983,7 +983,7 @@ class CheckoutBottomSheetTest {
         assertThat(header.elevation).isEqualTo(0f)
         assertThat(header.title).isNullOrEmpty()
         assertThat(title.text).isEqualTo(activity.getString(R.string.checkout_web_view_title))
-        assertThat(title.currentTextColor).isEqualTo(customColors.headerFont.getValue(activity))
+        assertThat(title.currentTextColor).isEqualTo(customColors.headerTitleColor.getValue(activity))
         assertThat(title.textSize).isEqualTo(activity.resources.getDimension(R.dimen.checkout_sheet_title_text_size))
         assertThat(titleLayoutParams.gravity and Gravity.CENTER).isEqualTo(Gravity.CENTER)
     }
@@ -1050,7 +1050,7 @@ class CheckoutBottomSheetTest {
 
         val webViewContainer = sheet.findViewById<RelativeLayout>(R.id.checkout_container)!!
         val webViewContainerBackgroundColor = backgroundColor(webViewContainer)
-        val configuredColor = customColors.webViewBackground.getValue(activity)
+        val configuredColor = customColors.webViewBackgroundColor.getValue(activity)
         val webView = sheet.currentCheckoutWebView()
 
         assertThat(webViewContainerBackgroundColor).isEqualTo(configuredColor)
@@ -1065,7 +1065,7 @@ class CheckoutBottomSheetTest {
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkout_header)!!
         val headerBorder = sheet.findViewById<View>(R.id.checkout_header_border)!!
         val webView = sheet.currentCheckoutWebView()
-        val restingColor = customColors.headerBackground.getValue(activity)
+        val restingColor = customColors.headerBackgroundColor.getValue(activity)
 
         assertThat(backgroundColor(toolbar)).isEqualTo(restingColor)
         assertThat(toolbar.elevation).isEqualTo(0f)
@@ -1118,7 +1118,7 @@ class CheckoutBottomSheetTest {
     fun `bottom sheet applies close icon tint when provided and no custom icon`() {
         val tintColor = Color.SRGB(0xFF0000)
         ShopifyCheckoutKit.configure {
-            it.sheet = CheckoutSheetOptions(closeIconTint = tintColor)
+            it.sheet = CheckoutSheetOptions(closeIconTintColor = tintColor)
         }
 
         val sheet = presentBottomSheet(checkoutListener = mock<DefaultCheckoutListener>())
@@ -1167,7 +1167,7 @@ class CheckoutBottomSheetTest {
         ShopifyCheckoutKit.configure {
             it.sheet = CheckoutSheetOptions(
                 closeIcon = customIcon,
-                closeIconTint = tintColor,
+                closeIconTintColor = tintColor,
             )
         }
         val mockProcessor = mock<DefaultCheckoutListener>()
@@ -1280,10 +1280,10 @@ class CheckoutBottomSheetTest {
 
     private fun customColors(): Colors {
         return Colors(
-            headerFont = Color.ResourceId(androidx.appcompat.R.color.material_grey_850),
-            headerBackground = Color.ResourceId(androidx.appcompat.R.color.material_blue_grey_900),
-            webViewBackground = Color.ResourceId(androidx.appcompat.R.color.material_deep_teal_200),
-            progressIndicator = Color.ResourceId(androidx.appcompat.R.color.background_material_dark),
+            headerTitleColor = Color.ResourceId(androidx.appcompat.R.color.material_grey_850),
+            headerBackgroundColor = Color.ResourceId(androidx.appcompat.R.color.material_blue_grey_900),
+            webViewBackgroundColor = Color.ResourceId(androidx.appcompat.R.color.material_deep_teal_200),
+            progressIndicatorColor = Color.ResourceId(androidx.appcompat.R.color.background_material_dark),
             headerBorderColor = Color.ResourceId(androidx.appcompat.R.color.material_grey_600),
         )
     }

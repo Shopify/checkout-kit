@@ -5,14 +5,15 @@ see [guidelines and instructions](../../.github/CONTRIBUTING.md).
 
 ---
 
-This repo is subdivided into 3 parts using pnpm workspaces:
+This platform is a pnpm workspace. Its root package,
+`@shopify/checkout-kit-react-native`, is the published SDK; `pnpm module ...`
+is a convenience filter for that same package, not a separate module directory.
+The workspace also contains private component and core packages, the `sample`
+application, the native integration app, and the shared TypeScript protocol
+package. Membership is declared in `pnpm-workspace.yaml`.
 
-- The base repo (workspace name = `checkout-kit-react-native`)
-- The `@shopify/checkout-kit-react-native` Native Module (workspace name = `module`)
-- The sample application (workspace name = `sample`)
-
-Each of the workspaces contains a separate `package.json` to manage tasks
-specific to each workspace.
+See [Platform and component architecture](../../.github/ARCHITECTURE.md#react-native)
+for ownership rules and the component-addition checklist.
 
 ## Getting started
 
@@ -126,8 +127,9 @@ SCCACHE=false pnpm sample android
 
 The platform publishes one `@shopify/checkout-kit-react-native` package. Its
 checkout, accelerated checkout and native binding packages are private workspace
-packages with the same version. They share the platform TypeScript configuration,
-Bob build, Jest suite and dependency rules.
+packages with placeholder version `0.0.0`; they are bundled, not independently
+released. They share the platform TypeScript configuration, Vite build, Jest
+suite, and dependency rules.
 
 ```text
 platforms/react-native/
@@ -142,12 +144,17 @@ platforms/react-native/
 └── test/                          # Native integration and package consumers
 ```
 
-Components import declared package exports. Native bindings cannot depend on
-components or the public facade; dependency-cruiser checks these relationships.
-`pnpm build` assembles the private sources into one publishable tree, rewrites
-private import specifiers, then runs Bob and checks the built consumer API. Metro
-uses workspace sources while developing the sample. No private package needs to
-be published or installed by SDK consumers.
+Components import declared package exports. The TypeScript `internal/core`
+package must not depend on components or the public facade; dependency-cruiser
+checks that direction and rejects runtime cycles. Keep component-specific
+behavior in its component package; extract shared internals only when needed.
+
+`pnpm build` uses Vite to bundle private component/core sources into ESM and
+CommonJS output in `lib/`, along with rolled-up declarations. It then verifies
+the built API, packed-package consumption, Metro bundling, and native codegen
+inputs. Raw native specs are also shipped for consumer-side codegen. No private
+component or core package needs to be published or installed by SDK consumers.
+The local sample's Metro configuration uses workspace sources.
 
 ## Making changes to the Native Module
 
@@ -163,7 +170,7 @@ first need to run `pnpm module build` each time you change the TS code.
 There are a handful of commands to clean the individual workspaces.
 
 ```sh
-# Clear the current directory from watchman
+# Remove the SDK's lib/ build output
 pnpm clean
 
 # Removes the "sample/node_modules" directory
@@ -175,7 +182,7 @@ pnpm sample clean
 pnpm module clean
 ```
 
-## Linting the code
+## Linting and formatting
 
 Linting the codespaces will (1) compile the code with TypeScript and (2) run
 eslint over the source code.
@@ -186,7 +193,17 @@ pnpm module lint
 
 # Lint the Sample App TS code
 pnpm sample lint
+
+# Apply JS/TS lint and formatting corrections
+pnpm module format
+pnpm sample format
+
+# Format native Swift bindings
+pnpm module format:swift
 ```
+
+Lint commands are read-only. `dev rn format` runs all three formatting commands
+above; `dev rn lint` checks JS/TS and Swift without applying corrections.
 
 ## Testing
 
@@ -194,7 +211,7 @@ There are 3 types of tests in this repo: Typescript, Swift and Java - each for
 testing the Native Module.
 
 ```sh
-# Run Jest tests for "src/**/*.tsx"
+# Run the SDK's JavaScript/TypeScript Jest suite
 pnpm test
 
 # Run swift tests for the Native Module

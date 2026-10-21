@@ -13,7 +13,7 @@ class CheckoutAppearanceTests: XCTestCase {
     }
 
     func testStorefrontAppliesCustomNativeColorsToTheLightScheme() {
-        let colors = CheckoutColors(progressIndicator: .red, closeIconTint: .blue)
+        let colors = CheckoutColors(progressIndicatorColor: .red, closeIconTintColor: .blue)
 
         XCTAssertEqual(CheckoutAppearance.storefront(colors: colors).effectiveColorScheme, .light(colors: colors))
     }

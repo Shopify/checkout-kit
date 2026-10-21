@@ -61,8 +61,9 @@ final class CheckoutEventBridge: CheckoutDelegate {
         emit(.complete, checkout: event.checkout)
     }
 
+    /// A failure that closes checkout is followed by `checkoutDidDismiss()`, which ends the session.
     func checkoutDidFail(_ event: CheckoutFailureEvent) {
-        finish(.fail, payload: ["error": ShopifyEventSerialization.serialize(checkoutError: event.error)])
+        emit(.fail, payload: ["error": ShopifyEventSerialization.serialize(checkoutError: event.error)])
     }
 
     func checkoutDidDismiss() {

@@ -17,8 +17,8 @@ struct ApplePayButton: View {
     @Environment(\.shopifyApplePayConfiguration)
     private var applePayConfiguration: ShopifyAcceleratedCheckouts.ApplePayConfiguration?
 
-    /// The identifier to use for checkout
-    private let identifier: CheckoutIdentifier
+    /// The source used to obtain a cart for checkout
+    private let cartSource: CartSource
 
     /// The event handlers for checkout events
     private let eventHandlers: EventHandlers
@@ -39,7 +39,21 @@ struct ApplePayButton: View {
         buttonType: PKPaymentButtonType = .plain,
         buttonStyle: PKPaymentButtonStyle = .automatic
     ) {
-        self.identifier = identifier.parse()
+        cartSource = .cart(identifier.parse())
+        self.eventHandlers = eventHandlers
+        self.cornerRadius = cornerRadius
+        self.buttonType = buttonType
+        self.buttonStyle = buttonStyle
+    }
+
+    init(
+        cartSource: CartSource,
+        eventHandlers: EventHandlers = EventHandlers(),
+        cornerRadius: CGFloat?,
+        buttonType: PKPaymentButtonType = .plain,
+        buttonStyle: PKPaymentButtonStyle = .automatic
+    ) {
+        self.cartSource = cartSource
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
         self.buttonType = buttonType
@@ -47,12 +61,9 @@ struct ApplePayButton: View {
     }
 
     var body: some View {
-        switch identifier {
-        case .invariant:
-            EmptyView()
-        default:
+        if cartSource.isValid() {
             Internal_ApplePayButton(
-                identifier: identifier,
+                cartSource: cartSource,
                 buttonType: buttonType,
                 buttonStyle: buttonStyle,
                 configuration: ApplePayConfigurationWrapper(
@@ -89,8 +100,8 @@ struct ApplePayButton: View {
 struct Internal_ApplePayButton: View {
     private let buttonType: PKPaymentButtonType
     private let buttonStyle: PKPaymentButtonStyle
-    @State private var controller: ApplePayViewController?
-    private let identifier: CheckoutIdentifier
+    @State private var attempt = WalletButtonAttempt()
+    private let cartSource: CartSource
     private let eventHandlers: EventHandlers
     private let configuration: ApplePayConfigurationWrapper
     private let cornerRadius: CGFloat?
@@ -112,7 +123,23 @@ struct Internal_ApplePayButton: View {
         self.buttonStyle = buttonStyle
         self.cornerRadius = cornerRadius
         self.configuration = configuration
-        self.identifier = identifier
+        cartSource = .cart(identifier)
+        self.eventHandlers = eventHandlers
+    }
+
+    init(
+        cartSource: CartSource,
+        buttonType: PKPaymentButtonType,
+        buttonStyle: PKPaymentButtonStyle,
+        configuration: ApplePayConfigurationWrapper,
+        eventHandlers: EventHandlers = EventHandlers(),
+        cornerRadius: CGFloat?
+    ) {
+        self.buttonType = buttonType
+        self.buttonStyle = buttonStyle
+        self.cornerRadius = cornerRadius
+        self.configuration = configuration
+        self.cartSource = cartSource
         self.eventHandlers = eventHandlers
     }
 
@@ -124,14 +151,16 @@ struct Internal_ApplePayButton: View {
                 cornerRadius: cornerRadius ?? 8,
                 action: {
                     Task { @MainActor in
+                        // Check the retained attempt before creating a fresh controller for this tap.
+                        guard attempt.controller?.isStartingCheckout != true else { return }
                         let controller = ApplePayViewController(
-                            identifier: identifier,
+                            cartSource: cartSource,
                             configuration: configuration
                         )
                         controller.eventHandlers = eventHandlers
                         controller.onCheckoutFail = eventHandlers.checkoutDidFail
                         controller.onCheckoutDismiss = eventHandlers.checkoutDidDismiss
-                        self.controller = controller
+                        attempt.controller = controller
                         await controller.onPress()
                     }
                 }

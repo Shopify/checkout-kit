@@ -1,18 +1,5 @@
 extension GraphQLDocument {
     enum Mutations: String, CaseIterable {
-        case cartCreate = """
-        mutation CartCreate($input: CartInput!) {
-          cartCreate(input: $input) {
-            cart {
-              ...CartFragment
-            }
-            userErrors {
-              ...CartUserErrorFragment
-            }
-          }
-        }
-        """
-
         case cartBuyerIdentityUpdate = """
         mutation CartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
           cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {

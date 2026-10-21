@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Run the sibling fixture first, then leave the repository with the real SDK artifact.
+./scripts/check_publication_features
 ./gradlew :shopify-checkout-kit:verifyFusedPublication --console=plain
 ./gradlew -p tests/publication assembleDebug --console=plain
 # Exercise Maven POM consumers too, without Gradle module metadata.

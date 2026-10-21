@@ -1,6 +1,6 @@
 package com.shopify.reactnative.checkoutkit
 
-import com.shopify.checkoutkit.Checkout
+import com.shopify.checkoutkit.checkout.Checkout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject

@@ -11,6 +11,31 @@ pnpm sample
 
 Vite serves at `http://localhost:5173`.
 
+### Telemetry during development
+
+With `pnpm sample`, checkout telemetry is logged to the browser console instead of
+sent to production. To opt in to production reporting during development, run
+`VITE_CK_TELEMETRY=production pnpm sample`.
+
+Built output, including `pnpm dev` (`vite build --watch`) and `pnpm sample:build`,
+keeps production telemetry. The published CDN also keeps production telemetry.
+Set `telemetry="false"` on the checkout element to disable telemetry entirely.
+
+### Run against the published CDN
+
+```bash
+pnpm sample:cdn
+```
+
+This follows the CDN-only merchant integration path: it typechecks the playground against the
+built `@shopify/checkout-kit` package declarations, then loads
+`https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js` at runtime and calls
+`loadComponents(["shopify-checkout"])`. There is no local runtime fallback. A CDN entry-module,
+component-chunk, or registration failure prevents the playground from starting.
+
+The header identifies whether the playground uses local source or the CDN, including the CDN
+loader's reported version.
+
 ## What the demo shows
 
 The default flow highlights a multi-item cart use case:
@@ -60,7 +85,8 @@ This sample does not currently call Storefront API `cartCreate`; it uses cart pe
 ## Build
 
 ```bash
-pnpm sample:build      # outputs to sample/dist/
+pnpm sample:build      # local-source build; outputs to sample/dist/
+pnpm sample:cdn:build  # CDN-only build; outputs to sample/dist-cdn/
 ```
 
 CI runs this on every PR (see `.github/workflows/web.yml`). The sample is not published to npm (`files` allowlist in `platforms/web/package.json`).

@@ -120,7 +120,7 @@ public abstract class DefaultCheckoutListener : CheckoutListener {
         // no-op override to implement
     }
 
-    override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction = CheckoutLinkAction.Open
+    override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction = CheckoutLinkAction.Default
 
     override fun onPermissionRequest(permissionRequest: PermissionRequest) {
         // no-op override to implement

@@ -10,7 +10,7 @@ class ShopPayViewController: WalletController {
         eventHandlers: EventHandlers = EventHandlers()
     ) {
         super.init(
-            identifier: identifier,
+            cartSource: .cart(identifier),
             storefront: StorefrontAPI(
                 storefrontDomain: configuration.storefrontDomain,
                 storefrontAccessToken: configuration.storefrontAccessToken
@@ -18,16 +18,33 @@ class ShopPayViewController: WalletController {
             configuration: configuration
         )
         self.eventHandlers = eventHandlers
-        self.identifier = identifier.parse()
+    }
+
+    convenience init(
+        cartSource: CartSource,
+        configuration: ShopifyAcceleratedCheckouts.Configuration,
+        eventHandlers: EventHandlers = EventHandlers()
+    ) {
+        self.init(
+            identifier: .invariant(reason: "Cart source has not been resolved"),
+            configuration: configuration,
+            eventHandlers: eventHandlers
+        )
+        self.cartSource = cartSource
     }
 
     func onPress() async {
+        guard !isStartingCheckout else { return }
+        isStartingCheckout = true
+        defer { isStartingCheckout = false }
         do {
-            let cart = try await fetchCartByCheckoutIdentifier()
+            let cart = try await fetchCartByCheckoutIdentifier(wallet: .shopPay)
             guard let url = cart.checkoutUrl.url.appendQueryParam(name: "payment", value: "shop_pay") else {
                 throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "url")
             }
             try await present(url: url)
+        } catch is HandledCartRequestFailure {
+            ShopifyAcceleratedCheckouts.logger.debug("[present] Cart request was handled by the app")
         } catch {
             let error = CheckoutError(
                 code: .sdkError,

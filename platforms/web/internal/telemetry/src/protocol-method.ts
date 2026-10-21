@@ -1,9 +1,8 @@
 import {embeddedCheckoutMethods} from '@shopify/checkout-kit-protocol';
 
-import type {TelemetryProtocolMethod} from './types';
 
-export function toProtocolMethod(method: string): TelemetryProtocolMethod {
-  return embeddedCheckoutMethods.has(method)
-    ? (method as TelemetryProtocolMethod)
+export function toProtocolMethod(method: string, additionalMethods: readonly string[] = []): string {
+  return embeddedCheckoutMethods.has(method) || additionalMethods.includes(method)
+    ? method
     : 'unknown';
 }

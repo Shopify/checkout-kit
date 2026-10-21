@@ -44,8 +44,8 @@ struct CheckoutURLDecoratorTests {
     }
 
     @Test func nativeColorOverridesDoNotChangeCheckoutBranding() throws {
-        try assertAppearanceDecoratesWith(.app(.automatic().customize { $0.webViewBackground = .red }), colorScheme: "automatic", branding: "app")
-        try assertAppearanceDecoratesWith(.storefront(colors: CheckoutColors(webViewBackground: .red)), colorScheme: "light", branding: "shop")
+        try assertAppearanceDecoratesWith(.app(.automatic().customize { $0.webViewBackgroundColor = .red }), colorScheme: "automatic", branding: "app")
+        try assertAppearanceDecoratesWith(.storefront(colors: CheckoutColors(webViewBackgroundColor: .red)), colorScheme: "light", branding: "shop")
     }
 
     private func assertAppearanceDecoratesWith(

@@ -68,7 +68,7 @@ jobs:
           java-version: 17
 
       - name: Test and check API against the published protocol
-        run: ./gradlew :shopify-checkout:testDebugUnitTest :shopify-checkout:apiCheck --console=plain
+        run: ./gradlew testDebugUnitTest apiCheck --console=plain
 
       - name: Publish Package
         run: |

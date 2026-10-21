@@ -3,6 +3,7 @@ import android.os.Looper
 import com.shopify.checkoutkit.internal.protocol.CheckoutEventAdapter
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.checkoutkit.internal.web.CheckoutWebViewListener
+import kotlinx.serialization.json.JsonPrimitive
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,6 +104,47 @@ class CheckoutEventAdapterTest {
     }
 
     @Test
+    fun `future checkout fields and enum values do not suppress lifecycle events`() {
+        val methods = listOf(
+            "ec.start",
+            "ec.line_items.change",
+            "ec.messages.change",
+            "ec.totals.change",
+            "ec.fulfillment.change",
+            "ec.complete",
+        )
+
+        methods.forEach { method ->
+            val adapter = CheckoutEventAdapter(listener)
+            adapter.process(
+                message(
+                    method,
+                    status = "on_hold",
+                    extension = "future-$method",
+                    buyerExtension = "future-$method",
+                ),
+            )
+        }
+
+        assertThat(started.single().checkout.status.value).isEqualTo("on_hold")
+        assertThat(started.single().checkout.additionalProperties)
+            .containsEntry("com.example.extension", JsonPrimitive("future-ec.start"))
+        assertThat(started.single().checkout.buyer?.additionalProperties)
+            .containsEntry("com.example.future_buyer_field", JsonPrimitive("future-ec.start"))
+        assertThat(updated).hasSize(4)
+        assertThat(updated).allSatisfy { event ->
+            assertThat(event.checkout.status.value).isEqualTo("on_hold")
+            assertThat(event.checkout.additionalProperties).containsKey("com.example.extension")
+            assertThat(event.checkout.buyer?.additionalProperties).containsKey("com.example.future_buyer_field")
+        }
+        assertThat(completed.single().checkout.status.value).isEqualTo("on_hold")
+        assertThat(completed.single().checkout.additionalProperties)
+            .containsEntry("com.example.extension", JsonPrimitive("future-ec.complete"))
+        assertThat(completed.single().checkout.buyer?.additionalProperties)
+            .containsEntry("com.example.future_buyer_field", JsonPrimitive("future-ec.complete"))
+    }
+
+    @Test
     fun `unsupported buyer and payment changes do not emit`() {
         val adapter = CheckoutEventAdapter(listener)
         adapter.process(message("ec.buyer.change"))
@@ -146,16 +188,20 @@ class CheckoutEventAdapterTest {
         assertThat(updated).hasSize(2)
     }
 
+    @Suppress("LongParameterList")
     private fun message(
         method: String,
         total: Int = 0,
         version: String = CheckoutProtocol.SPEC_VERSION,
+        status: String = "incomplete",
         extension: String = "value",
+        buyerExtension: String = "value",
     ): String = """{
         "jsonrpc":"2.0","method":"$method","params":{"checkout":{
           "actions":{"com.example.review":[{"id":"action-1"}]},
           "policies":[{"type":"com.example.return","description":{"plain":"Return within 30 days"}}],
-          "id":"checkout-1","currency":"USD","status":"incomplete","line_items":[],"links":[],
+          "buyer":{"email":"buyer@example.com","com.example.future_buyer_field":"$buyerExtension"},
+          "id":"checkout-1","currency":"USD","status":"$status","line_items":[],"links":[],
           "messages":[{"type":"error","code":"out_of_stock","content":"Unavailable"}],
           "totals":[{"type":"total","amount":$total}],"com.example.extension":"$extension",
           "ucp":{"payment_handlers":{},"version":"$version"}

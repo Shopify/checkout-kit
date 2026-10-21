@@ -6,7 +6,7 @@ import android.webkit.GeolocationPermissions;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.shopify.checkoutkit.*;
+import com.shopify.checkoutkit.checkout.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -105,20 +105,21 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     this.geolocationOrigin = null;
   }
 
+  /**
+   * A failure that closes checkout is followed by {@link #onCheckoutDismissed()},
+   * which ends the session.
+   */
   @Override
   public void onCheckoutFailed(CheckoutFailureEvent event) {
     if (dispatch.isReleased()) {
       return;
     }
     try {
-      onTerminal.run();
       Map<String, Object> payload = new HashMap<>();
       payload.put("error", populateErrorDetails(event.getError()));
       dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, payload));
     } catch (IOException e) {
       Log.e(TAG, "Error processing checkout failed event", e);
-    } finally {
-      release();
     }
   }
 

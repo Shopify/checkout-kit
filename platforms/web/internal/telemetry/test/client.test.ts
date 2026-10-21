@@ -97,6 +97,24 @@ describe('CheckoutKitTelemetry', () => {
     expect(body).toContain('checkout_kit_protocol_decode_error');
   });
 
+  it('allows only explicitly configured additional protocol labels per client', async () => {
+    const fetch = vi.fn().mockResolvedValue({ok: true});
+    const methods = ['custom.update'];
+    const telemetry = createCheckoutKitTelemetryForTesting({sdkVersion: 'test', fetch, protocolMethods: methods});
+    methods.push('untrusted.value');
+    telemetry.recordProtocolDecodeError({method: 'custom.update', failureType: 'params'});
+    telemetry.recordProtocolDecodeError({method: 'untrusted.value', failureType: 'params'});
+    await telemetry.flush();
+    expect(fetch.mock.calls[0]![1].body).toContain('custom.update');
+    expect(fetch.mock.calls[0]![1].body).toContain('unknown');
+    expect(fetch.mock.calls[0]![1].body).not.toContain('untrusted.value');
+    fetch.mockClear();
+    const standard = createCheckoutKitTelemetryForTesting({sdkVersion: 'test', fetch});
+    standard.recordProtocolDecodeError({method: 'custom.update', failureType: 'params'});
+    await standard.flush();
+    expect(fetch.mock.calls[0]![1].body).not.toContain('custom.update');
+  });
+
   it('bounds pending measurements and isolates export failures', async () => {
     const fetch = vi.fn().mockRejectedValue(new Error('network unavailable'));
     const telemetry = createCheckoutKitTelemetryForTesting({

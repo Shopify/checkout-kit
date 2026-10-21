@@ -16,21 +16,30 @@ describe('completed checkout cleanup', () => {
     }),
   };
 
-  it.each(['onDismiss', 'onFail'] as const)(
-    'clears a completed cart once on %s',
-    terminal => {
-      const clearCart = jest.fn();
-      const {result} = renderHook(() =>
-        useShopifyEventHandlers('test', clearCart),
-      );
-      act(() => result.current.onComplete?.({} as CheckoutCompleteEvent));
-      expect(clearCart).not.toHaveBeenCalled();
-      act(() => result.current[terminal]?.(failure));
-      expect(clearCart).toHaveBeenCalledTimes(1);
-      act(() => result.current.onDismiss?.());
-      expect(clearCart).toHaveBeenCalledTimes(1);
-    },
-  );
+  it('clears a completed cart once on dismissal', () => {
+    const clearCart = jest.fn();
+    const {result} = renderHook(() =>
+      useShopifyEventHandlers('test', clearCart),
+    );
+    act(() => result.current.onComplete?.({} as CheckoutCompleteEvent));
+    expect(clearCart).not.toHaveBeenCalled();
+    act(() => result.current.onDismiss?.());
+    expect(clearCart).toHaveBeenCalledTimes(1);
+    act(() => result.current.onDismiss?.());
+    expect(clearCart).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for dismissal after a failure to clear a completed cart', () => {
+    const clearCart = jest.fn();
+    const {result} = renderHook(() =>
+      useShopifyEventHandlers('test', clearCart),
+    );
+    act(() => result.current.onComplete?.({} as CheckoutCompleteEvent));
+    act(() => result.current.onFail?.(failure));
+    expect(clearCart).not.toHaveBeenCalled();
+    act(() => result.current.onDismiss?.());
+    expect(clearCart).toHaveBeenCalledTimes(1);
+  });
 
   it('keeps an incomplete cart after failure', () => {
     const clearCart = jest.fn();

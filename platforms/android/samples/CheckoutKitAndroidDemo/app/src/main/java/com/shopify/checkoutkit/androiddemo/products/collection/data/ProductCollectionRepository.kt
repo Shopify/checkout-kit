@@ -3,19 +3,11 @@ package com.shopify.checkoutkit.androiddemo.products.collection.data
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiClient
 import com.shopify.checkoutkit.androiddemo.common.client.StorefrontApiException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 
 class ProductCollectionRepository(
     private val client: StorefrontApiClient,
 ) {
-    suspend fun getProductCollections(
-        numberOfCollections: Int,
-        numberOfProductsPerCollection: Int
-    ): List<ProductCollection> {
-        return observeProductCollections(numberOfCollections, numberOfProductsPerCollection).last()
-    }
-
     fun observeProductCollections(
         numberOfCollections: Int,
         numberOfProductsPerCollection: Int,
@@ -26,10 +18,6 @@ class ProductCollectionRepository(
         ).map { data ->
             data.collections.nodes.map { collection -> collection.toLocal() }
         }
-    }
-
-    suspend fun getProductCollection(collectionHandle: String, numberOfProducts: Int): ProductCollection {
-        return observeProductCollection(collectionHandle, numberOfProducts).last()
     }
 
     fun observeProductCollection(collectionHandle: String, numberOfProducts: Int): Flow<ProductCollection> {

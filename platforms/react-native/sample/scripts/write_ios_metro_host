@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Runs in the "Bundle React Native code and images" build phase, after
+# react-native-xcode.sh.
+#
+# A Debug build reads the Metro host from ip.txt in the app bundle. Without
+# ip.txt, the app uses localhost and port 8081. That port is compiled into the
+# prebuilt React-Core, so RCT_METRO_PORT at build time does not change it. This
+# script writes HOST:RCT_METRO_PORT to ip.txt, so the app loads its bundle from
+# Metro on that port. react-native run-ios sets RCT_METRO_PORT from --port.
+
+set -euo pipefail
+
+case "$CONFIGURATION" in
+  *Debug*) ;;
+  *) exit 0 ;;
+esac
+
+IP_FILE="$CONFIGURATION_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/ip.txt"
+
+if [[ "$PLATFORM_NAME" == *simulator ]]; then
+  # react-native-xcode.sh writes ip.txt only for devices. Remove the file of an
+  # earlier build, so a build without RCT_METRO_PORT uses port 8081 again.
+  rm -f "$IP_FILE"
+  host="localhost"
+else
+  # On a device, react-native-xcode.sh writes the IP address of this Mac.
+  host="$(cat "$IP_FILE" 2>/dev/null || echo localhost)"
+  host="${host%%:*}"
+fi
+
+[ -n "${RCT_METRO_PORT:-}" ] || exit 0
+
+printf '%s:%s\n' "$host" "$RCT_METRO_PORT" >"$IP_FILE"
+echo "Metro host for this build: $host:$RCT_METRO_PORT"

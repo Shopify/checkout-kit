@@ -52,7 +52,7 @@ enum ApplePayState: Equatable, @unchecked Sendable {
     case unexpectedError(error: Error)
 
     /// Use this when when ApplePay cannot handle the error, and Checkout Kit cannot be used as a fallback
-    /// e.g. cart query / cartCreate fails, so we don't have a checkoutURL to show Checkout Kit
+    /// e.g. a cart query fails, so we don't have a checkout URL to show Checkout Kit
     case terminalError(error: Error)
 
     /// Presenting CheckoutKit (Checkout Kit)

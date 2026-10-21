@@ -8,6 +8,7 @@ import {toProtocolMethod} from './protocol-method';
 import type {
   CheckoutKitTelemetry as CheckoutKitTelemetryClient,
   CheckoutKitTelemetryTestingOptions,
+  CheckoutKitTelemetryOptions,
   FlushOptions,
   ShutdownOptions,
   TelemetryErrorMetric,
@@ -26,6 +27,7 @@ const MAX_EXPORT_BACKOFF_EXPONENT = 4;
 
 class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
   readonly #sdkVersion: string;
+  readonly #protocolMethods: readonly string[];
   readonly #product: TelemetryProduct;
   readonly #platform: TelemetryPlatform;
   readonly #endpoint: string;
@@ -44,6 +46,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
 
   constructor(options: CheckoutKitTelemetryTestingOptions) {
     this.#sdkVersion = options.sdkVersion;
+    this.#protocolMethods = [...(options.protocolMethods ?? [])];
     this.#product = options.product ?? 'checkout_kit';
     this.#platform = options.platform ?? 'web';
     this.#endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
@@ -77,7 +80,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
 
   recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric): void {
     this.#recordCounter('checkout_kit_protocol_decode_error', this.#attributes({
-      method: toProtocolMethod(metric.method),
+      method: toProtocolMethod(metric.method, this.#protocolMethods),
       failure_type: metric.failureType,
     }));
   }
@@ -255,8 +258,9 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
 
 export function createCheckoutKitTelemetry(
   sdkVersion: string,
+  options: CheckoutKitTelemetryOptions = {},
 ): CheckoutKitTelemetryClient {
-  return new DefaultCheckoutKitTelemetry({sdkVersion});
+  return new DefaultCheckoutKitTelemetry({...options, sdkVersion});
 }
 
 export function createCheckoutKitTelemetryForTesting(

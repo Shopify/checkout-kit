@@ -108,17 +108,6 @@ final class GraphQLClientTests: XCTestCase {
         XCTAssertTrue(operation.responseType == StorefrontAPI.CartQueryResponse.self)
     }
 
-    func testGraphQLRequestWithMutation() {
-        // Test that GraphQLRequest works with mutation enum
-        let operation = GraphQLRequest(
-            operation: GraphQLDocument.Mutations.cartCreate,
-            responseType: StorefrontAPI.CartCreateResponse.self
-        )
-
-        XCTAssertFalse(operation.query.isEmpty)
-        XCTAssertTrue(operation.responseType == StorefrontAPI.CartCreateResponse.self)
-    }
-
     func testGraphQLRequestWithRawDocument() {
         struct TestResponse: Codable {
             let test: String
@@ -142,55 +131,12 @@ final class GraphQLClientTests: XCTestCase {
         XCTAssertFalse(cartOp.query.isEmpty)
     }
 
-    func testPreDefinedMutationOperations() {
-        // Test cart mutations
-        let createOp = Operations.cartCreate()
-        XCTAssertTrue(createOp.responseType == StorefrontAPI.CartCreateResponse.self)
-        XCTAssertFalse(createOp.query.isEmpty)
-
-        let updateBuyerOp = Operations.cartBuyerIdentityUpdate()
-        XCTAssertTrue(updateBuyerOp.responseType == StorefrontAPI.CartBuyerIdentityUpdateResponse.self)
-
-        let replaceAddressOp = Operations.cartDeliveryAddressesReplace()
-        XCTAssertTrue(replaceAddressOp.responseType == StorefrontAPI.CartDeliveryAddressesReplaceResponse.self)
-
-        let updateDeliveryOp = Operations.cartSelectedDeliveryOptionsUpdate()
-        XCTAssertTrue(updateDeliveryOp.responseType == StorefrontAPI.CartSelectedDeliveryOptionsUpdateResponse.self)
-
-        let paymentOp = Operations.cartPaymentUpdate()
-        XCTAssertTrue(paymentOp.responseType == StorefrontAPI.CartPaymentUpdateResponse.self)
-
-        let removeDataOp = Operations.cartRemovePersonalData()
-        XCTAssertTrue(removeDataOp.responseType == StorefrontAPI.CartRemovePersonalDataResponse.self)
-
-        let prepareOp = Operations.cartPrepareForCompletion()
-        XCTAssertTrue(prepareOp.responseType == StorefrontAPI.CartPrepareForCompletionResponse.self)
-
-        let submitOp = Operations.cartSubmitForCompletion()
-        XCTAssertTrue(submitOp.responseType == StorefrontAPI.CartSubmitForCompletionResponse.self)
-    }
-
-    // MARK: - GraphQL Document Integration Tests
-
     func testGraphQLDocumentQueries() {
         // Verify that GraphQL queries are properly formatted
         let cartQuery = GraphQLDocument.build(operation: .cart)
         XCTAssertTrue(cartQuery.contains("query GetCart"))
         XCTAssertTrue(cartQuery.contains("cart(id: $id)"))
     }
-
-    func testGraphQLDocumentMutations() {
-        // Verify that GraphQL mutations are properly formatted
-        let createMutation = GraphQLDocument.build(operation: .cartCreate)
-        XCTAssertTrue(createMutation.contains("mutation CartCreate"))
-        XCTAssertTrue(createMutation.contains("cartCreate(input: $input)"))
-
-        let updateMutation = GraphQLDocument.build(operation: .cartBuyerIdentityUpdate)
-        XCTAssertTrue(updateMutation.contains("mutation CartBuyerIdentityUpdate"))
-        XCTAssertTrue(updateMutation.contains("cartBuyerIdentityUpdate(cartId: $cartId"))
-    }
-
-    // MARK: - Client Configuration Tests
 
     func testClientWithDifferentConfigurations() {
         // Test with all parameters
@@ -245,7 +191,6 @@ final class GraphQLClientTests: XCTestCase {
         _ = StorefrontAPI.CartQueryResponse.self
 
         // Mutation response types
-        _ = StorefrontAPI.CartCreateResponse.self
         _ = StorefrontAPI.CartBuyerIdentityUpdateResponse.self
         _ = StorefrontAPI.CartDeliveryAddressesReplaceResponse.self
         _ = StorefrontAPI.CartSelectedDeliveryOptionsUpdateResponse.self

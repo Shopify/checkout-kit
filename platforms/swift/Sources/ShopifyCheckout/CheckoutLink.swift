@@ -11,11 +11,11 @@ public struct CheckoutLink: Equatable, Sendable {
 
 /// The action Checkout Kit should take for a link clicked in checkout.
 public enum CheckoutLinkAction: Equatable, Sendable {
-    /// Open the link using Checkout Kit's default system behavior.
-    case open
-
     /// Do not open the link.
     case cancel
+
+    /// Let Checkout Kit open the link using its default system behavior.
+    case `default`
 
     /// The app handled the link itself.
     case handled

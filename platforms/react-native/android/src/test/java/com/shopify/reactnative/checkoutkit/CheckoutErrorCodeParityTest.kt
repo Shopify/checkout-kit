@@ -1,6 +1,6 @@
 package com.shopify.reactnative.checkoutkit
 
-import com.shopify.checkoutkit.CheckoutErrorCode
+import com.shopify.checkoutkit.checkout.CheckoutErrorCode
 import java.io.File
 import java.io.IOException
 import kotlinx.serialization.json.Json

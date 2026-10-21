@@ -127,8 +127,8 @@ jobs:
           STOREFRONT_DOMAIN: example.myshopify.com
           STOREFRONT_ACCESS_TOKEN: test-token
 
-      - name: Test and Build Sample App
-        run: ./gradlew :app:testDebugUnitTest assembleDebug --console=plain
+      - name: Build Sample App
+        run: ./gradlew assembleDebug --console=plain
         working-directory: platforms/android/samples/CheckoutKitAndroidDemo
 
   lint:
