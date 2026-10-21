@@ -1,5 +1,28 @@
 # Checkout Kit for Swift changelog
 
+## 4.0.0-alpha.10
+
+### Major Changes
+
+- Accelerated checkout buttons now obtain Buy Now carts from your app after a wallet is selected. Replace `ShopifyAcceleratedCheckoutButtons(variantID:quantity:)` with either an existing `cartID` or the new `variantID:getCart:` initializer.
+- Rename the `CheckoutColors` color properties and their `init` labels so that each color name ends in `Color`. The old names are removed without deprecated aliases. `closeIcon` and `headerBorderColor` keep their names.
+
+  | Before | After |
+  | --- | --- |
+  | `webViewBackground` | `webViewBackgroundColor` |
+  | `headerBackground` | `headerBackgroundColor` |
+  | `headerFont` | `headerTitleColor` |
+  | `progressIndicator` | `progressIndicatorColor` |
+  | `closeIconTint` | `closeIconTintColor` |
+
+  The initializer is now `CheckoutColors(webViewBackgroundColor:headerBackgroundColor:headerTitleColor:progressIndicatorColor:closeIcon:closeIconTintColor:headerBorderColor:)`. For example, replace `CheckoutColors(progressIndicator: .systemBlue)` with `CheckoutColors(progressIndicatorColor: .systemBlue)`, and `$0.headerFont = .label` with `$0.headerTitleColor = .label`.
+- Replace the `Wallet` enum with an extensible value type. Existing `.applePay` and `.shopPay` values remain available; update exhaustive `switch` statements to handle unknown wallet values.
+- Rename `CheckoutLinkAction.open` to `default`. Return `default` when your app does not handle a checkout link and Checkout Kit should use its default link-opening behavior.
+
+### Patch Changes
+
+- Use a lighter default progress indicator color in dark mode. The default `CheckoutColors.progressIndicatorColor` is now `#1773B0` in light mode and `#1E8CC8` in dark mode, matching Android.
+
 ## 4.0.0-alpha.9
 
 ### Major Changes
