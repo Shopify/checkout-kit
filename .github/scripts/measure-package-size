@@ -94,7 +94,7 @@ measure_web_package() {
   pack_dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-web-pack.XXXXXX")
   (
     cd "$repo_root/platforms/web"
-    pnpm build
+    # `prepack` runs `build:npm`; the CDN build is not in the package.
     pnpm pack --pack-destination "$pack_dir"
   )
 

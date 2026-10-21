@@ -18,13 +18,15 @@ final class PreloadCache {
         let key: PreloadKey
         let view: CheckoutWebView
         let createdAt: Date
+        let now: () -> Date
 
         private static let ttl: TimeInterval = 5 * 60
 
-        init(key: PreloadKey, view: CheckoutWebView, createdAt: Date = Date()) {
+        init(key: PreloadKey, view: CheckoutWebView, createdAt: Date, now: @escaping () -> Date) {
             self.key = key
             self.view = view
             self.createdAt = createdAt
+            self.now = now
         }
 
         var isStale: Bool {
@@ -32,31 +34,36 @@ final class PreloadCache {
         }
 
         var remainingTTL: TimeInterval {
-            Self.ttl - Date().timeIntervalSince(createdAt)
+            Self.ttl - now().timeIntervalSince(createdAt)
         }
     }
 
     private static let keepAliveInterval: TimeInterval = 0.5
 
+    private let now: () -> Date
     private var entry: Entry?
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
 
-    private(set) var state: PreloadState = .idle
+    private(set) var state: PreloadState = .idle()
 
     /// The cache notifies a single observer. Each `preload(checkout:)` call
     /// replaces it, so only the most recently returned `CheckoutPreload` handle
     /// receives state updates; earlier handles stop observing.
     private weak var observer: CheckoutPreload?
 
+    init(now: @escaping () -> Date = Date.init) {
+        self.now = now
+    }
+
     func setObserver(_ observer: CheckoutPreload) {
         self.observer = observer
     }
 
-    func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date = Date()) -> Bool {
+    func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date? = nil) -> Bool {
         invalidate()
 
-        let entry = Entry(key: key, view: view, createdAt: createdAt)
+        let entry = Entry(key: key, view: view, createdAt: createdAt ?? now(), now: now)
         guard !entry.isStale else {
             return false
         }
@@ -79,7 +86,10 @@ final class PreloadCache {
     /// Evicts the cached view, then notifies observers of the resulting `state`.
     /// Clearing before notifying ensures a preload started re-entrantly from the
     /// callback is not wiped by this invalidation.
+    /// An empty cache preserves its last state without notifying observers.
     func evict(with state: PreloadState) {
+        guard entry != nil else { return }
+
         invalidate()
         transition(to: state)
     }
@@ -89,7 +99,7 @@ final class PreloadCache {
             let missed = entry
             invalidate()
             if let missed {
-                transition(to: missed.isStale ? .expired : .idle)
+                transition(to: .idle(reason: missed.isStale ? .expired : .invalidated))
             }
             return nil
         }
@@ -199,7 +209,7 @@ final class PreloadCache {
     }
 
     func expire() {
-        evict(with: .expired)
+        evict(with: .idle(reason: .expired))
     }
 
     func keepAliveDidFail() {
@@ -376,7 +386,7 @@ class CheckoutWebView: WKWebView {
             // If the buyer then completes that checkout, discard its background replacement too;
             // otherwise the completed cart could be shown when checkout is opened again.
             guard cacheContainsCompletedView || cacheContainsItsReplacement else { return }
-            CheckoutWebView.preloadCache.evict(with: .idle)
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
         }
         .on(CheckoutProtocol.windowOpen) { [weak self, externalURLHandler] request in
             guard let target = request.parsedURL else {
@@ -634,7 +644,7 @@ class CheckoutWebView: WKWebView {
         guard CheckoutWebView.preloadCache.contains(self) else { return }
 
         if hasBeenPresented {
-            CheckoutWebView.preloadCache.evict(with: .idle)
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
         } else {
             CheckoutWebView.preloadCache.evict(with: .failed(reason: reason, message: message))
         }

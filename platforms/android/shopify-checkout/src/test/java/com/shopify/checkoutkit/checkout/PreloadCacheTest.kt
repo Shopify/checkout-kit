@@ -23,6 +23,98 @@ class PreloadCacheTest {
     }
 
     @Test
+    fun `invalidating an empty cache preserves initial state without notifying`() {
+        val cache = PreloadCache(FakePreloadExpiryScheduler())
+        val states = mutableListOf<PreloadState>()
+        val preload = CheckoutPreload(cache).also { it.listener = PreloadStateListener(states::add) }
+
+        cache.evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+
+        assertThat(cache.state).isEqualTo(PreloadState.Idle())
+        assertThat(preload.state).isEqualTo(PreloadState.Idle())
+        assertThat(states).containsExactly(PreloadState.Idle())
+    }
+
+    @Test
+    fun `expiry at ttl boundary preserves expired reason through empty invalidation`() {
+        var now = 1_000L
+        val scheduler = FakePreloadExpiryScheduler()
+        val cache = PreloadCache(scheduler).also {
+            it.clock = object : PreloadCache.Clock() {
+                override fun elapsedRealtime(): Long = now
+            }
+        }
+        cache.store(PreloadKey("https://example.com/checkout"), mock(), activity())
+        val states = mutableListOf<PreloadState>()
+        val preload = CheckoutPreload(cache).also { it.listener = PreloadStateListener(states::add) }
+        now += TimeUnit.MINUTES.toMillis(5) - 1
+        scheduler.fire()
+        assertThat(cache.hasEntry).isTrue()
+        assertThat(scheduler.scheduledDelayMillis).isEqualTo(1)
+
+        now += 1
+        scheduler.fire()
+        cache.evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+
+        val expired = PreloadState.Idle(PreloadState.IdleReason.Expired)
+        assertThat(cache.hasEntry).isFalse()
+        assertThat(cache.state).isEqualTo(expired)
+        assertThat(preload.state).isEqualTo(expired)
+        assertThat(states).containsExactly(PreloadState.Loading, expired)
+    }
+
+    @Test
+    fun `invalidating an empty cache preserves failure without notifying`() {
+        val cache = PreloadCache(FakePreloadExpiryScheduler())
+        cache.store(PreloadKey("https://example.com/checkout"), mock(), activity())
+        val states = mutableListOf<PreloadState>()
+        val preload = CheckoutPreload(cache).also { it.listener = PreloadStateListener(states::add) }
+        val failure = PreloadState.Failed(PreloadState.FailureReason.NavigationFailed, "Navigation failed.")
+        cache.evict(failure)
+
+        cache.evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+
+        assertThat(cache.state).isEqualTo(failure)
+        assertThat(preload.state).isEqualTo(failure)
+        assertThat(states).containsExactly(PreloadState.Loading, failure)
+    }
+
+    @Test
+    fun `future idle reason is preserved and releases the observer`() {
+        val cache = PreloadCache(FakePreloadExpiryScheduler())
+        val key = PreloadKey("https://example.com/checkout")
+        cache.store(key, mock(), activity())
+        val states = mutableListOf<PreloadState>()
+        val preload = CheckoutPreload(cache).also { it.listener = PreloadStateListener(states::add) }
+        val reason = PreloadState.IdleReason("futureReason")
+        val futureIdle = PreloadState.Idle(reason)
+
+        cache.evict(futureIdle)
+        cache.store(key, mock(), activity())
+
+        assertThat(preload.state).isEqualTo(futureIdle)
+        assertThat(states).containsExactly(PreloadState.Loading, futureIdle)
+        val handledReason = when (reason) {
+            PreloadState.IdleReason.Invalidated, PreloadState.IdleReason.Expired -> "known"
+            else -> reason.rawValue
+        }
+        assertThat(handledReason).isEqualTo("futureReason")
+    }
+
+    @Test
+    fun `destroying lifecycle owner invalidates preload`() {
+        val cache = PreloadCache(FakePreloadExpiryScheduler())
+        val owner = activity()
+        cache.store(PreloadKey("https://example.com/checkout"), mock(), owner)
+        val preload = CheckoutPreload(cache)
+
+        cache.onDestroy(owner)
+
+        assertThat(cache.hasEntry).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+    }
+
+    @Test
     fun `expiry timer rearms while entry is fresh`() {
         val now = 1_000L
         val scheduler = FakePreloadExpiryScheduler()
@@ -61,6 +153,7 @@ class PreloadCacheTest {
 
         assertThat(cache.hasEntry).isFalse()
         assertThat(scheduler.isScheduled).isFalse()
+        assertThat(cache.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Expired))
     }
 
     @Test

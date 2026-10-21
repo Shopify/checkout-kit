@@ -105,7 +105,7 @@ class PreloadObservabilityTest {
         ShopifyCheckoutKit.invalidate()
         ShadowLooper.shadowMainLooper().idle()
 
-        assertThat(preload.state).isEqualTo(PreloadState.Idle)
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
     }
 
     @Test
@@ -117,7 +117,7 @@ class PreloadObservabilityTest {
         ShadowLooper.shadowMainLooper().idle()
 
         assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
-        assertThat(preload.state).isEqualTo(PreloadState.Idle)
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
     }
 
     @Test
@@ -129,7 +129,7 @@ class PreloadObservabilityTest {
         ShopifyCheckoutKit.invalidate()
         ShadowLooper.shadowMainLooper().idle()
 
-        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Idle)
+        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Idle(PreloadState.IdleReason.Invalidated))
     }
 
     @Test
@@ -188,7 +188,10 @@ class PreloadObservabilityTest {
         ShadowLooper.shadowMainLooper().idle()
 
         assertThat(firstStates).containsExactly(PreloadState.Loading)
-        assertThat(secondStates).containsExactly(PreloadState.Loading, PreloadState.Idle)
+        assertThat(secondStates).containsExactly(
+            PreloadState.Loading,
+            PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+        )
     }
 
     @Test
@@ -244,7 +247,7 @@ class PreloadObservabilityTest {
         CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().idle()
 
-        assertThat(preload.state).isEqualTo(PreloadState.Expired)
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Expired))
     }
 
     @Test
@@ -256,7 +259,7 @@ class PreloadObservabilityTest {
         CheckoutWebView.checkoutViewFor(otherUrl, activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().idle()
 
-        assertThat(preload.state).isEqualTo(PreloadState.Idle)
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
     }
 
     @Test
@@ -266,7 +269,7 @@ class PreloadObservabilityTest {
             override fun elapsedRealtime(): Long = now
         }
         ShopifyCheckoutKit.preload(url, activity, webMessageTransport) { state ->
-            if (state == PreloadState.Expired) {
+            if (state == PreloadState.Idle(PreloadState.IdleReason.Expired)) {
                 ShopifyCheckoutKit.preload(url, activity, webMessageTransport)
             }
         }
@@ -298,7 +301,7 @@ class PreloadObservabilityTest {
         ShadowLooper.shadowMainLooper().idle()
 
         assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
-        assertThat(preload.state).isEqualTo(PreloadState.Expired)
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Expired))
     }
 
     @Config(sdk = [26])

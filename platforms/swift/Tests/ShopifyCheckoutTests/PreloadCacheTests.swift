@@ -81,7 +81,7 @@ class PreloadCacheTests: XCTestCase {
         entry.webViewWebContentProcessDidTerminate(entry)
 
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
-        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle)
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle(reason: .invalidated))
         XCTAssertEqual(try XCTUnwrap(delegate.errorReceived).code, .webContentProcessTerminated)
     }
 
@@ -91,6 +91,7 @@ class PreloadCacheTests: XCTestCase {
         _ = await entry.defaultsClient.process(ecCompleteBody())
 
         XCTAssertFalse(CheckoutWebView.preloadCache.contains(entry))
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle(reason: .invalidated))
     }
 
     func test_CompleteOnPresentedViewClearsMatchingReplacementPreload() async {
@@ -106,6 +107,7 @@ class PreloadCacheTests: XCTestCase {
         _ = await presented.defaultsClient.process(ecCompleteBody())
 
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+        XCTAssertEqual(CheckoutWebView.preloadCache.state, .idle(reason: .invalidated))
         XCTAssertFalse(replacement.isBridgeAttached)
         XCTAssertTrue(presented.isBridgeAttached)
     }
