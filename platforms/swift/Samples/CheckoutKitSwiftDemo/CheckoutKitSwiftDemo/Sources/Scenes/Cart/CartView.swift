@@ -10,7 +10,7 @@ struct CartView: View {
     @State var isBusy: Bool = false
     @StateObject private var checkoutPresentation = CartCheckoutPresentation()
     @State private var checkoutPreload: CheckoutPreload?
-    @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle)
+    @State private var preloadStateTestId = PreloadStateMarker.testId(for: .idle())
 
     @ObservedObject var cartManager: CartManager = .shared
     @ObservedObject private var preloadCacheHitLog: PreloadCacheHitLog = .shared

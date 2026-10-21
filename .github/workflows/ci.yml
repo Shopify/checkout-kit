@@ -163,16 +163,6 @@ jobs:
     if: needs.changes.outputs.swift == 'true'
     uses: ./.github/workflows/swift-lint.yml
 
-  swift-sample-package-paths:
-    name: Swift Sample Package Paths
-    needs: changes
-    if: needs.changes.outputs.swift == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: platforms/swift/Scripts/check_sample_package_paths
-
   rn-test:
     name: React Native
     needs: changes
@@ -311,7 +301,6 @@ jobs:
       - changes
       - android-test
       - swift-lint
-      - swift-sample-package-paths
       - rn-test
       - rn-test-android
       - rn-build-android

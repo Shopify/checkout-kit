@@ -49,7 +49,7 @@ internal class PreloadCache(
     private var entry: Entry? = null
     private var observer: CheckoutPreload? = null
 
-    var state: PreloadState = PreloadState.Idle
+    var state: PreloadState = PreloadState.Idle()
         private set
 
     val hasEntry: Boolean
@@ -72,7 +72,7 @@ internal class PreloadCache(
         val isCurrentEntry = cached?.view === view
         if (isCurrentEntry && cached?.isFresh(clock.elapsedRealtime()) == false) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding expired preloaded WebView.")
-            evict(PreloadState.Expired)
+            evict(PreloadState.Idle(PreloadState.IdleReason.Expired))
         }
         return entry?.view === view
     }
@@ -103,7 +103,7 @@ internal class PreloadCache(
         )
         entry = newEntry
         if (lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
-            evict(PreloadState.Idle)
+            evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
             return
         }
         lifecycleOwner.lifecycle.addObserver(this)
@@ -116,7 +116,8 @@ internal class PreloadCache(
             cached
         } else {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
-            evict(if (cached.key == key) PreloadState.Expired else PreloadState.Idle)
+            val reason = if (cached.key == key) PreloadState.IdleReason.Expired else PreloadState.IdleReason.Invalidated
+            evict(PreloadState.Idle(reason))
             // `evict` notifies synchronously, and its observer may re-enter `preload`.
             // Reuse only a fresh replacement that matches the requested key.
             entry?.takeIf { it.isValid(key, clock.elapsedRealtime()) }
@@ -160,6 +161,8 @@ internal class PreloadCache(
      */
     fun evict(state: PreloadState, view: CheckoutWebView? = null) {
         if (view != null && entry?.view !== view) return
+        // Idle reasons describe a removed entry. Invalid requests can fail before an entry exists.
+        if (entry == null && state is PreloadState.Idle) return
         invalidate()
         transition(state)
     }
@@ -181,7 +184,7 @@ internal class PreloadCache(
                 if (entry.isFresh(clock.elapsedRealtime())) {
                     scheduleExpiry(entry)
                 } else {
-                    evict(PreloadState.Expired, view = entry.view)
+                    evict(PreloadState.Idle(PreloadState.IdleReason.Expired), view = entry.view)
                 }
             }
         }
@@ -202,14 +205,14 @@ internal class PreloadCache(
         if (cached.isFresh(clock.elapsedRealtime())) {
             scheduleExpiry(cached)
         } else {
-            evict(PreloadState.Expired, view = cached.view)
+            evict(PreloadState.Idle(PreloadState.IdleReason.Expired), view = cached.view)
         }
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
         if (entry?.lifecycleOwner === owner) {
             ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding preloaded WebView for destroyed lifecycle owner.")
-            evict(PreloadState.Idle)
+            evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
         }
     }
 
@@ -249,4 +252,4 @@ private class HandlerPreloadExpiryScheduler : PreloadExpiryScheduler {
 }
 
 private val PreloadState.isTerminal: Boolean
-    get() = this == PreloadState.Idle || this == PreloadState.Expired || this is PreloadState.Failed
+    get() = this is PreloadState.Idle || this is PreloadState.Failed

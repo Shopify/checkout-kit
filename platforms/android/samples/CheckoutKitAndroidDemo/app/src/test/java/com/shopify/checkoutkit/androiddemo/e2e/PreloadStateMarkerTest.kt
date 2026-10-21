@@ -12,6 +12,6 @@ class PreloadStateMarkerTest {
 
     @Test
     fun `non-ready state uses the fallback marker`() {
-        assertThat(PreloadStateMarker.testId(PreloadState.Idle)).isEqualTo("preload-state-not-ready")
+        assertThat(PreloadStateMarker.testId(PreloadState.Idle())).isEqualTo("preload-state-not-ready")
     }
 }

@@ -10,10 +10,31 @@ import com.shopify.checkoutkit.internal.preload.PreloadCache
  * machine-readable value.
  */
 public sealed class PreloadState {
-    public data object Idle : PreloadState()
+    /** No checkout is cached; the initial state has no reason. */
+    public data class Idle(public val reason: IdleReason? = null) : PreloadState()
     public data object Loading : PreloadState()
     public data object Ready : PreloadState()
-    public data object Expired : PreloadState()
+
+    /**
+     * Extensible reason for an unavailable preload. Compare known constants or include an
+     * `else` branch in `when` expressions to handle reasons added by future releases.
+     *
+     * @property rawValue Stable identifier, preserved even for unknown reasons.
+     */
+    public data class IdleReason(public val rawValue: String) {
+        public companion object {
+            /**
+             * The preload was invalidated or became inapplicable: configuration changes,
+             * a checkout URL mismatch, activity destruction, completion, or unusable presented content.
+             */
+            @JvmField
+            public val Invalidated: IdleReason = IdleReason("invalidated")
+
+            /** The cached preload passed its time-to-live. */
+            @JvmField
+            public val Expired: IdleReason = IdleReason("expired")
+        }
+    }
 
     public data class Failed(
         public val reason: FailureReason,

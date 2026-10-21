@@ -187,14 +187,14 @@ Each call refreshes the cached checkout, even when `checkoutURL` is unchanged. C
 let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
 preload?.onStateChange = { state in
   switch state {
+  case .idle(let reason):
+    recordPreloadIdle(reason)
   case .loading:
     showPreloadProgress()
   case .ready:
     enableCheckoutAffordance()
-  case .failed(let reason):
-    recordPreloadFailure(reason)
-  case .expired, .idle:
-    break
+  case .failed(let reason, let message):
+    recordPreloadFailure(reason, message)
   }
 }
 
@@ -206,15 +206,18 @@ if preload == nil {
 
 `onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `.loading`.
 
-A successful background preload normally transitions from `.loading` to `.ready`. `.idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+A successful background preload normally transitions from `.loading` to `.ready`. `.idle()` is the initial state. An idle state with an `.invalidated` or `.expired` reason means a cached preload became unavailable through that expected lifecycle transition. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+
+`.invalidated` covers explicit invalidation, configuration changes (including disabling preloading), a checkout URL or entry point mismatch, checkout completion, and clearing unusable content after presentation. `.expired` means the cached preload reached its time-to-live. Calling `invalidate()` when no checkout is cached preserves the last state, including any expiry or failure reason, and does not notify observers.
+
+`IdleReason` is an extensible string-backed value, with `.invalidated` and `.expired` constants. New reasons can be added without adding state cases. Compare the constants or include a `default` branch when switching over reasons; treat unfamiliar reasons as an unavailable preload. `rawValue` preserves the reason's stable identifier, including unknown values.
 
 | State | Meaning |
 | --- | --- |
 | `.loading` | The background checkout WebView is loading. |
 | `.ready` | The preload finished and can be used for the matching checkout URL. |
-| `.idle` | The preload was invalidated or otherwise cleared. |
-| `.expired` | The cached preload exceeded its lifetime before it could be used. |
-| `.failed(reason:)` | An HTTP, navigation, or web-content failure occurred while preloading. |
+| `.idle(reason:)` | No checkout is cached. The optional reason distinguishes invalidation and expiry from the initial state. |
+| `.failed(reason:message:)` | An HTTP, navigation, protocol, or web-content failure occurred while preloading. |
 
 `preload` returns `nil` when preloading is disabled.
 

@@ -81,6 +81,24 @@ Expect this state while you do it:
 
 This is a local development aid for early integration. It is not part of normal development.
 
+### Review staged native and React Native work
+
+The native SDK release and its React Native adoption are intentionally separate:
+
+1. Land and publish the Swift and/or Android public API.
+2. Once that version is available from CocoaPods and Maven Central, open a React Native PR that bumps `checkoutKit.nativeSdkVersions` and adopts the API.
+
+When reviewing either PR, do not report the absence of the other step as a defect. In
+particular, do not ask a native SDK PR to update the React Native pin or bridge in the
+same PR. Do not report an early React Native integration that uses `--local` as broken
+solely because its default CI build still resolves the previous published SDK; that is an
+expected, temporary merge gate until the native release is published and the pin is
+updated.
+
+A version-pin mismatch is a defect only when the React Native change is intended to
+merge against published artifacts and the required native release is already available,
+but the PR does not update `checkoutKit.nativeSdkVersions`.
+
 ### Scope
 
 `--local` concerns the native SDK sources:

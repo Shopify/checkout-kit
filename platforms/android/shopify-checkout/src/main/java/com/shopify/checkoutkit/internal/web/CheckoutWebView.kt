@@ -567,7 +567,7 @@ internal class CheckoutWebView private constructor(
                 if (wasBackgroundedUnconsumedPreload) {
                     PreloadState.Failed(backgroundedPreloadReason, backgroundedPreloadMessage)
                 } else {
-                    PreloadState.Idle
+                    PreloadState.Idle(PreloadState.IdleReason.Invalidated)
                 },
                 view = view,
             )
@@ -648,7 +648,7 @@ internal class CheckoutWebView private constructor(
 
         fun invalidate() {
             runOnMainThread {
-                preloadCache.evict(PreloadState.Idle)
+                preloadCache.evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
             }
         }
 
@@ -660,7 +660,7 @@ internal class CheckoutWebView private constructor(
                 val containsReplacement = wasPresented &&
                     view.checkoutKey?.let { it == preloadCache.cachedKey } == true
                 if (containsCompletedView || containsReplacement) {
-                    preloadCache.evict(PreloadState.Idle, view = cachedView)
+                    preloadCache.evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated), view = cachedView)
                 }
             }
         }
