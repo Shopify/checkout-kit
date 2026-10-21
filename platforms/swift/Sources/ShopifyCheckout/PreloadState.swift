@@ -7,7 +7,11 @@ import Foundation
 /// ``CheckoutDelegate/checkoutDidFail(_:)``; a later presentation can load checkout normally.
 public enum PreloadState: Equatable {
     /// No checkout is currently cached for preload.
-    case idle
+    ///
+    /// A reason is present when a previously cached checkout became unavailable through an
+    /// expected lifecycle transition. The initial state has no reason.
+    /// Invalidating an empty cache preserves its last state and reason.
+    case idle(reason: IdleReason? = nil)
 
     /// The cached checkout is loading in the background.
     case loading
@@ -15,14 +19,34 @@ public enum PreloadState: Equatable {
     /// The cached checkout is ready for a matching presentation.
     case ready
 
-    /// The cached checkout passed its time-to-live and was evicted.
-    case expired
-
     /// The cached checkout could not be retained for the associated reason.
     ///
     /// The message contains best-effort diagnostic context. It is not a stable, machine-readable
     /// value; use ``FailureReason`` to determine how to handle the failure.
     case failed(reason: FailureReason, message: String)
+
+    /// Reason no checkout is currently cached for preload.
+    ///
+    /// New reasons may be added without changing the state cases. Compare the known constants
+    /// or include a `default` branch when switching over reasons to handle future values.
+    public struct IdleReason: RawRepresentable, Hashable, Sendable {
+        /// Stable identifier for this reason, including values introduced by future releases.
+        public let rawValue: String
+
+        /// Creates a reason from its stable identifier, preserving unknown values.
+        public init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        /// The preload was explicitly invalidated or became inapplicable.
+        ///
+        /// This includes configuration changes, a checkout URL or entry point mismatch,
+        /// checkout completion, and clearing unusable content after presentation.
+        public static let invalidated = IdleReason(rawValue: "invalidated")
+
+        /// The cached preload passed its time-to-live.
+        public static let expired = IdleReason(rawValue: "expired")
+    }
 
     /// Reason a preload cache entry was not available.
     public enum FailureReason: Equatable {

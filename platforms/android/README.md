@@ -240,8 +240,10 @@ val preload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
         PreloadState.Loading -> showPreloadProgress()
         PreloadState.Ready -> enableCheckoutAffordance()
         is PreloadState.Failed -> recordPreloadFailure(state.reason)
-        PreloadState.Expired,
-        PreloadState.Idle -> Unit
+        is PreloadState.Idle -> when (state.reason) {
+            PreloadState.IdleReason.Expired -> recordPreloadExpiry()
+            else -> Unit // Initial, invalidated, or a future reason.
+        }
     }
 }
 
@@ -253,14 +255,19 @@ if (preload == null) {
 
 The listener runs on the main thread and receives the current state immediately, followed by state changes. You can also set `preload?.listener` after creation. The preload cache has one observer, so a later `preload` call replaces the listener associated with an earlier handle. That earlier handle retains its last observed state but receives no further updates; retain the latest handle when observing state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `Loading`.
 
-A successful background preload normally transitions from `Loading` to `Ready`. `Idle` means the preload was intentionally abandoned or became inapplicable, such as after explicit invalidation, disabling preloading, activity destruction, or a checkout URL mismatch. `Failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+A successful background preload normally transitions from `Loading` to `Ready`. `Idle()` is the initial state. An idle state with an `Invalidated` or `Expired` reason means a cached preload became unavailable through that expected lifecycle transition. `Invalidated` includes explicit invalidation, configuration changes, activity destruction, a checkout URL mismatch, checkout completion, or unusable presented content. `Failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+
+Calling `invalidate()` when no checkout is cached preserves its last state and reason without notifying observers. `IdleReason` is an extensible string-backed value. Compare its known constants or include an `else` branch when switching over reasons; treat unfamiliar reasons as an unavailable preload. Its `rawValue` preserves unknown values, allowing new reasons without requiring consumer source changes.
+
+When migrating, replace `PreloadState.Idle` values with `PreloadState.Idle()`, use `is PreloadState.Idle` in state checks, and replace `PreloadState.Expired` with `PreloadState.Idle(PreloadState.IdleReason.Expired)`. Java callers use `new PreloadState.Idle()` or `new PreloadState.Idle(PreloadState.IdleReason.Expired)` and read the reason with `getReason()`.
 
 | State | Meaning |
 | --- | --- |
 | `Loading` | The background checkout WebView is loading. |
 | `Ready` | The preload finished and can be used for the matching checkout URL. |
-| `Idle` | The preload was invalidated or otherwise cleared. |
-| `Expired` | The cached preload reached its lifetime and was discarded before use. |
+| `Idle()` | Initial state with no cached preload. |
+| `Idle(IdleReason.Invalidated)` | The preload was invalidated or became inapplicable. |
+| `Idle(IdleReason.Expired)` | The cached preload reached its lifetime and was discarded before use. |
 | `Failed(reason)` | Checkout navigation, web content, or an HTTP response failed while preloading. |
 
 `preload` returns `null` when preloading is disabled, the activity is finishing or destroyed, or the installed WebView does not support the required WebMessageListener API.

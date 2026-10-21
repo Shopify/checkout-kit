@@ -50,9 +50,10 @@ public func preload(checkout url: URL) -> CheckoutPreload? {
 }
 
 /// Invalidates any cached checkout created by preload calls.
+/// If no checkout is cached, the last preload state is preserved and observers are not notified.
 @MainActor
 public func invalidate() {
-    CheckoutWebView.preloadCache.evict(with: .idle)
+    CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
 }
 
 /// Presents checkout, or returns the existing checkout in the presenter’s modal hierarchy.

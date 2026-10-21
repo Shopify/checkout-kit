@@ -65,8 +65,8 @@ class CartViewModel(
     private val _checkoutPresentationMode = MutableStateFlow(CheckoutPresentationMode.CheckoutKitSheet)
     val checkoutPresentationMode: StateFlow<CheckoutPresentationMode> = _checkoutPresentationMode.asStateFlow()
 
-    private val _preloadState = MutableStateFlow<PreloadState>(PreloadState.Idle)
-    private val _preloadStateTestId = MutableStateFlow(PreloadStateMarker.testId(PreloadState.Idle))
+    private val _preloadState = MutableStateFlow<PreloadState>(PreloadState.Idle())
+    private val _preloadStateTestId = MutableStateFlow(PreloadStateMarker.testId(PreloadState.Idle()))
     val preloadStateTestId: StateFlow<String> = _preloadStateTestId.asStateFlow()
 
     // The SDK's log sink is internal, so the cache hit is observed from this process's own

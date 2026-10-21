@@ -272,6 +272,19 @@ public class InteropTest {
     }
 
     @Test
+    public void canConstructAndInspectExtensibleIdleReasonsFromJava() {
+        assertThat(new PreloadState.Idle().getReason()).isNull();
+        PreloadState.Idle invalidated = new PreloadState.Idle(PreloadState.IdleReason.Invalidated);
+        assertThat(invalidated.getReason().getRawValue()).isEqualTo("invalidated");
+        assertThat(new PreloadState.IdleReason("expired")).isEqualTo(PreloadState.IdleReason.Expired);
+
+        PreloadState.Idle future = new PreloadState.Idle(new PreloadState.IdleReason("futureReason"));
+        assertThat(future.getReason().getRawValue()).isEqualTo("futureReason");
+        assertThat(future.getReason()).isNotEqualTo(PreloadState.IdleReason.Invalidated);
+        assertThat(future.getReason()).isNotEqualTo(PreloadState.IdleReason.Expired);
+    }
+
+    @Test
     public void canPreloadWithListenerFromJava() {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             ComponentActivity activity = controller.get();

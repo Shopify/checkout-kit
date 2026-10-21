@@ -8,6 +8,8 @@ class PreloadStateMarkerTests: XCTestCase {
     }
 
     func testNonReadyStateUsesTheFallbackMarker() {
-        XCTAssertEqual(PreloadStateMarker.testId(for: .idle), "preload-state-not-ready")
+        XCTAssertEqual(PreloadStateMarker.testId(for: .idle()), "preload-state-not-ready")
+        XCTAssertEqual(PreloadStateMarker.testId(for: .idle(reason: .invalidated)), "preload-state-not-ready")
+        XCTAssertEqual(PreloadStateMarker.testId(for: .idle(reason: .expired)), "preload-state-not-ready")
     }
 }
