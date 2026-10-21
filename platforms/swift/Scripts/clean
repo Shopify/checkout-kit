@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Cleans the Swift packages and the sample app build artifacts.
+# Usage: dev swift clean
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "$SCRIPT_DIR/.."
+# ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
+# library targets in Package.swift (ShopifyCheckoutKit,
+# ShopifyAcceleratedCheckouts, EmbeddedCheckoutProtocol) in one pass.
+./Scripts/xcode_run clean ShopifyCheckoutKit-Package
+cd Samples/CheckoutKitSwiftDemo
+# The sample app has a "Run Script" build phase that runs during clean
+# and exits non-zero when there is nothing to delete.
+../../Scripts/xcode_run clean CheckoutKitSwiftDemo || true

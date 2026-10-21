@@ -673,17 +673,25 @@ Shopify's Checkout Kit is provided under an [MIT License](LICENSE).
 
 ## Source organization
 
-Component implementations live in `src/components/<component-name>/`, with an
-explicitly named implementation file such as
-`src/components/shopify-checkout/shopify-checkout.ts`. Keep component-specific
-styles, events, types, and tests alongside it; `register.ts` registers its custom
-element. Import files directly rather than adding component barrel files.
+Component implementations live in private workspace packages under
+`components/<component-name>/`. For example, checkout lives in
+`components/shopify-checkout/src/`. Keep component-specific styles, models,
+events, types, and tests there. Each package declares its supported entrypoints
+in `package.json`: `src/index.ts` exports its API and `src/register.ts` registers
+its custom element. Other packages use those exports, not implementation paths.
 
-New components such as `accelerated-checkouts`, `universal-checkout`, and
-`shop-wallet` should follow the same layout when added. Shared models and helpers
-stay outside component directories. `src/index.ts` is the public npm entry
-for `@shopify/checkout-kit`: it exports classes, events, and types, and must not
-register elements. Expose each component through its own package subpath
-pointing to `register.ts`, which registers the element through the class's static
-`register()`. Add `@tagname` to the class so the custom elements manifest maps the
-tag to it, and list the component entry in `sideEffects`.
+The platform's `src/index.ts` is the public npm facade for
+`@shopify/checkout-kit`. It exports classes, events, and types without registering
+elements. A separate platform entry such as `src/shopify-checkout.ts` imports
+the component's registration entry and is exposed as a public npm subpath.
+Private packages are bundled into the SDK, not installed by consumers.
+
+Checkout presentation, common models, and helpers live in `internal/core/checkout`,
+exposed through `@shopify/checkout-kit-core/checkout` and its explicit subpaths.
+The core package is private; consumers use its declared exports. See
+[internal package boundaries](internal/README.md) for core composition and how to
+move a package out of core.
+
+Shared implementation belongs under `internal/` only when it has shared
+ownership. See [Platform and component architecture](../../.github/ARCHITECTURE.md#web)
+for the full component-addition checklist, including npm and CDN wiring.

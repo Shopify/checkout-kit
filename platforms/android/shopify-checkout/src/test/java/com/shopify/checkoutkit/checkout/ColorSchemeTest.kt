@@ -10,13 +10,15 @@ class ColorSchemeTest {
     fun `dark color scheme has defaults matching idiomatic dark checkout`() {
         val dark = ColorScheme.Dark()
 
-        assertThat(dark.colors.headerBackground).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
-        assertThat(dark.colors.headerFont).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
-        assertThat(dark.colors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
-        assertThat(dark.colors.progressIndicator).isEqualTo(Color.ResourceId(R.color.checkout_dark_progress_indicator))
+        assertThat(dark.colors.headerBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
+        assertThat(dark.colors.headerTitleColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
+        assertThat(dark.colors.webViewBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
+        assertThat(dark.colors.progressIndicatorColor).isEqualTo(
+            Color.ResourceId(R.color.checkout_dark_progress_indicator)
+        )
         assertThat(dark.colors.headerBorderColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_header_border))
         assertThat(dark.colors.closeIcon).isNull()
-        assertThat(dark.colors.closeIconTint).isNull()
+        assertThat(dark.colors.closeIconTintColor).isNull()
         assertThat(dark.colors.dragHandleColor).isNull()
         assertThat(dark.dragHandleColor(isDark = true)).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
     }
@@ -25,13 +27,13 @@ class ColorSchemeTest {
     fun `light color scheme has defaults matching idiomatic light checkout`() {
         val light = ColorScheme.Light()
 
-        assertThat(light.colors.headerBackground).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
-        assertThat(light.colors.headerFont).isEqualTo(
+        assertThat(light.colors.headerBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
+        assertThat(light.colors.headerTitleColor).isEqualTo(
             Color.ResourceId(R.color.checkout_light_font)
         )
-        assertThat(light.colors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
+        assertThat(light.colors.webViewBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
         assertThat(
-            light.colors.progressIndicator
+            light.colors.progressIndicatorColor
         ).isEqualTo(
             Color.ResourceId(
                 R.color.checkout_light_progress_indicator
@@ -39,7 +41,7 @@ class ColorSchemeTest {
         )
         assertThat(light.colors.headerBorderColor).isEqualTo(Color.ResourceId(R.color.checkout_light_header_border))
         assertThat(light.colors.closeIcon).isNull()
-        assertThat(light.colors.closeIconTint).isNull()
+        assertThat(light.colors.closeIconTintColor).isNull()
         assertThat(light.colors.dragHandleColor).isNull()
         assertThat(light.dragHandleColor(isDark = false)).isEqualTo(Color.ResourceId(R.color.checkout_light_font))
     }
@@ -48,11 +50,11 @@ class ColorSchemeTest {
     fun `automatic color scheme has defaults matching both idiomatic light and dark checkout`() {
         val automatic = ColorScheme.Automatic()
 
-        assertThat(automatic.darkColors.headerBackground).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
-        assertThat(automatic.darkColors.headerFont).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
-        assertThat(automatic.darkColors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
+        assertThat(automatic.darkColors.headerBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
+        assertThat(automatic.darkColors.headerTitleColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
+        assertThat(automatic.darkColors.webViewBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_dark_bg))
         assertThat(
-            automatic.darkColors.progressIndicator
+            automatic.darkColors.progressIndicatorColor
         ).isEqualTo(
             Color.ResourceId(
                 R.color.checkout_dark_progress_indicator
@@ -62,21 +64,21 @@ class ColorSchemeTest {
             automatic.darkColors.headerBorderColor
         ).isEqualTo(Color.ResourceId(R.color.checkout_dark_header_border))
         assertThat(automatic.darkColors.closeIcon).isNull()
-        assertThat(automatic.darkColors.closeIconTint).isNull()
+        assertThat(automatic.darkColors.closeIconTintColor).isNull()
         assertThat(automatic.darkColors.dragHandleColor).isNull()
         assertThat(automatic.dragHandleColor(isDark = true)).isEqualTo(Color.ResourceId(R.color.checkout_dark_font))
 
-        assertThat(automatic.lightColors.headerBackground).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
-        assertThat(automatic.lightColors.headerFont).isEqualTo(Color.ResourceId(R.color.checkout_light_font))
-        assertThat(automatic.lightColors.webViewBackground).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
+        assertThat(automatic.lightColors.headerBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
+        assertThat(automatic.lightColors.headerTitleColor).isEqualTo(Color.ResourceId(R.color.checkout_light_font))
+        assertThat(automatic.lightColors.webViewBackgroundColor).isEqualTo(Color.ResourceId(R.color.checkout_light_bg))
         assertThat(
-            automatic.lightColors.progressIndicator
+            automatic.lightColors.progressIndicatorColor
         ).isEqualTo(Color.ResourceId(R.color.checkout_light_progress_indicator))
         assertThat(
             automatic.lightColors.headerBorderColor
         ).isEqualTo(Color.ResourceId(R.color.checkout_light_header_border))
         assertThat(automatic.lightColors.closeIcon).isNull()
-        assertThat(automatic.lightColors.closeIconTint).isNull()
+        assertThat(automatic.lightColors.closeIconTintColor).isNull()
         assertThat(automatic.lightColors.dragHandleColor).isNull()
         assertThat(automatic.dragHandleColor(isDark = false)).isEqualTo(Color.ResourceId(R.color.checkout_light_font))
     }
@@ -85,16 +87,16 @@ class ColorSchemeTest {
     fun `color schemes has a helper function for retrieving header background color`() {
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
             )
         )
 
@@ -108,28 +110,28 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun `color schemes has a helper function for retrieving header font color`() {
+    fun `color schemes has a helper function for retrieving header title color`() {
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
             )
         )
 
         assertThat(
-            automatic.headerFontColor(isDark = false)
+            automatic.headerTitleColor(isDark = false)
         ).isEqualTo(Color.ResourceId(2))
 
         assertThat(
-            automatic.headerFontColor(isDark = true)
+            automatic.headerTitleColor(isDark = true)
         ).isEqualTo(Color.ResourceId(6))
     }
 
@@ -139,26 +141,26 @@ class ColorSchemeTest {
         val darkBorder = Color.ResourceId(10)
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
                 headerBorderColor = lightBorder,
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
                 headerBorderColor = darkBorder,
             ),
         )
         val customLightWithoutBorder = ColorScheme.Light(
             colors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             )
         )
 
@@ -172,16 +174,16 @@ class ColorSchemeTest {
     fun `color schemes has a helper function for retrieving WebView background color`() {
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
             )
         )
 
@@ -198,16 +200,16 @@ class ColorSchemeTest {
     fun `color scheme can be serialized`() {
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(8),
-                progressIndicator = Color.ResourceId(9),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(8),
+                progressIndicatorColor = Color.ResourceId(9),
             )
         )
 
@@ -225,10 +227,10 @@ class ColorSchemeTest {
         val customIcon = DrawableResource(123)
         val light = ColorScheme.Light(
             colors = Colors(
-                headerBackground = Color.ResourceId(R.color.checkout_light_bg),
-                headerFont = Color.ResourceId(R.color.checkout_light_font),
-                webViewBackground = Color.ResourceId(R.color.checkout_light_bg),
-                progressIndicator = Color.ResourceId(R.color.checkout_light_progress_indicator),
+                headerBackgroundColor = Color.ResourceId(R.color.checkout_light_bg),
+                headerTitleColor = Color.ResourceId(R.color.checkout_light_font),
+                webViewBackgroundColor = Color.ResourceId(R.color.checkout_light_bg),
+                progressIndicatorColor = Color.ResourceId(R.color.checkout_light_progress_indicator),
                 closeIcon = customIcon
             )
         )
@@ -237,19 +239,19 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun `closeIconTint can be overridden with custom color`() {
+    fun `closeIconTintColor can be overridden with custom color`() {
         val customTint = Color.ResourceId(456)
         val dark = ColorScheme.Dark(
             colors = Colors(
-                headerBackground = Color.ResourceId(R.color.checkout_dark_bg),
-                headerFont = Color.ResourceId(R.color.checkout_dark_font),
-                webViewBackground = Color.ResourceId(R.color.checkout_dark_bg),
-                progressIndicator = Color.ResourceId(R.color.checkout_dark_progress_indicator),
-                closeIconTint = customTint
+                headerBackgroundColor = Color.ResourceId(R.color.checkout_dark_bg),
+                headerTitleColor = Color.ResourceId(R.color.checkout_dark_font),
+                webViewBackgroundColor = Color.ResourceId(R.color.checkout_dark_bg),
+                progressIndicatorColor = Color.ResourceId(R.color.checkout_dark_progress_indicator),
+                closeIconTintColor = customTint
             )
         )
 
-        assertThat(dark.colors.closeIconTint).isEqualTo(customTint)
+        assertThat(dark.colors.closeIconTintColor).isEqualTo(customTint)
     }
 
     @Test
@@ -259,17 +261,17 @@ class ColorSchemeTest {
 
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
                 closeIcon = lightIcon
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
                 closeIcon = darkIcon
             )
         )
@@ -279,29 +281,29 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun `closeIconTint helper function returns correct tint for dark mode`() {
+    fun `closeIconTintColor helper function returns correct tint for dark mode`() {
         val lightTint = Color.ResourceId(123)
         val darkTint = Color.ResourceId(456)
 
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
-                closeIconTint = lightTint
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
+                closeIconTintColor = lightTint
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
-                closeIconTint = darkTint
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
+                closeIconTintColor = darkTint
             )
         )
 
-        assertThat(automatic.closeIconTint(isDark = false)).isEqualTo(lightTint)
-        assertThat(automatic.closeIconTint(isDark = true)).isEqualTo(darkTint)
+        assertThat(automatic.closeIconTintColor(isDark = false)).isEqualTo(lightTint)
+        assertThat(automatic.closeIconTintColor(isDark = true)).isEqualTo(darkTint)
     }
 
     @Test
@@ -311,17 +313,17 @@ class ColorSchemeTest {
 
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
                 dragHandleColor = lightHandle
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
                 dragHandleColor = darkHandle
             )
         )
@@ -343,47 +345,47 @@ class ColorSchemeTest {
     }
 
     @Test
-    fun `closeIconTint helper function returns null when no custom tint is set`() {
+    fun `closeIconTintColor helper function returns null when no custom tint is set`() {
         val light = ColorScheme.Light()
         val dark = ColorScheme.Dark()
         val automatic = ColorScheme.Automatic()
 
-        assertThat(light.closeIconTint(isDark = false)).isNull()
-        assertThat(dark.closeIconTint(isDark = true)).isNull()
-        assertThat(automatic.closeIconTint(isDark = false)).isNull()
-        assertThat(automatic.closeIconTint(isDark = true)).isNull()
+        assertThat(light.closeIconTintColor(isDark = false)).isNull()
+        assertThat(dark.closeIconTintColor(isDark = true)).isNull()
+        assertThat(automatic.closeIconTintColor(isDark = false)).isNull()
+        assertThat(automatic.closeIconTintColor(isDark = true)).isNull()
     }
 
     @Test
-    fun `dragHandleColor helper function falls back to header font when no color is set`() {
+    fun `dragHandleColor helper function falls back to header title color when no color is set`() {
         val light = ColorScheme.Light(
             colors = Colors(
-                headerBackground = Color.ResourceId(1),
-                headerFont = Color.ResourceId(2),
-                webViewBackground = Color.ResourceId(3),
-                progressIndicator = Color.ResourceId(4),
+                headerBackgroundColor = Color.ResourceId(1),
+                headerTitleColor = Color.ResourceId(2),
+                webViewBackgroundColor = Color.ResourceId(3),
+                progressIndicatorColor = Color.ResourceId(4),
             )
         )
         val dark = ColorScheme.Dark(
             colors = Colors(
-                headerBackground = Color.ResourceId(5),
-                headerFont = Color.ResourceId(6),
-                webViewBackground = Color.ResourceId(7),
-                progressIndicator = Color.ResourceId(8),
+                headerBackgroundColor = Color.ResourceId(5),
+                headerTitleColor = Color.ResourceId(6),
+                webViewBackgroundColor = Color.ResourceId(7),
+                progressIndicatorColor = Color.ResourceId(8),
             )
         )
         val automatic = ColorScheme.Automatic(
             lightColors = Colors(
-                headerBackground = Color.ResourceId(13),
-                headerFont = Color.ResourceId(14),
-                webViewBackground = Color.ResourceId(15),
-                progressIndicator = Color.ResourceId(16),
+                headerBackgroundColor = Color.ResourceId(13),
+                headerTitleColor = Color.ResourceId(14),
+                webViewBackgroundColor = Color.ResourceId(15),
+                progressIndicatorColor = Color.ResourceId(16),
             ),
             darkColors = Colors(
-                headerBackground = Color.ResourceId(17),
-                headerFont = Color.ResourceId(18),
-                webViewBackground = Color.ResourceId(19),
-                progressIndicator = Color.ResourceId(20),
+                headerBackgroundColor = Color.ResourceId(17),
+                headerTitleColor = Color.ResourceId(18),
+                webViewBackgroundColor = Color.ResourceId(19),
+                progressIndicatorColor = Color.ResourceId(20),
             )
         )
 
@@ -399,16 +401,16 @@ class ColorSchemeTest {
         val customTint = Color.ResourceId(456)
 
         val customizedScheme = originalScheme.customize {
-            closeIconTint = customTint
+            closeIconTintColor = customTint
         }
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Light::class.java)
         val lightScheme = customizedScheme as ColorScheme.Light
-        assertThat(lightScheme.colors.closeIconTint).isEqualTo(customTint)
+        assertThat(lightScheme.colors.closeIconTintColor).isEqualTo(customTint)
 
         // Other properties should remain unchanged
-        assertThat(lightScheme.colors.headerBackground).isEqualTo(originalScheme.colors.headerBackground)
-        assertThat(lightScheme.colors.headerFont).isEqualTo(originalScheme.colors.headerFont)
+        assertThat(lightScheme.colors.headerBackgroundColor).isEqualTo(originalScheme.colors.headerBackgroundColor)
+        assertThat(lightScheme.colors.headerTitleColor).isEqualTo(originalScheme.colors.headerTitleColor)
     }
 
     @Test
@@ -420,14 +422,14 @@ class ColorSchemeTest {
 
         val customizedScheme = originalScheme.customize {
             withCloseIcon(customIcon)
-                .withCloseIconTint(customTint)
+                .withCloseIconTintColor(customTint)
                 .withHeaderBorderColor(customBorder)
         }
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Dark::class.java)
         val darkScheme = customizedScheme as ColorScheme.Dark
         assertThat(darkScheme.colors.closeIcon).isEqualTo(customIcon)
-        assertThat(darkScheme.colors.closeIconTint).isEqualTo(customTint)
+        assertThat(darkScheme.colors.closeIconTintColor).isEqualTo(customTint)
         assertThat(darkScheme.colors.headerBorderColor).isEqualTo(customBorder)
     }
 
@@ -437,13 +439,13 @@ class ColorSchemeTest {
         val customTint = Color.ResourceId(789)
 
         val customizedScheme = originalScheme.customize {
-            closeIconTint = customTint
+            closeIconTintColor = customTint
         }
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Automatic::class.java)
         val autoScheme = customizedScheme as ColorScheme.Automatic
-        assertThat(autoScheme.lightColors.closeIconTint).isEqualTo(customTint)
-        assertThat(autoScheme.darkColors.closeIconTint).isEqualTo(customTint)
+        assertThat(autoScheme.lightColors.closeIconTintColor).isEqualTo(customTint)
+        assertThat(autoScheme.darkColors.closeIconTintColor).isEqualTo(customTint)
     }
 
     @Test
@@ -456,19 +458,19 @@ class ColorSchemeTest {
 
         val customizedScheme = originalScheme.customize(
             light = {
-                closeIconTint = lightTint
+                closeIconTintColor = lightTint
                 dragHandleColor = lightHandle
             },
             dark = {
-                closeIconTint = darkTint
+                closeIconTintColor = darkTint
                 dragHandleColor = darkHandle
             }
         )
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Automatic::class.java)
         val autoScheme = customizedScheme as ColorScheme.Automatic
-        assertThat(autoScheme.lightColors.closeIconTint).isEqualTo(lightTint)
-        assertThat(autoScheme.darkColors.closeIconTint).isEqualTo(darkTint)
+        assertThat(autoScheme.lightColors.closeIconTintColor).isEqualTo(lightTint)
+        assertThat(autoScheme.darkColors.closeIconTintColor).isEqualTo(darkTint)
         assertThat(autoScheme.lightColors.dragHandleColor).isEqualTo(lightHandle)
         assertThat(autoScheme.darkColors.dragHandleColor).isEqualTo(darkHandle)
     }
@@ -479,12 +481,12 @@ class ColorSchemeTest {
         val darkTint = Color.ResourceId(222)
 
         val customizedScheme = ColorScheme.Dark().customize(
-            light = { closeIconTint = lightTint },
-            dark = { closeIconTint = darkTint }
+            light = { closeIconTintColor = lightTint },
+            dark = { closeIconTintColor = darkTint }
         )
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Dark::class.java)
-        assertThat((customizedScheme as ColorScheme.Dark).colors.closeIconTint).isEqualTo(darkTint)
+        assertThat((customizedScheme as ColorScheme.Dark).colors.closeIconTintColor).isEqualTo(darkTint)
     }
 
     @Test
@@ -493,35 +495,35 @@ class ColorSchemeTest {
         val darkTint = Color.ResourceId(222)
 
         val customizedScheme = ColorScheme.Light().customize(
-            light = { closeIconTint = lightTint },
-            dark = { closeIconTint = darkTint }
+            light = { closeIconTintColor = lightTint },
+            dark = { closeIconTintColor = darkTint }
         )
 
         assertThat(customizedScheme).isInstanceOf(ColorScheme.Light::class.java)
-        assertThat((customizedScheme as ColorScheme.Light).colors.closeIconTint).isEqualTo(lightTint)
+        assertThat((customizedScheme as ColorScheme.Light).colors.closeIconTintColor).isEqualTo(lightTint)
     }
 
     @Test
-    fun `customize derives the drag handle color from a customized header font`() {
-        val customFont = Color.ResourceId(99)
+    fun `customize derives the drag handle color from a customized header title color`() {
+        val customHeaderTitleColor = Color.ResourceId(99)
 
-        val light = ColorScheme.Light().customize { headerFont = customFont }
-        val dark = ColorScheme.Dark().customize { headerFont = customFont }
-        val automatic = ColorScheme.Automatic().customize { headerFont = customFont }
+        val light = ColorScheme.Light().customize { headerTitleColor = customHeaderTitleColor }
+        val dark = ColorScheme.Dark().customize { headerTitleColor = customHeaderTitleColor }
+        val automatic = ColorScheme.Automatic().customize { headerTitleColor = customHeaderTitleColor }
 
-        assertThat(light.dragHandleColor(isDark = false)).isEqualTo(customFont)
-        assertThat(dark.dragHandleColor(isDark = true)).isEqualTo(customFont)
-        assertThat(automatic.dragHandleColor(isDark = false)).isEqualTo(customFont)
-        assertThat(automatic.dragHandleColor(isDark = true)).isEqualTo(customFont)
+        assertThat(light.dragHandleColor(isDark = false)).isEqualTo(customHeaderTitleColor)
+        assertThat(dark.dragHandleColor(isDark = true)).isEqualTo(customHeaderTitleColor)
+        assertThat(automatic.dragHandleColor(isDark = false)).isEqualTo(customHeaderTitleColor)
+        assertThat(automatic.dragHandleColor(isDark = true)).isEqualTo(customHeaderTitleColor)
     }
 
     @Test
-    fun `customize keeps an explicit drag handle color over a customized header font`() {
-        val customFont = Color.ResourceId(99)
+    fun `customize keeps an explicit drag handle color over a customized header title color`() {
+        val customHeaderTitleColor = Color.ResourceId(99)
         val customHandle = Color.ResourceId(100)
 
         val light = ColorScheme.Light().customize {
-            withHeaderFont(customFont).withDragHandleColor(customHandle)
+            withHeaderTitleColor(customHeaderTitleColor).withDragHandleColor(customHandle)
         }
 
         assertThat(light.dragHandleColor(isDark = false)).isEqualTo(customHandle)

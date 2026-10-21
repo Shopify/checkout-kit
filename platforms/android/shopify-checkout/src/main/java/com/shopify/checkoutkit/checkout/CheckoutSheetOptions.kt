@@ -23,7 +23,7 @@ public class CheckoutSheetOptions internal constructor(
     public val titleAlignment: CheckoutSheetTitleAlignment = CheckoutSheetTitleAlignment.CENTER,
     public val toolbarElevationDp: Float = 0f,
     public val closeIcon: DrawableResource? = null,
-    public val closeIconTint: Color? = null,
+    public val closeIconTintColor: Color? = null,
     public val scrimColor: Color = Color.SRGB(MATERIAL_COMPONENTS_SCRIM_COLOR),
     public val dismissal: CheckoutSheetDismissal = CheckoutSheetDismissal(),
     public val dragHandle: CheckoutSheetDragHandle = CheckoutSheetDragHandle(),
@@ -38,7 +38,7 @@ public class CheckoutSheetOptions internal constructor(
             titleAlignment == other.titleAlignment &&
             toolbarElevationDp.toBits() == other.toolbarElevationDp.toBits() &&
             closeIcon == other.closeIcon &&
-            closeIconTint == other.closeIconTint &&
+            closeIconTintColor == other.closeIconTintColor &&
             scrimColor == other.scrimColor &&
             dismissal == other.dismissal &&
             dragHandle == other.dragHandle &&
@@ -50,7 +50,7 @@ public class CheckoutSheetOptions internal constructor(
         result = HASH_MULTIPLIER * result + titleAlignment.hashCode()
         result = HASH_MULTIPLIER * result + toolbarElevationDp.hashCode()
         result = HASH_MULTIPLIER * result + (closeIcon?.hashCode() ?: 0)
-        result = HASH_MULTIPLIER * result + (closeIconTint?.hashCode() ?: 0)
+        result = HASH_MULTIPLIER * result + (closeIconTintColor?.hashCode() ?: 0)
         result = HASH_MULTIPLIER * result + scrimColor.hashCode()
         result = HASH_MULTIPLIER * result + dismissal.hashCode()
         result = HASH_MULTIPLIER * result + dragHandle.hashCode()
@@ -61,7 +61,7 @@ public class CheckoutSheetOptions internal constructor(
 
     override fun toString(): String =
         "CheckoutSheetOptions(cornerRadiusDp=$cornerRadiusDp, titleAlignment=$titleAlignment, " +
-            "toolbarElevationDp=$toolbarElevationDp, closeIcon=$closeIcon, closeIconTint=$closeIconTint, " +
+            "toolbarElevationDp=$toolbarElevationDp, closeIcon=$closeIcon, closeIconTintColor=$closeIconTintColor, " +
             "scrimColor=$scrimColor, dismissal=$dismissal, dragHandle=$dragHandle, " +
             "snapPoints=$snapPoints, maxWidthDp=$maxWidthDp)"
 
@@ -70,7 +70,7 @@ public class CheckoutSheetOptions internal constructor(
         public var titleAlignment: CheckoutSheetTitleAlignment = CheckoutSheetTitleAlignment.CENTER
         public var toolbarElevationDp: Float = 0f
         public var closeIcon: DrawableResource? = null
-        public var closeIconTint: Color? = null
+        public var closeIconTintColor: Color? = null
         public var scrimColor: Color = Color.SRGB(MATERIAL_COMPONENTS_SCRIM_COLOR)
         public var dismissal: CheckoutSheetDismissal = CheckoutSheetDismissal()
         public var dragHandle: CheckoutSheetDragHandle = CheckoutSheetDragHandle()
@@ -86,7 +86,7 @@ public class CheckoutSheetOptions internal constructor(
                 titleAlignment = titleAlignment,
                 toolbarElevationDp = toolbarElevationDp,
                 closeIcon = closeIcon,
-                closeIconTint = closeIconTint,
+                closeIconTintColor = closeIconTintColor,
                 scrimColor = scrimColor,
                 dismissal = dismissal,
                 dragHandle = dragHandle,

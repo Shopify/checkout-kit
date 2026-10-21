@@ -1,4 +1,3 @@
-import "@shopify/checkout-kit/shopify-checkout";
 import type { ShopifyCheckout } from "@shopify/checkout-kit";
 
 import { normalizeQuantity, normalizeStorefrontDomain, upsertCartLine } from "./cart";
@@ -24,6 +23,11 @@ import "./styles.css";
 const EVENT_TYPES = ["start", "update", "complete", "close", "error", "blocked"] as const;
 
 const refs = queryRefs();
+const checkoutKitProvenance = document.documentElement.dataset.checkoutKitProvenance;
+if (!checkoutKitProvenance) {
+  throw new Error("[playground] Checkout Kit SDK did not report its provenance");
+}
+refs.checkoutKitProvenance.textContent = checkoutKitProvenance;
 
 const checkout = document.createElement("shopify-checkout") as ShopifyCheckout;
 document.body.append(checkout);

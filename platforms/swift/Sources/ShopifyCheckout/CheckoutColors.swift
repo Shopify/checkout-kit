@@ -5,34 +5,36 @@ import UIKit
 /// Pass a `CheckoutColors` value to a `CheckoutColorScheme` or to
 /// `CheckoutAppearance.storefront(colors:)` to override the defaults. Colors that
 /// can be overridden are:
-/// - The web view background,
-/// - The native header background and font color,
-/// - The progress indicator,
-/// - The close button icon and its tint,
-/// - The header border shown when checkout content scrolls beneath it.
+/// - The web view background color (`webViewBackgroundColor`),
+/// - The native header background color (`headerBackgroundColor`) and header
+///   title color (`headerTitleColor`),
+/// - The progress indicator color (`progressIndicatorColor`),
+/// - The close button icon (`closeIcon`) and its tint color (`closeIconTintColor`),
+/// - The header border color (`headerBorderColor`) shown when checkout content
+///   scrolls beneath it.
 ///
 /// `UIColor` values can be dynamic colors; they resolve against the presented
 /// checkout's trait collection.
 public struct CheckoutColors: Equatable, Sendable {
     /// The background color shown behind the checkout web content.
-    public var webViewBackground: UIColor
+    public var webViewBackgroundColor: UIColor
 
     /// The background color of the navigation bar. The default is transparent.
-    public var headerBackground: UIColor
+    public var headerBackgroundColor: UIColor
 
     /// The color of the checkout title shown in the navigation bar.
-    public var headerFont: UIColor
+    public var headerTitleColor: UIColor
 
     /// The color of the progress indicator shown while checkout loads.
-    public var progressIndicator: UIColor
+    public var progressIndicatorColor: UIColor
 
     /// A custom image for the close button. When `nil`, the system close button
-    /// is used unless `closeIconTint` is set.
+    /// is used unless `closeIconTintColor` is set.
     public var closeIcon: UIImage?
 
-    /// The tint of the close button. When `nil`, the system close button is used
-    /// unless `closeIcon` is set.
-    public var closeIconTint: UIColor?
+    /// The tint color of the close button. When `nil`, the system close button
+    /// is used unless `closeIcon` is set.
+    public var closeIconTintColor: UIColor?
 
     /// The color of the border shown under the navigation bar when checkout
     /// content scrolls beneath it. When `nil`, Checkout Kit doesn't set a border
@@ -42,20 +44,20 @@ public struct CheckoutColors: Equatable, Sendable {
     /// Creates a set of colors, using the Checkout Kit defaults for any value
     /// that isn't provided.
     public init(
-        webViewBackground: UIColor = .systemBackground,
-        headerBackground: UIColor = .clear,
-        headerFont: UIColor = .label,
-        progressIndicator: UIColor = .init(red: 0.09, green: 0.45, blue: 0.69, alpha: 1),
+        webViewBackgroundColor: UIColor = .systemBackground,
+        headerBackgroundColor: UIColor = .clear,
+        headerTitleColor: UIColor = .label,
+        progressIndicatorColor: UIColor = CheckoutColors.defaultProgressIndicatorColor,
         closeIcon: UIImage? = nil,
-        closeIconTint: UIColor? = nil,
+        closeIconTintColor: UIColor? = nil,
         headerBorderColor: UIColor? = nil
     ) {
-        self.webViewBackground = webViewBackground
-        self.headerBackground = headerBackground
-        self.headerFont = headerFont
-        self.progressIndicator = progressIndicator
+        self.webViewBackgroundColor = webViewBackgroundColor
+        self.headerBackgroundColor = headerBackgroundColor
+        self.headerTitleColor = headerTitleColor
+        self.progressIndicatorColor = progressIndicatorColor
         self.closeIcon = closeIcon
-        self.closeIconTint = closeIconTint
+        self.closeIconTintColor = closeIconTintColor
         self.headerBorderColor = headerBorderColor
     }
 
@@ -64,5 +66,14 @@ public struct CheckoutColors: Equatable, Sendable {
         var colors = self
         customizer(&colors)
         return colors
+    }
+
+    /// The default progress indicator color: #1773B0 in light mode and #1E8CC8 in
+    /// dark mode. One shared instance keeps default colors equal to each other.
+    @usableFromInline
+    static let defaultProgressIndicatorColor = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 30 / 255, green: 140 / 255, blue: 200 / 255, alpha: 1)
+            : UIColor(red: 23 / 255, green: 115 / 255, blue: 176 / 255, alpha: 1)
     }
 }

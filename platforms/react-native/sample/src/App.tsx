@@ -1,13 +1,6 @@
 import type {PropsWithChildren, ReactNode} from 'react';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  Appearance,
-  Linking,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import {Linking, Pressable, StatusBar, StyleSheet, View} from 'react-native';
 import {
   NavigationContainer,
   useNavigation,
@@ -26,7 +19,6 @@ import LoginScreen from './screens/LoginScreen';
 import type {Configuration, Features} from '@shopify/checkout-kit-react-native';
 import {
   ApplePayContactField,
-  ColorScheme,
   LogLevel,
   ShopifyCheckoutProvider,
   useShopifyCheckout,
@@ -34,11 +26,10 @@ import {
 import {ConfigProvider, useConfig} from './context/Config';
 import {BuyerIdentityMode} from './auth/types';
 import {
+  AppearanceOption,
   ThemeProvider,
-  darkColors,
-  getColors,
+  getCheckoutAppearance,
   getNavigationTheme,
-  lightColors,
   useTheme,
 } from './context/Theme';
 import {CartProvider, useCart} from './context/Cart';
@@ -111,10 +102,10 @@ const client = new ApolloClient({
 });
 
 function AppWithTheme({children}: PropsWithChildren) {
-  const {colorScheme} = useTheme();
+  const {appearance} = useTheme();
 
   return (
-    <ThemeProvider cornerRadius={30} defaultValue={colorScheme}>
+    <ThemeProvider cornerRadius={30} defaultValue={appearance}>
       {children}
     </ThemeProvider>
   );
@@ -200,7 +191,6 @@ class StorefrontURL {
 const checkoutKitConfigDefaults: Configuration = {
   title: 'Plant Store',
   logLevel: LogLevel.debug,
-  colorScheme: ColorScheme.dark,
 };
 
 function AppWithContext({children}: PropsWithChildren) {
@@ -312,58 +302,10 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
     fetchAccessToken();
   }, [fetchAccessToken]);
 
-  const updatedColors = getColors(
-    appConfig.colorScheme,
-    Appearance.getColorScheme(),
+  const checkoutAppearance = useMemo(
+    () => getCheckoutAppearance(appConfig.appearance),
+    [appConfig.appearance],
   );
-
-  const checkoutKitThemeConfig: Configuration = useMemo(() => {
-    if (appConfig.colorScheme === ColorScheme.automatic) {
-      return {
-        colorScheme: ColorScheme.automatic,
-        colors: {
-          ios: {
-            backgroundColor: updatedColors.webviewBackgroundColor,
-            tintColor: updatedColors.webViewProgressIndicator,
-          },
-          android: {
-            light: {
-              backgroundColor: lightColors.webviewBackgroundColor,
-              progressIndicator: lightColors.webViewProgressIndicator,
-              headerBackgroundColor: lightColors.webviewBackgroundColor,
-              headerTextColor: lightColors.webviewHeaderTextColor,
-              closeButtonColor: lightColors.webviewCloseButtonColor,
-            },
-            dark: {
-              backgroundColor: darkColors.webviewBackgroundColor,
-              progressIndicator: darkColors.webViewProgressIndicator,
-              headerBackgroundColor: darkColors.webviewBackgroundColor,
-              headerTextColor: darkColors.webviewHeaderTextColor,
-              closeButtonColor: darkColors.webviewCloseButtonColor,
-            },
-          },
-        },
-      };
-    }
-
-    return {
-      colorScheme: appConfig.colorScheme,
-      colors: {
-        ios: {
-          backgroundColor: updatedColors.webviewBackgroundColor,
-          tintColor: updatedColors.webViewProgressIndicator,
-          closeButtonColor: updatedColors.webviewCloseButtonColor,
-        },
-        android: {
-          backgroundColor: updatedColors.webviewBackgroundColor,
-          progressIndicator: updatedColors.webViewProgressIndicator,
-          headerBackgroundColor: updatedColors.webviewBackgroundColor,
-          headerTextColor: updatedColors.webviewHeaderTextColor,
-          closeButtonColor: updatedColors.webviewCloseButtonColor,
-        },
-      },
-    };
-  }, [appConfig.colorScheme, updatedColors]);
 
   const checkoutKitConfig: Configuration = useMemo(() => {
     const customer =
@@ -382,9 +324,8 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
 
     return {
       ...checkoutKitConfigDefaults,
-      ...checkoutKitThemeConfig,
+      appearance: checkoutAppearance,
       preloading: appConfig.checkoutPreloadingEnabled,
-      colors: checkoutKitThemeConfig.colors,
       acceleratedCheckouts: {
         storefrontDomain: env.STOREFRONT_DOMAIN!,
         storefrontAccessToken: env.STOREFRONT_ACCESS_TOKEN!,
@@ -405,8 +346,8 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
           },
         },
       },
-    } as Configuration;
-  }, [appConfig, checkoutKitThemeConfig, isAuthenticated, accessToken]);
+    };
+  }, [appConfig, checkoutAppearance, isAuthenticated, accessToken]);
 
   return (
     <ShopifyCheckoutProvider
@@ -418,9 +359,9 @@ function AppWithCheckoutKit({children}: PropsWithChildren) {
 }
 
 function AppWithNavigation(props: {children: React.ReactNode}) {
-  const {colorScheme, preference} = useTheme();
+  const {appearance, preference} = useTheme();
   return (
-    <NavigationContainer theme={getNavigationTheme(colorScheme, preference)}>
+    <NavigationContainer theme={getNavigationTheme(appearance, preference)}>
       {props.children}
     </NavigationContainer>
   );
@@ -564,8 +505,7 @@ function App() {
       <AppWithTheme>
         <ConfigProvider
           config={{
-            colorScheme:
-              checkoutKitConfigDefaults.colorScheme ?? ColorScheme.automatic,
+            appearance: AppearanceOption.appAutomatic,
             buyerIdentityMode: BuyerIdentityMode.Guest,
             checkoutPreloadingEnabled: true,
           }}>

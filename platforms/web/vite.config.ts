@@ -75,7 +75,7 @@ export default defineConfig({
     },
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.ts', 'components/*/src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'components/*/src/**/*.test.ts', 'internal/**/src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
     // Package tests run against the build via pnpm verify.
     exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
     projects: [
@@ -85,7 +85,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html', 'lcov'],
-      include: ['src/**/*.ts', 'components/*/src/**/*.ts', 'internal/telemetry/src/**/*.ts'],
+      include: ['src/**/*.ts', 'components/*/src/**/*.ts', 'internal/**/src/**/*.ts'],
       exclude: ['sample/**', '**/*.test.ts', '**/*.test-helpers.ts', '**/*.d.ts'],
       thresholds: {
         statements: 85,

@@ -55,6 +55,21 @@ final class ShopPayViewControllerTests: XCTestCase {
             )
             self.storefront = storefront
         }
+
+        convenience init(
+            cartSource: CartSource,
+            configuration: ShopifyAcceleratedCheckouts.Configuration,
+            eventHandlers: EventHandlers = EventHandlers(),
+            storefront: TestStorefrontAPI = TestStorefrontAPI()
+        ) {
+            self.init(
+                identifier: .invariant(reason: "Cart source has not been resolved"),
+                configuration: configuration,
+                eventHandlers: eventHandlers,
+                storefront: storefront
+            )
+            self.cartSource = cartSource
+        }
     }
 
     // MARK: - onPress() Tests with Cart Identifier
@@ -91,23 +106,23 @@ final class ShopPayViewControllerTests: XCTestCase {
         XCTAssertTrue(viewController.presentCalls.isEmpty)
     }
 
-    // MARK: - onPress() Tests with Variant Identifier
+    // MARK: - onPress() Tests with Cart Provider
 
-    func test_onPress_withVariantIdentifier_shouldCallPresent() async {
-        let mockCart = StorefrontAPI.Cart.testCart()
-
+    func test_onPress_withCartProvider_resolvesCartOnceAndPresents() async {
+        var providerCalls = 0
         viewController = MockShopPayViewController(
-            identifier: .variant(
-                variantID: "gid://Shopify/ProductVariant/test-variant-id",
-                quantity: 2
-            ),
+            cartSource: .provider { _ in
+                providerCalls += 1
+                return .cart("gid://Shopify/Cart/test-cart-id")
+            },
             configuration: mockConfiguration,
             storefront: mockStorefront
         )
-        viewController.mockStorefront.cartCreateResult = .success(mockCart)
+        viewController.mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart())
 
         await viewController.onPress()
 
+        XCTAssertEqual(providerCalls, 1)
         XCTAssertEqual(viewController.presentCalls.count, 1)
         XCTAssertEqual(
             viewController.presentCalls[0].absoluteString,
@@ -115,40 +130,66 @@ final class ShopPayViewControllerTests: XCTestCase {
         )
     }
 
-    func test_onPress_withVariantIdentifier_whenCartCreateFails_shouldNotCallPresent()
-        async
-    {
-        let cartCreateError = NSError(domain: "CartCreateError", code: 400, userInfo: nil)
-
+    func test_onPress_withCartProvider_passesShopPayAsTheTappedWallet() async {
+        var requestedWallet: Wallet?
         viewController = MockShopPayViewController(
-            identifier: .variant(
-                variantID: "gid://Shopify/ProductVariant/test-variant-id",
-                quantity: 2
-            ),
+            cartSource: .provider { request in
+                requestedWallet = request.wallet
+                return .cart("gid://Shopify/Cart/test-cart-id")
+            },
             configuration: mockConfiguration,
             storefront: mockStorefront
         )
-        viewController.mockStorefront.cartCreateResult = .failure(cartCreateError)
+        viewController.mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart())
 
         await viewController.onPress()
 
+        XCTAssertEqual(requestedWallet, .shopPay)
+    }
+
+    func test_onPress_whenCartProviderHandlesFailure_endsQuietlyWithoutPresentingOrFailing() async {
+        var failed = false
+        viewController = MockShopPayViewController(
+            cartSource: .provider { _ in .failed },
+            configuration: mockConfiguration,
+            eventHandlers: EventHandlers(checkoutDidFail: { _ in failed = true }),
+            storefront: mockStorefront
+        )
+
+        await viewController.onPress()
+
+        XCTAssertFalse(failed)
         XCTAssertTrue(viewController.presentCalls.isEmpty)
     }
 
-    func test_onPress_withInvalidZeroQuantityVariantIdentifier_shouldNotCreateCheckoutCoordinator()
-        async
-    {
-        let mockCart = StorefrontAPI.Cart.testCart()
-
+    func test_onPress_whenCartProviderThrowsCancellation_reportsFailure() async {
+        let failure = XCTestExpectation(description: "checkoutDidFail should be called")
         viewController = MockShopPayViewController(
-            identifier: .variant(
-                variantID: "gid://Shopify/ProductVariant/test-variant-id",
-                quantity: 0
+            cartSource: .provider { _ in throw CancellationError() },
+            configuration: mockConfiguration,
+            eventHandlers: EventHandlers(
+                checkoutDidFail: { error in
+                    XCTAssertEqual(error.code, .sdkError)
+                    XCTAssertTrue(error.underlyingError is CancellationError)
+                    failure.fulfill()
+                }
             ),
+            storefront: mockStorefront
+        )
+
+        await viewController.onPress()
+
+        await fulfillment(of: [failure], timeout: 1.0)
+        XCTAssertTrue(viewController.presentCalls.isEmpty)
+    }
+
+    func test_onPress_withCartProviderReturningNonCartID_shouldNotCallPresent() async {
+        viewController = MockShopPayViewController(
+            cartSource: .provider { _ in .cart("gid://Shopify/ProductVariant/test-variant-id") },
             configuration: mockConfiguration,
             storefront: mockStorefront
         )
-        viewController.mockStorefront.cartCreateResult = .success(mockCart)
+        viewController.mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart())
 
         await viewController.onPress()
 
@@ -192,18 +233,14 @@ final class ShopPayViewControllerTests: XCTestCase {
         await fulfillment(of: [checkoutDidFailExpectation], timeout: 1.0)
     }
 
-    func test_onPress_withVariantIdentifierCartCreateFails_shouldCallCheckoutDidFail() async {
+    func test_onPress_whenCartProviderThrows_shouldCallCheckoutDidFailWithItsError() async {
         let checkoutDidFailExpectation = XCTestExpectation(
             description: "checkoutDidFail should be called"
-        )
-        let identifier = CheckoutIdentifier.variant(
-            variantID: "gid://Shopify/ProductVariant/test-variant-id",
-            quantity: 2
         )
         var underlyingError: Error?
 
         viewController = MockShopPayViewController(
-            identifier: identifier,
+            cartSource: .provider { _ in throw NSError(domain: "CartProviderError", code: 400, userInfo: nil) },
             configuration: mockConfiguration,
             eventHandlers: EventHandlers(
                 checkoutDidFail: { error in
@@ -214,19 +251,16 @@ final class ShopPayViewControllerTests: XCTestCase {
             ),
             storefront: mockStorefront
         )
-        // Now cartCreate errors pass through directly instead of being wrapped
-        let cartCreateError = NSError(domain: "CartCreateError", code: 400, userInfo: nil)
-        viewController.mockStorefront.cartCreateResult = .failure(cartCreateError)
 
         await viewController.onPress()
 
         await fulfillment(of: [checkoutDidFailExpectation], timeout: 1.0)
-
+        XCTAssertTrue(viewController.presentCalls.isEmpty)
         guard let nsError = underlyingError as? NSError else {
             XCTFail("Expected NSError, got: \(String(describing: underlyingError))")
             return
         }
-        XCTAssertEqual(nsError.domain, "CartCreateError")
+        XCTAssertEqual(nsError.domain, "CartProviderError")
         XCTAssertEqual(nsError.code, 400)
     }
 

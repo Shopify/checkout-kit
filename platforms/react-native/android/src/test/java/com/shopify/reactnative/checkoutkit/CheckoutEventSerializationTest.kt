@@ -1,7 +1,7 @@
 package com.shopify.reactnative.checkoutkit
 
 import android.net.Uri
-import com.shopify.checkoutkit.*
+import com.shopify.checkoutkit.checkout.*
 import kotlinx.serialization.json.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test

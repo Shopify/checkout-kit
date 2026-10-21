@@ -1,12 +1,7 @@
-import groovy.json.JsonSlurper
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 
-import java.util.zip.ZipInputStream
-import javax.xml.parsers.DocumentBuilderFactory
-
 plugins {
-    id 'com.android.fused-library'
-    id 'maven-publish'
+    id 'shopify.checkout-kit-publication'
 }
 
 def versionName = libs.versions.checkoutKitAndroid.get()
@@ -33,19 +28,6 @@ tasks.withType(PublishToMavenRepository).configureEach {
     }
 }
 
-// The fused plugin publishes runtime dependencies. Add a compile variant for
-// dependencies deliberately exposed by feature APIs, such as protocol types.
-def apiPublication = configurations.create('apiPublication') {
-    canBeConsumed = true
-    canBeResolved = false
-    attributes {
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'aar'))
-        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-    }
-}
-
 // Fused runtime metadata uses project coordinates. Explicit local protocol mode
 // must resolve to the same Maven coordinate that publishToMavenLocal produces.
 if (useLocalProtocol) {
@@ -55,226 +37,33 @@ if (useLocalProtocol) {
     }
 }
 
-def bundledProjects = { configurations.include.dependencies.withType(ProjectDependency).collect { project(it.path) } }
+// Coordinates and merchant-facing metadata belong to the SDK, not build logic.
+publishing.publications.release {
+    pom {
+        name = "CheckoutKit"
+        description = "Shopify's Checkout Kit makes it simple to render checkouts inside your mobile app."
+        url = "https://github.com/Shopify/checkout-kit"
+        groupId = "com.shopify"
+        artifactId = "checkout-kit"
+        version = versionName
 
-def sourcesJar = tasks.register('sourcesJar', Jar) {
-    destinationDirectory = layout.buildDirectory.dir('libs')
-    archiveBaseName = project.name
-    archiveClassifier = 'sources'
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-}
-def javadocJar = tasks.register('javadocJar', Jar) {
-    destinationDirectory = layout.buildDirectory.dir('libs')
-    archiveBaseName = project.name
-    archiveClassifier = 'javadoc'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-gradle.projectsEvaluated {
-    def features = bundledProjects()
-    features.each { feature ->
-        feature.configurations.api.allDependencies.each { dependency ->
-            if (!(dependency instanceof ProjectDependency) || !features.any { it.path == dependency.path }) {
-                dependencies.add(apiPublication.name, dependency.copy())
-            }
-        }
-        sourcesJar.configure {
-            from((feature.android.sourceSets.main.java.srcDirs + feature.android.sourceSets.main.kotlin.srcDirs).toSet())
-            include '**/*.kt', '**/*.java'
-        }
-
-        def docs = feature.tasks.named('javaDocReleaseJar', Jar)
-        javadocJar.configure {
-            dependsOn docs
-            from(docs.map { zipTree(it.archiveFile.get().asFile) }) { into feature.name }
-        }
-    }
-    def component = components.fusedLibraryComponent
-    component.withVariantsFromConfiguration(configurations.runtimeSourcePublication) { skip() }
-    apiPublication.outgoing.artifact(tasks.named('bundle')) {
-        type = 'aar'
-        extension = 'aar'
-    }
-    component.addVariantsFromConfiguration(apiPublication) { mapToMavenScope('compile') }
-    publishing.publications.release {
-        artifact sourcesJar
-        artifact javadocJar
-    }
-}
-
-project.afterEvaluate {
-    publishing {
-        publications.remove(publications.getByName('maven'))
-        publications {
-            release(MavenPublication) {
-                pom {
-                    name = "CheckoutKit"
-                    description = "Shopify's Checkout Kit makes it simple to render checkouts inside your mobile app."
-                    url = "https://github.com/Shopify/checkout-kit"
-                    groupId = "com.shopify"
-                    artifactId = "checkout-kit"
-                    version = versionName
-
-                    licenses {
-                        license {
-                            name = "MIT"
-                            url = "https://opensource.org/licenses/MIT"
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            name = "Shopify Inc."
-                        }
-                    }
-
-                    scm {
-                        connection = "https://github.com/Shopify/checkout-kit.git"
-                        developerConnection = "https://github.com/Shopify/checkout-kit.git"
-                        url = "https://github.com/Shopify/checkout-kit.git"
-                    }
-                }
-
-                afterEvaluate {
-                    from components.fusedLibraryComponent
-                }
+        licenses {
+            license {
+                name = "MIT"
+                url = "https://opensource.org/licenses/MIT"
             }
         }
 
-        repositories {
-            maven {
-                name = 'verification'
-                url = rootProject.layout.buildDirectory.dir('verification-repository')
-            }
-            maven {
-                name = 'ossrh-staging-api'
-                url = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
-                credentials {
-                    username = System.getenv("OSSRH_USERNAME")
-                    password = System.getenv("OSSRH_PASSWORD")
-                }
+        developers {
+            developer {
+                name = "Shopify Inc."
             }
         }
-    }
-}
 
-// AGP's fused plugin owns its lifecycle tasks. Apply signing in the root
-// project so Gradle's signing/base plugin does not register a second assemble.
-def sdkPublications = publishing.publications
-rootProject.signing {
-    def signingKeyId = findProperty('signingKeyId')
-    def signingKey = findProperty('signingKey')
-    def signingPassword = findProperty('signingPassword')
-    if (signingKey) {
-        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign sdkPublications
-    }
-}
-
-// Inspect the final AAR and published metadata rather than relying on the
-// intermediate feature outputs alone. This keeps fused-publication validation
-// in Gradle, without requiring another scripting runtime.
-tasks.register('verifyFusedPublication') {
-    group = 'verification'
-    description = 'Verify the published fused AAR contains all feature APIs and resources.'
-    dependsOn 'publishReleasePublicationToVerificationRepository', ':shopify-checkout:assembleRelease',
-        ':shopify-checkout:lintRelease', 'report'
-
-    doLast {
-        def verify = { boolean condition, String message ->
-            if (!condition) {
-                throw new GradleException(message)
-            }
+        scm {
+            connection = "https://github.com/Shopify/checkout-kit.git"
+            developerConnection = "https://github.com/Shopify/checkout-kit.git"
+            url = "https://github.com/Shopify/checkout-kit.git"
         }
-        def entryBytes = { archive, String name ->
-            def entry = archive.getEntry(name)
-            verify(entry != null, "Missing $name from ${archive.name}")
-            archive.getInputStream(entry).bytes
-        }
-        def entryNames = { byte[] bytes ->
-            def names = [] as Set
-            new ZipInputStream(new ByteArrayInputStream(bytes)).withCloseable { archive ->
-                for (def entry = archive.nextEntry; entry != null; entry = archive.nextEntry) {
-                    names << entry.name
-                }
-            }
-            names
-        }
-        def resourceSymbols = { archive ->
-            new String(entryBytes(archive, 'R.txt'), 'UTF-8').readLines().collect { line ->
-                def parts = line.split()
-                parts.size() >= 3 ? [parts[1], parts[2]] : null
-            }.findAll().toSet()
-        }
-        def resourceFiles = { archive ->
-            archive.entries().findAll { entry -> entry.name.startsWith('res/') && !entry.directory }*.name.toSet()
-        }
-
-        def bundle = layout.buildDirectory.get().asFile
-        def metadata = new JsonSlurper().parse(new File(bundle, 'publications/release/module.json'))
-        verify(metadata.component.group == 'com.shopify', 'Incorrect publication group')
-        verify(metadata.component.module == 'checkout-kit', 'Incorrect publication module')
-        def variants = metadata.variants.collectEntries { variant -> [(variant.attributes['org.gradle.usage']): variant] }
-        ['java-api', 'java-runtime'].each { usage ->
-            def variant = variants[usage]
-            verify(variant != null, "Missing $usage publication variant")
-            verify(variant.files.every { it.name.endsWith('.aar') }, "Unexpected $usage artifact: $variant")
-            def shopify = variant.dependencies.findAll { it.group == 'com.shopify' }*.module.toSet()
-            verify(shopify == ['embedded-checkout-protocol'] as Set, "Unexpected $usage Shopify dependencies: $shopify")
-            verify(variant.dependencies.every { it.group != 'checkout-kit' },
-                "$usage must not depend on an internal feature project: $variant")
-        }
-
-        def pom = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-            .parse(new File(bundle, 'publications/release/pom-default.xml'))
-        def childText = { node, String name -> node.getElementsByTagName(name).item(0)?.textContent }
-        def protocol = (0..<pom.getElementsByTagName('dependency').length).collect { index ->
-            pom.getElementsByTagName('dependency').item(index)
-        }.findAll { dependency -> childText(dependency, 'artifactId') == 'embedded-checkout-protocol' }
-        verify(protocol.size() == 1, 'Expected exactly one embedded-checkout-protocol POM dependency')
-        verify(childText(protocol[0], 'scope') == 'compile', 'Protocol POM dependency must have compile scope')
-
-        def report = new JsonSlurper().parse(new File(bundle, 'reports/fused_library_report/single/report.json'))
-        verify(!report.included.isEmpty(), 'No features bundled')
-        def aarFile = new File(bundle, 'outputs/aar/shopify-checkout-kit.aar')
-        new java.util.zip.ZipFile(aarFile).withCloseable { aar ->
-            def classNames = entryNames(entryBytes(aar, 'classes.jar'))
-            verify(!classNames.any { it.startsWith('com/shopify/ucp/') }, 'Protocol must remain external')
-            verify(classNames.any { it.endsWith('.kotlin_module') }, 'Missing Kotlin metadata')
-            verify(new String(entryBytes(aar, 'META-INF/com/android/build/gradle/aar-metadata.properties'), 'UTF-8').contains('minCompileSdk=35'),
-                'Incorrect minCompileSdk metadata')
-            verify(!new String(entryBytes(aar, 'proguard.txt'), 'UTF-8').trim().isEmpty(), 'Missing consumer rules')
-
-            def featureSymbols = [:].withDefault { [] }
-            def expectedResourceFiles = [] as Set
-            report.included.each { projectPath ->
-                def module = projectPath.replaceFirst(/^project ':/, '').replaceFirst(/'$/, '')
-                def featureAar = new File(rootProject.projectDir, "$module/build/outputs/aar/$module-release.aar")
-                new java.util.zip.ZipFile(featureAar).withCloseable { feature ->
-                    def missingClasses = entryNames(entryBytes(feature, 'classes.jar')).findAll { it.endsWith('.class') } - classNames
-                    verify(missingClasses.isEmpty(), "Missing classes from $module: $missingClasses")
-                    resourceSymbols(feature).each { symbol -> featureSymbols.get(symbol) << module }
-                    expectedResourceFiles.addAll(resourceFiles(feature))
-                }
-            }
-
-            // IDs are intentionally shareable: multiple layouts or features may refer to the
-            // same ID, which is merged into one R.id entry. Other duplicate resource names
-            // would make the fused artifact's resource ownership ambiguous.
-            def collisions = featureSymbols.findAll { symbol, modules -> symbol[0] != 'id' && modules.size() > 1 }
-            verify(collisions.isEmpty(), "Feature resource symbol collisions: $collisions")
-            def missingSymbols = featureSymbols.keySet() - resourceSymbols(aar)
-            verify(missingSymbols.isEmpty(), "Missing feature resource symbols: $missingSymbols")
-            def missingResourceFiles = expectedResourceFiles - resourceFiles(aar)
-            verify(missingResourceFiles.isEmpty(), "Missing feature resource files: $missingResourceFiles")
-        }
-
-        [['sources', '.kt'], ['javadoc', '.html']].each { classifier, suffix ->
-            new java.util.zip.ZipFile(new File(bundle, "libs/shopify-checkout-kit-${classifier}.jar")).withCloseable { archive ->
-                verify(archive.entries().any { it.name.endsWith(suffix) }, "Empty $classifier archive")
-            }
-        }
-        logger.lifecycle('Single SDK AAR, all feature classes, resources, consumer rules, Kotlin metadata, ' +
-            'sources, documentation and protocol dependency verified.')
     }
 }

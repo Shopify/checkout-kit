@@ -37,8 +37,8 @@ export class AccessibilityIdentifiers {
       `settings-section-${AccessibilityIdentifiers.kebabCase(section)}`,
     buyerIdentityOption: (mode: string) =>
       `settings-buyer-identity-option-${AccessibilityIdentifiers.kebabCase(mode)}`,
-    themeOption: (scheme: string) =>
-      `settings-theme-option-${AccessibilityIdentifiers.kebabCase(scheme)}`,
+    appearanceOption: (option: string) =>
+      `settings-appearance-option-${AccessibilityIdentifiers.kebabCase(option)}`,
     applePayStyleOption: (style: string) =>
       `settings-apple-pay-style-option-${AccessibilityIdentifiers.kebabCase(style)}`,
     checkoutPreloadingSwitch: 'settings-checkout-preloading-switch',

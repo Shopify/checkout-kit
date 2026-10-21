@@ -437,9 +437,7 @@ class ApplePayViewControllerTests: XCTestCase {
         XCTAssertEqual(
             mockAuthorizationDelegate.transitionHistory.first,
             .terminalError(
-                error: ShopifyAcceleratedCheckouts.Error.cartAcquisition(
-                    identifier: CheckoutIdentifier.cart(cartID: "gid://Shopify/Cart/test-cart-id")
-                )
+                error: ShopifyAcceleratedCheckouts.Error.cartAcquisition(cartID: "gid://Shopify/Cart/test-cart-id")
             )
         )
         XCTAssertEqual(mockAuthorizationDelegate.transitionHistory.last, .completed)
@@ -662,31 +660,116 @@ class ApplePayViewControllerTests: XCTestCase {
         XCTAssertEqual(mockAuthorizationDelegate.transitionHistory.last, .completed)
     }
 
+    // MARK: - Cart Provider Tests
+
+    func test_onPress_withCartProvider_resolvesCartOnceAndStartsPayment() async {
+        var providerCalls = 0
+        viewController.cartSource = .provider { _ in
+            providerCalls += 1
+            return .cart("gid://Shopify/Cart/test-cart-id")
+        }
+        mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart())
+
+        await viewController.onPress()
+
+        XCTAssertEqual(providerCalls, 1)
+        XCTAssertNotNil(viewController.cart)
+        XCTAssertEqual(mockAuthorizationDelegate.transitionHistory.first, .startPaymentRequest)
+    }
+
+    func test_onPress_whenCartProviderThrows_reportsFailureWithoutStartingPayment() async throws {
+        viewController.cartSource = .provider { _ in throw NSError(domain: "CartProviderError", code: 400, userInfo: nil) }
+        var receivedError: CheckoutError?
+        viewController.onCheckoutFail = { receivedError = $0 }
+
+        await viewController.onPress()
+
+        let error = try XCTUnwrap(receivedError)
+        XCTAssertEqual(error.code, .sdkError)
+        XCTAssertEqual((error.underlyingError as NSError?)?.domain, "CartProviderError")
+        XCTAssertNil(viewController.cart)
+        XCTAssertFalse(mockAuthorizationDelegate.transitionHistory.contains(.startPaymentRequest))
+    }
+
+    func test_onPress_whenCartProviderReturnsNonCartID_reportsFailureWithoutStartingPayment() async {
+        viewController.cartSource = .provider { _ in .cart("gid://Shopify/ProductVariant/test-variant-id") }
+        var receivedError: CheckoutError?
+        viewController.onCheckoutFail = { receivedError = $0 }
+
+        await viewController.onPress()
+
+        XCTAssertNotNil(receivedError)
+        XCTAssertNil(viewController.cart)
+        XCTAssertFalse(mockAuthorizationDelegate.transitionHistory.contains(.startPaymentRequest))
+    }
+
+    func test_onPress_withCartProvider_passesApplePayAsTheTappedWallet() async {
+        var requestedWallet: Wallet?
+        viewController.cartSource = .provider { request in
+            requestedWallet = request.wallet
+            return .cart("gid://Shopify/Cart/test-cart-id")
+        }
+        mockStorefront.cartResult = .success(StorefrontAPI.Cart.testCart())
+
+        await viewController.onPress()
+
+        XCTAssertEqual(requestedWallet, .applePay)
+    }
+
+    func test_onPress_whenCartProviderHandlesFailure_endsQuietlyWithoutStartingPaymentOrFailing() async {
+        viewController.cartSource = .provider { _ in .failed }
+        var failed = false
+        viewController.onCheckoutFail = { _ in failed = true }
+
+        await viewController.onPress()
+
+        XCTAssertFalse(failed)
+        XCTAssertNil(viewController.cart)
+        XCTAssertFalse(mockAuthorizationDelegate.transitionHistory.contains(.startPaymentRequest))
+        XCTAssertFalse(mockAuthorizationDelegate.transitionHistory.contains {
+            if case .terminalError = $0 {
+                return true
+            }; return false
+        })
+    }
+
     // MARK: - Actor Isolation Tests (Double-Tap Race Condition)
 
-    func test_onPress_whenDoubleTapped_doesNotCrashFromConcurrentActorHops() async throws {
-        let expectedError = NSError(domain: "TestError", code: 500, userInfo: nil)
-        mockStorefront.cartResult = .failure(expectedError)
+    func test_onPress_whileCartRequestPending_startsOneAttemptAndReportsOneFailure() async throws {
+        let providerStarted = expectation(description: "Cart provider started")
+        let onCheckoutFailExpectation = expectation(description: "onCheckoutFail should be called once")
+        onCheckoutFailExpectation.assertForOverFulfill = true
+        var pending: CheckedContinuation<CartResult, Never>?
+        var providerCalls = 0
 
-        let onCheckoutFailExpectation = XCTestExpectation(description: "onCheckoutFail should be called")
-        onCheckoutFailExpectation.expectedFulfillmentCount = 2
-
-        await MainActor.run {
-            viewController.onCheckoutFail = { _ in
-                onCheckoutFailExpectation.fulfill()
+        viewController.cartSource = .provider { _ in
+            providerCalls += 1
+            return await withCheckedContinuation {
+                pending = $0
+                providerStarted.fulfill()
             }
         }
+        mockStorefront.cartResult = .failure(NSError(domain: "TestError", code: 500, userInfo: nil))
+        viewController.onCheckoutFail = { _ in
+            onCheckoutFailExpectation.fulfill()
+        }
+        defer { pending?.resume(returning: .failed) }
 
         let vc = try XCTUnwrap(viewController)
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { await vc.onPress() }
-            group.addTask { await vc.onPress() }
-            group.addTask { await vc.onPress() }
-            group.addTask { await vc.onPress() }
-            group.addTask { await vc.onPress() }
-            group.addTask { await vc.onPress() }
-        }
+        let firstAttempt = Task { await vc.onPress() }
+        await fulfillment(of: [providerStarted], timeout: 1.0)
 
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< 5 {
+                group.addTask { await vc.onPress() }
+            }
+        }
+        XCTAssertEqual(providerCalls, 1)
+
+        let continuation = try XCTUnwrap(pending)
+        pending = nil
+        continuation.resume(returning: .cart("gid://Shopify/Cart/test-cart-id"))
+        await firstAttempt.value
         await fulfillment(of: [onCheckoutFailExpectation], timeout: 1.0)
     }
 }

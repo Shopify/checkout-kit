@@ -12,9 +12,15 @@ fi
 if command -v sccache >/dev/null 2>&1; then
   ANDROID_SCCACHE_SHIM_DIR="${TMPDIR:-/tmp}/checkout-kit-react-native-sccache"
   mkdir -p "$ANDROID_SCCACHE_SHIM_DIR"
+  # CMake also starts archive and file steps through the launcher, such as
+  # `cmake -E rm`, `llvm-ar`, and `llvm-ranlib`. sccache rejects commands that
+  # are not compilers, so the shim runs those commands directly.
   cat > "$ANDROID_SCCACHE_SHIM_DIR/ccache" <<'EOF'
 #!/usr/bin/env sh
-exec sccache "$@"
+case "${1##*/}" in
+  *clang | *clang++ | *gcc | *g++ | cc | c++) exec sccache "$@" ;;
+  *) exec "$@" ;;
+esac
 EOF
   chmod +x "$ANDROID_SCCACHE_SHIM_DIR/ccache"
   export PATH="$ANDROID_SCCACHE_SHIM_DIR:$PATH"

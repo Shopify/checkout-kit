@@ -1,54 +1,63 @@
 import type {CodegenTypes, TurboModule} from 'react-native';
 import {TurboModuleRegistry} from 'react-native';
 
-type IosColorsSpec = {
-  tintColor?: string;
-  backgroundColor?: string;
-  closeButtonColor?: string;
+type ColorsBaseSpec = {
+  webViewBackgroundColor?: string;
+  headerBackgroundColor?: string;
+  headerTitleColor?: string;
+  progressIndicatorColor?: string;
+  closeIconTintColor?: string | null;
+  headerBorderColor?: string | null;
+  dragHandleColor?: string | null;
+  // iOS only: colors that reset to the native default. See toNativeConfiguration.
+  resetColors?: string[];
 };
 
-type AndroidColorsBaseSpec = {
-  progressIndicator?: string;
-  backgroundColor?: string;
+type PlatformColorsSpec = {
+  webViewBackgroundColor?: string;
   headerBackgroundColor?: string;
-  headerTextColor?: string;
-  closeButtonColor?: string;
-};
-
-type AndroidColorsSpec = {
-  progressIndicator?: string;
-  backgroundColor?: string;
-  headerBackgroundColor?: string;
-  headerTextColor?: string;
-  closeButtonColor?: string;
-  light?: AndroidColorsBaseSpec;
-  dark?: AndroidColorsBaseSpec;
+  headerTitleColor?: string;
+  progressIndicatorColor?: string;
+  closeIconTintColor?: string | null;
+  headerBorderColor?: string | null;
+  dragHandleColor?: string | null;
+  // iOS only: colors that reset to the native default. See toNativeConfiguration.
+  resetColors?: string[];
+  light?: ColorsBaseSpec | null;
+  dark?: ColorsBaseSpec | null;
 };
 
 type ColorsSpec = {
-  ios?: IosColorsSpec;
-  android?: AndroidColorsSpec;
+  ios?: PlatformColorsSpec | null;
+  android?: PlatformColorsSpec | null;
 };
 
-type ConfigurationSpec = {
-  title?: string;
+type AppearanceSpec = {
+  type: string;
   colorScheme?: string;
+  colors?: ColorsSpec | null;
+};
+
+type AppearanceResultSpec = {
+  type: string;
+  colorScheme?: string;
+};
+
+export type ConfigurationSpec = {
+  title?: string;
+  appearance?: AppearanceSpec | null;
   logLevel?: string;
   preloading?: boolean;
   allowedMessageOrigins?: string[];
   telemetry?: boolean;
-  colors?: ColorsSpec;
 };
 
 type ConfigurationResultSpec = {
-  colorScheme: string;
+  appearance: AppearanceResultSpec;
   logLevel: string;
   preloading: boolean;
   telemetry: boolean;
   title?: string;
-  tintColor?: string;
-  backgroundColor?: string;
-  closeButtonColor?: string;
   allowedMessageOrigins: string[];
 };
 

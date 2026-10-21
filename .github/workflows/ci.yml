@@ -32,10 +32,12 @@ jobs:
       android: ${{ steps.platform.outputs.android == 'true' || steps.platform.outputs.protocolKotlin == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.android == 'true' }}
       swift: ${{ steps.platform.outputs.swift == 'true' || steps.platform.outputs.protocolSwift == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.swift == 'true' }}
       reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
-      reactNativeAndroid: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
+      reactNativeAndroid: ${{ steps.platform.outputs.reactNativeAndroid == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
+      reactNativeSwift: ${{ steps.platform.outputs.reactNativeSwift == 'true' || steps.infra.outputs.reactNativeSwift == 'true' }}
       web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
       telemetry: ${{ steps.platform.outputs.telemetry == 'true' || steps.infra.outputs.telemetry == 'true' }}
-      protocol: ${{ steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.protocol == 'true' }}
+      # compat/check.sh builds the Kotlin, Java, Swift, and TypeScript consumers, so every binding selects it.
+      protocol: ${{ steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolSwift == 'true' || steps.platform.outputs.protocolKotlin == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.protocol == 'true' }}
       scripts: ${{ steps.infra.outputs.scripts == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -89,6 +91,12 @@ jobs:
             reactNativeAndroid:
               - '.github/workflows/rn-test-android.yml'
               - '.github/workflows/rn-build-android.yml'
+            # React Native Swift lint infra: gates SwiftLint and SwiftFormat.
+            reactNativeSwift:
+              - '.github/workflows/rn-lint.yml'
+              - '.github/actions/setup-mint/**'
+              - '.ci/changed-file-filters.yml'
+              - '.github/workflows/ci.yml'
             web:
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
@@ -196,8 +204,10 @@ jobs:
   rn-lint:
     name: React Native
     needs: changes
-    if: needs.changes.outputs.reactNative == 'true'
+    if: needs.changes.outputs.reactNative == 'true' || needs.changes.outputs.reactNativeSwift == 'true'
     uses: ./.github/workflows/rn-lint.yml
+    with:
+      swift: ${{ needs.changes.outputs.reactNativeSwift == 'true' }}
 
   web:
     name: Web

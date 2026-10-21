@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Opens the Web sample app (default) or the @shopify/checkout-kit package in
+# the editor set by DEV_EDITOR in .dev.env at the repo root, otherwise `open`.
+# Usage: dev web open [lib|demo]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+# shellcheck source=../../../scripts/lib/open_target
+source "$REPO_ROOT/scripts/lib/open_target"
+
+cd "$REPO_ROOT"
+
+parse_open_target "dev web open" "$@"
+case "$OPEN_TARGET" in
+  demo) workspace="platforms/web/sample" ;;
+  lib) workspace="platforms/web" ;;
+esac
+
+if [ -f .dev.env ]; then
+  # shellcheck source=/dev/null
+  . ./.dev.env
+fi
+"${DEV_EDITOR:-open}" "$workspace"

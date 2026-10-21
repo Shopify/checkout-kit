@@ -13,11 +13,10 @@ import Config from 'react-native-config';
 import {useConfig} from '../context/Config';
 import {
   ApplePayStyle,
-  ColorScheme,
   useShopifyCheckout,
 } from '@shopify/checkout-kit-react-native';
 import type {Colors} from '../context/Theme';
-import {useTheme} from '../context/Theme';
+import {AppearanceOption, useTheme} from '../context/Theme';
 import {useNavigation} from '@react-navigation/native';
 import {useAuth} from '../context/Auth';
 import {BuyerIdentityMode, BuyerIdentityModeDisplayNames} from '../auth/types';
@@ -39,7 +38,7 @@ interface SwitchItem {
 interface SingleSelectItem {
   type: SectionType.SingleSelect;
   title: string;
-  value: ColorScheme | BuyerIdentityMode | ApplePayStyle;
+  value: AppearanceOption | BuyerIdentityMode | ApplePayStyle;
   selected: boolean;
 }
 
@@ -71,25 +70,25 @@ interface SectionData {
 type SettingsSectionId =
   | 'features'
   | 'authentication'
-  | 'theme'
+  | 'appearance'
   | 'apple-pay-style'
   | 'versions';
 
 function SettingsScreen() {
   const shopify = useShopifyCheckout();
   const {appConfig, setAppConfig} = useConfig();
-  const {colors, setColorScheme} = useTheme();
+  const {colors, setAppearance} = useTheme();
   const styles = createStyles(colors);
 
-  const handleColorSchemeChange = useCallback(
+  const handleAppearanceChange = useCallback(
     (item: SingleSelectItem) => {
       setAppConfig({
         ...appConfig,
-        colorScheme: item.value as ColorScheme,
+        appearance: item.value as AppearanceOption,
       });
-      setColorScheme(item.value as ColorScheme);
+      setAppearance(item.value as AppearanceOption);
     },
-    [appConfig, setAppConfig, setColorScheme],
+    [appConfig, setAppConfig, setAppearance],
   );
 
   const {isAuthenticated, customerEmail, tokenExpiresAt, logout} = useAuth();
@@ -154,34 +153,34 @@ function SettingsScreen() {
     [appConfig.checkoutPreloadingEnabled, handleCheckoutPreloadingChange],
   );
 
-  const themeOptions: readonly SingleSelectItem[] = useMemo(
+  const appearanceOptions: readonly SingleSelectItem[] = useMemo(
     () => [
-      {
-        title: 'Automatic',
-        type: SectionType.SingleSelect,
-        value: ColorScheme.automatic,
-        selected: appConfig.colorScheme === ColorScheme.automatic,
-      },
-      {
-        title: 'Light',
-        type: SectionType.SingleSelect,
-        value: ColorScheme.light,
-        selected: appConfig.colorScheme === ColorScheme.light,
-      },
-      {
-        title: 'Dark',
-        type: SectionType.SingleSelect,
-        value: ColorScheme.dark,
-        selected: appConfig.colorScheme === ColorScheme.dark,
-      },
       {
         title: 'Storefront',
         type: SectionType.SingleSelect,
-        value: ColorScheme.storefront,
-        selected: appConfig.colorScheme === ColorScheme.storefront,
+        value: AppearanceOption.storefront,
+        selected: appConfig.appearance === AppearanceOption.storefront,
+      },
+      {
+        title: 'App automatic',
+        type: SectionType.SingleSelect,
+        value: AppearanceOption.appAutomatic,
+        selected: appConfig.appearance === AppearanceOption.appAutomatic,
+      },
+      {
+        title: 'App light',
+        type: SectionType.SingleSelect,
+        value: AppearanceOption.appLight,
+        selected: appConfig.appearance === AppearanceOption.appLight,
+      },
+      {
+        title: 'App dark',
+        type: SectionType.SingleSelect,
+        value: AppearanceOption.appDark,
+        selected: appConfig.appearance === AppearanceOption.appDark,
       },
     ],
-    [appConfig.colorScheme],
+    [appConfig.appearance],
   );
 
   const applePayStyleDisplayNames: Record<ApplePayStyle, string> = useMemo(
@@ -241,9 +240,9 @@ function SettingsScreen() {
         data: buyerIdentityOptions,
       },
       {
-        id: 'theme',
-        title: 'Theme',
-        data: themeOptions,
+        id: 'appearance',
+        title: 'Appearance',
+        data: appearanceOptions,
       },
       {
         id: 'apple-pay-style',
@@ -259,7 +258,7 @@ function SettingsScreen() {
     ],
     [
       featureOptions,
-      themeOptions,
+      appearanceOptions,
       buyerIdentityOptions,
       applePayStyleOptions,
       informationalItems,
@@ -285,7 +284,7 @@ function SettingsScreen() {
               'apple-pay-style': handleApplePayStyleChange,
             };
             const handler =
-              sectionHandlers[section.id] ?? handleColorSchemeChange;
+              sectionHandlers[section.id] ?? handleAppearanceChange;
             return (
               <SelectItem
                 item={item}
@@ -393,8 +392,10 @@ function selectItemTestID(
       return AccessibilityIdentifiers.settings.buyerIdentityOption(
         String(item.value),
       );
-    case 'theme':
-      return AccessibilityIdentifiers.settings.themeOption(String(item.value));
+    case 'appearance':
+      return AccessibilityIdentifiers.settings.appearanceOption(
+        String(item.value),
+      );
     case 'apple-pay-style':
       return AccessibilityIdentifiers.settings.applePayStyleOption(
         String(item.value),

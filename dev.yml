@@ -15,10 +15,10 @@ up:
       - ejson2env
   - ruby
   - xcode:
-      version: "26.2"
+      version: "26.6"
       runtimes:
         ios:
-          - version: 23C54 # 26.2
+          - version: 23F77 # 26.5, the iOS SDK in Xcode 26.6
             architecture_variant: arm64
   - node:
       version: v22.14.0
@@ -85,6 +85,7 @@ check:
   maestro-hide-keyboard-lint: ./e2e/scripts/check_hide_keyboard_usage
   android-detekt: platforms/android/gradlew -p platforms/android detekt
   android-lint: |
+    set -e
     scripts/check_storefront_env
     platforms/android/gradlew -p platforms/android lintRelease
     platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:lintRelease
@@ -214,32 +215,7 @@ commands:
       test:
         desc: "Run protocol package tests. Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"
         syntax: "[kotlin|swift|typescript]"
-        run: |
-          set -e
-          root=$(pwd)
-          run_swift() {
-            cd $root/protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift
-            echo "Running tests for Swift..."
-            swift test
-          }
-          run_kotlin() {
-            echo "Running tests for Kotlin..."
-            protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:test
-          }
-          run_typescript() {
-            cd $root/protocols/universal-commerce-protocol/embedded-checkout-protocol
-            echo "Running tests for TypeScript..."
-            pnpm test "$@"
-          }
-          target="${1:-all}"
-          [ $# -gt 0 ] && shift
-          case "$target" in
-            swift) run_swift ;;
-            kotlin) run_kotlin ;;
-            typescript|ts) run_typescript "$@" ;;
-            all) run_kotlin; run_swift; run_typescript ;;
-            *) echo "Usage: dev protocol test [kotlin|swift|typescript] [-- <extra args>]"; exit 1 ;;
-          esac
+        run: ./protocols/universal-commerce-protocol/embedded-checkout-protocol/scripts/test.sh "$@"
 
       lint:
         desc: "Lint Kotlin protocol source and TypeScript test files"
@@ -279,28 +255,7 @@ commands:
       test:
         desc: "Run telemetry tests for every language, or a single one. Usage: dev telemetry test [typescript|swift|kotlin]"
         syntax: "[typescript|swift|kotlin]"
-        run: |
-          set -e
-          run_typescript() { (cd platforms/web/internal/telemetry && pnpm test); }
-          run_swift() {
-            # xcode_run only auto-discovers test targets under
-            # platforms/swift/Tests, so pass the telemetry target/suite
-            # pair explicitly.
-            (cd platforms/swift && ./Scripts/xcode_run test ShopifyCheckoutKit-Package CheckoutKitTelemetryTests/CheckoutKitTelemetryTests)
-          }
-          run_kotlin() {
-            platforms/android/gradlew -p platforms/android :shopify-checkout:testDebugUnitTest \
-              --tests "com.shopify.checkoutkit.checkout.telemetry.*" \
-              --tests "com.shopify.checkoutkit.checkout.Telemetry*" \
-              --console=plain
-          }
-          case "${1:-all}" in
-            typescript|ts) run_typescript ;;
-            swift|ios) run_swift ;;
-            kotlin|android) run_kotlin ;;
-            all) run_typescript; run_swift; run_kotlin ;;
-            *) echo "Usage: dev telemetry test [typescript|swift|kotlin]"; exit 1 ;;
-          esac
+        run: ./scripts/test_telemetry "$@"
       typecheck:
         desc: "Type-check the TypeScript telemetry package"
         run: cd platforms/web/internal/telemetry && pnpm typecheck
@@ -365,55 +320,7 @@ commands:
             dev android start --device emulator-5556
             dev android start --local --device emulator-5556
         syntax: "[--local] [--device ID]"
-        run: |
-          source platforms/android/scripts/parse_local_protocol_flag
-          local_flag_args=()
-          device_id=""
-          while [ "$#" -gt 0 ]; do
-            case "$1" in
-              --device)
-                device_id="${2:-}"
-                if [ -z "$device_id" ]; then
-                  echo "--device needs an adb serial, such as emulator-5556." >&2
-                  exit 1
-                fi
-                shift 2
-                ;;
-              --device=*)
-                device_id="${1#--device=}"
-                if [ -z "$device_id" ]; then
-                  echo "--device needs an adb serial, such as emulator-5556." >&2
-                  exit 1
-                fi
-                shift
-                ;;
-              --local)
-                local_flag_args+=("$1")
-                shift
-                ;;
-              *)
-                echo "Unknown argument: $1" >&2
-                echo "Usage: dev android start [--local] [--device ID]" >&2
-                exit 1
-                ;;
-            esac
-          done
-          parse_local_protocol_flag ${local_flag_args[@]+"${local_flag_args[@]}"}
-
-          if [ -z "$device_id" ]; then
-            platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
-            exit
-          fi
-
-          attached_device_ids=$(adb devices | awk '$2 == "device" { print $1 }')
-          if ! printf '%s\n' "$attached_device_ids" | awk -v serial="$device_id" '$0 == serial { found = 1 } END { exit !found }'; then
-            echo "$device_id is not listed by adb devices in state device." >&2
-            echo "Attached Android devices:" >&2
-            printf '%s\n' "${attached_device_ids:-(none)}" | sed 's/^/  /' >&2
-            exit 1
-          fi
-          echo "Using device: $device_id"
-          ANDROID_SERIAL="$device_id" platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo installDebug
+        run: ./platforms/android/scripts/start "$@"
 
       e2e:
         desc: Run Android sample end-to-end tests
@@ -476,11 +383,12 @@ commands:
               platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
 
       lint:
-        desc: Check code style and lint (detekt + Android lint, including the sample)
+        desc: Check code style and lint without changing files (detekt + Android lint, including the sample)
         aliases: [style]
         syntax:
           optional: --local
         run: |
+          set -e
           source platforms/android/scripts/parse_local_protocol_flag
           parse_local_protocol_flag "$@"
           scripts/check_storefront_env
@@ -493,6 +401,7 @@ commands:
         syntax:
           optional: --local
         run: |
+          set -e
           source platforms/android/scripts/parse_local_protocol_flag
           parse_local_protocol_flag "$@"
           scripts/check_storefront_env
@@ -545,23 +454,7 @@ commands:
             dev android open lib      Open the Android SDK library project (aliases: library, package, module)
         syntax:
           optional: "[lib|demo]"
-        run: |
-          set -e
-          if [ "$#" -gt 1 ]; then
-            echo "Usage: dev android open [lib|demo]" >&2
-            exit 1
-          fi
-
-          case "${1:-demo}" in
-            demo|sample|samples) project="platforms/android/samples/CheckoutKitAndroidDemo" ;;
-            lib|library|package|module) project="platforms/android" ;;
-            *)
-              echo "Usage: dev android open [lib|demo]" >&2
-              exit 1
-              ;;
-          esac
-
-          open -a "Android Studio" "$project"
+        run: ./platforms/android/scripts/open "$@"
 
       api:
         desc: Validate or update the public Android API baselines
@@ -580,7 +473,7 @@ commands:
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
               set -e
-              platforms/android/gradlew -p platforms/android :shopify-checkout:apiCheck
+              platforms/android/gradlew -p platforms/android apiCheck
               protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiCheck
           dump:
             desc: Regenerate the baselines after intentional public API changes
@@ -590,7 +483,7 @@ commands:
               source platforms/android/scripts/parse_local_protocol_flag
               parse_local_protocol_flag "$@"
               set -e
-              platforms/android/gradlew -p platforms/android :shopify-checkout:apiDump
+              platforms/android/gradlew -p platforms/android apiDump
               protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiDump
 
   # Swift
@@ -630,116 +523,7 @@ commands:
             dev swift start
             dev swift start --device 00000000-0000-0000-0000-000000000000
         syntax: "[--device ID]"
-        run: |
-          set -eo pipefail
-          cd platforms/swift
-
-          REQUESTED_DEVICE_ID=""
-          while [ "$#" -gt 0 ]; do
-            case "$1" in
-              --device)
-                REQUESTED_DEVICE_ID="${2:-}"
-                [ -n "$REQUESTED_DEVICE_ID" ] || { echo "--device needs a simulator UDID." >&2; exit 1; }
-                shift 2
-                ;;
-              --device=*)
-                REQUESTED_DEVICE_ID="${1#--device=}"
-                [ -n "$REQUESTED_DEVICE_ID" ] || { echo "--device needs a simulator UDID." >&2; exit 1; }
-                shift
-                ;;
-              *)
-                echo "Unknown argument: $1" >&2
-                echo "Usage: dev swift start [--device ID]" >&2
-                exit 1
-                ;;
-            esac
-          done
-
-          BOOTED_DEVICE_IDS=$(xcrun simctl list devices booted | awk '/^-- /{ios = /iOS/; next} ios && match($0, /\(([0-9A-Fa-f-]{36})\)/) { print substr($0, RSTART + 1, 36) }')
-          if [ -n "$REQUESTED_DEVICE_ID" ]; then
-            if ! printf '%s\n' "$BOOTED_DEVICE_IDS" | awk -v udid="$REQUESTED_DEVICE_ID" '$0 == udid { found = 1 } END { exit !found }'; then
-              echo "$REQUESTED_DEVICE_ID is not a booted iOS simulator." >&2
-              echo "Booted iOS simulators:" >&2
-              printf '%s\n' "${BOOTED_DEVICE_IDS:-(none)}" | sed 's/^/  /' >&2
-              exit 1
-            fi
-            DEVICE_ID="$REQUESTED_DEVICE_ID"
-            echo "Using booted simulator: $DEVICE_ID"
-          else
-            DEVICE_ID="${BOOTED_DEVICE_IDS%%$'\n'*}"
-            if [ -n "$DEVICE_ID" ]; then
-              echo "Using booted simulator: $DEVICE_ID"
-            else
-              DEVICE_ID=$(./Scripts/get_device_id "iPhone 16" 2>/dev/null || ./Scripts/get_device_id "iPhone" 2>/dev/null || true)
-              if [ -z "$DEVICE_ID" ]; then
-                echo "No iOS simulator found." >&2
-                exit 1
-              fi
-              echo "No booted simulator found. Booting simulator: $DEVICE_ID"
-              xcrun simctl boot "$DEVICE_ID" 2>/dev/null || true
-              xcrun simctl bootstatus "$DEVICE_ID" -b
-            fi
-          fi
-
-          ./Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
-
-          DERIVED_DATA="$PWD/../../.build/swift-start-simulator"
-          cd Samples/CheckoutKitSwiftDemo
-          build_command=(
-            xcodebuild build
-            -project CheckoutKitSwiftDemo.xcodeproj
-            -scheme CheckoutKitSwiftDemo
-            -sdk iphonesimulator
-            -destination "id=$DEVICE_ID"
-            -derivedDataPath "$DERIVED_DATA"
-            -skipPackagePluginValidation
-            -disableAutomaticPackageResolution
-            CODE_SIGNING_ALLOWED=NO
-          )
-          if command -v xcbeautify >/dev/null 2>&1; then
-            "${build_command[@]}" | xcbeautify
-          else
-            "${build_command[@]}"
-          fi
-
-          APP_PATH=$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name "CheckoutKitSwiftDemo.app" -print -quit)
-          if [ -z "$APP_PATH" ]; then
-            echo "The build created no CheckoutKitSwiftDemo.app bundle." >&2
-            exit 1
-          fi
-
-          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
-          echo "Launching CheckoutKitSwiftDemo on simulator: $DEVICE_ID"
-          echo "Press Ctrl-C to stop the app."
-
-          colorize_logs() {
-            if [ ! -t 1 ] || [ -n "${NO_COLOR:-}" ] || [ "${TERM:-}" = "dumb" ]; then
-              cat
-              return
-            fi
-
-            awk '
-              BEGIN {
-                escape = sprintf("%c", 27)
-                reset = escape "[0m"
-                dim = escape "[2m"
-                green = escape "[32m"
-                yellow = escape "[33m"
-                blue = escape "[34m"
-                magenta = escape "[35m"
-                cyan = escape "[36m"
-              }
-              /^\[CheckoutKitSwiftDemo\]/ { print green $0 reset; next }
-              /^\[UCP\]/ { print cyan $0 reset; next }
-              /^\[Preload\]/ { print magenta $0 reset; next }
-              /^\[AcceleratedCheckout\]/ { print yellow $0 reset; next }
-              /^\[E2E\]/ { print blue $0 reset; next }
-              /^objc\[/ { print dim $0 reset; next }
-              { print }
-            '
-          }
-
-          xcrun simctl launch --terminate-running-process --console-pty "$DEVICE_ID" com.shopify.checkoutkit.swiftdemo | colorize_logs
+        run: ./platforms/swift/Scripts/start "$@"
 
       e2e:
         desc: Run Swift sample end-to-end tests
@@ -818,17 +602,7 @@ commands:
 
       clean:
         desc: Clean Swift packages and sample app build artifacts
-        run: |
-          set -e
-          cd platforms/swift
-          # ShopifyCheckoutKit-Package is the SPM-wide scheme: it cleans all
-          # library targets in Package.swift (ShopifyCheckoutKit,
-          # ShopifyAcceleratedCheckouts, EmbeddedCheckoutProtocol) in one pass.
-          ./Scripts/xcode_run clean ShopifyCheckoutKit-Package
-          cd Samples/CheckoutKitSwiftDemo
-          # The sample app has a "Run Script" build phase that runs during clean
-          # and exits non-zero when there is nothing to delete.
-          ../../Scripts/xcode_run clean CheckoutKitSwiftDemo || true
+        run: ./platforms/swift/Scripts/clean "$@"
 
       open:
         desc: Open the Swift package or sample app in Xcode
@@ -840,26 +614,7 @@ commands:
             dev swift open lib      Open the ShopifyCheckoutKit Swift package (aliases: library, package, module)
         syntax:
           optional: "[lib|demo]"
-        run: |
-          set -e
-          if [ "$#" -gt 1 ]; then
-            echo "Usage: dev swift open [lib|demo]" >&2
-            exit 1
-          fi
-
-          case "${1:-demo}" in
-            demo|sample|samples)
-              platforms/swift/Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
-              target="platforms/swift/Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj"
-              ;;
-            lib|library|package|module) target="platforms/swift" ;;
-            *)
-              echo "Usage: dev swift open [lib|demo]" >&2
-              exit 1
-              ;;
-          esac
-
-          xed "$target"
+        run: ./platforms/swift/Scripts/open "$@"
 
   # React Native
   react-native:
@@ -912,17 +667,7 @@ commands:
                 Only for unreleased native API that this PR changes.
             syntax:
               optional: --local
-            run: |
-              set -e
-              cd platforms/react-native
-              for arg in "$@"; do
-                if [ "$arg" = "--local" ]; then
-                  export USE_LOCAL_SDK=1
-                fi
-              done
-              ./scripts/publish_android_snapshot
-              cd sample/android
-              ./gradlew :shopify_checkout-kit-react-native:test --refresh-dependencies
+            run: ./platforms/react-native/scripts/test_android "$@"
       e2e:
         desc: Run React Native sample end-to-end tests
         long_desc: |
@@ -930,10 +675,11 @@ commands:
           Choose ios or android, then use the interactive picker, matrix tags,
           or positional YAML files to select coverage. --device ID runs on that
           device only: a booted simulator UDID on iOS, or an adb serial such as
-          emulator-5556 on Android.
-        syntax: "{ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
+          emulator-5556 on Android. --metro-port PORT runs the app against Metro
+          on that port and starts Metro there when nothing answers.
+        syntax: "{ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID] [--metro-port PORT]"
         run: |
-          echo "Usage: dev rn e2e {ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]" >&2
+          echo "Usage: dev rn e2e {ios|android} [TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID] [--metro-port PORT]" >&2
           exit 1
         subcommands:
           ios:
@@ -949,12 +695,19 @@ commands:
               iOS simulator is used. --device does not select tests, so the
               picker still opens.
 
+              --metro-port PORT runs the app against Metro on that port. When
+              nothing answers there, the command starts Metro on that port and
+              writes its log to $TMPDIR/checkout-kit-rn-ios-metro-PORT.log.
+              Without it, port 8081 is used. --metro-port does not select tests,
+              so the picker still opens.
+
               Examples:
                 dev rn e2e ios
                 dev rn e2e ios --tags launch
                 dev rn e2e ios tests/shared/launch-smoke.yaml
                 dev rn e2e ios --device 00000000-0000-0000-0000-000000000000 --tags launch
-            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
+                dev rn e2e ios --device 00000000-0000-0000-0000-000000000000 --metro-port 8082 --tags launch
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID] [--metro-port PORT]"
             run: ./e2e/scripts/run_local_e2e react-native-ios "$@"
           android:
             desc: Run React Native Android end-to-end tests
@@ -969,12 +722,20 @@ commands:
               adb devices. Without it, the first device in state device is used.
               --device does not select tests, so the picker still opens.
 
+              --metro-port PORT runs the app against Metro on that port and runs
+              adb reverse for that port on the device. When nothing answers
+              there, the command starts Metro on that port and writes its log to
+              $TMPDIR/checkout-kit-rn-android-metro-PORT.log. Without it, port
+              8081 is used. --metro-port does not select tests, so the picker
+              still opens.
+
               Examples:
                 dev rn e2e android
                 dev rn e2e android --tags launch
                 dev rn e2e android tests/shared/launch-smoke.yaml
                 dev rn e2e android --device emulator-5556 --tags launch
-            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID]"
+                dev rn e2e android --device emulator-5556 --metro-port 8082 --tags launch
+            syntax: "[TEST_FILE...] [--tags TAG[,TAG...]] [--exclude-tags TAG[,TAG...]] [--device ID] [--metro-port PORT]"
             run: ./e2e/scripts/run_local_e2e react-native-android "$@"
       lint:
         desc: Run all React Native lint checks (Swift, module, sample)
@@ -997,9 +758,14 @@ commands:
             run: cd platforms/react-native && pnpm sample lint
 
       format:
-        desc: Auto-format and apply safe lint autocorrections (Swift bridge only)
+        desc: Auto-format JS/TS module and sample sources and Swift bindings
         aliases: [fix]
-        run: cd platforms/react-native && ./scripts/lint_swift fix
+        run: |
+          set -e
+          cd platforms/react-native
+          pnpm module format
+          pnpm sample format
+          pnpm module format:swift
 
       api:
         desc: Validate or update the public React Native API baseline (api/checkout-kit-react-native.api.md)
@@ -1045,34 +811,33 @@ commands:
 
       clean:
         desc: Remove generated directories, clean CocoaPods cache, and stop sccache
-        run: |
-          cd platforms/react-native
-          if (cd sample/ios && bundle exec pod --version >/dev/null 2>&1); then
-            (cd sample/ios && bundle exec pod cache clean --all)
-          else
-            echo "Skipping CocoaPods cache clean (pod unavailable; run dev up first)"
-          fi
-          rm -rf test/rct-integration-app/Pods \
-            test/rct-integration-app/RCTIntegrationApp.xcodeproj \
-            test/rct-integration-app/RCTIntegrationApp.xcworkspace \
-            test/rct-integration-app/RCTIntegrationApp/Info.plist \
-            test/rct-integration-app/RCTIntegrationAppTests/Info.plist \
-            test/rct-integration-app/build \
-            test/rct-integration-app/.xcode.env \
-            test/rct-integration-app/.xcode.env.local \
-            test/rct-integration-app/PrivacyInfo.xcprivacy
-          pnpm module clean
-          pnpm sample clean
-          pnpm clean
-          if command -v sccache >/dev/null 2>&1; then
-            sccache --stop-server 2>/dev/null || true
-          fi
-          echo "Cleaned root, module and sample workspaces"
+        run: ./platforms/react-native/scripts/clean "$@"
 
       start:
         desc: Start Metro development server
+        long_desc: |
+          Starts Metro for the React Native sample app.
+
+          Options:
+            --metro-port PORT  Start Metro on this port. Without it, Metro uses
+                               port 8081. Use the same port with dev rn ios or
+                               dev rn android, so the app loads its bundle from
+                               this Metro.
+
+          Examples:
+            dev rn start
+            dev rn start --metro-port 8082
         aliases: [s, server]
-        run: cd platforms/react-native && pnpm sample start --reset-cache
+        syntax: "[--metro-port PORT]"
+        run: |
+          source platforms/react-native/scripts/metro_port
+          parse_metro_port_option "$@"
+          if [ "${#METRO_PORT_REMAINING_ARGS[@]}" -gt 0 ]; then
+            echo "Unknown argument: ${METRO_PORT_REMAINING_ARGS[0]}" >&2
+            echo "Usage: dev rn start [--metro-port PORT]" >&2
+            exit 1
+          fi
+          cd platforms/react-native && pnpm sample start --reset-cache
 
       ios:
         desc: Run the iOS sample app in the simulator.
@@ -1082,9 +847,21 @@ commands:
           --local
             Build against in-repo Swift SDK sources. Only for unreleased native API that
             this PR adds; CI resolves published pods, so the PR stays red until release.
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm sample ios "$@"
+
+          --metro-port PORT
+            Build an app that loads its bundle from Metro on this port, and start Metro
+            on it when nothing answers there. Without it, the app uses port 8081.
+
+          Other arguments go to react-native run-ios, such as --udid ID.
+
+          Examples:
+            dev rn ios
+            dev rn ios --metro-port 8082
+        syntax: "[--local] [--metro-port PORT]"
+        run: |
+          source platforms/react-native/scripts/metro_port
+          parse_metro_port_option "$@"
+          cd platforms/react-native && pnpm sample ios ${METRO_PORT_REMAINING_ARGS[@]+"${METRO_PORT_REMAINING_ARGS[@]}"}
 
       android:
         desc: Run the Android sample app in the emulator.
@@ -1096,9 +873,22 @@ commands:
             against them. Enables useLocalProtocol=true automatically.
             Only for unreleased native API that this PR adds; CI resolves published Maven
             artifacts, so the PR stays red until release.
-        syntax:
-          optional: --local
-        run: cd platforms/react-native && pnpm sample android "$@"
+
+          --metro-port PORT
+            Build an app that loads its bundle from Metro on this port, start Metro on it
+            when nothing answers there, and run adb reverse for this port on the target
+            device. Without it, the app uses port 8081.
+
+          Other arguments go to react-native run-android, such as --device SERIAL.
+
+          Examples:
+            dev rn android
+            dev rn android --metro-port 8082 --device emulator-5556
+        syntax: "[--local] [--metro-port PORT]"
+        run: |
+          source platforms/react-native/scripts/metro_port
+          parse_metro_port_option "$@"
+          cd platforms/react-native && pnpm sample android ${METRO_PORT_REMAINING_ARGS[@]+"${METRO_PORT_REMAINING_ARGS[@]}"}
 
       pod-install:
         desc: Install CocoaPods for the iOS sample.
@@ -1125,31 +915,7 @@ commands:
             dev rn open --android       Open the sample Android project in Android Studio
         syntax:
           optional: "[--ios|--android]"
-        run: |
-          set -e
-          if [ "$#" -gt 1 ]; then
-            echo "Usage: dev rn open [--ios|--android]" >&2
-            exit 1
-          fi
-
-          case "${1:-}" in
-            "")
-              if [ -f .dev.env ]; then
-                . ./.dev.env
-              fi
-              "${DEV_EDITOR:-open}" platforms/react-native
-              ;;
-            --ios)
-              xed platforms/react-native/sample/ios/CheckoutKitReactNativeDemo.xcworkspace
-              ;;
-            --android)
-              open -a "Android Studio" platforms/react-native/sample/android
-              ;;
-            *)
-              echo "Usage: dev rn open [--ios|--android]" >&2
-              exit 1
-              ;;
-          esac
+        run: ./platforms/react-native/scripts/open "$@"
 
   rn:
     desc: "Alias for React Native Checkout Kit commands"
@@ -1206,6 +972,7 @@ commands:
           /opt/dev/bin/dev web e2e
           /opt/dev/bin/dev web verify
           /opt/dev/bin/dev web sample build
+          /opt/dev/bin/dev web sample cdn build
 
       clean:
         desc: Remove npm and CDN build outputs and coverage
@@ -1226,6 +993,16 @@ commands:
           preview:
             desc: Preview the built sample app
             run: cd platforms/web && pnpm sample:preview
+          cdn:
+            desc: Start the sample app using the published Checkout Kit CDN loader
+            run: cd platforms/web && pnpm sample:cdn
+            subcommands:
+              build:
+                desc: Build the CDN-backed sample app
+                run: cd platforms/web && pnpm sample:cdn:build
+              preview:
+                desc: Preview the CDN-backed sample app
+                run: cd platforms/web && pnpm sample:cdn:preview
 
       verify:
         desc: Verify the Web npm package and CDN assets
@@ -1289,23 +1066,4 @@ commands:
             dev web open lib      Open the @shopify/checkout-kit package (aliases: library, package, module)
         syntax:
           optional: "[lib|demo]"
-        run: |
-          set -e
-          if [ "$#" -gt 1 ]; then
-            echo "Usage: dev web open [lib|demo]" >&2
-            exit 1
-          fi
-
-          case "${1:-demo}" in
-            demo|sample|samples) workspace="platforms/web/sample" ;;
-            lib|library|package|module) workspace="platforms/web" ;;
-            *)
-              echo "Usage: dev web open [lib|demo]" >&2
-              exit 1
-              ;;
-          esac
-
-          if [ -f .dev.env ]; then
-            . ./.dev.env
-          fi
-          "${DEV_EDITOR:-open}" "$workspace"
+        run: ./platforms/web/scripts/open "$@"

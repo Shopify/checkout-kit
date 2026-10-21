@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Source from commands that take --device ID or --device=ID.
+#
+# parse_device_option REPORT_MISSING_ID ARG...
+#
+# Reads one --device option at the start of ARG... When ARG... does not start
+# with --device or --device=, it returns 1 and changes nothing. Otherwise it
+# sets REQUESTED_DEVICE_ID to the ID, sets DEVICE_OPTION_ARG_COUNT to the
+# number of arguments the option used, and returns 0. Callers shift by
+# DEVICE_OPTION_ARG_COUNT.
+#
+# An empty ID is an error. The function then runs REPORT_MISSING_ID, a command
+# that prints the caller's error text to stderr, and exits 1.
+parse_device_option() {
+  local report_missing_id="$1"
+  shift
+
+  case "${1-}" in
+    --device)
+      REQUESTED_DEVICE_ID="${2:-}"
+      DEVICE_OPTION_ARG_COUNT=2
+      ;;
+    --device=*)
+      REQUESTED_DEVICE_ID="${1#--device=}"
+      DEVICE_OPTION_ARG_COUNT=1
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ -z "$REQUESTED_DEVICE_ID" ]; then
+    "$report_missing_id"
+    exit 1
+  fi
+}

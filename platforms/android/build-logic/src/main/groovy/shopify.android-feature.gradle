@@ -138,7 +138,8 @@ dependencies {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(file('../gradle/detekt.config.yml'))
-    autoCorrect = true
+    // Lint is read-only; formatting commands opt in with --auto-correct.
+    autoCorrect = false
 }
 
 tasks.withType(Detekt).configureEach {

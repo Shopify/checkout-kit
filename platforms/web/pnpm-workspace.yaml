@@ -4,4 +4,4 @@ packages:
   - components/*
   - 'test/e2e'
   - '../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript'
-  - 'internal/telemetry'
+  - 'internal/*'

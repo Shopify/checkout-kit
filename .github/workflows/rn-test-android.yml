@@ -70,5 +70,4 @@ jobs:
           java -version
           javac -version
           ${{ github.workspace }}/scripts/setup_storefront_env
-          pnpm module build
           pnpm sample test:android --no-daemon

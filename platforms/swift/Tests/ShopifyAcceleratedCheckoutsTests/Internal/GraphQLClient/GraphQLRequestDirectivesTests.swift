@@ -148,24 +148,6 @@ final class GraphQLRequestDirectivesTests: XCTestCase {
         XCTAssertTrue(operationWithDirective.query.contains("cart(id: $id)"))
     }
 
-    func testWithContextDirectiveAddsToMutationOperation() {
-        let operation = GraphQLRequest(
-            query: "mutation CartCreate($input: CartInput!) { cartCreate(input: $input) { cart { id } } }",
-            responseType: StorefrontAPI.CartCreateResponse.self
-        )
-        let context = InContextDirective(countryCode: CountryCode.GB, languageCode: LanguageCode.EN)
-
-        let operationWithDirective = operation.withContextDirective(context)
-
-        // Verify the directive string matches expected format
-        XCTAssertEqual(context.toString, "@inContext(country: GB, language: EN)")
-
-        // Verify the directive is added to the mutation
-        XCTAssertTrue(operationWithDirective.query.contains(context.toString))
-        XCTAssertTrue(operationWithDirective.query.contains("mutation CartCreate"))
-        XCTAssertTrue(operationWithDirective.query.contains("cartCreate(input: $input)"))
-    }
-
     func testWithContextDirectiveWithComplexQuery() {
         let operation = GraphQLRequest(
             query: """

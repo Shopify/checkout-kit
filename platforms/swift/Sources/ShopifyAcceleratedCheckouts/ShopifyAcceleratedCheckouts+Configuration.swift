@@ -16,9 +16,13 @@ extension ShopifyAcceleratedCheckouts {
         /// See: https://shopify.dev/docs/storefronts/themes/getting-started/build-a-theme#get-the-storefront-access-token
         public var storefrontAccessToken: String
 
-        /// Data to attach to the buyerIdentity during cart creation
-        /// - Apple Pay sheet will skip requesting email/phone number fields if provided here
-        /// - Customer will *override* existing cart.buyerIdentity if you are using cartId
+        /// Customer identity Checkout Kit applies when it updates a supplied cart during accelerated checkout.
+        ///
+        /// If an app-provided cart should use an authenticated buyer's identity, set that identity, including the
+        /// customer access token, when creating or updating the cart before returning its ID. This configuration does
+        /// not initialize app-provided carts.
+        ///
+        /// Wallets may skip requesting email and phone number fields when they are provided here.
         ///
         /// See: https://shopify.dev/docs/api/storefront/latest/mutations/cartBuyerIdentityUpdate
         public var customer: Customer?

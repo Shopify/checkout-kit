@@ -4,7 +4,7 @@ import XCTest
 
 @available(iOS 17.0, *)
 @MainActor
-final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
+final class ShopifyAcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
     // MARK: - Render State Change Callback Tests
 
     func testOnRenderStateChange_CalledWithErrorStateForInvalidCartID() {
@@ -31,7 +31,11 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
 
         // Then: Callback should eventually be called with error state
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(receivedStates.contains { if case .error = $0 { return true }; return false }, "onRenderStateChange should be called with .error state for invalid cart ID")
+        XCTAssertTrue(receivedStates.contains {
+            if case .error = $0 {
+                return true
+            }; return false
+        }, "onRenderStateChange should be called with .error state for invalid cart ID")
     }
 
     func testOnRenderStateChange_CalledWithErrorStateForEmptyCartID() {
@@ -58,61 +62,11 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
 
         // Then: Callback should be called with error state
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(receivedStates.contains { if case .error = $0 { return true }; return false }, "onRenderStateChange should be called with .error state for empty cart ID")
-    }
-
-    func testOnRenderStateChange_CalledWithErrorStateForInvalidVariantID() {
-        // Given: Invalid variant ID and expectation for callback
-        let invalidVariantID = "invalid-variant-id"
-        let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
-        var receivedStates: [RenderState] = []
-
-        // When: Creating ShopifyAcceleratedCheckoutButtons with invalid variant ID in SwiftUI environment
-        let testView = ShopifyAcceleratedCheckoutButtons(variantID: invalidVariantID, quantity: 1)
-            .onRenderStateChange { state in
-                receivedStates.append(state)
-                if case .error = state {
-                    expectation.fulfill()
-                }
-            }
-            .environment(\.shopifyAcceleratedCheckoutsConfiguration, ShopifyAcceleratedCheckouts.Configuration.testConfiguration)
-
-        // Render the view to trigger onAppear
-        let hostingController = UIHostingController(rootView: testView)
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = hostingController
-        window.makeKeyAndVisible()
-
-        // Then: Callback should be called with error state
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(receivedStates.contains { if case .error = $0 { return true }; return false }, "onRenderStateChange should be called with .error state for invalid variant ID")
-    }
-
-    func testOnRenderStateChange_CalledWithErrorStateForZeroQuantity() {
-        // Given: Valid variant ID but zero quantity
-        let validVariantID = "gid://shopify/ProductVariant/test-variant-id"
-        let expectation = XCTestExpectation(description: "onRenderStateChange called with error state")
-        var receivedStates: [RenderState] = []
-
-        // When: Creating ShopifyAcceleratedCheckoutButtons with zero quantity in SwiftUI environment
-        let testView = ShopifyAcceleratedCheckoutButtons(variantID: validVariantID, quantity: 0)
-            .onRenderStateChange { state in
-                receivedStates.append(state)
-                if case .error = state {
-                    expectation.fulfill()
-                }
-            }
-            .environment(\.shopifyAcceleratedCheckoutsConfiguration, ShopifyAcceleratedCheckouts.Configuration.testConfiguration)
-
-        // Render the view to trigger onAppear
-        let hostingController = UIHostingController(rootView: testView)
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = hostingController
-        window.makeKeyAndVisible()
-
-        // Then: Callback should be called with error state
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(receivedStates.contains { if case .error = $0 { return true }; return false }, "onRenderStateChange should be called with .error state for zero quantity")
+        XCTAssertTrue(receivedStates.contains {
+            if case .error = $0 {
+                return true
+            }; return false
+        }, "onRenderStateChange should be called with .error state for empty cart ID")
     }
 
     func testOnRenderStateChange_CalledWithLoadingStateForValidCartID() {
@@ -142,31 +96,42 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
         XCTAssertTrue(receivedStates.contains(.loading), "onRenderStateChange should be called with .loading state for valid cart ID")
     }
 
-    func testOnRenderStateChange_CalledWithLoadingStateForValidVariantID() {
-        // Given: Valid variant ID and expectation for callback
-        let validVariantID = "gid://shopify/ProductVariant/test-variant-id"
+    func testOnRenderStateChange_CalledWithLoadingStateForCartProviderWithoutCallingIt() {
+        // Given: A cart provider that must only be called after a tap
         let expectation = XCTestExpectation(description: "onRenderStateChange called with loading state")
         var receivedStates: [RenderState] = []
+        var providerCalls = 0
 
-        // When: Creating ShopifyAcceleratedCheckoutButtons with valid variant ID in SwiftUI environment
-        let testView = ShopifyAcceleratedCheckoutButtons(variantID: validVariantID, quantity: 2)
-            .onRenderStateChange { state in
-                receivedStates.append(state)
-                if state == .loading {
-                    expectation.fulfill()
-                }
+        // When: Rendering ShopifyAcceleratedCheckoutButtons with a cart provider
+        let testView = ShopifyAcceleratedCheckoutButtons(variantID: "gid://shopify/ProductVariant/test-variant") { _ in
+            providerCalls += 1
+            return .cart("gid://shopify/Cart/test-cart-id")
+        }
+        .onRenderStateChange { state in
+            receivedStates.append(state)
+            if state == .loading {
+                expectation.fulfill()
             }
-            .environment(\.shopifyAcceleratedCheckoutsConfiguration, ShopifyAcceleratedCheckouts.Configuration.testConfiguration)
+        }
+        .environment(\.shopifyAcceleratedCheckoutsConfiguration, ShopifyAcceleratedCheckouts.Configuration.testConfiguration)
 
-        // Render the view to trigger onAppear
         let hostingController = UIHostingController(rootView: testView)
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = hostingController
         window.makeKeyAndVisible()
 
-        // Then: Callback should be called with loading state initially
+        // Then: The buttons load without asking the app for a cart
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(receivedStates.contains(.loading), "onRenderStateChange should be called with .loading state for valid variant ID")
+        XCTAssertTrue(receivedStates.contains(.loading))
+        XCTAssertEqual(providerCalls, 0, "The cart provider must not be called while rendering")
+    }
+
+    func testBuyNowInitializer_RetainsProductContext() {
+        let buttons = ShopifyAcceleratedCheckoutButtons(variantID: "gid://shopify/ProductVariant/test-variant") { _ in
+            .cart("gid://shopify/Cart/test-cart-id")
+        }
+
+        XCTAssertEqual(buttons.buyNowContext?.variantID, "gid://shopify/ProductVariant/test-variant")
     }
 
     // MARK: - Identifier Validation Tests
@@ -199,47 +164,6 @@ final class AcceleratedCheckoutButtonsRenderStateTests: XCTestCase {
             let identifier = CheckoutIdentifier.cart(cartID: cartID)
             XCTAssertFalse(identifier.parse().isValid(), "Cart ID '\(cartID)' should be invalid")
         }
-    }
-
-    func testCheckoutIdentifier_ValidVariantIDFormats() {
-        // Test valid variant ID formats
-        let validVariantIDs = [
-            "gid://shopify/ProductVariant/test-id",
-            "gid://Shopify/ProductVariant/Z2NwLXVzLWV4YW1wbGU6MDEyMzQ1Njc4OTAxMjM0NTY3ODkw",
-            "GID://SHOPIFY/PRODUCTVARIANT/uppercase-test"
-        ]
-
-        for variantID in validVariantIDs {
-            let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-            XCTAssertTrue(identifier.parse().isValid(), "Variant ID '\(variantID)' should be valid")
-        }
-    }
-
-    func testCheckoutIdentifier_InvalidVariantIDFormats() {
-        // Test invalid variant ID formats
-        let invalidVariantIDs = [
-            "",
-            "invalid-variant-id",
-            "variant/test-id",
-            "gid://shopify/Product/test-id", // Wrong type
-            "gid://other/ProductVariant/test-id" // Wrong platform
-        ]
-
-        for variantID in invalidVariantIDs {
-            let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-            XCTAssertFalse(identifier.parse().isValid(), "Variant ID '\(variantID)' should be invalid")
-        }
-    }
-
-    func testCheckoutIdentifier_InvalidQuantity() {
-        // Test that zero or negative quantities are invalid
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-
-        let zeroQuantityIdentifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: 0)
-        XCTAssertFalse(zeroQuantityIdentifier.parse().isValid(), "Zero quantity should be invalid")
-
-        let negativeQuantityIdentifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: -1)
-        XCTAssertFalse(negativeQuantityIdentifier.parse().isValid(), "Negative quantity should be invalid")
     }
 
     // MARK: - Render State Enum Tests

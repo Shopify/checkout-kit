@@ -24,7 +24,13 @@ if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+# The source root is stable relative to this script in standalone and embedded
+# checkouts. An embedding workspace can still override it when necessary.
+if [[ -n "${CHECKOUT_KIT_SOURCE_ROOT:-}" ]]; then
+	REPO_ROOT="$(cd "$CHECKOUT_KIT_SOURCE_ROOT" && pwd -P)"
+else
+	REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd -P)"
+fi
 SWIFT_MINT="$REPO_ROOT/scripts/swift_mint"
 if ! "$SCRIPT_DIR/check_sample_package_paths"; then
 	exit 1
@@ -111,7 +117,7 @@ fi
 
 # Run from the directory containing .swiftlint.yml so its `included:` and
 # `excluded:` paths resolve consistently.
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+PROJECT_ROOT="$REPO_ROOT"
 
 if [[ "$MODE" == "fix" ]]; then
 	(cd "$PROJECT_ROOT" && $SWIFTLINT lint --fix --no-cache $QUIET_FLAG)
@@ -179,7 +185,6 @@ if [[ "$MODE" == "check" && "$SKIP_POD" == "false" ]]; then
 	# Podspec lives at the repo root so it can glob source files in both
 	# platforms/swift/ and protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/swift/. Run lint from the
 	# repo root.
-	REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 	export BUNDLE_GEMFILE="${BUNDLE_GEMFILE:-$REPO_ROOT/platforms/swift/Gemfile}"
 	POD_LOG=""
 	if [[ "$VERBOSE" == "true" ]]; then

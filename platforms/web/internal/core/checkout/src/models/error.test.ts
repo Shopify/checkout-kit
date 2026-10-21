@@ -59,7 +59,15 @@ describe("toCheckoutError", () => {
     expect(error).toEqual({ code: "invalid_cart", message: "First error" });
   });
 
-  it.each(["new_checkout_reason", "network_error", "http_error", "sdk_error", 123, null])(
+  it.each([
+    "new_checkout_reason",
+    "network_error",
+    "http_error",
+    "sdk_error",
+    "unsupported_browser",
+    123,
+    null,
+  ])(
     "maps unsupported or malformed code %s to unknown without discarding the diagnostic",
     (code) => {
       const error = toCheckoutError(
@@ -118,6 +126,9 @@ describe("toCheckoutError", () => {
     expectTypeOf<keyof CheckoutError>().toEqualTypeOf<"code" | "message">();
     expectTypeOf<CheckoutError["code"]>().toEqualTypeOf<CheckoutErrorCode>();
     expectTypeOf<CheckoutError["message"]>().toEqualTypeOf<string>();
+    expectTypeOf<ReturnType<typeof toCheckoutError>["code"]>().toEqualTypeOf<
+      Exclude<CheckoutErrorCode, "unsupported_browser">
+    >();
 
     const error = toCheckoutError(
       protocolError([{ type: "error", code: "invalid_cart", content: "Invalid checkout" }]),

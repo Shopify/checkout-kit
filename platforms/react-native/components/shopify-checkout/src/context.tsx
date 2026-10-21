@@ -47,13 +47,19 @@ export function ShopifyCheckoutProvider({
     instance.current = new ShopifyCheckout(configuration, features);
   }
   const checkout = instance.current;
+  // The constructor already applied the initial configuration.
+  const lastAppliedConfiguration = useRef(configuration);
 
   useEffect(() => {
     if (!configuration) {
       return;
     }
 
-    checkout.setConfig(configuration);
+    if (configuration !== lastAppliedConfiguration.current) {
+      checkout.setConfig(configuration);
+      lastAppliedConfiguration.current = configuration;
+    }
+
     setAcceleratedCheckoutsAvailable(checkout.acceleratedCheckoutsReady);
   }, [checkout, configuration]);
 

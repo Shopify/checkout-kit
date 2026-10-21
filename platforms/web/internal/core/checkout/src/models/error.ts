@@ -17,6 +17,9 @@ export interface CheckoutError {
   message: string;
 }
 
+// Browser capability errors originate locally, never from a checkout message.
+type ProtocolCheckoutErrorCode = Exclude<CheckoutErrorCode, "unsupported_browser">;
+
 interface ErrorMessage {
   type: "error";
   severity?: unknown;
@@ -27,7 +30,9 @@ interface ErrorMessage {
 const UNKNOWN_ERROR_MESSAGE = "Embedded checkout reported an error.";
 
 /** Maps a protocol error without exposing its envelope or arbitrary codes. */
-export function toCheckoutError(protocolError: ErrorResponse): CheckoutError {
+export function toCheckoutError(
+  protocolError: ErrorResponse,
+): CheckoutError & { code: ProtocolCheckoutErrorCode } {
   // The protocol decoder preserves message contents, including malformed ones.
   const messages: unknown[] = Array.isArray(protocolError.messages) ? protocolError.messages : [];
   const errors = messages.filter(isErrorMessage);
@@ -51,7 +56,7 @@ function isErrorMessage(value: unknown): value is ErrorMessage {
   );
 }
 
-function toCheckoutErrorCode(value: unknown): CheckoutErrorCode {
+function toCheckoutErrorCode(value: unknown): ProtocolCheckoutErrorCode {
   if (typeof value !== "string") return "unknown";
 
   // Only checkout-origin recovery reasons are accepted from protocol messages.

@@ -67,5 +67,4 @@ jobs:
           echo "JAVA_HOME: $JAVA_HOME"
           java -version
           echo "STOREFRONT_DOMAIN=myshopify.com" > sample/.env
-          pnpm module build
           pnpm sample build:android --no-daemon

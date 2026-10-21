@@ -306,10 +306,10 @@ class CartViewModel(
         handler: WindowOpenHandler,
     ): CheckoutLinkAction {
         recordSdkEvent("Checkout link clicked", mapOf("url" to link.url.toString()))
-        // Returning Open keeps Checkout Kit's Custom Tab and non-web intent handling.
+        // Returning Default keeps Checkout Kit's Custom Tab and non-web intent handling.
         if (handler == WindowOpenHandler.Default) {
             recordSdkEvent("Checkout link delegated to Checkout Kit", mapOf("url" to link.url.toString()))
-            return CheckoutLinkAction.Open
+            return CheckoutLinkAction.Default
         }
 
         return try {

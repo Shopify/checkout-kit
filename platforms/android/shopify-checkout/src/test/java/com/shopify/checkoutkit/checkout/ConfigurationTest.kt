@@ -81,12 +81,12 @@ class ConfigurationTest {
     @Test
     fun `to string serializes all settings`() {
         val colors = Colors(
-            webViewBackground = Color.SRGB(1),
-            headerBackground = Color.SRGB(2),
-            headerFont = Color.SRGB(3),
-            progressIndicator = Color.SRGB(4),
+            webViewBackgroundColor = Color.SRGB(1),
+            headerBackgroundColor = Color.SRGB(2),
+            headerTitleColor = Color.SRGB(3),
+            progressIndicatorColor = Color.SRGB(4),
             closeIcon = DrawableResource(5),
-            closeIconTint = Color.SRGB(6),
+            closeIconTintColor = Color.SRGB(6),
             dragHandleColor = Color.SRGB(7),
             headerBorderColor = Color.SRGB(8),
         )
@@ -97,7 +97,7 @@ class ConfigurationTest {
                 titleAlignment = CheckoutSheetTitleAlignment.START,
                 toolbarElevationDp = 10f,
                 closeIcon = DrawableResource(11),
-                closeIconTint = Color.SRGB(12),
+                closeIconTintColor = Color.SRGB(12),
                 scrimColor = Color.SRGB(13),
                 dismissal = CheckoutSheetDismissal(false, false),
                 dragHandle = CheckoutSheetDragHandle(true),
@@ -114,13 +114,13 @@ class ConfigurationTest {
 
         assertThat(configuration.toString()).isEqualTo(
             "Configuration(appearance=App(colorScheme=Light(colors=Colors(" +
-                "webViewBackground=SRGB(sRGB=1), headerBackground=SRGB(sRGB=2), " +
-                "headerFont=SRGB(sRGB=3), progressIndicator=SRGB(sRGB=4), " +
-                "closeIcon=DrawableResource(id=5), closeIconTint=SRGB(sRGB=6), " +
+                "webViewBackgroundColor=SRGB(sRGB=1), headerBackgroundColor=SRGB(sRGB=2), " +
+                "headerTitleColor=SRGB(sRGB=3), progressIndicatorColor=SRGB(sRGB=4), " +
+                "closeIcon=DrawableResource(id=5), closeIconTintColor=SRGB(sRGB=6), " +
                 "dragHandleColor=SRGB(sRGB=7), headerBorderColor=SRGB(sRGB=8)))), " +
                 "sheet=CheckoutSheetOptions(cornerRadiusDp=9.0, titleAlignment=START, " +
                 "toolbarElevationDp=10.0, closeIcon=DrawableResource(id=11), " +
-                "closeIconTint=SRGB(sRGB=12), scrimColor=SRGB(sRGB=13), " +
+                "closeIconTintColor=SRGB(sRGB=12), scrimColor=SRGB(sRGB=13), " +
                 "dismissal=CheckoutSheetDismissal(dragToDismissEnabled=false, " +
                 "tapAwayToDismissEnabled=false), dragHandle=CheckoutSheetDragHandle(visible=true), " +
                 "snapPoints=[Expanded(topMarginDp=14.0)], maxWidthDp=15.0), " +
@@ -235,7 +235,7 @@ class ConfigurationTest {
             titleAlignment = CheckoutSheetTitleAlignment.START,
             toolbarElevationDp = 4f,
             maxWidthDp = 480f,
-            closeIconTint = Color.SRGB(0xFF0000),
+            closeIconTintColor = Color.SRGB(0xFF0000),
             dismissal = CheckoutSheetDismissal(
                 dragToDismissEnabled = false,
                 tapAwayToDismissEnabled = false,

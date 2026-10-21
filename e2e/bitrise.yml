@@ -434,11 +434,11 @@ workflows:
   ci-ios-swift-package-tests:
     meta:
       bitrise.io:
-        # Keep in sync with dev.yml's xcode.version (26.2). Bitrise stable stacks
-        # only receive Xcode patch updates, so this pins Xcode 26.2 / iOS 26.2
-        # (23C54) to match local development.
-        stack: &macos_stack osx-xcode-26.2.x
-        machine_type_id: g2.mac.large
+        # Keep in sync with dev.yml's xcode.version (26.6). Bitrise stable stacks
+        # only receive Xcode patch updates, so this pins Xcode 26.6 / iOS 26.5
+        # (23F77) to match local development.
+        stack: &macos_stack osx-xcode-26.6.x
+        machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -456,7 +456,7 @@ workflows:
     meta:
       bitrise.io:
         stack: *macos_stack
-        machine_type_id: g2.mac.large
+        machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}
@@ -775,7 +775,7 @@ workflows:
     meta:
       bitrise.io:
         stack: *macos_stack
-        machine_type_id: g2.mac.large
+        machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
       - bundle::create-ios-simulator: {}

@@ -6,36 +6,6 @@ import ShopifyCheckoutKit
  * to React Native compatible dictionaries.
  */
 internal enum ShopifyEventSerialization {
-    /**
-     * Encodes a Codable object to a JSON dictionary for React Native bridge.
-     */
-    static func encodeToJSON(from value: Codable) -> [String: Any] {
-        let encoder = JSONEncoder()
-
-        do {
-            let jsonData = try encoder.encode(value)
-            if let jsonObject = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-                return jsonObject
-            }
-        } catch {
-            print("Error encoding to JSON object: \(error)")
-        }
-        return [:]
-    }
-
-    /**
-     * Converts a JSON string to a dictionary.
-     */
-    static func stringToJSON(from value: String?) -> [String: Any]? {
-        guard let data = value?.data(using: .utf8, allowLossyConversion: false) else { return [:] }
-        do {
-            return try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any]
-        } catch {
-            print("Failed to convert string to JSON: \(error)", value ?? "nil")
-            return [:]
-        }
-    }
-
     static func serialize(clickEvent url: URL) -> [String: String] {
         return ["url": url.absoluteString]
     }

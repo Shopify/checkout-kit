@@ -12,9 +12,7 @@ class ShopPayButtonTests: XCTestCase {
     private var validCartIdentifier: CheckoutIdentifier! = .cart(
         cartID: "gid://Shopify/Cart/test-cart-id"
     )
-    private var validVariantIdentifier: CheckoutIdentifier! = .variant(
-        variantID: "gid://Shopify/ProductVariant/test-variant-id", quantity: 1
-    )
+    private var cartProviderSource: CartSource! = .provider { _ in .cart("gid://Shopify/Cart/test-cart-id") }
 
     // MARK: - ShopPayButton Tests
 
@@ -32,9 +30,9 @@ class ShopPayButtonTests: XCTestCase {
         XCTAssertEqual(try logoImage.actualImage().name(), "shop-pay-logo")
     }
 
-    func test_shopPayButton_withValidVariantIdentifier_shouldRenderLogo() throws {
+    func test_shopPayButton_withCartProvider_shouldRenderLogo() throws {
         let button = Internal_ShopPayButton(
-            identifier: validVariantIdentifier,
+            cartSource: cartProviderSource,
             configuration: testConfiguration,
             eventHandlers: EventHandlers(),
             cornerRadius: nil
@@ -44,6 +42,50 @@ class ShopPayButtonTests: XCTestCase {
         let buttonElement = try button.inspect().find(ViewType.Button.self)
         let logoImage = try buttonElement.labelView().hStack().image(0)
         XCTAssertEqual(try logoImage.actualImage().name(), "shop-pay-logo")
+    }
+
+    func test_cartProvider_whilePending_shouldIgnoreRepeatedTapsAndAllowRetryAfterFailure() async throws {
+        let providerStarted = expectation(description: "First provider request started")
+        let retried = expectation(description: "Provider called for retry")
+        var pending: CheckedContinuation<CartResult, Never>?
+        var providerCalls = 0
+        var isPending = true
+        let button = Internal_ShopPayButton(
+            cartSource: .provider { _ in
+                providerCalls += 1
+                if providerCalls == 1 {
+                    return await withCheckedContinuation {
+                        pending = $0
+                        providerStarted.fulfill()
+                    }
+                }
+                if !isPending {
+                    retried.fulfill()
+                }
+                return .failed
+            },
+            configuration: testConfiguration,
+            cornerRadius: nil
+        )
+        defer { pending?.resume(returning: .failed) }
+        let buttonElement = try button.inspect().find(ViewType.Button.self)
+        try buttonElement.tap()
+        await fulfillment(of: [providerStarted], timeout: 2)
+
+        try buttonElement.tap()
+        try buttonElement.tap()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(providerCalls, 1)
+
+        isPending = false
+        let continuation = try XCTUnwrap(pending)
+        pending = nil
+        continuation.resume(returning: .failed)
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        try buttonElement.tap()
+        await fulfillment(of: [retried], timeout: 2)
+        XCTAssertEqual(providerCalls, 2)
     }
 
     // MARK: - ShopPayButton Rendering Tests
@@ -89,18 +131,11 @@ class ShopPayButtonTests: XCTestCase {
 
     // MARK: - Identifier Validation Tests
 
-    func test_shopPayButton_withInvalidIdentifiers_shouldRenderEmptyView() throws {
+    func test_shopPayButton_withInvalidIdentifiers_shouldNotRenderButton() throws {
         let testCases: [(CheckoutIdentifier, String)] = [
             (.cart(cartID: ""), "empty cart ID"),
             (.cart(cartID: "invalid://Shopify/Cart/test-id"), "invalid cart ID prefix"),
-            (
-                .variant(variantID: "gid://Shopify/ProductVariant/test-id", quantity: 0),
-                "zero quantity variant"
-            ),
-            (
-                .variant(variantID: "invalid://Shopify/ProductVariant/test-id", quantity: 1),
-                "invalid variant ID prefix"
-            )
+            (.cart(cartID: "gid://Shopify/ProductVariant/test-id"), "variant ID is not a cart ID")
         ]
 
         for (identifier, description) in testCases {
@@ -111,7 +146,7 @@ class ShopPayButtonTests: XCTestCase {
                     cornerRadius: nil
                 )
 
-                XCTAssertNoThrow(try button.inspect().find(ViewType.EmptyView.self))
+                XCTAssertThrowsError(try button.inspect().find(ViewType.Button.self))
             }
         }
     }

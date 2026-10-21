@@ -2,12 +2,20 @@ import React from 'react';
 import {render, act} from '@testing-library/react-native';
 import {NativeModules, Platform} from 'react-native';
 import {ShopifyCheckoutProvider, useShopifyCheckout} from '../components/shopify-checkout/src/context';
-import {ApplePayContactField, ColorScheme, type Configuration} from '../src';
+import {
+  ApplePayContactField,
+  CheckoutAppearanceType,
+  CheckoutColorScheme,
+  type Configuration,
+} from '../src';
 import {__resetPreloadForTests} from '../internal/core/src/preload';
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
-  colorScheme: ColorScheme.automatic,
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: CheckoutColorScheme.automatic,
+  },
 };
 
 jest.mock('react-native');
@@ -123,22 +131,59 @@ describe('ShopifyCheckoutProvider', () => {
     );
   });
 
-  it('reuses the same instance across re-renders', () => {
+  it('keeps a mount-time preload when the configuration is stable', () => {
+    const PreloadOnMount = () => {
+      const {preload} = useShopifyCheckout();
+      React.useEffect(() => {
+        preload(checkoutUrl);
+      }, [preload]);
+      return null;
+    };
+
     const {rerender} = render(
       <TestComponent>
-        <MockChild />
+        <PreloadOnMount />
       </TestComponent>,
+    );
+    rerender(
+      <TestComponent>
+        <PreloadOnMount />
+      </TestComponent>,
+    );
+
+    const {setConfig, preload} = NativeModules.ShopifyCheckoutKit;
+    const nativeCalls = [
+      ...setConfig.mock.invocationCallOrder.map((at: number) => [at, 'setConfig']),
+      ...preload.mock.invocationCallOrder.map((at: number) => [at, 'preload']),
+    ]
+      .sort(([a], [b]) => (a as number) - (b as number))
+      .map(([, name]) => name);
+    expect(nativeCalls).toEqual(['setConfig', 'preload']);
+  });
+
+  it('applies a new configuration object', () => {
+    const newConfig: Configuration = {
+      appearance: {
+        type: CheckoutAppearanceType.app,
+        colorScheme: CheckoutColorScheme.dark,
+      },
+    };
+    const {rerender} = render(
+      <ShopifyCheckoutProvider configuration={config}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
     );
 
     rerender(
-      <TestComponent>
+      <ShopifyCheckoutProvider configuration={newConfig}>
         <MockChild />
-      </TestComponent>,
+      </ShopifyCheckoutProvider>,
     );
 
-    expect(NativeModules.ShopifyCheckoutKit.setConfig.mock.calls).toHaveLength(
-      2,
-    );
+    expect(NativeModules.ShopifyCheckoutKit.setConfig.mock.calls).toEqual([
+      [config],
+      [newConfig],
+    ]);
   });
 });
 
@@ -348,7 +393,12 @@ describe('useShopifyCheckout', () => {
       hookValue = value;
     };
 
-    const newConfig = {colorScheme: ColorScheme.light};
+    const newConfig: Configuration = {
+      appearance: {
+        type: CheckoutAppearanceType.app,
+        colorScheme: CheckoutColorScheme.light,
+      },
+    };
 
     render(
       <Wrapper>
@@ -379,7 +429,7 @@ describe('useShopifyCheckout', () => {
 
     const config = hookValue.getConfig();
     expect(config).toEqual({
-      colorScheme: 'automatic',
+      appearance: {type: 'app', colorScheme: 'automatic'},
       logLevel: 'error',
       preloading: true,
       telemetry: true,

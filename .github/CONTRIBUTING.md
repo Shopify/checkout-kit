@@ -4,6 +4,9 @@ The following is a set of guidelines for contributing to this project. Please ta
 
 This is a monorepo containing the Swift, Android, React Native, and Web implementations of the Shopify Checkout Kit. Each platform has its own conventions, tooling, and release process; the shared guidelines below apply to all of them.
 
+For module ownership, dependency direction, packaging, and the steps to add a
+component, see [Platform and component architecture](ARCHITECTURE.md).
+
 ## Code of Conduct
 
 This project and everyone participating in it are governed by the [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [opensource@shopify.com](mailto:opensource@shopify.com).
@@ -73,9 +76,23 @@ scripts/setup_storefront_env
 
 Platform-scoped commands are available as `dev android <command>`, `dev swift <command>`, `dev react-native <command>` (or `dev rn`), and `dev web <command>` after setup. Protocol schema/model commands are available as `dev protocol <command>`. For cross-platform changes, use `dev lint`, `dev test`, `dev check`, `dev format`, and `dev build`.
 
-React Native sample apps can be run against local in-repo SDK sources with
-`dev rn ios --local` or `dev rn android --local`. The Web sample accepts a
-checkout URL directly and does not use the shared storefront credential files.
+Use `dev <platform> lint` for read-only static checks and
+`dev <platform> format` (alias `fix`) for formatting and safe lint corrections.
+React Native formatting covers the JS/TS module, sample, and Swift bindings.
+Android and Kotlin protocol formatting explicitly opt into Detekt's
+`--auto-correct`; plain `detekt` does not change source files.
+
+`dev up` provisions the whole repository. Platform `check` commands currently
+have different scopes: Swift, Android, and React Native run static checks;
+Web also runs tests, package verification, and sample builds. Use the platform
+sections below for individual checks rather than assuming `check` runs every CI
+job.
+
+React Native uses published native SDKs by default. Use
+`dev rn ios --local` or `dev rn android --local` only to integrate unreleased
+native public API changes; see [React Native local SDK development](../platforms/react-native/CONTRIBUTING.md#local-sdk-development---local).
+The Web sample accepts a checkout URL directly and does not use the shared
+storefront credential files.
 
 ### Test coverage
 
@@ -91,7 +108,7 @@ Run the same coverage checks locally from the repository root:
 ```bash
 pnpm --dir platforms/web test
 pnpm --dir platforms/react-native test --coverage --testPathPatterns="^tests/"
-pnpm --dir protocol test --coverage
+pnpm --dir protocols/universal-commerce-protocol/embedded-checkout-protocol test --coverage
 ```
 
 A failing threshold fails the test command and its CI job. Add tests for the
@@ -398,7 +415,7 @@ The Android-facing public APIs are tracked via committed baselines managed by th
 - `platforms/android/shopify-checkout/api/shopify-checkout.api` for `com.shopify:checkout-kit`.
 - `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
 
-The unified `Breaking Changes` CI workflow runs `./gradlew :shopify-checkout:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. It fails if either compiled public API diverges from the committed baselines.
+The unified `Breaking Changes` CI workflow runs the platform aggregate `./gradlew apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` on every PR that touches Android or Kotlin protocol sources. The platform aggregate covers all feature modules, not only checkout. It fails if any compiled public API diverges from its committed baseline.
 
 If your change intentionally modifies the public API:
 

@@ -34,8 +34,8 @@ public class CheckoutViewController: UINavigationController {
 
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundColor = colorScheme.color { $0.headerBackground }
-        appearance.titleTextAttributes = [.foregroundColor: colorScheme.color { $0.headerFont }]
+        appearance.backgroundColor = colorScheme.color { $0.headerBackgroundColor }
+        appearance.titleTextAttributes = [.foregroundColor: colorScheme.color { $0.headerTitleColor }]
         appearance.shadowColor = colorScheme.optionalColor { $0.headerBorderColor }
 
         navigationBar.standardAppearance = appearance
@@ -118,8 +118,8 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     /// Registers a handler for links clicked in checkout.
     ///
-    /// Return ``CheckoutLinkAction/open`` to use Checkout Kit's default behavior,
-    /// ``CheckoutLinkAction/handled`` when your app handled the link, or
+    /// Return ``CheckoutLinkAction/default`` when your app does not handle the link,
+    /// so Checkout Kit uses its default behavior; return ``CheckoutLinkAction/handled`` when your app handled the link, or
     /// ``CheckoutLinkAction/cancel`` to reject it.
     @discardableResult public func onLinkClick(
         _ action: @escaping (CheckoutLink) -> CheckoutLinkAction

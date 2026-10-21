@@ -5,36 +5,14 @@ import XCTest
 final class ShopifyAcceleratedCheckoutsErrorTests: XCTestCase {
     // MARK: - cartAcquisition Error Tests
 
-    func test_cartAcquisitionError_withAllIdentifierTypes_shouldGenerateCorrectErrorMessages() {
-        struct TestCase {
-            let identifier: CheckoutIdentifier
-            let expectedError: String
-            let description: String
-        }
+    func test_cartAcquisitionError_withoutCartID_shouldGenerateFallbackMessage() {
+        let error = ShopifyAcceleratedCheckouts.Error.cartAcquisition(cartID: nil)
+        XCTAssertEqual(error.toString(), "unable to get cart for the supplied cart identifier")
+    }
 
-        let testCases: [TestCase] = [
-            TestCase(
-                identifier: .cart(cartID: "gid://Shopify/Cart/test-id"),
-                expectedError: "unable to get cart for CheckoutIdentifier: cart(cartID: \"gid://Shopify/Cart/test-id\")",
-                description: "cart identifier"
-            ),
-            TestCase(
-                identifier: .variant(variantID: "gid://Shopify/ProductVariant/test-id", quantity: 2),
-                expectedError: "unable to get cart for CheckoutIdentifier: variant(variantID: \"gid://Shopify/ProductVariant/test-id\", quantity: 2)",
-                description: "variant identifier"
-            ),
-            TestCase(
-                identifier: .invariant(reason: "Invalid checkout data"),
-                expectedError: "unable to get cart for CheckoutIdentifier: invariant(reason: \"Invalid checkout data\")",
-                description: "invariant identifier"
-            )
-        ]
-
-        for testCase in testCases {
-            let error = ShopifyAcceleratedCheckouts.Error.cartAcquisition(identifier: testCase.identifier)
-            let errorString = error.toString()
-            XCTAssertEqual(errorString, testCase.expectedError, "Failed for \(testCase.description)")
-        }
+    func test_cartAcquisitionError_withDiagnosticCartID_shouldIncludeCartID() {
+        let error = ShopifyAcceleratedCheckouts.Error.cartAcquisition(cartID: "gid://shopify/Cart/test-cart")
+        XCTAssertEqual(error.toString(), "unable to get cart for gid://shopify/Cart/test-cart")
     }
 
     // MARK: - invariant Error Tests

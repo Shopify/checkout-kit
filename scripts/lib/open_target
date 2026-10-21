@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Source from the open commands that take an optional [lib|demo] target.
+#
+# parse_open_target COMMAND [TARGET]
+#
+# Sets OPEN_TARGET to demo or lib. No TARGET, or an empty one, means demo.
+# demo also accepts sample and samples. lib also accepts library, package and
+# module. For more than one TARGET or an unknown TARGET, it prints
+# "Usage: COMMAND [lib|demo]" to stderr and exits 1.
+parse_open_target() {
+  local command_name="$1"
+  shift
+
+  if [ "$#" -gt 1 ]; then
+    echo "Usage: $command_name [lib|demo]" >&2
+    exit 1
+  fi
+
+  case "${1:-demo}" in
+    demo | sample | samples) OPEN_TARGET=demo ;;
+    lib | library | package | module) OPEN_TARGET=lib ;;
+    *)
+      echo "Usage: $command_name [lib|demo]" >&2
+      exit 1
+      ;;
+  esac
+}

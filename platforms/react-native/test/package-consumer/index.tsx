@@ -5,17 +5,25 @@ import {
   useShopifyCheckout,
   AcceleratedCheckoutButtons,
   AcceleratedCheckoutWallet,
-  ColorScheme,
+  CheckoutAppearanceType,
+  CheckoutColorScheme,
   LogLevel,
 } from '../..';
 import type {
+  CheckoutColors,
   Configuration,
   PresentCallbacks,
   PreloadState,
 } from '../..';
 
+const colors: CheckoutColors = {progressIndicatorColor: '#0B6E4F'};
+
 const configuration: Configuration = {
-  colorScheme: ColorScheme.automatic,
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: CheckoutColorScheme.automatic,
+    colors: {ios: colors, android: {...colors, dragHandleColor: null}},
+  },
   telemetry: false,
   logLevel: LogLevel.warn,
 };

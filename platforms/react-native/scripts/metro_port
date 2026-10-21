@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Source from React Native commands that take --metro-port PORT.
+#
+# Metro and the React Native CLI read the Metro port from RCT_METRO_PORT. The
+# CLI passes it to run-ios and run-android as the default of --port.
+
+DEFAULT_METRO_PORT=8081
+
+# Returns non-zero and names the value when $1 is not a port number from 1 to
+# 65535.
+validate_metro_port() {
+  case "$1" in
+    [1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-9][0-9][0-9][0-9][0-9])
+      [ "$1" -le 65535 ] && return 0
+      ;;
+  esac
+  echo "Invalid --metro-port value: $1. Use a port number from 1 to 65535." >&2
+  return 1
+}
+
+# Removes --metro-port PORT and --metro-port=PORT from the arguments, checks
+# PORT, and exports it as RCT_METRO_PORT. The other arguments stay in order in
+# METRO_PORT_REMAINING_ARGS. Without --metro-port, RCT_METRO_PORT is not
+# changed.
+parse_metro_port_option() {
+  local port
+  METRO_PORT_REMAINING_ARGS=()
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --metro-port)
+        if [ "$#" -lt 2 ]; then
+          echo "--metro-port needs a port number, such as 8082." >&2
+          exit 1
+        fi
+        port="$2"
+        shift 2
+        ;;
+      --metro-port=*)
+        port="${1#--metro-port=}"
+        shift
+        ;;
+      *)
+        METRO_PORT_REMAINING_ARGS+=("$1")
+        shift
+        continue
+        ;;
+    esac
+    validate_metro_port "$port" || exit 1
+    export RCT_METRO_PORT="$port"
+  done
+}

@@ -10,6 +10,7 @@
     "release:android": "bash ./scripts/release_android",
     "build:ios": "sh ./scripts/build_ios",
     "lint": "pnpm run typecheck && eslint .",
+    "format": "eslint . --fix",
     "ios": "bash ./scripts/ios",
     "start": "react-native start -- --reset-cache",
     "typecheck": "tsc --noEmit",

@@ -26,6 +26,25 @@ class ConfigurationTests: XCTestCase {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
     }
 
+    func testReplacingAppearanceRestoresDefaultColors() {
+        let custom = CheckoutColors(
+            webViewBackgroundColor: .systemRed,
+            headerBackgroundColor: .systemBlue,
+            headerTitleColor: .systemGreen,
+            progressIndicatorColor: .systemOrange,
+            closeIconTintColor: .systemPurple,
+            headerBorderColor: .systemYellow
+        )
+        XCTAssertNotEqual(custom, CheckoutColors())
+
+        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark(colors: custom)) }
+        ShopifyCheckoutKit.configure { $0.appearance = .app(.automatic()) }
+
+        let colorScheme = ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme
+        XCTAssertEqual(colorScheme.colors(isDark: false), CheckoutColors())
+        XCTAssertEqual(colorScheme.colors(isDark: true), CheckoutColors())
+    }
+
     func testAllowedMessageOriginsDefaultsToEmpty() {
         XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, [])
     }

@@ -180,7 +180,8 @@ tasks.withType(KotlinJvmCompile).configureEach {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom('../detekt.config.yml')
-    autoCorrect = true
+    // Lint is read-only; formatting commands opt in with --auto-correct.
+    autoCorrect = false
 }
 
 dependencies {

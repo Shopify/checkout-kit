@@ -22,6 +22,8 @@ interface CreatePresentDispatcherOptions {
   respondToGeolocationRequest?: (allow: boolean) => void;
   /** Release the subscription before invoking consumer code, which may present again. */
   onTerminal?: () => void;
+  /** Stop pending work for a failed checkout; native dismissal still ends the session. */
+  onFailure?: () => void;
 }
 
 export function createPresentDispatcher(
@@ -80,7 +82,7 @@ function dispatchEnvelope(
       callbacks?.onDismiss?.();
       return;
     case 'fail': {
-      options.onTerminal?.();
+      options.onFailure?.();
       const error = isPlainObject(payload) ? payload.error : undefined;
       if (
         !isPlainObject(error) ||

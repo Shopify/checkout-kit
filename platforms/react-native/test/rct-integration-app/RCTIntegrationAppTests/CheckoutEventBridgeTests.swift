@@ -57,16 +57,20 @@ final class CheckoutEventBridgeTests: XCTestCase {
         XCTAssertEqual(try events.map { try parse($0)["type"] as? String }, ["start", "update", "complete", "dismiss"])
     }
 
-    func testFailureUsesErrorEventAndReleasesCallbacks() throws {
+    func testFailureUsesErrorEventAndKeepsCallbacksUntilDismissal() throws {
         var events: [String] = []
-        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in })
+        var terminalCount = 0
+        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
+        XCTAssertEqual(terminalCount, 0)
         bridge.checkoutDidDismiss()
+        bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Late")))
+        XCTAssertEqual(terminalCount, 1)
+        XCTAssertEqual(try events.map { try parse($0)["type"] as? String }, ["fail", "dismiss"])
         let envelope = try parse(XCTUnwrap(events.first))
         let payload = try XCTUnwrap(envelope["payload"] as? [String: Any])
         let error = try XCTUnwrap(payload["error"] as? [String: Any])
         XCTAssertEqual(error["code"] as? String, "sdk_error")
-        XCTAssertEqual(events.count, 1)
     }
 
     private func parse(_ json: String) throws -> [String: Any] {

@@ -4,54 +4,6 @@ import Foundation
 
 @available(iOS 16.0, *)
 extension StorefrontAPI {
-    /// Create a new cart
-    /// - Parameters:
-    ///   - items: Array of product variant IDs to add to the cart
-    ///   - customer: Optional customer information to associate with the cart
-    /// - Returns: The created cart
-    func cartCreate(
-        with items: [GraphQLScalars.ID] = [],
-        customer: ShopifyAcceleratedCheckouts.Customer? = nil
-    ) async throws -> Cart {
-        var input: [String: Any] = [
-            "lines": items.map { ["merchandiseId": $0.rawValue] }
-        ]
-
-        if let customer {
-            var buyerIdentity: [String: String] = [:]
-
-            if let email = customer.email {
-                buyerIdentity["email"] = email
-            }
-            if let phoneNumber = customer.phoneNumber {
-                buyerIdentity["phone"] = phoneNumber
-            }
-            if let customerAccessToken = customer.customerAccessToken {
-                buyerIdentity["customerAccessToken"] = customerAccessToken
-            }
-
-            if !buyerIdentity.isEmpty {
-                input["buyerIdentity"] = buyerIdentity
-            }
-        }
-
-        let variables: [String: Any] = ["input": input]
-
-        let response = try await client.mutate(
-            Operations.cartCreate(variables: variables)
-        )
-
-        guard let payload = response.data?.cartCreate else {
-            throw GraphQLError.invalidResponse
-        }
-
-        let cart = try validateCart(payload.cart, requestName: "cartCreate")
-
-        try validateUserErrors(payload.userErrors, checkoutURL: cart.checkoutUrl.url)
-
-        return cart
-    }
-
     struct CartBuyerIdentityUpdateInput: Codable {
         var email: String?
         var phoneNumber: String?
@@ -427,10 +379,6 @@ extension StorefrontAPI {
 
 @available(iOS 16.0, *)
 extension StorefrontAPI {
-    struct CartCreateResponse: Codable {
-        let cartCreate: CartCreatePayload
-    }
-
     struct CartBuyerIdentityUpdateResponse: Codable {
         let cartBuyerIdentityUpdate: CartBuyerIdentityUpdatePayload
     }

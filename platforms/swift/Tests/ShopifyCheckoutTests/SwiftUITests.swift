@@ -208,7 +208,7 @@ class CheckoutConfigurableTests: XCTestCase {
 
     func testAppearanceColorsAreCapturedWithoutChangingGlobalConfiguration() {
         let globalAppearance = ShopifyCheckoutKit.configuration.appearance
-        let colors = CheckoutColors(webViewBackground: .red, progressIndicator: .blue, closeIconTint: .green)
+        let colors = CheckoutColors(webViewBackgroundColor: .red, progressIndicatorColor: .blue, closeIconTintColor: .green)
 
         let sheet = shopifyCheckout.appearance(.app(.light(colors: colors)))
 
@@ -232,7 +232,7 @@ class CheckoutConfigurableTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
         _ = shopifyCheckout
-            .appearance(.app(.dark(colors: CheckoutColors(webViewBackground: .red))))
+            .appearance(.app(.dark(colors: CheckoutColors(webViewBackgroundColor: .red))))
             .title("Instance checkout")
 
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())

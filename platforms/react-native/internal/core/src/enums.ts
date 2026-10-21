@@ -1,7 +1,34 @@
-export enum ColorScheme {
+/**
+ * Color scheme for the app appearance. Mirrors the native `CheckoutColorScheme`.
+ */
+export enum CheckoutColorScheme {
+  /**
+   * Follow the device's light or dark appearance.
+   */
   automatic = 'automatic',
+  /**
+   * Always use a light color scheme.
+   */
   light = 'light',
+  /**
+   * Always use a dark color scheme.
+   */
   dark = 'dark',
+}
+
+/**
+ * Kind of checkout appearance. Mirrors the native `CheckoutAppearance` cases.
+ */
+export enum CheckoutAppearanceType {
+  /**
+   * Checkout uses Checkout Kit's built-in light or dark style, not the
+   * storefront's branding. The color scheme picks light, dark or the device
+   * setting.
+   */
+  app = 'app',
+  /**
+   * Checkout uses the storefront's branding.
+   */
   storefront = 'storefront',
 }
 

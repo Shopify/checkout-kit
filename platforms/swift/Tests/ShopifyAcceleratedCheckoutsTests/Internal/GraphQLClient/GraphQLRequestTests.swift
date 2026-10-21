@@ -38,31 +38,6 @@ final class GraphQLRequestTests: XCTestCase {
         XCTAssertTrue(operation.query.contains("cart("))
     }
 
-    func testInitWithMutationEnum() {
-        let mutation = GraphQLDocument.Mutations.cartCreate
-
-        let operation = GraphQLRequest(
-            operation: mutation,
-            responseType: StorefrontAPI.CartCreateResponse.self
-        )
-
-        XCTAssertFalse(operation.query.isEmpty)
-        XCTAssertTrue(operation.responseType == StorefrontAPI.CartCreateResponse.self)
-        // Verify it contains the expected mutation structure
-        XCTAssertTrue(operation.query.contains("mutation CartCreate("))
-        XCTAssertTrue(operation.query.contains("cartCreate("))
-    }
-
-    // MARK: - Pre-defined Operations Tests
-
-    func testCartCreateOperation() {
-        let operation = Operations.cartCreate()
-
-        XCTAssertTrue(operation.responseType == StorefrontAPI.CartCreateResponse.self)
-        XCTAssertTrue(operation.query.contains("mutation CartCreate("))
-        XCTAssertTrue(operation.query.contains("cartCreate("))
-    }
-
     func testCartBuyerIdentityUpdateOperation() {
         let operation = Operations.cartBuyerIdentityUpdate()
 
@@ -128,50 +103,6 @@ final class GraphQLRequestTests: XCTestCase {
     }
 
     // MARK: - Type Safety Tests
-
-    func testOperationTypeInference() {
-        // This test verifies that the type system correctly infers types
-        // When using pre-defined operations
-        let cartCreateOp = Operations.cartCreate()
-        let cartQueryOp = Operations.getCart()
-
-        // These should be different types
-        XCTAssertFalse(type(of: cartCreateOp) == type(of: cartQueryOp))
-    }
-
-    func testOperationDocumentConsistency() {
-        // Test that operations consistently build their queries
-        let operation1 = GraphQLRequest(
-            operation: .cartCreate,
-            responseType: StorefrontAPI.CartCreateResponse.self
-        )
-        let operation2 = Operations.cartCreate()
-
-        // Both should produce the same query
-        XCTAssertEqual(operation1.query, operation2.query)
-    }
-
-    // MARK: - Variables Tests
-
-    func testOperationsWithVariables() {
-        // Test that operations can accept variables
-        let variables: [String: Any] = ["cartId": "test123", "input": ["name": "test"]]
-
-        let cartOperation = Operations.getCart(variables: variables)
-        XCTAssertEqual(cartOperation.variables["cartId"] as? String, "test123")
-
-        let createOperation = Operations.cartCreate(variables: variables)
-        let inputDict = createOperation.variables["input"] as? [String: Any]
-        XCTAssertEqual(inputDict?["name"] as? String, "test")
-    }
-
-    func testOperationsWithEmptyVariables() {
-        // Test that operations work with empty variables
-        let operation = Operations.cartCreate()
-        XCTAssertTrue(operation.variables.isEmpty)
-    }
-
-    // MARK: - Directive Tests
 
     func testWithContextDirective() {
         let operation = GraphQLRequest(

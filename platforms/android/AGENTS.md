@@ -10,7 +10,7 @@ The main modules are:
 
 - **`shopify-checkout-kit/`** — the fused distribution bundle, published as the single `com.shopify:checkout-kit` AAR. It has no sources.
 - **`shopify-checkout/`** — the internal Android library module that owns checkout sources, resources, tests and its API baseline. It has no Maven publication.
-- **`build-logic/`** — shared Android library conventions for feature modules.
+- **`build-logic/`** — `shopify.android-feature` conventions for feature modules and `shopify.checkout-kit-publication` conventions for the fused SDK's variants, archives, signing, and artifact verification.
 - **`../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/`** — the Embedded Checkout Protocol Kotlin artifact, published as `com.shopify:embedded-checkout-protocol`. The Android Gradle project path is `:embedded-checkout-protocol`, and the Kotlin package is `com.shopify.ucp.embedded.checkout`.
 - **`samples/CheckoutKitAndroidDemo/`** — a demo app that consumes Checkout Kit from source and the published Kotlin protocol artifact transitively. Changes here never reach consumers; this module is for internal testing and developer onboarding.
 
@@ -65,7 +65,7 @@ The Android public APIs are captured by the [binary-compatibility-validator](htt
 - `shopify-checkout/api/shopify-checkout.api` for `com.shopify:checkout-kit`.
 - `../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/embedded-checkout-protocol/api/embedded-checkout-protocol.api` for `com.shopify:embedded-checkout-protocol`.
 
-Every PR is gated in CI by `./gradlew :shopify-checkout:apiCheck` from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` — the build fails if either compiled public API diverges from the committed baselines.
+Every PR is gated in CI by the platform aggregate `./gradlew apiCheck` (all feature modules) from `platforms/android` and `./gradlew :embedded-checkout-protocol:apiCheck` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` — the build fails if either compiled public API diverges from the committed baselines.
 
 If a change intentionally modifies public API (adding, removing, or changing any public class, method, field, or property):
 
@@ -79,8 +79,9 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 - Published protocol resolution: `./gradlew :shopify-checkout:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
 - Tests: `./gradlew test` (or `dev android test`)
-- API surface: `./gradlew :shopify-checkout:apiCheck` / `./gradlew :shopify-checkout:apiDump` for Checkout Kit, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
-- Lint: `./gradlew detekt lintRelease` (or `dev android lint`)
+- API surface: `./gradlew apiCheck` / `./gradlew apiDump` for every Checkout Kit feature, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
+- Publication and sibling-feature integration: `./scripts/check_publication` (checks a temporary second feature, then rebuilds the normal SDK and tests Gradle-metadata and POM-only consumers).
+- Lint: `./gradlew detekt lintRelease` (or `dev android lint`); read-only. Formatting opts into corrections explicitly.
 - Format: `./gradlew detekt --auto-correct` (or `dev android format`)
 - Full local verification: `./gradlew clean test detekt lintRelease assembleRelease`
 - Kotlin protocol only: from the repo root, `cd protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin && ./gradlew test apiCheck`

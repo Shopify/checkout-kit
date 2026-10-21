@@ -8,13 +8,16 @@ permissions:
   contents: read
   pull-requests: read
 
+# `edited` matters only when the base branch changes; title and body edits
+# skip every job and use their own group so they never cancel a measurement.
 concurrency:
-  group: package-size-${{ github.ref }}
+  group: package-size-${{ github.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && '-edit' || '' }}
   cancel-in-progress: true
 
 jobs:
   changes:
     name: Detect Changed Packages
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:

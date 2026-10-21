@@ -52,7 +52,7 @@ class CheckoutWebViewClientTest {
         // no activity resolves the intent. Robolectric defaults to silently recording the
         // intent instead — turning on checkActivities aligns the shadow with production.
         shadowOf(activity.application).checkActivities(true)
-        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Open)
+        whenever(mockListener.onCheckoutLinkClicked(any())).thenReturn(CheckoutLinkAction.Default)
     }
 
     @After

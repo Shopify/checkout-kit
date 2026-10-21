@@ -38,8 +38,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         // XCTest runs these synchronous tests on the main thread, which is what `configure` requires.
         MainActor.assumeIsolated {
             ShopifyCheckoutKit.configure {
-                $0.appearance = .storefront
-                $0.closeButtonTintColor = nil
+                $0.appearance = .storefront()
             }
         }
     }

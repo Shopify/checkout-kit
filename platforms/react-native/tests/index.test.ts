@@ -10,7 +10,8 @@ import {
   AcceleratedCheckoutWallet,
   RenderState,
   LogLevel,
-  ColorScheme,
+  CheckoutAppearanceType,
+  CheckoutColorScheme,
   type Configuration,
   type AcceleratedCheckoutConfiguration,
   type AcceleratedCheckoutCustomer,
@@ -26,7 +27,10 @@ const NativeModule = TurboModuleRegistry.getEnforcing(
 
 const checkoutUrl = 'https://shopify.com/checkout';
 const config: Configuration = {
-  colorScheme: ColorScheme.automatic,
+  appearance: {
+    type: CheckoutAppearanceType.app,
+    colorScheme: CheckoutColorScheme.automatic,
+  },
 };
 
 jest.mock('react-native');
@@ -142,12 +146,20 @@ describe('Exports', () => {
     });
   });
 
-  describe('ColorScheme enum', () => {
+  describe('CheckoutColorScheme enum', () => {
     it('exports every scheme both native bridges accept', () => {
-      expect(Object.values(ColorScheme)).toStrictEqual([
+      expect(Object.values(CheckoutColorScheme)).toStrictEqual([
         'automatic',
         'light',
         'dark',
+      ]);
+    });
+  });
+
+  describe('CheckoutAppearanceType enum', () => {
+    it('exports every appearance type both native bridges accept', () => {
+      expect(Object.values(CheckoutAppearanceType)).toStrictEqual([
+        'app',
         'storefront',
       ]);
     });
@@ -239,7 +251,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with logLevel configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithLogLevel: Configuration = {
-        colorScheme: ColorScheme.automatic,
         logLevel: LogLevel.debug,
       };
       instance.setConfig(configWithLogLevel);
@@ -249,7 +260,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with preloading configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithPreloading: Configuration = {
-        colorScheme: ColorScheme.automatic,
         preloading: false,
       };
       instance.setConfig(configWithPreloading);
@@ -259,7 +269,6 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with title configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithTitle: Configuration = {
-        colorScheme: ColorScheme.automatic,
         title: 'Custom Checkout',
       };
       instance.setConfig(configWithTitle);
@@ -269,13 +278,59 @@ describe('ShopifyCheckoutKit', () => {
     it('calls `setConfig` with allowedMessageOrigins configuration', () => {
       const instance = new ShopifyCheckout();
       const configWithAllowedOrigins: Configuration = {
-        colorScheme: ColorScheme.automatic,
         allowedMessageOrigins: ['https://example.com', 'https://*.example.com'],
       };
       instance.setConfig(configWithAllowedOrigins);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(
         configWithAllowedOrigins,
       );
+    });
+
+    it('lists iOS `null` colors in `resetColors` because the iOS bridge drops `null`', () => {
+      const instance = new ShopifyCheckout();
+      instance.setConfig({
+        appearance: {
+          type: CheckoutAppearanceType.app,
+          colorScheme: CheckoutColorScheme.automatic,
+          colors: {
+            ios: {
+              closeIconTintColor: '#333333',
+              headerBorderColor: null,
+              light: {
+                webViewBackgroundColor: '#ffffff',
+                closeIconTintColor: null,
+              },
+              dark: {closeIconTintColor: '#ffffff'},
+            },
+            android: {
+              closeIconTintColor: '#333333',
+              light: {closeIconTintColor: null, dragHandleColor: null},
+            },
+          },
+        },
+      });
+
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        appearance: {
+          type: 'app',
+          colorScheme: 'automatic',
+          colors: {
+            ios: {
+              closeIconTintColor: '#333333',
+              resetColors: ['headerBorderColor'],
+              light: {
+                webViewBackgroundColor: '#ffffff',
+                resetColors: ['closeIconTintColor'],
+              },
+              dark: {closeIconTintColor: '#ffffff'},
+            },
+            android: {
+              closeIconTintColor: '#333333',
+              light: {closeIconTintColor: null, dragHandleColor: null},
+            },
+          },
+        },
+      });
     });
   });
 
@@ -518,11 +573,12 @@ describe('ShopifyCheckoutKit', () => {
       expect(callbacks.onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('delivers failure as an error event and releases the session', () => {
+    it('delivers failure as an error event and ends the session at dismissal', () => {
       const remove = jest.fn();
       NativeModule.onDispatch.mockReturnValueOnce({remove});
       const onFail = jest.fn();
-      new ShopifyCheckout().present(checkoutUrl, {onFail});
+      const onDismiss = jest.fn();
+      new ShopifyCheckout().present(checkoutUrl, {onFail, onDismiss});
       lastDispatch()(
         JSON.stringify({
           type: 'fail',
@@ -539,6 +595,12 @@ describe('ShopifyCheckoutKit', () => {
       expect(error).toBeInstanceOf(CheckoutException);
       expect(error.code).toBe(CheckoutErrorCode.httpError);
       expect(error.statusCode).toBe(503);
+      expect(remove).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+      expect(onFail.mock.invocationCallOrder[0]).toBeLessThan(
+        onDismiss.mock.invocationCallOrder[0]!,
+      );
       expect(remove).toHaveBeenCalledTimes(1);
     });
 
@@ -614,29 +676,42 @@ describe('ShopifyCheckoutKit', () => {
       expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it.each(['dismiss', 'fail'])(
-      'keeps an accepted presentation from the %s callback subscribed',
-      type => {
-        const instance = new ShopifyCheckout();
-        const nextRemove = jest.fn();
-        NativeModule.onDispatch
-          .mockReturnValueOnce({remove: jest.fn()})
-          .mockReturnValueOnce({remove: nextRemove});
-        const nextDismiss = jest.fn();
-        const again = () =>
-          instance.present(checkoutUrl, {onDismiss: nextDismiss});
-        instance.present(checkoutUrl, {onDismiss: again, onFail: again});
-        lastDispatch()(
-          JSON.stringify({
-            type,
-            payload: {error: {code: 'sdk_error', message: 'Failed'}},
-          }),
-        );
-        expect(nextRemove).not.toHaveBeenCalled();
-        lastDispatch()(JSON.stringify({type: 'dismiss'}));
-        expect(nextDismiss).toHaveBeenCalledTimes(1);
-      },
-    );
+    it('keeps an accepted presentation from the dismiss callback subscribed', () => {
+      const instance = new ShopifyCheckout();
+      const nextRemove = jest.fn();
+      NativeModule.onDispatch
+        .mockReturnValueOnce({remove: jest.fn()})
+        .mockReturnValueOnce({remove: nextRemove});
+      const nextDismiss = jest.fn();
+      instance.present(checkoutUrl, {
+        onDismiss: () => instance.present(checkoutUrl, {onDismiss: nextDismiss}),
+      });
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(NativeModule.present).toHaveBeenCalledTimes(2);
+      expect(nextRemove).not.toHaveBeenCalled();
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(nextDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores presenting from the fail callback while checkout closes', () => {
+      const instance = new ShopifyCheckout();
+      const nextDismiss = jest.fn();
+      const onDismiss = jest.fn();
+      instance.present(checkoutUrl, {
+        onDismiss,
+        onFail: () => instance.present(checkoutUrl, {onDismiss: nextDismiss}),
+      });
+      lastDispatch()(
+        JSON.stringify({
+          type: 'fail',
+          payload: {error: {code: 'sdk_error', message: 'Failed'}},
+        }),
+      );
+      expect(NativeModule.present).toHaveBeenCalledTimes(1);
+      lastDispatch()(JSON.stringify({type: 'dismiss'}));
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+      expect(nextDismiss).not.toHaveBeenCalled();
+    });
 
     it('releases callbacks even if consumer code throws', () => {
       const remove = jest.fn();
@@ -652,14 +727,24 @@ describe('ShopifyCheckoutKit', () => {
       expect(remove).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps callbacks until native programmatic dismissal finishes', () => {
+    it('fires no callbacks after programmatic dismissal and then allows presenting', () => {
       const instance = new ShopifyCheckout();
       const onDismiss = jest.fn();
-      instance.present(checkoutUrl, {onDismiss});
+      const onFail = jest.fn();
+      instance.present(checkoutUrl, {onDismiss, onFail});
+      const dispatch = lastDispatch();
       instance.dismiss();
+      dispatch(
+        JSON.stringify({
+          type: 'fail',
+          payload: {error: {code: 'sdk_error', message: 'Failed'}},
+        }),
+      );
+      dispatch(JSON.stringify({type: 'dismiss'}));
+      expect(onFail).not.toHaveBeenCalled();
       expect(onDismiss).not.toHaveBeenCalled();
-      lastDispatch()(JSON.stringify({type: 'dismiss'}));
-      expect(onDismiss).toHaveBeenCalledTimes(1);
+      instance.present(checkoutUrl, {onDismiss});
+      expect(NativeModule.present).toHaveBeenCalledTimes(2);
     });
 
     it('stops callbacks on teardown', () => {
@@ -706,7 +791,10 @@ describe('ShopifyCheckoutKit', () => {
     it('returns the parsed config from the Native Module', () => {
       const instance = new ShopifyCheckout();
       expect(instance.getConfig()).toStrictEqual({
-        colorScheme: ColorScheme.automatic,
+        appearance: {
+          type: CheckoutAppearanceType.app,
+          colorScheme: CheckoutColorScheme.automatic,
+        },
         logLevel: LogLevel.error,
         preloading: true,
         telemetry: true,
@@ -716,7 +804,7 @@ describe('ShopifyCheckoutKit', () => {
 
     it('reports the native log level rather than a local default', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'storefront',
+        appearance: {type: 'storefront'},
         logLevel: 'warn',
         preloading: true,
       });
@@ -726,9 +814,23 @@ describe('ShopifyCheckoutKit', () => {
       expect(instance.getConfig().logLevel).toBe(LogLevel.warn);
     });
 
+    it('reports a storefront appearance without a color scheme', () => {
+      NativeModule.getConfig.mockReturnValueOnce({
+        appearance: {type: 'storefront'},
+        logLevel: 'error',
+        preloading: true,
+      });
+
+      const instance = new ShopifyCheckout();
+
+      expect(instance.getConfig().appearance).toStrictEqual({
+        type: CheckoutAppearanceType.storefront,
+      });
+    });
+
     it('passes an unrecognised native value through untouched', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'sepia',
+        appearance: {type: 'app', colorScheme: 'sepia'},
         logLevel: 'trace',
         preloading: true,
       });
@@ -737,12 +839,15 @@ describe('ShopifyCheckoutKit', () => {
       const result = instance.getConfig();
 
       expect(result.logLevel).toBe('trace');
-      expect(result.colorScheme).toBe('sepia');
+      expect(result.appearance).toStrictEqual({
+        type: CheckoutAppearanceType.app,
+        colorScheme: 'sepia',
+      });
     });
 
     it('returns configured allowed message origins', () => {
       NativeModule.getConfig.mockReturnValueOnce({
-        colorScheme: 'automatic',
+        appearance: {type: 'app', colorScheme: 'automatic'},
         logLevel: 'error',
         preloading: true,
         allowedMessageOrigins: ['https://example.com'],
@@ -751,7 +856,10 @@ describe('ShopifyCheckoutKit', () => {
       const instance = new ShopifyCheckout();
 
       expect(instance.getConfig()).toStrictEqual({
-        colorScheme: ColorScheme.automatic,
+        appearance: {
+          type: CheckoutAppearanceType.app,
+          colorScheme: CheckoutColorScheme.automatic,
+        },
         logLevel: LogLevel.error,
         preloading: true,
         allowedMessageOrigins: ['https://example.com'],
@@ -899,8 +1007,7 @@ describe('ShopifyCheckoutKit', () => {
                 payload: {error: {code: 'sdk_error', message: 'closed'}},
               }),
             );
-          if (close === 'dismiss' || close === 'fail')
-            instance.present(checkoutUrl);
+          if (close === 'dismiss') instance.present(checkoutUrl);
           NativeModule.respondToGeolocationRequest.mockClear();
           resolve({'android.permission.ACCESS_FINE_LOCATION': 'granted'});
           await flush();
@@ -927,8 +1034,7 @@ describe('ShopifyCheckoutKit', () => {
                 payload: {error: {code: 'sdk_error', message: 'closed'}},
               }),
             );
-          if (close === 'dismiss' || close === 'fail')
-            instance.present(checkoutUrl);
+          if (close === 'dismiss') instance.present(checkoutUrl);
           NativeModule.respondToGeolocationRequest.mockClear();
           respond(true);
           expect(

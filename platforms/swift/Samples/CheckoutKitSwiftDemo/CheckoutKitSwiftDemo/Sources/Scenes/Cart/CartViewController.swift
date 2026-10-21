@@ -387,12 +387,3 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
         return variant
     }
 }
-
-extension CartViewController {
-    func showAlert(message: String) {
-        let alert = UIAlertController(title: "Checkout Failed", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Default action"), style: .default, handler: { _ in }))
-
-        present(alert, animated: true, completion: nil)
-    }
-}

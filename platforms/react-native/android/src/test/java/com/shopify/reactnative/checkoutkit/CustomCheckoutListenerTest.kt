@@ -1,8 +1,8 @@
 package com.shopify.reactnative.checkoutkit
 
-import com.shopify.checkoutkit.CheckoutErrorCode
-import com.shopify.checkoutkit.CheckoutFailureEvent
-import com.shopify.checkoutkit.CheckoutException
+import com.shopify.checkoutkit.checkout.CheckoutErrorCode
+import com.shopify.checkoutkit.checkout.CheckoutFailureEvent
+import com.shopify.checkoutkit.checkout.CheckoutException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
@@ -74,7 +74,7 @@ class CustomCheckoutListenerTest {
     }
 
     @Test
-    fun `a terminal event releases the dispatcher`() {
+    fun `dismissal releases the dispatcher`() {
         val captured = mutableListOf<String>()
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
@@ -82,6 +82,25 @@ class CustomCheckoutListenerTest {
         listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.SDK_ERROR, "late")))
 
         assertThat(captured).hasSize(1)
+    }
+
+    @Test
+    fun `failure keeps the session open until dismissal`() {
+        val captured = mutableListOf<String>()
+        var terminalCount = 0
+        val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
+        listener.configure("open") { terminalCount += 1 }
+
+        listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.SDK_ERROR, "failed")))
+
+        assertThat(terminalCount).isEqualTo(0)
+        assertThat(listener.isReleased()).isFalse()
+
+        listener.onCheckoutDismissed()
+
+        assertThat(terminalCount).isEqualTo(1)
+        assertThat(captured.map { Json.parseToJsonElement(it).jsonObject["type"]?.jsonPrimitive?.content })
+            .containsExactly("fail", "dismiss")
     }
 
     @Test

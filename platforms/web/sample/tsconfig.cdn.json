@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "isolatedDeclarations": false,
+    "declaration": false,
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["./**/*.ts", "./**/*.d.ts"]
+}

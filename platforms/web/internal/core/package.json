@@ -1,0 +1,24 @@
+{
+  "name": "@shopify/checkout-kit-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./checkout": "./checkout/src/checkout.types.ts",
+    "./checkout/presentation": "./checkout/src/checkout-element.ts",
+    "./checkout/browser-capabilities": "./checkout/src/browser-capabilities.ts",
+    "./checkout/types": "./checkout/src/checkout.types.ts",
+    "./checkout/logger": "./checkout/src/logger.ts",
+    "./checkout/utils": "./checkout/src/utils.ts",
+    "./checkout/telemetry": "./checkout/src/telemetry.ts",
+    "./checkout/version": "./checkout/src/version.ts",
+    "./checkout/models/checkout": "./checkout/src/models/checkout.ts",
+    "./checkout/models/error": "./checkout/src/models/error.ts",
+    "./checkout/testing": "./checkout/src/telemetry.test-helpers.ts"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-protocol": "workspace:*",
+    "@shopify/checkout-kit-telemetry": "workspace:*"
+  }
+}

@@ -18,7 +18,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     var checkoutView: CheckoutWebView?
 
     lazy var progressBar: ProgressBarView = {
-        let progressBar = ProgressBarView(frame: .zero, tintColor: colorScheme.color { $0.progressIndicator })
+        let progressBar = ProgressBarView(frame: .zero, tintColor: colorScheme.color { $0.progressIndicatorColor })
         progressBar.translatesAutoresizingMaskIntoConstraints = false
         return progressBar
     }()
@@ -33,7 +33,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         let colors = colorScheme.colors(isDark: traitCollection.userInterfaceStyle == .dark)
         let item: UIBarButtonItem
 
-        if colors.closeIcon != nil || colors.closeIconTint != nil {
+        if colors.closeIcon != nil || colors.closeIconTintColor != nil {
             let defaultSymbolName: String
             if #available(iOS 26.0, *) {
                 defaultSymbolName = "xmark"
@@ -46,7 +46,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
                 target: self,
                 action: #selector(close)
             )
-            item.tintColor = colors.closeIconTint
+            item.tintColor = colors.closeIconTintColor
         } else {
             item = UIBarButtonItem(
                 barButtonSystemItem: .close,
@@ -80,8 +80,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         super.init(nibName: nil, bundle: nil)
 
         checkoutView.linkActionProvider = { [weak self] link in
-            guard let self else { return .open }
-            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .open
+            guard let self else { return .default }
+            return onLinkClick?(link) ?? delegate?.checkoutAction(for: link) ?? .default
         }
 
         checkoutView.client = CheckoutEventAdapter(base: client, sink: self)
@@ -93,7 +93,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         checkoutView.viewDelegate = self
 
-        view.backgroundColor = colorScheme.color { $0.webViewBackground }
+        view.backgroundColor = colorScheme.color { $0.webViewBackgroundColor }
 
         if #available(iOS 17.0, *) {
             registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: CheckoutWebViewController, _) in

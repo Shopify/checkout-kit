@@ -33,6 +33,7 @@ export type Refs = {
   stateTarget: HTMLElement;
   stateAppearance: HTMLElement;
   stateLogLevel: HTMLElement;
+  checkoutKitProvenance: HTMLElement;
 };
 
 export function $<T extends Element>(selector: string): T {
@@ -79,6 +80,7 @@ export function queryRefs(): Refs {
     stateTarget: $<HTMLElement>("#state-target"),
     stateAppearance: $<HTMLElement>("#state-appearance"),
     stateLogLevel: $<HTMLElement>("#state-log-level"),
+    checkoutKitProvenance: $<HTMLElement>("#checkout-kit-provenance"),
   };
 }
 

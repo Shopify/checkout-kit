@@ -18,7 +18,7 @@ class ChangedFileFiltersTest < Minitest::Test
   def test_matches_platform_and_telemetry_paths_independently
     {
       "web" => [
-        "platforms/web/src/components/shopify-checkout/shopify-checkout.ts",
+        "platforms/web/components/shopify-checkout/src/shopify-checkout.ts",
         "platforms/web/internal/telemetry/src/types.ts",
         "platforms/shared/telemetry/contract/schema.json"
       ],
@@ -32,6 +32,117 @@ class ChangedFileFiltersTest < Minitest::Test
     end
     refute @filters.match?("web", ["platforms/web/internal/telemetry/README.md"])
     refute @filters.match?("swift", ["platforms/swift/Sources/Internal/Telemetry/docs/example.swift"])
+  end
+
+  # Exercise the actual workflow outputs as well as the globs: correct filters
+  # are insufficient when the expressions that combine them select the wrong jobs.
+  def github_areas(paths)
+    workflow = YAML.safe_load_file(File.expand_path("../../.github/workflows/ci.yml", __dir__), aliases: true)
+    changes = workflow.fetch("jobs").fetch("changes")
+    infra = changes.fetch("steps").find { |step| step["id"] == "infra" }
+    filters = {
+      "platform" => @filters,
+      "infra" => ChangedFileFilters.new(YAML.safe_load(infra.fetch("with").fetch("filters")))
+    }
+    changes.fetch("outputs").filter_map do |name, expression|
+      terms = expression.delete_prefix("${{ ").delete_suffix(" }}").split(" || ")
+      selected = terms.map do |term|
+        match = /\Asteps\.(platform|infra)\.outputs\.(\w+) == 'true'\z/.match(term)
+        raise "Unsupported routing expression: #{term}" unless match
+
+        filters.fetch(match[1]).match?(match[2], paths)
+      end
+      name if selected.any?
+    end
+  end
+
+  def test_root_podspec_selects_swift_validation
+    assert_equal ["swift"], github_areas(["ShopifyCheckoutKit.podspec"])
+  end
+
+  def test_android_telemetry_sources_and_tests_select_android_and_telemetry
+    paths = [
+      "platforms/android/shopify-checkout/src/main/java/com/shopify/checkoutkit/internal/telemetry/CheckoutKitTelemetry.kt",
+      "platforms/android/shopify-checkout/src/test/java/com/shopify/checkoutkit/checkout/telemetry/CheckoutKitTelemetryTest.kt"
+    ]
+    paths.each do |path|
+      assert File.file?(File.expand_path("../../#{path}", __dir__)), "Test the current source layout: #{path}"
+      assert_equal ["android", "telemetry"], github_areas([path])
+    end
+  end
+
+  def test_android_rn_infrastructure_keeps_common_and_android_validation
+    %w[rn-build-android rn-test-android].each do |workflow|
+      assert_equal ["reactNative", "reactNativeAndroid"], github_areas([".github/workflows/#{workflow}.yml"])
+    end
+  end
+
+  def test_common_rn_infrastructure_selects_all_rn_jobs
+    assert_equal ["reactNative", "reactNativeAndroid", "reactNativeSwift"], github_areas([".github/workflows/rn-lint.yml"])
+  end
+
+  def test_rn_component_changes_select_js_and_android_rn_jobs
+    [
+      "platforms/react-native/components/shopify-checkout/src/index.ts",
+      "platforms/react-native/components/new-component/src/index.ts"
+    ].each do |path|
+      assert_equal ["reactNative", "reactNativeAndroid"], github_areas([path])
+    end
+  end
+
+  def test_ios_only_rn_changes_skip_android_rn_jobs
+    [
+      "platforms/react-native/ios/ShopifyCheckoutKit.swift",
+      "platforms/react-native/sample/ios/Podfile.lock",
+      "platforms/react-native/test/rct-integration-app/RCTIntegrationApp/AppDelegate.swift",
+      "platforms/react-native/RNShopifyCheckoutKit.podspec"
+    ].each do |path|
+      areas = github_areas([path])
+      assert_includes areas, "reactNative", path
+      refute_includes areas, "reactNativeAndroid", path
+    end
+  end
+
+  def test_android_and_shared_rn_changes_select_android_rn_jobs
+    [
+      "platforms/react-native/android/build.gradle",
+      "platforms/react-native/sample/android/app/build.gradle",
+      "platforms/react-native/src/index.ts",
+      "platforms/react-native/pnpm-lock.yaml"
+    ].each do |path|
+      assert_equal ["reactNative", "reactNativeAndroid"], github_areas([path]), path
+    end
+  end
+
+  def test_only_rn_swift_inputs_select_rn_swift_lint
+    [
+      "platforms/react-native/ios/ShopifyCheckoutKit.swift",
+      "platforms/react-native/test/rct-integration-app/RCTIntegrationApp/AppDelegate.swift",
+      "platforms/react-native/.swiftlint.yml"
+    ].each do |path|
+      assert_includes github_areas([path]), "reactNativeSwift", path
+    end
+    [
+      "platforms/react-native/src/index.ts",
+      "platforms/react-native/android/build.gradle",
+      "protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript/models.ts"
+    ].each do |path|
+      refute_includes github_areas([path]), "reactNativeSwift", path
+    end
+  end
+
+  def test_protocol_changes_select_their_consumers
+    root = "protocols/universal-commerce-protocol/embedded-checkout-protocol"
+    assert_equal ["android", "protocol"], github_areas(["#{root}/languages/kotlin/Models.kt"])
+    assert_equal ["swift", "protocol"], github_areas(["#{root}/languages/swift/Models.swift"])
+    assert_equal ["reactNative", "reactNativeAndroid", "web", "protocol"],
+      github_areas(["#{root}/languages/typescript/models.ts"])
+    assert_equal ["android", "swift", "reactNative", "reactNativeAndroid", "web", "protocol"],
+      github_areas(["#{root}/scripts/generate_models.sh"])
+  end
+
+  def test_docs_only_changes_select_no_platform_jobs
+    assert_empty github_areas(["README.md", "platforms/web/README.md", "platforms/android/docs/notes.txt"])
   end
 
   def test_github_actions_share_the_ruby_inclusion_and_exclusion_semantics

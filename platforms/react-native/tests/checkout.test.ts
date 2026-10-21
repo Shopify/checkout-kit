@@ -22,6 +22,26 @@ describe('Checkout snapshots', () => {
     expect(checkout).not.toHaveProperty('ucp');
   });
 
+  it('preserves future checkout fields and unknown enum values', () => {
+    const extension = {nested: ['future']};
+    const buyerExtension = {enabled: true};
+    const checkout = decodeCheckout({
+      ...wireCheckout,
+      status: 'on_hold',
+      buyer: {
+        email: 'buyer@example.com',
+        'com.example.future_buyer_field': buyerExtension,
+      },
+      'com.example.future': extension,
+    });
+
+    expect(checkout.status).toBe('on_hold');
+    expect(checkout['com.example.future']).toEqual(extension);
+    expect(checkout.buyer).toMatchObject({
+      'com.example.future_buyer_field': buyerExtension,
+    });
+  });
+
   it('treats undefined optional fields as absent but rejects undefined required fields', () => {
     const checkout = {
       ...wireCheckout,

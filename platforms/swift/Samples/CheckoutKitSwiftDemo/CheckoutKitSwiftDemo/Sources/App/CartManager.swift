@@ -128,9 +128,23 @@ class CartManager: ObservableObject {
         }
     }
 
+    /// Creates a separate cart for a product page's accelerated checkout, leaving the shopping cart untouched.
+    /// Called only after the buyer taps a wallet button.
+    /// - Returns: The Storefront cart ID.
+    func prepareBuyNowCart(
+        variantID: String,
+        quantity: Int = 1
+    ) async throws -> String {
+        try await performCartCreate(
+            items: Array(repeating: variantID, count: max(quantity, 1)),
+            storeAsCurrentCart: false
+        ).id
+    }
+
     private func performCartCreate(
         items: [String] = [],
-        sellingPlanID: String? = nil
+        sellingPlanID: String? = nil,
+        storeAsCurrentCart: Bool = true
     ) async throws -> Storefront.CartFragment {
         var customerAccessToken: String?
         if CustomerAccountManager.shared.isAuthenticated {
@@ -166,8 +180,10 @@ class CartManager: ObservableObject {
                 throw Errors.invariant(message: "cart returned nil")
             }
 
-            cart = cartData
-            isDirty = true
+            if storeAsCurrentCart {
+                cart = cartData
+                isDirty = true
+            }
 
             return cartData
         } catch let error as Errors {

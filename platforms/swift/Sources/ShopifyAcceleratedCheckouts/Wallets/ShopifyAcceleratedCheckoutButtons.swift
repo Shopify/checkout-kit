@@ -9,7 +9,7 @@ public enum RenderState: Equatable {
     case error(reason: String)
 }
 
-/// Renders a Checkout buttons for a cart or product variant
+/// Renders accelerated checkout buttons for an app-owned Storefront cart
 ///
 /// Note:
 /// - The `wallets` modifier can be used to limit the buttons rendered
@@ -20,7 +20,8 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
     @Environment(\.shopifyAcceleratedCheckoutsConfiguration)
     private var configuration: ShopifyAcceleratedCheckouts.Configuration?
 
-    let identifier: CheckoutIdentifier
+    let cartSource: CartSource
+    let buyNowContext: BuyNowContext?
     public var wallets: [Wallet] = [.shopPay, .applePay]
     var eventHandlers: EventHandlers = .init()
     var cornerRadius: CGFloat?
@@ -36,38 +37,61 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
         }
     }
 
-    /// Initializes accelerated checkout buttons with a cart ID
+    /// Initializes accelerated checkout buttons with an existing cart ID.
     /// - Parameters:
-    ///   - cartID: The cart ID to checkout (must start with gid://shopify/Cart/)
+    ///   - cartID: The Storefront cart ID (must start with gid://shopify/Cart/)
     public init(cartID: String) {
-        identifier = .cart(cartID: cartID).parse()
+        let identifier = CheckoutIdentifier.cart(cartID: cartID).parse()
+        cartSource = .cart(identifier)
+        buyNowContext = nil
         if case let .invariant(reason) = identifier {
             ShopifyAcceleratedCheckouts.logger.error(reason)
             _currentRenderState = State(initialValue: .error(reason: reason))
         }
     }
 
-    /// Initializes accelerated checkout buttons with a variant ID
+    /// Initializes Buy Now accelerated checkout buttons that ask the app for its cart when the buyer taps.
+    ///
+    /// The selected variant describes the product being purchased and gives Checkout Kit product context it can use
+    /// to determine wallet-button eligibility. Checkout Kit calls `getCart` once per accepted wallet tap, never while
+    /// rendering. The app owns cart creation, reuse, variants, quantities, and buyer identity. If a cart should use
+    /// an authenticated buyer's identity, set it, including the customer access token, before returning its ID.
+    /// ``ShopifyAcceleratedCheckouts/Configuration/customer`` is applied by later wallet buyer-identity updates and
+    /// does not initialize an app-provided cart.
+    ///
+    /// - Return ``CartResult/cart(_:)`` with the Storefront cart ID to continue.
+    /// - Return ``CartResult/failed`` when the app has already handled the failure. No wallet opens and
+    ///   ``onFail(_:)`` isn't called.
+    /// - Throw an error when Checkout Kit should report the failed attempt through ``onFail(_:)``. A thrown
+    ///   `CancellationError` is treated like any other thrown error; return ``CartResult/failed`` for a
+    ///   merchant-handled cancellation.
+    ///
+    /// ```swift
+    /// ShopifyAcceleratedCheckoutButtons(variantID: variantID) { request in
+    ///     .cart(try await cartStore.prepareBuyNowCart(variantID: variantID, quantity: 1))
+    /// }
+    /// ```
+    ///
     /// - Parameters:
-    ///  - variantID: The variant ID to checkout (must start with gid://shopify/ProductVariant/)
-    ///  - quantity: The quantity of the variant to checkout
-    public init(variantID: String, quantity: Int) {
-        identifier = .variant(variantID: variantID, quantity: quantity).parse()
-        if case let .invariant(reason) = identifier {
-            _currentRenderState = State(initialValue: .error(reason: reason))
-            ShopifyAcceleratedCheckouts.logger.error(reason)
-        }
+    ///   - variantID: The currently selected Storefront product variant ID.
+    ///   - getCart: Returns the cart result for this attempt.
+    public init(
+        variantID: String,
+        getCart: @escaping @MainActor (CartRequest) async throws -> CartResult
+    ) {
+        cartSource = .provider(getCart)
+        buyNowContext = BuyNowContext(variantID: variantID)
     }
 
     public var body: some View {
         VStack {
             if let shopSettings {
                 VStack {
-                    ForEach(wallets, id: \.self) {
-                        switch $0 {
+                    ForEach(wallets, id: \.self) { wallet in
+                        switch wallet {
                         case .applePay:
                             ApplePayButton(
-                                identifier: identifier,
+                                cartSource: cartSource,
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius,
                                 buttonType: applePayButtonType,
@@ -75,10 +99,12 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
                             )
                         case .shopPay:
                             ShopPayButton(
-                                identifier: identifier,
+                                cartSource: cartSource,
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius
                             )
+                        default:
+                            EmptyView()
                         }
                     }
                 }.environmentObject(shopSettings)
@@ -98,7 +124,7 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
     }
 
     private func loadShopSettings() async {
-        guard identifier.isValid() else { return }
+        guard cartSource.isValid() else { return }
 
         do {
             currentRenderState = .loading

@@ -4,9 +4,18 @@ require "minitest/autorun"
 require "fileutils"
 require "open3"
 require "tmpdir"
+require "yaml"
 
 class ReleaseProtocolDependencyTest < Minitest::Test
   VALIDATOR = File.expand_path("../../.github/scripts/validate-release-version", __dir__)
+
+  def test_kit_release_validates_every_features_tests_and_api
+    workflow = YAML.safe_load_file(File.expand_path("../../.github/workflows/android-publish.yml", __dir__), aliases: true)
+    steps = workflow.fetch("jobs").values.flat_map { |job| job.fetch("steps", []) }
+    validation = steps.find { |step| step["name"] == "Test and check API against the published protocol" }
+
+    assert_equal "./gradlew testDebugUnitTest apiCheck --console=plain", validation.fetch("run")
+  end
 
   def test_protocol_can_release_before_kit_adopts_it
     Dir.mktmpdir("protocol-release") do |root|

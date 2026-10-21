@@ -7,12 +7,12 @@ public class CheckoutLink internal constructor(public val url: Uri)
 
 /** The action Checkout Kit should take for a link clicked in checkout. */
 public enum class CheckoutLinkAction {
-    /** Open the link using Checkout Kit's default system behavior. */
-    Open,
+    /** Do not open the link. */
+    Cancel,
+
+    /** Let Checkout Kit open the link using its default system behavior. */
+    Default,
 
     /** The app handled the link itself. */
     Handled,
-
-    /** Do not open the link. */
-    Cancel,
 }

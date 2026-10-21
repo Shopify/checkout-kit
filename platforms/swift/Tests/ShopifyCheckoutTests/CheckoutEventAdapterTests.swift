@@ -175,6 +175,43 @@ final class CheckoutEventAdapterTests: XCTestCase {
         }
     }
 
+    func testFutureCheckoutFieldsAndEnumValuesDoNotSuppressLifecycleEvents() async throws {
+        let sink = RecordingCheckoutEventSink()
+        let methods = [
+            "ec.start",
+            "ec.line_items.change",
+            "ec.messages.change",
+            "ec.totals.change",
+            "ec.fulfillment.change",
+            "ec.complete"
+        ]
+
+        for method in methods {
+            let adapter = CheckoutEventAdapter(sink: sink)
+            _ = await adapter.process(message(
+                method: method,
+                status: "on_hold",
+                extensionValue: "future-\(method)",
+                buyerExtensionValue: "future-\(method)"
+            ))
+        }
+
+        let started = try XCTUnwrap(sink.started.first)
+        XCTAssertEqual(started.status.rawValue, "on_hold")
+        XCTAssertEqual(started.additionalProperties["com.example.extension"]?.value as? String, "future-ec.start")
+        XCTAssertEqual(started.buyer?.additionalProperties["com.example.future_buyer_field"]?.value as? String, "future-ec.start")
+        XCTAssertEqual(sink.updated.count, 4)
+        for event in sink.updated {
+            XCTAssertEqual(event.status.rawValue, "on_hold")
+            XCTAssertNotNil(event.additionalProperties["com.example.extension"])
+            XCTAssertNotNil(event.buyer?.additionalProperties["com.example.future_buyer_field"])
+        }
+        let completed = try XCTUnwrap(sink.completed.first)
+        XCTAssertEqual(completed.status.rawValue, "on_hold")
+        XCTAssertEqual(completed.additionalProperties["com.example.extension"]?.value as? String, "future-ec.complete")
+        XCTAssertEqual(completed.buyer?.additionalProperties["com.example.future_buyer_field"]?.value as? String, "future-ec.complete")
+    }
+
     func testShippingSelectionAndPriceChangesProduceUpdates() async throws {
         let sink = RecordingCheckoutEventSink()
         let adapter = CheckoutEventAdapter(sink: sink)
@@ -251,11 +288,13 @@ final class CheckoutEventAdapterTests: XCTestCase {
         method: String,
         status: String = "incomplete",
         total: Int = 1000,
-        messages: String = "[]"
+        messages: String = "[]",
+        extensionValue: String = "value",
+        buyerExtensionValue: String = "value"
     ) -> String {
         """
         {"jsonrpc":"2.0","method":"\(method)","params":{"checkout":{
-          "buyer":{"email":"buyer@example.com","first_name":"Ada","last_name":"Lovelace"},
+          "buyer":{"email":"buyer@example.com","first_name":"Ada","last_name":"Lovelace","com.example.future_buyer_field":"\(buyerExtensionValue)"},
           "currency":"USD",
           "id":"checkout-1",
           "line_items":[],
@@ -263,6 +302,7 @@ final class CheckoutEventAdapterTests: XCTestCase {
           "messages":\(messages),
           "status":"\(status)",
           "totals":[{"amount":\(total),"type":"total"}],
+          "com.example.extension":"\(extensionValue)",
           "ucp":{"payment_handlers":{},"version":"\(EmbeddedCheckoutProtocol.specVersion)"}
         }}}
         """

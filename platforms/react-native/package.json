@@ -65,6 +65,8 @@
     "test": "jest",
     "build": "vite build && pnpm verify",
     "lint": "pnpm typecheck && eslint src components internal && pnpm lint:dependencies",
+    "format": "eslint src components internal --fix",
+    "format:swift": "./scripts/lint_swift fix",
     "typecheck": "tsc --noEmit",
     "api:check": "pnpm build && api-extractor run --verbose",
     "api:dump": "pnpm build && api-extractor run --local --verbose",
@@ -140,8 +142,8 @@
   },
   "checkoutKit": {
     "nativeSdkVersions": {
-      "ios": "4.0.0-alpha.8",
-      "android": "4.0.0-alpha.8"
+      "ios": "4.0.0-alpha.9",
+      "android": "4.0.0-alpha.9"
     }
   },
   "files": [

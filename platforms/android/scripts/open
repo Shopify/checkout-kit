@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Opens the Android sample app (default) or the Android library project in
+# Android Studio.
+# Usage: dev android open [lib|demo]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+# shellcheck source=../../../scripts/lib/open_target
+source "$REPO_ROOT/scripts/lib/open_target"
+
+cd "$REPO_ROOT"
+
+parse_open_target "dev android open" "$@"
+case "$OPEN_TARGET" in
+  demo) project="platforms/android/samples/CheckoutKitAndroidDemo" ;;
+  lib) project="platforms/android" ;;
+esac
+
+open -a "Android Studio" "$project"

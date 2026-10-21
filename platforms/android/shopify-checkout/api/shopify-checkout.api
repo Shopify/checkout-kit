@@ -164,8 +164,8 @@ public final class com/shopify/checkoutkit/checkout/CheckoutLink {
 
 public final class com/shopify/checkoutkit/checkout/CheckoutLinkAction : java/lang/Enum {
 	public static final field Cancel Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
+	public static final field Default Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static final field Handled Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
-	public static final field Open Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
 	public static fun values ()[Lcom/shopify/checkoutkit/checkout/CheckoutLinkAction;
@@ -258,7 +258,7 @@ public final class com/shopify/checkoutkit/checkout/CheckoutSheetOptions {
 	public static final fun builder ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetOptions$Builder;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/checkout/DrawableResource;
-	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getCloseIconTintColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getCornerRadiusDp ()F
 	public final fun getDismissal ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetDismissal;
 	public final fun getDragHandle ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetDragHandle;
@@ -275,7 +275,7 @@ public final class com/shopify/checkoutkit/checkout/CheckoutSheetOptions$Builder
 	public fun <init> ()V
 	public final fun build ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetOptions;
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/checkout/DrawableResource;
-	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getCloseIconTintColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getCornerRadiusDp ()F
 	public final fun getDismissal ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetDismissal;
 	public final fun getDragHandle ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetDragHandle;
@@ -285,7 +285,7 @@ public final class com/shopify/checkoutkit/checkout/CheckoutSheetOptions$Builder
 	public final fun getTitleAlignment ()Lcom/shopify/checkoutkit/checkout/CheckoutSheetTitleAlignment;
 	public final fun getToolbarElevationDp ()F
 	public final fun setCloseIcon (Lcom/shopify/checkoutkit/checkout/DrawableResource;)V
-	public final fun setCloseIconTint (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setCloseIconTintColor (Lcom/shopify/checkoutkit/checkout/Color;)V
 	public final fun setCornerRadiusDp (F)V
 	public final fun setDismissal (Lcom/shopify/checkoutkit/checkout/CheckoutSheetDismissal;)V
 	public final fun setDragHandle (Lcom/shopify/checkoutkit/checkout/CheckoutSheetDragHandle;)V
@@ -543,13 +543,13 @@ public final class com/shopify/checkoutkit/checkout/Colors {
 	public static synthetic fun copy$default (Lcom/shopify/checkoutkit/checkout/Colors;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/DrawableResource;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/Color;Lcom/shopify/checkoutkit/checkout/Color;ILjava/lang/Object;)Lcom/shopify/checkoutkit/checkout/Colors;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/checkout/DrawableResource;
-	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getCloseIconTintColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getDragHandleColor ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getHeaderBackground ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getHeaderBackgroundColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getHeaderBorderColor ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getHeaderFont ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getProgressIndicator ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getWebViewBackground ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getHeaderTitleColor ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getProgressIndicatorColor ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getWebViewBackgroundColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -571,29 +571,29 @@ public final class com/shopify/checkoutkit/checkout/Colors$Companion {
 
 public final class com/shopify/checkoutkit/checkout/ColorsBuilder {
 	public final fun getCloseIcon ()Lcom/shopify/checkoutkit/checkout/DrawableResource;
-	public final fun getCloseIconTint ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getCloseIconTintColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getDragHandleColor ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getHeaderBackground ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getHeaderBackgroundColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun getHeaderBorderColor ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getHeaderFont ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getProgressIndicator ()Lcom/shopify/checkoutkit/checkout/Color;
-	public final fun getWebViewBackground ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getHeaderTitleColor ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getProgressIndicatorColor ()Lcom/shopify/checkoutkit/checkout/Color;
+	public final fun getWebViewBackgroundColor ()Lcom/shopify/checkoutkit/checkout/Color;
 	public final fun setCloseIcon (Lcom/shopify/checkoutkit/checkout/DrawableResource;)V
-	public final fun setCloseIconTint (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setCloseIconTintColor (Lcom/shopify/checkoutkit/checkout/Color;)V
 	public final fun setDragHandleColor (Lcom/shopify/checkoutkit/checkout/Color;)V
-	public final fun setHeaderBackground (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setHeaderBackgroundColor (Lcom/shopify/checkoutkit/checkout/Color;)V
 	public final fun setHeaderBorderColor (Lcom/shopify/checkoutkit/checkout/Color;)V
-	public final fun setHeaderFont (Lcom/shopify/checkoutkit/checkout/Color;)V
-	public final fun setProgressIndicator (Lcom/shopify/checkoutkit/checkout/Color;)V
-	public final fun setWebViewBackground (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setHeaderTitleColor (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setProgressIndicatorColor (Lcom/shopify/checkoutkit/checkout/Color;)V
+	public final fun setWebViewBackgroundColor (Lcom/shopify/checkoutkit/checkout/Color;)V
 	public final fun withCloseIcon (Lcom/shopify/checkoutkit/checkout/DrawableResource;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
-	public final fun withCloseIconTint (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
+	public final fun withCloseIconTintColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
 	public final fun withDragHandleColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
-	public final fun withHeaderBackground (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
+	public final fun withHeaderBackgroundColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
 	public final fun withHeaderBorderColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
-	public final fun withHeaderFont (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
-	public final fun withProgressIndicator (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
-	public final fun withWebViewBackground (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
+	public final fun withHeaderTitleColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
+	public final fun withProgressIndicatorColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
+	public final fun withWebViewBackgroundColor (Lcom/shopify/checkoutkit/checkout/Color;)Lcom/shopify/checkoutkit/checkout/ColorsBuilder;
 }
 
 public final class com/shopify/checkoutkit/checkout/Configuration {

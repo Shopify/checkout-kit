@@ -2278,6 +2278,13 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Decodable",
             "printedName": "Decodable",
             "usr": "s:Se",
@@ -2292,6 +2299,20 @@
           },
           {
             "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Sendable",
             "printedName": "Sendable",
             "usr": "s:s8SendableP",
@@ -2303,27 +2324,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
           }
         ]
       },
@@ -2470,7 +2470,8 @@
             "static": true,
             "implicit": true,
             "declAttributes": [
-              "Implements"
+              "Implements",
+              "Semantics"
             ],
             "funcSelfKind": "NonMutating"
           }
@@ -2483,10 +2484,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -2501,20 +2516,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -2731,7 +2732,8 @@
             "static": true,
             "implicit": true,
             "declAttributes": [
-              "Implements"
+              "Implements",
+              "Semantics"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -2901,10 +2903,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -2919,20 +2935,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -2943,8 +2945,8 @@
         "children": [
           {
             "kind": "Var",
-            "name": "webViewBackground",
-            "printedName": "webViewBackground",
+            "name": "webViewBackgroundColor",
+            "printedName": "webViewBackgroundColor",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -2954,8 +2956,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvp",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasStorage"
@@ -2975,8 +2977,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvg",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3002,8 +3004,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvs",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17webViewBackgroundSo7UIColorCvs",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColorSo7UIColorCvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3015,8 +3017,8 @@
           },
           {
             "kind": "Var",
-            "name": "headerBackground",
-            "printedName": "headerBackground",
+            "name": "headerBackgroundColor",
+            "printedName": "headerBackgroundColor",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3026,8 +3028,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvp",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasStorage"
@@ -3047,8 +3049,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvg",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3074,8 +3076,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvs",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerBackgroundSo7UIColorCvs",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV21headerBackgroundColorSo7UIColorCvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3087,8 +3089,8 @@
           },
           {
             "kind": "Var",
-            "name": "headerFont",
-            "printedName": "headerFont",
+            "name": "headerTitleColor",
+            "printedName": "headerTitleColor",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3098,8 +3100,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvp",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasStorage"
@@ -3119,8 +3121,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvg",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3146,8 +3148,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvs",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV10headerFontSo7UIColorCvs",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV16headerTitleColorSo7UIColorCvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3159,8 +3161,8 @@
           },
           {
             "kind": "Var",
-            "name": "progressIndicator",
-            "printedName": "progressIndicator",
+            "name": "progressIndicatorColor",
+            "printedName": "progressIndicatorColor",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3170,8 +3172,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvp",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasStorage"
@@ -3191,8 +3193,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvg",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3218,8 +3220,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvs",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17progressIndicatorSo7UIColorCvs",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22progressIndicatorColorSo7UIColorCvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3328,8 +3330,8 @@
           },
           {
             "kind": "Var",
-            "name": "closeIconTint",
-            "printedName": "closeIconTint",
+            "name": "closeIconTintColor",
+            "printedName": "closeIconTintColor",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3347,8 +3349,8 @@
               }
             ],
             "declKind": "Var",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvp",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvp",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvp",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvp",
             "moduleName": "ShopifyCheckoutKit",
             "declAttributes": [
               "HasInitialValue",
@@ -3377,8 +3379,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvg",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvg",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvg",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvg",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3412,8 +3414,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvs",
-                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV13closeIconTintSo7UIColorCSgvs",
+                "usr": "s:18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvs",
+                "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV18closeIconTintColorSo7UIColorCSgvs",
                 "moduleName": "ShopifyCheckoutKit",
                 "implicit": true,
                 "declAttributes": [
@@ -3523,7 +3525,7 @@
           {
             "kind": "Constructor",
             "name": "init",
-            "printedName": "init(webViewBackground:headerBackground:headerFont:progressIndicator:closeIcon:closeIconTint:headerBorderColor:)",
+            "printedName": "init(webViewBackgroundColor:headerBackgroundColor:headerTitleColor:progressIndicatorColor:closeIcon:closeIconTintColor:headerBorderColor:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -3606,8 +3608,8 @@
               }
             ],
             "declKind": "Constructor",
-            "usr": "s:18ShopifyCheckoutKit0B6ColorsV17webViewBackground06headerG00H4Font17progressIndicator9closeIcon0lM4Tint0H11BorderColorACSo7UIColorC_A3LSo7UIImageCSgALSgAPtcfc",
-            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV17webViewBackground06headerG00H4Font17progressIndicator9closeIcon0lM4Tint0H11BorderColorACSo7UIColorC_A3LSo7UIImageCSgALSgAPtcfc",
+            "usr": "s:18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColor06headergH00i5TitleH0017progressIndicatorH09closeIcon0mn4TintH00i6BorderH0ACSo7UIColorC_A3LSo7UIImageCSgALSgAPtcfc",
+            "mangledName": "$s18ShopifyCheckoutKit0B6ColorsV22webViewBackgroundColor06headergH00i5TitleH0017progressIndicatorH09closeIcon0mn4TintH00i6BorderH0ACSo7UIColorC_A3LSo7UIImageCSgALSgAPtcfc",
             "moduleName": "ShopifyCheckoutKit",
             "init_kind": "Designated"
           },
@@ -3700,10 +3702,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -3718,20 +3734,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -3932,10 +3934,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -3950,20 +3966,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -4775,10 +4777,24 @@
           },
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Error",
             "printedName": "Error",
             "usr": "s:s5ErrorP",
             "mangledName": "$ss5ErrorP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -4793,20 +4809,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -5377,10 +5379,68 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "CaseIterable",
+            "printedName": "CaseIterable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "AllCases",
+                "printedName": "AllCases",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutErrorCode",
+                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
+                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s12CaseIterableP",
+            "mangledName": "$ss12CaseIterableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -5413,50 +5473,6 @@
           },
           {
             "kind": "Conformance",
-            "name": "Decodable",
-            "printedName": "Decodable",
-            "usr": "s:Se",
-            "mangledName": "$sSe"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Encodable",
-            "printedName": "Encodable",
-            "usr": "s:SE",
-            "mangledName": "$sSE"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CaseIterable",
-            "printedName": "CaseIterable",
-            "children": [
-              {
-                "kind": "TypeWitness",
-                "name": "AllCases",
-                "printedName": "AllCases",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Array",
-                    "printedName": "[ShopifyCheckoutKit.CheckoutErrorCode]",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutErrorCode",
-                        "printedName": "ShopifyCheckoutKit.CheckoutErrorCode",
-                        "usr": "s:18ShopifyCheckoutKit0B9ErrorCodeO"
-                      }
-                    ],
-                    "usr": "s:Sa"
-                  }
-                ]
-              }
-            ],
-            "usr": "s:s12CaseIterableP",
-            "mangledName": "$ss12CaseIterableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Sendable",
             "printedName": "Sendable",
             "usr": "s:s8SendableP",
@@ -5468,20 +5484,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -5598,20 +5600,6 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -5623,6 +5611,20 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -5744,10 +5746,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -5762,20 +5778,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -5784,43 +5786,6 @@
         "name": "CheckoutLinkAction",
         "printedName": "CheckoutLinkAction",
         "children": [
-          {
-            "kind": "Var",
-            "name": "open",
-            "printedName": "open",
-            "children": [
-              {
-                "kind": "TypeFunc",
-                "name": "Function",
-                "printedName": "(ShopifyCheckoutKit.CheckoutLinkAction.Type) -> ShopifyCheckoutKit.CheckoutLinkAction",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "CheckoutLinkAction",
-                    "printedName": "ShopifyCheckoutKit.CheckoutLinkAction",
-                    "usr": "s:18ShopifyCheckoutKit0B10LinkActionO"
-                  },
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Metatype",
-                    "printedName": "ShopifyCheckoutKit.CheckoutLinkAction.Type",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "CheckoutLinkAction",
-                        "printedName": "ShopifyCheckoutKit.CheckoutLinkAction",
-                        "usr": "s:18ShopifyCheckoutKit0B10LinkActionO"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "declKind": "EnumElement",
-            "usr": "s:18ShopifyCheckoutKit0B10LinkActionO4openyA2CmF",
-            "mangledName": "$s18ShopifyCheckoutKit0B10LinkActionO4openyA2CmF",
-            "moduleName": "ShopifyCheckoutKit"
-          },
           {
             "kind": "Var",
             "name": "cancel",
@@ -5856,6 +5821,43 @@
             "declKind": "EnumElement",
             "usr": "s:18ShopifyCheckoutKit0B10LinkActionO6cancelyA2CmF",
             "mangledName": "$s18ShopifyCheckoutKit0B10LinkActionO6cancelyA2CmF",
+            "moduleName": "ShopifyCheckoutKit"
+          },
+          {
+            "kind": "Var",
+            "name": "default",
+            "printedName": "default",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(ShopifyCheckoutKit.CheckoutLinkAction.Type) -> ShopifyCheckoutKit.CheckoutLinkAction",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CheckoutLinkAction",
+                    "printedName": "ShopifyCheckoutKit.CheckoutLinkAction",
+                    "usr": "s:18ShopifyCheckoutKit0B10LinkActionO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "ShopifyCheckoutKit.CheckoutLinkAction.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "CheckoutLinkAction",
+                        "printedName": "ShopifyCheckoutKit.CheckoutLinkAction",
+                        "usr": "s:18ShopifyCheckoutKit0B10LinkActionO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:18ShopifyCheckoutKit0B10LinkActionO7defaultyA2CmF",
+            "mangledName": "$s18ShopifyCheckoutKit0B10LinkActionO7defaultyA2CmF",
             "moduleName": "ShopifyCheckoutKit"
           },
           {
@@ -5926,7 +5928,8 @@
             "static": true,
             "implicit": true,
             "declAttributes": [
-              "Implements"
+              "Implements",
+              "Semantics"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -6003,10 +6006,10 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
           },
           {
             "kind": "Conformance",
@@ -6014,6 +6017,20 @@
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
           },
           {
             "kind": "Conformance",
@@ -6028,20 +6045,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -6354,13 +6357,6 @@
           },
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -6372,6 +6368,13 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",
@@ -6500,10 +6503,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -6518,20 +6535,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -6780,10 +6783,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -6798,20 +6815,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -7167,15 +7170,76 @@
           },
           {
             "kind": "Conformance",
-            "name": "UIAppearanceContainer",
-            "printedName": "UIAppearanceContainer",
-            "usr": "c:objc(pl)UIAppearanceContainer"
+            "name": "NSExtensionRequestHandling",
+            "printedName": "NSExtensionRequestHandling",
+            "usr": "c:objc(pl)NSExtensionRequestHandling"
           },
           {
             "kind": "Conformance",
-            "name": "UITraitEnvironment",
-            "printedName": "UITraitEnvironment",
-            "usr": "c:objc(pl)UITraitEnvironment"
+            "name": "NSObjectProtocol",
+            "printedName": "NSObjectProtocol",
+            "usr": "c:objc(pl)NSObject"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "UIActivityItemsConfigurationProviding",
+            "printedName": "UIActivityItemsConfigurationProviding",
+            "usr": "c:objc(pl)UIActivityItemsConfigurationProviding"
+          },
+          {
+            "kind": "Conformance",
+            "name": "UIAppearanceContainer",
+            "printedName": "UIAppearanceContainer",
+            "usr": "c:objc(pl)UIAppearanceContainer"
           },
           {
             "kind": "Conformance",
@@ -7191,82 +7255,21 @@
           },
           {
             "kind": "Conformance",
-            "name": "UIResponderStandardEditActions",
-            "printedName": "UIResponderStandardEditActions",
-            "usr": "c:objc(pl)UIResponderStandardEditActions"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "NSObjectProtocol",
-            "printedName": "NSObjectProtocol",
-            "usr": "c:objc(pl)NSObject"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Hashable",
-            "printedName": "Hashable",
-            "usr": "s:SH",
-            "mangledName": "$sSH"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CVarArg",
-            "printedName": "CVarArg",
-            "usr": "s:s7CVarArgP",
-            "mangledName": "$ss7CVarArgP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CustomStringConvertible",
-            "printedName": "CustomStringConvertible",
-            "usr": "s:s23CustomStringConvertibleP",
-            "mangledName": "$ss23CustomStringConvertibleP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "CustomDebugStringConvertible",
-            "printedName": "CustomDebugStringConvertible",
-            "usr": "s:s28CustomDebugStringConvertibleP",
-            "mangledName": "$ss28CustomDebugStringConvertibleP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "UIActivityItemsConfigurationProviding",
-            "printedName": "UIActivityItemsConfigurationProviding",
-            "usr": "c:objc(pl)UIActivityItemsConfigurationProviding"
-          },
-          {
-            "kind": "Conformance",
             "name": "UIPasteConfigurationSupporting",
             "printedName": "UIPasteConfigurationSupporting",
             "usr": "c:objc(pl)UIPasteConfigurationSupporting"
           },
           {
             "kind": "Conformance",
-            "name": "UIUserActivityRestoring",
-            "printedName": "UIUserActivityRestoring",
-            "usr": "c:objc(pl)UIUserActivityRestoring"
+            "name": "UIResponderStandardEditActions",
+            "printedName": "UIResponderStandardEditActions",
+            "usr": "c:objc(pl)UIResponderStandardEditActions"
+          },
+          {
+            "kind": "Conformance",
+            "name": "UIStateRestoring",
+            "printedName": "UIStateRestoring",
+            "usr": "c:objc(pl)UIStateRestoring"
           },
           {
             "kind": "Conformance",
@@ -7277,15 +7280,15 @@
           },
           {
             "kind": "Conformance",
-            "name": "NSExtensionRequestHandling",
-            "printedName": "NSExtensionRequestHandling",
-            "usr": "c:objc(pl)NSExtensionRequestHandling"
+            "name": "UITraitEnvironment",
+            "printedName": "UITraitEnvironment",
+            "usr": "c:objc(pl)UITraitEnvironment"
           },
           {
             "kind": "Conformance",
-            "name": "UIStateRestoring",
-            "printedName": "UIStateRestoring",
-            "usr": "c:objc(pl)UIStateRestoring"
+            "name": "UIUserActivityRestoring",
+            "printedName": "UIUserActivityRestoring",
+            "usr": "c:objc(pl)UIUserActivityRestoring"
           }
         ]
       },
@@ -7302,17 +7305,10 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
+            "name": "CheckoutCommunicationProtocol",
+            "printedName": "CheckoutCommunicationProtocol",
+            "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP",
+            "mangledName": "$s18ShopifyCheckoutKit0B21CommunicationProtocolP"
           },
           {
             "kind": "Conformance",
@@ -7330,10 +7326,17 @@
           },
           {
             "kind": "Conformance",
-            "name": "CheckoutCommunicationProtocol",
-            "printedName": "CheckoutCommunicationProtocol",
-            "usr": "s:18ShopifyCheckoutKit0B21CommunicationProtocolP",
-            "mangledName": "$s18ShopifyCheckoutKit0B21CommunicationProtocolP"
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -8231,20 +8234,6 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
@@ -8256,6 +8245,20 @@
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           },
@@ -8346,20 +8349,6 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
@@ -8371,6 +8360,20 @@
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           },
@@ -8461,20 +8464,6 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Sendable",
-                "printedName": "Sendable",
-                "usr": "s:s8SendableP",
-                "mangledName": "$ss8SendableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "SendableMetatype",
-                "printedName": "SendableMetatype",
-                "usr": "s:s16SendableMetatypeP",
-                "mangledName": "$ss16SendableMetatypeP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
@@ -8486,6 +8475,20 @@
                 "printedName": "Escapable",
                 "usr": "s:s9EscapableP",
                 "mangledName": "$ss9EscapableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Sendable",
+                "printedName": "Sendable",
+                "usr": "s:s8SendableP",
+                "mangledName": "$ss8SendableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "SendableMetatype",
+                "printedName": "SendableMetatype",
+                "usr": "s:s16SendableMetatypeP",
+                "mangledName": "$ss16SendableMetatypeP"
               }
             ]
           }
@@ -8495,20 +8498,6 @@
         "mangledName": "$s18ShopifyCheckoutKit13ConfigurationV",
         "moduleName": "ShopifyCheckoutKit",
         "conformances": [
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
           {
             "kind": "Conformance",
             "name": "Copyable",
@@ -8522,6 +8511,20 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -8870,10 +8873,54 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "CaseIterable",
+            "printedName": "CaseIterable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "AllCases",
+                "printedName": "AllCases",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Array",
+                    "printedName": "[ShopifyCheckoutKit.LogLevel]",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "LogLevel",
+                        "printedName": "ShopifyCheckoutKit.LogLevel",
+                        "usr": "s:18ShopifyCheckoutKit8LogLevelO"
+                      }
+                    ],
+                    "usr": "s:Sa"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:s12CaseIterableP",
+            "mangledName": "$ss12CaseIterableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -8906,36 +8953,6 @@
           },
           {
             "kind": "Conformance",
-            "name": "CaseIterable",
-            "printedName": "CaseIterable",
-            "children": [
-              {
-                "kind": "TypeWitness",
-                "name": "AllCases",
-                "printedName": "AllCases",
-                "children": [
-                  {
-                    "kind": "TypeNominal",
-                    "name": "Array",
-                    "printedName": "[ShopifyCheckoutKit.LogLevel]",
-                    "children": [
-                      {
-                        "kind": "TypeNominal",
-                        "name": "LogLevel",
-                        "printedName": "ShopifyCheckoutKit.LogLevel",
-                        "usr": "s:18ShopifyCheckoutKit8LogLevelO"
-                      }
-                    ],
-                    "usr": "s:Sa"
-                  }
-                ]
-              }
-            ],
-            "usr": "s:s12CaseIterableP",
-            "mangledName": "$ss12CaseIterableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Sendable",
             "printedName": "Sendable",
             "usr": "s:s8SendableP",
@@ -8947,20 +8964,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -9101,6 +9104,9 @@
                 "static": true,
                 "implicit": true,
                 "isInternal": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
                 "accessorKind": "get"
               }
             ]
@@ -9253,10 +9259,24 @@
             "conformances": [
               {
                 "kind": "Conformance",
+                "name": "Copyable",
+                "printedName": "Copyable",
+                "usr": "s:s8CopyableP",
+                "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
                 "name": "Equatable",
                 "printedName": "Equatable",
                 "usr": "s:SQ",
                 "mangledName": "$sSQ"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Escapable",
+                "printedName": "Escapable",
+                "usr": "s:s9EscapableP",
+                "mangledName": "$ss9EscapableP"
               },
               {
                 "kind": "Conformance",
@@ -9296,20 +9316,6 @@
               },
               {
                 "kind": "Conformance",
-                "name": "Copyable",
-                "printedName": "Copyable",
-                "usr": "s:s8CopyableP",
-                "mangledName": "$ss8CopyableP"
-              },
-              {
-                "kind": "Conformance",
-                "name": "Escapable",
-                "printedName": "Escapable",
-                "usr": "s:s9EscapableP",
-                "mangledName": "$ss9EscapableP"
-              },
-              {
-                "kind": "Conformance",
                 "name": "SendableMetatype",
                 "printedName": "SendableMetatype",
                 "usr": "s:s16SendableMetatypeP",
@@ -9327,13 +9333,6 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -9345,6 +9344,13 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",
@@ -9425,20 +9431,6 @@
           },
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -9450,6 +9442,20 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -9792,20 +9798,6 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -9817,6 +9809,20 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -10050,10 +10056,24 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
             "name": "Equatable",
             "printedName": "Equatable",
             "usr": "s:SQ",
             "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
           },
           {
             "kind": "Conformance",
@@ -10068,20 +10088,6 @@
             "printedName": "SendableMetatype",
             "usr": "s:s16SendableMetatypeP",
             "mangledName": "$ss16SendableMetatypeP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
           }
         ]
       },
@@ -10332,7 +10338,8 @@
             "static": true,
             "implicit": true,
             "declAttributes": [
-              "Implements"
+              "Implements",
+              "Semantics"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -10540,7 +10547,8 @@
                 "static": true,
                 "implicit": true,
                 "declAttributes": [
-                  "Implements"
+                  "Implements",
+                  "Semantics"
                 ],
                 "funcSelfKind": "NonMutating"
               }
@@ -10553,17 +10561,17 @@
             "conformances": [
               {
                 "kind": "Conformance",
-                "name": "Equatable",
-                "printedName": "Equatable",
-                "usr": "s:SQ",
-                "mangledName": "$sSQ"
-              },
-              {
-                "kind": "Conformance",
                 "name": "Copyable",
                 "printedName": "Copyable",
                 "usr": "s:s8CopyableP",
                 "mangledName": "$ss8CopyableP"
+              },
+              {
+                "kind": "Conformance",
+                "name": "Equatable",
+                "printedName": "Equatable",
+                "usr": "s:SQ",
+                "mangledName": "$sSQ"
               },
               {
                 "kind": "Conformance",
@@ -10583,17 +10591,17 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Equatable",
-            "printedName": "Equatable",
-            "usr": "s:SQ",
-            "mangledName": "$sSQ"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
             "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
           },
           {
             "kind": "Conformance",
@@ -11080,6 +11088,41 @@
         "conformances": [
           {
             "kind": "Conformance",
+            "name": "CheckoutConfigurable",
+            "printedName": "CheckoutConfigurable",
+            "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP",
+            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "SendableMetatype",
+            "printedName": "SendableMetatype",
+            "usr": "s:s16SendableMetatypeP",
+            "mangledName": "$ss16SendableMetatypeP"
+          },
+          {
+            "kind": "Conformance",
             "name": "UIViewControllerRepresentable",
             "printedName": "UIViewControllerRepresentable",
             "children": [
@@ -11128,13 +11171,6 @@
           },
           {
             "kind": "Conformance",
-            "name": "CheckoutConfigurable",
-            "printedName": "CheckoutConfigurable",
-            "usr": "s:18ShopifyCheckoutKit0B12ConfigurableP",
-            "mangledName": "$s18ShopifyCheckoutKit0B12ConfigurableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "View",
             "printedName": "View",
             "children": [
@@ -11154,34 +11190,6 @@
             ],
             "usr": "s:7SwiftUI4ViewP",
             "mangledName": "$s7SwiftUI4ViewP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Copyable",
-            "printedName": "Copyable",
-            "usr": "s:s8CopyableP",
-            "mangledName": "$ss8CopyableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "Escapable",
-            "printedName": "Escapable",
-            "usr": "s:s9EscapableP",
-            "mangledName": "$ss9EscapableP"
-          },
-          {
-            "kind": "Conformance",
-            "name": "SendableMetatype",
-            "printedName": "SendableMetatype",
-            "usr": "s:s16SendableMetatypeP",
-            "mangledName": "$ss16SendableMetatypeP"
           }
         ]
       },
@@ -11250,6 +11258,9 @@
                 "static": true,
                 "implicit": true,
                 "isInternal": true,
+                "declAttributes": [
+                  "Transparent"
+                ],
                 "accessorKind": "get"
               }
             ]
@@ -11264,13 +11275,6 @@
         "conformances": [
           {
             "kind": "Conformance",
-            "name": "Sendable",
-            "printedName": "Sendable",
-            "usr": "s:s8SendableP",
-            "mangledName": "$ss8SendableP"
-          },
-          {
-            "kind": "Conformance",
             "name": "Copyable",
             "printedName": "Copyable",
             "usr": "s:s8CopyableP",
@@ -11282,6 +11286,13 @@
             "printedName": "Escapable",
             "usr": "s:s9EscapableP",
             "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Sendable",
+            "printedName": "Sendable",
+            "usr": "s:s8SendableP",
+            "mangledName": "$ss8SendableP"
           },
           {
             "kind": "Conformance",

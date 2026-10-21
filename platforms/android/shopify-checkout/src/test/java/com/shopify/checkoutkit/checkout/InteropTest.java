@@ -187,7 +187,7 @@ public class InteropTest {
         Color headerBackground = new Color.SRGB(0xFF008060);
 
         CheckoutAppearance.Storefront appearance = new CheckoutAppearance.Storefront().customize(
-                builder -> builder.setHeaderBackground(headerBackground)
+                builder -> builder.setHeaderBackgroundColor(headerBackground)
         );
 
         assertThat(appearance).isNotEqualTo(new CheckoutAppearance.Storefront());
@@ -230,7 +230,7 @@ public class InteropTest {
         sheetBuilder.setCornerRadiusDp(12f);
         sheetBuilder.setTitleAlignment(CheckoutSheetTitleAlignment.START);
         sheetBuilder.setToolbarElevationDp(4f);
-        sheetBuilder.setCloseIconTint(new Color.ResourceId(android.R.color.holo_red_dark));
+        sheetBuilder.setCloseIconTintColor(new Color.ResourceId(android.R.color.holo_red_dark));
         sheetBuilder.setScrimColor(new Color.SRGB(0x52000000));
         sheetBuilder.setDismissal(dismissal.build());
         sheetBuilder.setDragHandle(dragHandle.build());
@@ -371,13 +371,13 @@ public class InteropTest {
         Color tintColor = new Color.ResourceId(android.R.color.holo_red_dark);
 
         ColorScheme customized = lightScheme.customize(builder -> {
-            builder.setCloseIconTint(tintColor);
+            builder.setCloseIconTintColor(tintColor);
             return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Light.class);
         ColorScheme.Light customizedLight = (ColorScheme.Light) customized;
-        assertThat(customizedLight.getColors().getCloseIconTint()).isEqualTo(tintColor);
+        assertThat(customizedLight.getColors().getCloseIconTintColor()).isEqualTo(tintColor);
     }
 
     @Test
@@ -391,13 +391,13 @@ public class InteropTest {
 
         ColorScheme customized = autoScheme.customize(
                 lightBuilder -> {
-                    lightBuilder.setCloseIconTint(lightTint);
+                    lightBuilder.setCloseIconTintColor(lightTint);
                     lightBuilder.setDragHandleColor(lightHandle);
                     return Unit.INSTANCE;
                 },
                 darkBuilder -> {
                     darkBuilder.setCloseIcon(customIcon);
-                    darkBuilder.setCloseIconTint(darkTint);
+                    darkBuilder.setCloseIconTintColor(darkTint);
                     darkBuilder.setDragHandleColor(darkHandle);
                     return Unit.INSTANCE;
                 }
@@ -406,10 +406,10 @@ public class InteropTest {
         assertThat(customized).isInstanceOf(ColorScheme.Automatic.class);
         ColorScheme.Automatic customizedAuto = (ColorScheme.Automatic) customized;
 
-        assertThat(customizedAuto.getLightColors().getCloseIconTint()).isEqualTo(lightTint);
+        assertThat(customizedAuto.getLightColors().getCloseIconTintColor()).isEqualTo(lightTint);
         assertThat(customizedAuto.getLightColors().getCloseIcon()).isNull();
 
-        assertThat(customizedAuto.getDarkColors().getCloseIconTint()).isEqualTo(darkTint);
+        assertThat(customizedAuto.getDarkColors().getCloseIconTintColor()).isEqualTo(darkTint);
         assertThat(customizedAuto.getDarkColors().getCloseIcon()).isEqualTo(customIcon);
         assertThat(customizedAuto.getLightColors().getDragHandleColor()).isEqualTo(lightHandle);
         assertThat(customizedAuto.getDarkColors().getDragHandleColor()).isEqualTo(darkHandle);
@@ -422,15 +422,15 @@ public class InteropTest {
         Color tintColor = new Color.SRGB(0xFFABCDEF);
 
         ColorScheme customized = darkScheme.customize(builder -> {
-            builder.setHeaderBackground(headerColor);
-            builder.setCloseIconTint(tintColor);
+            builder.setHeaderBackgroundColor(headerColor);
+            builder.setCloseIconTintColor(tintColor);
             return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Dark.class);
         ColorScheme.Dark customizedDark = (ColorScheme.Dark) customized;
-        assertThat(customizedDark.getColors().getHeaderBackground()).isEqualTo(headerColor);
-        assertThat(customizedDark.getColors().getCloseIconTint()).isEqualTo(tintColor);
+        assertThat(customizedDark.getColors().getHeaderBackgroundColor()).isEqualTo(headerColor);
+        assertThat(customizedDark.getColors().getCloseIconTintColor()).isEqualTo(tintColor);
     }
 
     @Test
@@ -444,8 +444,8 @@ public class InteropTest {
 
         ColorScheme customized = lightScheme.customize(builder -> {
             builder
-                    .withWebViewBackground(webViewBg)
-                    .withProgressIndicator(progressColor)
+                    .withWebViewBackgroundColor(webViewBg)
+                    .withProgressIndicatorColor(progressColor)
                     .withDragHandleColor(dragHandle)
                     .withHeaderBorderColor(headerBorder)
                     .withCloseIcon(icon);
@@ -456,27 +456,27 @@ public class InteropTest {
         ColorScheme.Light customizedLight = (ColorScheme.Light) customized;
         Colors colors = customizedLight.getColors();
 
-        assertThat(colors.getWebViewBackground()).isEqualTo(webViewBg);
-        assertThat(colors.getProgressIndicator()).isEqualTo(progressColor);
+        assertThat(colors.getWebViewBackgroundColor()).isEqualTo(webViewBg);
+        assertThat(colors.getProgressIndicatorColor()).isEqualTo(progressColor);
         assertThat(colors.getDragHandleColor()).isEqualTo(dragHandle);
         assertThat(colors.getHeaderBorderColor()).isEqualTo(headerBorder);
         assertThat(colors.getCloseIcon()).isEqualTo(icon);
     }
 
     @Test
-    public void customizeLeavesDragHandleColorUnsetWhenOnlyHeaderFontChanges() {
+    public void customizeLeavesDragHandleColorUnsetWhenOnlyHeaderTitleColorChanges() {
         ColorScheme.Light lightScheme = new ColorScheme.Light();
-        Color headerFont = new Color.SRGB(0xFF336699);
+        Color headerTitleColor = new Color.SRGB(0xFF336699);
 
         ColorScheme customized = lightScheme.customize(builder -> {
-            builder.setHeaderFont(headerFont);
+            builder.setHeaderTitleColor(headerTitleColor);
             return Unit.INSTANCE;
         });
 
         assertThat(customized).isInstanceOf(ColorScheme.Light.class);
         Colors colors = ((ColorScheme.Light) customized).getColors();
 
-        assertThat(colors.getHeaderFont()).isEqualTo(headerFont);
+        assertThat(colors.getHeaderTitleColor()).isEqualTo(headerTitleColor);
         assertThat(colors.getDragHandleColor()).isNull();
     }
 }

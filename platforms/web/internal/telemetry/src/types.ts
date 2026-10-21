@@ -70,7 +70,7 @@ export interface TelemetryErrorMetric {
 }
 
 export interface TelemetryProtocolDecodeErrorMetric {
-  method: TelemetryProtocolMethod;
+  method: string;
   failureType: TelemetryDecodeFailureType;
 }
 
@@ -104,7 +104,12 @@ export type TelemetryFetch = (
   init: RequestInit,
 ) => Promise<TelemetryResponse>;
 
-export interface CheckoutKitTelemetryTestingOptions {
+export interface CheckoutKitTelemetryOptions {
+  /** Additional fixed method labels owned by the calling protocol implementation. */
+  protocolMethods?: readonly string[];
+}
+
+export interface CheckoutKitTelemetryTestingOptions extends CheckoutKitTelemetryOptions {
   sdkVersion: string;
   product?: TelemetryProduct;
   platform?: TelemetryPlatform;

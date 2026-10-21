@@ -1,12 +1,20 @@
 import {PermissionsAndroid, Platform} from 'react-native';
 import type {PermissionStatus} from 'react-native';
 import RNShopifyCheckoutKit from '@shopify/checkout-kit-react-native-core/specs/NativeShopifyCheckoutKit';
-import {ApplePayContactField, ColorScheme, LogLevel} from '@shopify/checkout-kit-react-native-core/enums';
+import {
+  ApplePayContactField,
+  CheckoutAppearanceType,
+  CheckoutColorScheme,
+  LogLevel,
+} from '@shopify/checkout-kit-react-native-core/enums';
 import {
   DispatchEventParityError,
   verifyDispatchEventParity,
 } from '@shopify/checkout-kit-react-native-core/dispatch-events';
-import {coerceConfigurationResult} from '@shopify/checkout-kit-react-native-core/configuration';
+import {
+  coerceConfigurationResult,
+  toNativeConfiguration,
+} from '@shopify/checkout-kit-react-native-core/configuration';
 import {
   createPresentDispatcher,
   LifecycleEventParseError,
@@ -16,10 +24,15 @@ import type {
   AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
+  AutomaticColors,
+  CheckoutAppearance,
+  CheckoutColors,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosAutomaticColors,
   IosColors,
+  PlatformColors,
   PresentCallbacks,
   PreloadFailureReason,
   PreloadOptions,
@@ -89,10 +102,14 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   }
 
   /**
-   * Dismisses the currently displayed checkout sheet
+   * Dismisses the currently displayed checkout sheet. Like native programmatic
+   * dismissal, this invokes neither `onDismiss` nor `onFail`.
    */
   public dismiss(): void {
-    ShopifyCheckout.activePresentation?.cancelGeolocationRequest();
+    const active = ShopifyCheckout.activePresentation;
+    active?.cancelGeolocationRequest();
+    // Keep the session tracked until native closes it, without consumer callbacks.
+    if (active?.presentation) active.presentation.callbacks = undefined;
     RNShopifyCheckoutKit.dismiss();
   }
 
@@ -146,6 +163,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
       onTerminal: () => {
         if (subscription) this.releaseDispatchSubscription(subscription);
       },
+      onFailure: () => this.cancelGeolocationRequest(),
     };
     this.presentation = presentation;
     const {dispatcher} = createPresentDispatcher(presentation);
@@ -190,7 +208,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
         configuration.acceleratedCheckouts,
       );
     }
-    RNShopifyCheckoutKit.setConfig(configuration);
+    RNShopifyCheckoutKit.setConfig(toNativeConfiguration(configuration));
   }
 
   /**
@@ -406,7 +424,8 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
 export {
   AcceleratedCheckoutWallet,
   ApplePayContactField,
-  ColorScheme,
+  CheckoutAppearanceType,
+  CheckoutColorScheme,
   DispatchEventParityError,
   LifecycleEventParseError,
   LogLevel,
@@ -423,10 +442,15 @@ export type {
   AcceleratedCheckoutCustomer,
   AndroidAutomaticColors,
   AndroidColors,
+  AutomaticColors,
+  CheckoutAppearance,
+  CheckoutColors,
   Configuration,
   Features,
   GeolocationRequestEvent,
+  IosAutomaticColors,
   IosColors,
+  PlatformColors,
   PresentCallbacks,
   PreloadFailureReason,
   PreloadOptions,

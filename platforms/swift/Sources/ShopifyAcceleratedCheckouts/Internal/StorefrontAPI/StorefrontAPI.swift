@@ -41,10 +41,6 @@ protocol StorefrontAPIProtocol: Sendable {
 
     // MARK: - Mutation Methods
 
-    @discardableResult func cartCreate(
-        with items: [GraphQLScalars.ID], customer: ShopifyAcceleratedCheckouts.Customer?
-    ) async throws -> StorefrontAPI.Cart
-
     @discardableResult func cartBuyerIdentityUpdate(
         id: GraphQLScalars.ID,
         input buyerIdentity: StorefrontAPI.CartBuyerIdentityUpdateInput

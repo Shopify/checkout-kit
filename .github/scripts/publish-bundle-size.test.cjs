@@ -107,3 +107,51 @@ test("rejects stale or mismatched reports and trusts only the Actions bot's save
     assert.equal(publisher.isReport({ user: { login, type }, body: policy.marker }), trusted);
   }
 });
+
+test("a skipped title-edit run republishes the latest measurement", async () => {
+  const report = { ...fixture().report, head: { "Web\tJavaScript": 34000 } };
+  const pr = {
+    number: 1,
+    state: "open",
+    head: { sha: "head", ref: "feature", repo: { id: 7 } },
+    base: { sha: "base" },
+  };
+  const runs = [
+    { id: 10, status: "completed", conclusion: "success", run_attempt: 1, head_sha: "head" },
+    { id: 11, status: "completed", conclusion: "skipped", run_attempt: 1, head_sha: "head" },
+  ].map((run) => ({ ...run, head_branch: "feature", head_repository: { id: 7 } }));
+  const listWorkflowRuns = Symbol("runs");
+  const listComments = Symbol("comments");
+  const listForRef = Symbol("checks");
+  const checks = [];
+  const loaded = [];
+  const github = {
+    paginate: async (method) =>
+      ({ [listWorkflowRuns]: runs, [listComments]: [], [listForRef]: [] })[method],
+    rest: {
+      pulls: { get: async () => ({ data: pr }) },
+      actions: { listWorkflowRuns },
+      issues: {
+        listComments,
+        createComment: async () => ({ data: { html_url: "https://example.com/c" } }),
+      },
+      checks: { listForRef, create: async (params) => checks.push(params) },
+      reactions: {},
+    },
+  };
+  await publisher.publish({
+    github,
+    context: { eventName: "workflow_run", repo: {}, payload: { workflow_run: runs[1] } },
+    core: { setFailed: (message) => assert.fail(message) },
+    prNumber: 1,
+    loadArtifact: async (_github, _repo, runId) => {
+      loaded.push(runId);
+      return { report, packageComment: "" };
+    },
+  });
+  assert.deepEqual(loaded, [10]);
+  assert.deepEqual(
+    checks.map((check) => check.conclusion),
+    ["success"],
+  );
+});

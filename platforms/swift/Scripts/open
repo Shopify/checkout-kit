@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Opens the demo Xcode project by default, or the Swift package when requested.
+# Usage: dev swift open [lib|demo]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+# shellcheck source=../../../scripts/lib/open_target
+source "$REPO_ROOT/scripts/lib/open_target"
+
+cd "$REPO_ROOT"
+
+parse_open_target "dev swift open" "$@"
+case "$OPEN_TARGET" in
+  demo)
+    platforms/swift/Scripts/generate_xcode_projects --spec Samples/CheckoutKitSwiftDemo/project.yml
+    target="platforms/swift/Samples/CheckoutKitSwiftDemo/CheckoutKitSwiftDemo.xcodeproj"
+    ;;
+  lib) target="platforms/swift" ;;
+esac
+
+xed "$target"

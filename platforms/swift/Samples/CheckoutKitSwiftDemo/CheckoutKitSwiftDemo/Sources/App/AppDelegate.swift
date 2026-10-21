@@ -31,7 +31,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         ShopifyCheckoutKit.configure {
             $0.appearance = .app(.automatic().customize {
-                $0.progressIndicator = ColorPalette.primaryColor
+                $0.progressIndicatorColor = ColorPalette.primaryColor
             })
             $0.logger = ObservingLogger(wrapping: FileLogger("log.txt"))
             $0.logLevel = checkoutKitLogLevel

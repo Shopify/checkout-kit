@@ -43,8 +43,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Switch to Xcode 26.2
-        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
+      - name: Switch to Xcode 26.6
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app
 
       - name: Check public Swift API baseline
         run: ./Scripts/api check
@@ -71,7 +71,7 @@ jobs:
           cache: 'gradle'
 
       - name: Check public Android API baseline
-        run: ./gradlew :shopify-checkout:apiCheck --console=plain
+        run: ./gradlew apiCheck --console=plain
 
       - name: Check public Kotlin protocol API baseline
         run: ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin/gradlew -p ../../protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin :embedded-checkout-protocol:apiCheck --console=plain

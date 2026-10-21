@@ -90,6 +90,45 @@ describe("built distributions", () => {
     };
   }
 
+  it.each(["npm", "cdn"])("keeps production telemetry in the %s build", async (distribution) => {
+    const urls = await distributionUrls();
+    const result = runWithBrowser(`
+      globalThis.HTMLDialogElement = window.HTMLDialogElement;
+      globalThis.Event = window.Event;
+      const requests = [];
+      globalThis.fetch = async (url, init) => {
+        requests.push({ url, body: JSON.parse(init.body) });
+        return { ok: true };
+      };
+      const logs = [];
+      console.info = (...args) => logs.push(args);
+      if (${JSON.stringify(distribution)} === "npm") {
+        await import(${JSON.stringify(urls.npm("shopify-checkout.js"))});
+      } else {
+        const { loadComponents } = await import(${JSON.stringify(urls.cdn)});
+        await loadComponents(["shopify-checkout"]);
+      }
+      const checkout = document.createElement("shopify-checkout");
+      checkout.logLevel = "none";
+      document.body.append(checkout);
+      // An empty source records invalid_url without opening a checkout or making a real request.
+      checkout.open();
+      checkout.remove();
+      await Promise.resolve();
+      return { requests, logs };
+    `);
+
+    expect(result).toEqual({
+      requests: [
+        {
+          url: "https://otlp-http-production.shopifysvc.com/v1/metrics",
+          body: expect.objectContaining({ resourceMetrics: expect.any(Array) }),
+        },
+      ],
+      logs: [],
+    });
+  });
+
   it.each(["npm", "cdn"])(
     "keeps the first registration when the npm component entry and CDN loader both load (%s first)",
     async (first) => {

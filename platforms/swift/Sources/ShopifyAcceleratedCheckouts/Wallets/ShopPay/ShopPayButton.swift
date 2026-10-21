@@ -6,7 +6,7 @@ internal struct ShopPayButton: View {
     @Environment(\.shopifyAcceleratedCheckoutsConfiguration)
     private var configuration: ShopifyAcceleratedCheckouts.Configuration?
 
-    let identifier: CheckoutIdentifier
+    let cartSource: CartSource
     let eventHandlers: EventHandlers
     let cornerRadius: CGFloat?
 
@@ -15,18 +15,25 @@ internal struct ShopPayButton: View {
         eventHandlers: EventHandlers = EventHandlers(),
         cornerRadius: CGFloat?
     ) {
-        self.identifier = identifier.parse()
+        cartSource = .cart(identifier.parse())
+        self.eventHandlers = eventHandlers
+        self.cornerRadius = cornerRadius
+    }
+
+    init(
+        cartSource: CartSource,
+        eventHandlers: EventHandlers = EventHandlers(),
+        cornerRadius: CGFloat?
+    ) {
+        self.cartSource = cartSource
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
     }
 
     var body: some View {
-        switch identifier {
-        case .invariant:
-            EmptyView()
-        default:
+        if cartSource.isValid() {
             Internal_ShopPayButton(
-                identifier: identifier,
+                cartSource: cartSource,
                 configuration: resolvedConfiguration,
                 eventHandlers: eventHandlers,
                 cornerRadius: cornerRadius
@@ -47,8 +54,8 @@ internal struct ShopPayButton: View {
 @available(iOS 16.0, *)
 @MainActor
 internal struct Internal_ShopPayButton: View {
-    @State private var controller: ShopPayViewController?
-    private let identifier: CheckoutIdentifier
+    @State private var attempt = WalletButtonAttempt()
+    private let cartSource: CartSource
     private let configuration: ShopifyAcceleratedCheckouts.Configuration
     private let eventHandlers: EventHandlers
     private let cornerRadius: CGFloat?
@@ -59,7 +66,19 @@ internal struct Internal_ShopPayButton: View {
         eventHandlers: EventHandlers = EventHandlers(),
         cornerRadius: CGFloat?
     ) {
-        self.identifier = identifier
+        cartSource = .cart(identifier)
+        self.configuration = configuration
+        self.eventHandlers = eventHandlers
+        self.cornerRadius = cornerRadius
+    }
+
+    init(
+        cartSource: CartSource,
+        configuration: ShopifyAcceleratedCheckouts.Configuration,
+        eventHandlers: EventHandlers = EventHandlers(),
+        cornerRadius: CGFloat?
+    ) {
+        self.cartSource = cartSource
         self.configuration = configuration
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
@@ -69,14 +88,16 @@ internal struct Internal_ShopPayButton: View {
         Button(
             action: {
                 Task { @MainActor in
+                    // Check the retained attempt before creating a fresh controller for this tap.
+                    guard attempt.controller?.isStartingCheckout != true else { return }
                     let controller = ShopPayViewController(
-                        identifier: identifier,
+                        cartSource: cartSource,
                         configuration: configuration,
                         eventHandlers: eventHandlers
                     )
 
                     // Retain the delegate while checkout events redraw the button's parent.
-                    self.controller = controller
+                    attempt.controller = controller
                     await controller.onPress()
                 }
             },

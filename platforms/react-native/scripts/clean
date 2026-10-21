@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Removes generated directories, cleans the CocoaPods cache, and stops sccache.
+# Each step runs even when an earlier step fails.
+# Usage: dev rn clean
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "$SCRIPT_DIR/.."
+if (cd sample/ios && bundle exec pod --version >/dev/null 2>&1); then
+  (cd sample/ios && bundle exec pod cache clean --all)
+else
+  echo "Skipping CocoaPods cache clean (pod unavailable; run dev up first)"
+fi
+rm -rf test/rct-integration-app/Pods \
+  test/rct-integration-app/RCTIntegrationApp.xcodeproj \
+  test/rct-integration-app/RCTIntegrationApp.xcworkspace \
+  test/rct-integration-app/RCTIntegrationApp/Info.plist \
+  test/rct-integration-app/RCTIntegrationAppTests/Info.plist \
+  test/rct-integration-app/build \
+  test/rct-integration-app/.xcode.env \
+  test/rct-integration-app/.xcode.env.local \
+  test/rct-integration-app/PrivacyInfo.xcprivacy
+pnpm module clean
+pnpm sample clean
+pnpm clean
+if command -v sccache >/dev/null 2>&1; then
+  sccache --stop-server 2>/dev/null || true
+fi
+echo "Cleaned root, module and sample workspaces"

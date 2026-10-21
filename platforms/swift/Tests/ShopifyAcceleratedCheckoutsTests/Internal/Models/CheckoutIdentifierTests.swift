@@ -26,35 +26,6 @@ class CheckoutIdentifierTests: XCTestCase {
         ]
     }
 
-    private func validVariantIDs() -> [String] {
-        return [
-            "gid://shopify/ProductVariant/test-id",
-            "gid://Shopify/ProductVariant/Z2NwLXVzLWV4YW1wbGU6MDEyMzQ1Njc4OTAxMjM0NTY3ODkw",
-            "GID://SHOPIFY/PRODUCTVARIANT/uppercase-test",
-            "gid://shopify/ProductVariant/complex-variant-456",
-            "gid://shopify/productvariant/lowercase-type"
-        ]
-    }
-
-    private func invalidVariantIDs() -> [String] {
-        return [
-            "",
-            "invalid-variant-id",
-            "variant/test-id",
-            "gid://shopify/Product/test-id",
-            "gid://other/ProductVariant/test-id",
-            "gid://different/ProductVariant/test-id"
-        ]
-    }
-
-    private func validQuantities() -> [Int] {
-        return [1, 2, 5, 10, 100, 999]
-    }
-
-    private func invalidQuantities() -> [Int] {
-        return [0, -1, -5, -100]
-    }
-
     // MARK: - 1. Initialization Tests
 
     func test_cartInit_whenValidID_createsCartCase() {
@@ -76,58 +47,6 @@ class CheckoutIdentifierTests: XCTestCase {
             XCTAssertEqual(id, cartID)
         } else {
             XCTFail("Expected cart case, got \(identifier)")
-        }
-    }
-
-    func test_variantInit_whenValidIDAndQuantity_createsVariantCase() {
-        let variantID = "gid://shopify/ProductVariant/test-id"
-        let quantity = 5
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-
-        if case let .variant(id, qty) = identifier {
-            XCTAssertEqual(id, variantID)
-            XCTAssertEqual(qty, quantity)
-        } else {
-            XCTFail("Expected variant case, got \(identifier)")
-        }
-    }
-
-    func test_variantInit_whenValidIDAndZeroQuantity_createsVariantCase() {
-        let variantID = "gid://shopify/ProductVariant/test-id"
-        let quantity = 0
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-
-        if case let .variant(id, qty) = identifier {
-            XCTAssertEqual(id, variantID)
-            XCTAssertEqual(qty, quantity)
-        } else {
-            XCTFail("Expected variant case, got \(identifier)")
-        }
-    }
-
-    func test_variantInit_whenValidIDAndNegativeQuantity_createsVariantCase() {
-        let variantID = "gid://shopify/ProductVariant/test-id"
-        let quantity = -1
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-
-        if case let .variant(id, qty) = identifier {
-            XCTAssertEqual(id, variantID)
-            XCTAssertEqual(qty, quantity)
-        } else {
-            XCTFail("Expected variant case, got \(identifier)")
-        }
-    }
-
-    func test_variantInit_whenEmptyID_createsVariantCase() {
-        let variantID = ""
-        let quantity = 1
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-
-        if case let .variant(id, qty) = identifier {
-            XCTAssertEqual(id, variantID)
-            XCTAssertEqual(qty, quantity)
-        } else {
-            XCTFail("Expected variant case, got \(identifier)")
         }
     }
 
@@ -164,9 +83,7 @@ class CheckoutIdentifierTests: XCTestCase {
 
             if case let .invariant(reason) = parsed {
                 XCTAssertTrue(reason.contains("Invalid 'cartID' format"), "Reason should mention invalid cartID format for '\(cartID)'")
-                if !cartID.isEmpty {
-                    XCTAssertTrue(reason.contains(cartID), "Reason should include the invalid cartID '\(cartID)'")
-                }
+
             } else {
                 XCTFail("Cart ID '\(cartID)' should return invariant with reason, got \(parsed)")
             }
@@ -191,127 +108,10 @@ class CheckoutIdentifierTests: XCTestCase {
         let parsed = identifier.parse()
 
         if case let .invariant(reason) = parsed {
-            let expectedPrefix = "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/', received: 'invalid-cart-id'"
+            let expectedPrefix = "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/'"
             XCTAssertEqual(reason, expectedPrefix)
         } else {
             XCTFail("Invalid cart ID should return invariant with error message")
-        }
-    }
-
-    // MARK: - 2. Parse Method Tests - Variant
-
-    func test_parse_whenValidVariantFormats_returnsSelf() {
-        for variantID in validVariantIDs() {
-            for quantity in validQuantities() {
-                let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-                let parsed = identifier.parse()
-
-                if case let .variant(id, qty) = parsed {
-                    XCTAssertEqual(id, variantID, "Variant ID '\(variantID)' should parse successfully")
-                    XCTAssertEqual(qty, quantity, "Quantity '\(quantity)' should be preserved")
-                } else {
-                    XCTFail("Variant ID '\(variantID)' with quantity '\(quantity)' should parse successfully, got \(parsed)")
-                }
-            }
-        }
-    }
-
-    func test_parse_whenInvalidVariantFormats_returnsInvariantWithReason() {
-        for variantID in invalidVariantIDs() {
-            let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-            let parsed = identifier.parse()
-
-            if case let .invariant(reason) = parsed {
-                XCTAssertTrue(reason.contains("Invalid 'variantID' format"), "Reason should mention invalid variantID format for '\(variantID)'")
-                if !variantID.isEmpty {
-                    XCTAssertTrue(reason.contains(variantID), "Reason should include the invalid variantID '\(variantID)'")
-                }
-            } else {
-                XCTFail("Variant ID '\(variantID)' should return invariant with reason, got \(parsed)")
-            }
-        }
-    }
-
-    func test_parse_whenVariantZeroQuantity_returnsInvariantWithReason() {
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: 0)
-        let parsed = identifier.parse()
-
-        if case let .invariant(reason) = parsed {
-            XCTAssertTrue(reason.contains("Quantity must be greater than 0"), "Reason should mention quantity validation")
-            XCTAssertTrue(reason.contains("0"), "Reason should include the invalid quantity")
-        } else {
-            XCTFail("Zero quantity should return invariant with reason, got \(parsed)")
-        }
-    }
-
-    func test_parse_whenVariantNegativeQuantity_returnsInvariantWithReason() {
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        for invalidQuantity in invalidQuantities() {
-            let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: invalidQuantity)
-            let parsed = identifier.parse()
-
-            if case let .invariant(reason) = parsed {
-                XCTAssertTrue(reason.contains("Quantity must be greater than 0"), "Reason should mention quantity validation for quantity \(invalidQuantity)")
-                XCTAssertTrue(reason.contains("\(invalidQuantity)"), "Reason should include the invalid quantity \(invalidQuantity)")
-            } else {
-                XCTFail("Invalid quantity \(invalidQuantity) should return invariant with reason, got \(parsed)")
-            }
-        }
-    }
-
-    func test_parse_whenVariantValidQuantity_returnsSelf() {
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        for quantity in validQuantities() {
-            let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: quantity)
-            let parsed = identifier.parse()
-
-            if case let .variant(id, qty) = parsed {
-                XCTAssertEqual(id, validVariantID)
-                XCTAssertEqual(qty, quantity)
-            } else {
-                XCTFail("Valid quantity \(quantity) should return self, got \(parsed)")
-            }
-        }
-    }
-
-    func test_parse_whenVariantIDCaseInsensitive_returnsSelf() {
-        let variantID = "GID://SHOPIFY/PRODUCTVARIANT/test-id"
-        let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-        let parsed = identifier.parse()
-
-        if case let .variant(id, qty) = parsed {
-            XCTAssertEqual(id, variantID)
-            XCTAssertEqual(qty, 1)
-        } else {
-            XCTFail("Case insensitive variant ID should parse successfully, got \(parsed)")
-        }
-    }
-
-    func test_parse_whenInvalidVariantID_returnsInvariantWithCorrectErrorMessage() {
-        let invalidVariantID = "invalid-variant-id"
-        let identifier = CheckoutIdentifier.variant(variantID: invalidVariantID, quantity: 1)
-        let parsed = identifier.parse()
-
-        if case let .invariant(reason) = parsed {
-            let expectedPrefix = "[invariant_violation] Invalid 'variantID' format. Expected to start with 'gid://Shopify/ProductVariant/', received: 'invalid-variant-id'"
-            XCTAssertEqual(reason, expectedPrefix)
-        } else {
-            XCTFail("Invalid variant ID should return invariant with error message")
-        }
-    }
-
-    func test_parse_whenInvalidQuantity_returnsInvariantWithCorrectErrorMessage() {
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        let invalidQuantity = -5
-        let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: invalidQuantity)
-        let parsed = identifier.parse()
-
-        if case let .invariant(reason) = parsed {
-            let expectedMessage = "[invariant_violation] Quantity must be greater than 0, received: -5"
-            XCTAssertEqual(reason, expectedMessage)
-        } else {
-            XCTFail("Invalid quantity should return invariant with error message")
         }
     }
 
@@ -329,6 +129,31 @@ class CheckoutIdentifierTests: XCTestCase {
         }
     }
 
+    func test_diagnosticCartID_shouldStripQueryAndFragmentWithoutChangingRequestID() {
+        let cartID = "gid://shopify/Cart/test-cart"
+        for suffix in [
+            "",
+            "?key=synthetic-secret",
+            "?KEY=synthetic-secret&token=synthetic-token",
+            "#synthetic-fragment",
+            "?key=synthetic-secret#synthetic-fragment",
+            "#fragment?key=synthetic-secret"
+        ] {
+            let identifier = CheckoutIdentifier.cart(cartID: cartID + suffix)
+            XCTAssertEqual(identifier.diagnosticCartID, cartID)
+            guard case let .cart(requestID) = identifier.parse() else {
+                XCTFail("Expected valid cart")
+                continue
+            }
+            XCTAssertEqual(requestID, cartID + suffix)
+        }
+    }
+
+    func test_diagnosticCartID_whenInvalid_shouldOmitInput() {
+        XCTAssertNil(CheckoutIdentifier.cart(cartID: "invalid?key=synthetic-secret").diagnosticCartID)
+        XCTAssertNil(CheckoutIdentifier.invariant(reason: "Invalid cart").diagnosticCartID)
+    }
+
     // MARK: - 3. Helper Method Tests - isValid
 
     func test_isValid_whenValidCartID_returnsTrue() {
@@ -342,28 +167,6 @@ class CheckoutIdentifierTests: XCTestCase {
         for cartID in invalidCartIDs() {
             let identifier = CheckoutIdentifier.cart(cartID: cartID)
             XCTAssertFalse(identifier.isValid(), "Cart ID '\(cartID)' should be invalid")
-        }
-    }
-
-    func test_isValid_whenValidVariantID_returnsTrue() {
-        for variantID in validVariantIDs() {
-            for quantity in validQuantities() {
-                let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: quantity)
-                XCTAssertTrue(identifier.isValid(), "Variant ID '\(variantID)' with quantity \(quantity) should be valid")
-            }
-        }
-    }
-
-    func test_isValid_whenInvalidVariantID_returnsFalse() {
-        for variantID in invalidVariantIDs() {
-            let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-            XCTAssertFalse(identifier.isValid(), "Variant ID '\(variantID)' should be invalid")
-        }
-
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        for invalidQuantity in invalidQuantities() {
-            let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: invalidQuantity)
-            XCTAssertFalse(identifier.isValid(), "Variant with quantity \(invalidQuantity) should be invalid")
         }
     }
 
@@ -383,15 +186,6 @@ class CheckoutIdentifierTests: XCTestCase {
         } else {
             XCTFail("Empty cart ID should return invariant")
         }
-
-        let variantIdentifier = CheckoutIdentifier.variant(variantID: "", quantity: 1)
-        let variantParsed = variantIdentifier.parse()
-
-        if case let .invariant(reason) = variantParsed {
-            XCTAssertTrue(reason.contains("Invalid 'variantID' format"))
-        } else {
-            XCTFail("Empty variant ID should return invariant")
-        }
     }
 
     func test_parse_whenWhitespaceOnlyStrings_returnsInvariantWithReason() {
@@ -402,15 +196,6 @@ class CheckoutIdentifierTests: XCTestCase {
             XCTAssertTrue(reason.contains("Invalid 'cartID' format"))
         } else {
             XCTFail("Whitespace-only cart ID should return invariant")
-        }
-
-        let variantIdentifier = CheckoutIdentifier.variant(variantID: "   ", quantity: 1)
-        let variantParsed = variantIdentifier.parse()
-
-        if case let .invariant(reason) = variantParsed {
-            XCTAssertTrue(reason.contains("Invalid 'variantID' format"))
-        } else {
-            XCTFail("Whitespace-only variant ID should return invariant")
         }
     }
 
@@ -424,16 +209,6 @@ class CheckoutIdentifierTests: XCTestCase {
         } else {
             XCTFail("Long valid cart ID should parse successfully")
         }
-
-        let longValidVariantID = "gid://shopify/ProductVariant/" + String(repeating: "b", count: 1000)
-        let variantIdentifier = CheckoutIdentifier.variant(variantID: longValidVariantID, quantity: 1)
-        let variantParsed = variantIdentifier.parse()
-
-        if case let .variant(id, _) = variantParsed {
-            XCTAssertEqual(id, longValidVariantID)
-        } else {
-            XCTFail("Long valid variant ID should parse successfully")
-        }
     }
 
     func test_parse_whenSpecialCharactersInIDs_handlesCorrectly() {
@@ -446,25 +221,15 @@ class CheckoutIdentifierTests: XCTestCase {
         } else {
             XCTFail("Cart ID with special characters should parse successfully")
         }
-
-        let specialCharsVariantID = "gid://shopify/ProductVariant/variant-id_456%20with%20special&chars=true"
-        let variantIdentifier = CheckoutIdentifier.variant(variantID: specialCharsVariantID, quantity: 1)
-        let variantParsed = variantIdentifier.parse()
-
-        if case let .variant(id, _) = variantParsed {
-            XCTAssertEqual(id, specialCharsVariantID)
-        } else {
-            XCTFail("Variant ID with special characters should parse successfully")
-        }
     }
 
     // MARK: - 5. Error Message Validation Tests
 
     func test_parse_whenCartValidationFails_returnsExpectedErrorMessage() {
         let testCases = [
-            ("invalid-cart", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/', received: 'invalid-cart'"),
-            ("", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/', received: ''"),
-            ("gid://shopify/Product/123", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/', received: 'gid://shopify/Product/123'")
+            ("invalid-cart", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/'"),
+            ("", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/'"),
+            ("gid://shopify/Product/123?key=synthetic-secret", "[invariant_violation] Invalid 'cartID' format. Expected to start with 'gid://Shopify/Cart/'")
         ]
 
         for (cartID, expectedMessage) in testCases {
@@ -475,45 +240,6 @@ class CheckoutIdentifierTests: XCTestCase {
                 XCTAssertEqual(reason, expectedMessage, "Error message mismatch for cart ID '\(cartID)'")
             } else {
                 XCTFail("Invalid cart ID '\(cartID)' should return invariant with error message")
-            }
-        }
-    }
-
-    func test_parse_whenVariantValidationFails_returnsExpectedErrorMessage() {
-        let testCases = [
-            ("invalid-variant", "[invariant_violation] Invalid 'variantID' format. Expected to start with 'gid://Shopify/ProductVariant/', received: 'invalid-variant'"),
-            ("", "[invariant_violation] Invalid 'variantID' format. Expected to start with 'gid://Shopify/ProductVariant/', received: ''"),
-            ("gid://shopify/Product/123", "[invariant_violation] Invalid 'variantID' format. Expected to start with 'gid://Shopify/ProductVariant/', received: 'gid://shopify/Product/123'")
-        ]
-
-        for (variantID, expectedMessage) in testCases {
-            let identifier = CheckoutIdentifier.variant(variantID: variantID, quantity: 1)
-            let parsed = identifier.parse()
-
-            if case let .invariant(reason) = parsed {
-                XCTAssertEqual(reason, expectedMessage, "Error message mismatch for variant ID '\(variantID)'")
-            } else {
-                XCTFail("Invalid variant ID '\(variantID)' should return invariant with error message")
-            }
-        }
-    }
-
-    func test_parse_whenQuantityValidationFails_returnsExpectedErrorMessage() {
-        let validVariantID = "gid://shopify/ProductVariant/test-id"
-        let testCases = [
-            (0, "[invariant_violation] Quantity must be greater than 0, received: 0"),
-            (-1, "[invariant_violation] Quantity must be greater than 0, received: -1"),
-            (-100, "[invariant_violation] Quantity must be greater than 0, received: -100")
-        ]
-
-        for (quantity, expectedMessage) in testCases {
-            let identifier = CheckoutIdentifier.variant(variantID: validVariantID, quantity: quantity)
-            let parsed = identifier.parse()
-
-            if case let .invariant(reason) = parsed {
-                XCTAssertEqual(reason, expectedMessage, "Error message mismatch for quantity \(quantity)")
-            } else {
-                XCTFail("Invalid quantity \(quantity) should return invariant with error message")
             }
         }
     }
@@ -552,5 +278,64 @@ class CheckoutIdentifierTests: XCTestCase {
         } else {
             XCTFail("Multiple parse calls on invalid identifier should return consistent results")
         }
+    }
+
+    // MARK: - 7. Cart Provider Tests
+
+    @MainActor
+    func test_resolve_whenCartProviderReturnsValidCartID_returnsCartAndCallsProviderOnce() async throws {
+        var calls = 0
+        let source = CartSource.provider { _ in
+            calls += 1
+            return .cart("gid://shopify/Cart/provided?key=synthetic")
+        }
+
+        XCTAssertTrue(source.isValid(), "A provider is validated when it is resolved")
+        XCTAssertEqual(calls, 0, "Validation must not call the provider")
+
+        let resolved = try await source.resolve(for: CartRequest(wallet: .applePay))
+        guard case let .cart(id) = resolved else { return XCTFail("Expected cart case, got \(resolved)") }
+        XCTAssertEqual(id, "gid://shopify/Cart/provided?key=synthetic")
+        XCTAssertEqual(calls, 1)
+    }
+
+    @MainActor
+    func test_resolve_whenCartProviderHandlesFailure_endsTheAttemptQuietly() async {
+        let source = CartSource.provider { _ in .failed }
+
+        await XCTAssertThrowsErrorAsync(try await source.resolve(for: CartRequest(wallet: .applePay))) { error in
+            XCTAssertTrue(error is HandledCartRequestFailure)
+        }
+    }
+
+    @MainActor
+    func test_resolve_whenCartProviderReturnsInvalidID_returnsInvariant() async throws {
+        let source = CartSource.provider { _ in .cart("gid://shopify/ProductVariant/123") }
+
+        let resolved = try await source.resolve(for: CartRequest(wallet: .applePay))
+        guard case let .invariant(reason) = resolved else { return XCTFail("Expected invariant, got \(resolved)") }
+        XCTAssertTrue(reason.contains("Invalid 'cartID' format"))
+    }
+
+    @MainActor
+    func test_resolve_whenCartProviderThrows_rethrows() async {
+        struct ProviderError: Error {}
+        let source = CartSource.provider { _ in throw ProviderError() }
+
+        do {
+            _ = try await source.resolve(for: CartRequest(wallet: .applePay))
+            XCTFail("Expected the provider error")
+        } catch {
+            XCTAssertTrue(error is ProviderError)
+        }
+    }
+
+    @MainActor
+    func test_resolve_whenFixedCart_parsesWithoutProvider() async throws {
+        let valid = try await CartSource.cart(.cart(cartID: "gid://shopify/Cart/test-id")).resolve(for: CartRequest(wallet: .applePay))
+        guard case .cart = valid else { return XCTFail("Expected cart case, got \(valid)") }
+
+        let invalid = try await CartSource.cart(.cart(cartID: "invalid-cart")).resolve(for: CartRequest(wallet: .applePay))
+        guard case .invariant = invalid else { return XCTFail("Expected invariant, got \(invalid)") }
     }
 }

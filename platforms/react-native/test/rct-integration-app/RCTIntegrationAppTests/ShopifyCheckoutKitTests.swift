@@ -19,8 +19,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     private func resetShopifyCheckoutKitDefaults() {
         configureShopifyCheckoutKit {
-            $0.appearance = .storefront
-            $0.closeButtonTintColor = nil
+            $0.appearance = .storefront()
             $0.logLevel = LogLevel.warn
             $0.preloading.enabled = true
             $0.allowedMessageOrigins = []
@@ -45,48 +44,8 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         // Verify that getConfig returned the expected result
-        XCTAssertEqual(result?["colorScheme"] as? String, "storefront")
+        XCTAssertEqual(result?["appearance"] as? [String: String], ["type": "storefront"])
         XCTAssertEqual(result?["preloading"] as? Bool, true)
-    }
-
-    /// configure
-    func testConfigure() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "dark",
-            "colors": [
-                "ios": [
-                    "tintColor": "#FF0000",
-                    "backgroundColor": "#0000FF"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, UIColor(hex: "#FF0000"))
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.backgroundColor, UIColor(hex: "#0000FF"))
-    }
-
-    func testConfigureWithWebDefaultUsesStorefrontAppearance() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "storefront"
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
-    }
-
-    func testGetConfigReturnsColorSchemeIdForAppAppearance() {
-        let configuration: [AnyHashable: Any] = [
-            "colorScheme": "light"
-        ]
-        shopifyCheckoutKit.setConfig(configuration)
-
-        let result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-        XCTAssertEqual(result?["colorScheme"] as? String, "light")
     }
 
     func testConfigureSetsTitle() {
@@ -123,86 +82,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
             result?["allowedMessageOrigins"] as? [String],
             ["https://example.com", "https://*.example.com"]
         )
-    }
-
-    func testConfigureWithInvalidColors() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "tintColor": "invalid"
-                ]
-            ]
-        ]
-
-        let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.tintColor, defaultColorFallback)
-    }
-
-    func testConfigureWithCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "#FF0000"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, UIColor(hex: "#FF0000"))
-    }
-
-    func testConfigureWithInvalidCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "invalid"
-                ]
-            ]
-        ]
-
-        let defaultColorFallback = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
-        shopifyCheckoutKit.setConfig(configuration)
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.closeButtonTintColor, defaultColorFallback)
-    }
-
-    func testConfigureWithoutCloseButtonColor() {
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "tintColor": "#FF0000"
-                ]
-            ]
-        ]
-
-        shopifyCheckoutKit.setConfig(configuration)
-
-        // closeButtonTintColor should remain nil when not specified (uses system default)
-        XCTAssertNil(ShopifyCheckoutKit.configuration.closeButtonTintColor)
-    }
-
-    func testGetConfigIncludesCloseButtonColor() {
-        // Set a close button color
-        let configuration: [AnyHashable: Any] = [
-            "colors": [
-                "ios": [
-                    "closeButtonColor": "#00FF00"
-                ]
-            ]
-        ]
-        shopifyCheckoutKit.setConfig(configuration)
-
-        // Call getConfig and capture the result
-        var result: [String: Any]?
-        result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-        // Verify that getConfig returned the close button color
-        XCTAssertNotNil(result?["closeButtonColor"])
-        let returnedColor = result?["closeButtonColor"] as? UIColor
-        XCTAssertEqual(returnedColor, UIColor(hex: "#00FF00"))
     }
 
     func testConfigureWithLogLevelDebug() {
@@ -458,45 +337,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertEqual(result?["logLevel"] as? String, "none")
     }
 
-    func testGetConfigReportsEveryNativeColorScheme() {
-        for colorScheme in Configuration.ColorScheme.allCases {
-            shopifyCheckoutKit.setConfig(["colorScheme": colorScheme.rawValue])
-
-            let result = shopifyCheckoutKit.getConfig() as? [String: Any]
-
-            XCTAssertEqual(result?["colorScheme"] as? String, colorScheme.rawValue)
-        }
-    }
-
-    func testEveryColorSchemeMapsToTheAppearanceTheUrlDecoratorReads() {
-        let expectedAppearances: [(String, Configuration.Appearance)] = [
-            ("light", .app(.light)),
-            ("dark", .app(.dark)),
-            ("automatic", .app(.automatic)),
-            ("storefront", .storefront)
-        ]
-
-        for (colorScheme, expected) in expectedAppearances {
-            shopifyCheckoutKit.setConfig(["colorScheme": colorScheme])
-
-            XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, expected)
-        }
-    }
-
-    func testConfigureWithUnknownColorSchemeKeepsTheCurrentAppearance() {
-        shopifyCheckoutKit.setConfig(["colorScheme": "dark"])
-
-        shopifyCheckoutKit.setConfig(["colorScheme": "sepia"])
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.dark))
-    }
-
-    func testConfigureWithUnknownColorSchemeKeepsTheStorefrontAppearance() {
-        shopifyCheckoutKit.setConfig(["colorScheme": "sepia"])
-
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront)
-    }
-
     func testGetConfigReportsEveryNativeLogLevel() {
         for logLevel in LogLevel.allCases {
             shopifyCheckoutKit.setConfig(["logLevel": logLevel.rawValue])
@@ -590,33 +430,48 @@ extension ShopifyCheckoutKitTests {
 
     @MainActor
     func testPresentFromNativeDismissIsIgnoredWhileClosing() async {
-        await assertPresentFromTerminalIsIgnored(fail: false)
-    }
-
-    @MainActor
-    func testPresentFromNativeFailureIsIgnoredWhileClosing() async {
-        await assertPresentFromTerminalIsIgnored(fail: true)
-    }
-
-    @MainActor
-    private func assertPresentFromTerminalIsIgnored(fail: Bool) async {
         let module = PresentationTrackingModule()
         module.attemptPresentation("https://example.test/first")
         await flushPresentationQueue()
         let oldSheet = module.sheets[0]
-        module.onEvent = {
-            module.onEvent = nil
-            module.attemptPresentation("https://example.test/second")
-        }
-        if fail {
-            module.delegates[0].checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
-        } else {
-            module.delegates[0].checkoutDidDismiss()
-        }
+        attemptPresentationOnNextEvent(module, "https://example.test/second")
+        module.delegates[0].checkoutDidDismiss()
         await flushPresentationQueue()
         XCTAssertEqual(module.urls.count, 1)
         XCTAssertEqual(module.results, [true, false])
         XCTAssertEqual(module.events.count, 1)
+        await assertPresentSucceedsAfterDismissal(module, oldSheet)
+    }
+
+    @MainActor
+    func testPresentFromNativeFailureIsIgnoredUntilDismissal() async {
+        let module = PresentationTrackingModule()
+        module.attemptPresentation("https://example.test/first")
+        await flushPresentationQueue()
+        let oldSheet = module.sheets[0]
+        attemptPresentationOnNextEvent(module, "https://example.test/second")
+        module.delegates[0].checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
+        await flushPresentationQueue()
+        XCTAssertEqual(module.results, [true, false])
+        // Native closes a failed checkout and then reports dismissal.
+        module.delegates[0].checkoutDidDismiss()
+        await flushPresentationQueue()
+        XCTAssertEqual(module.urls.count, 1)
+        XCTAssertEqual(module.results, [true, false])
+        XCTAssertEqual(module.events.count, 2)
+        await assertPresentSucceedsAfterDismissal(module, oldSheet)
+    }
+
+    @MainActor
+    private func attemptPresentationOnNextEvent(_ module: PresentationTrackingModule, _ url: String) {
+        module.onEvent = {
+            module.onEvent = nil
+            module.attemptPresentation(url)
+        }
+    }
+
+    @MainActor
+    private func assertPresentSucceedsAfterDismissal(_ module: PresentationTrackingModule, _ oldSheet: DeferredDismissViewController) async {
         oldSheet.finishDismissal()
         await flushPresentationQueue()
         XCTAssertEqual(module.urls.count, 1)
