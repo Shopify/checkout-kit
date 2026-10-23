@@ -72,6 +72,7 @@ jobs:
             # Common React Native infra: JS-level jobs (jest, lint, packed
             # files) and shared config that should trigger all RN jobs.
             reactNativeCommon:
+              - '.github/workflows/coverage-baseline.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/lib/coverage_report.rb'
@@ -98,6 +99,7 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             web:
+              - '.github/workflows/coverage-baseline.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/lib/coverage_report.rb'
@@ -111,6 +113,7 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             protocol:
+              - '.github/workflows/coverage-baseline.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/lib/coverage_report.rb'
@@ -121,6 +124,7 @@ jobs:
             scripts:
               - '.github/scripts/*coverage*'
               - '.github/workflows/coverage-report.yml'
+              - '.github/workflows/coverage-baseline.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/check-sdk-packages*'
@@ -226,6 +230,42 @@ jobs:
       checks: write
       pull-requests: read
     uses: ./.github/workflows/protocol-test.yml
+
+  coverage-base-web:
+    name: Coverage baseline (web)
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.web == 'true'
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    uses: ./.github/workflows/coverage-baseline.yml
+    with:
+      platform: web
+
+  coverage-base-react-native:
+    name: Coverage baseline (react-native)
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.reactNative == 'true'
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    uses: ./.github/workflows/coverage-baseline.yml
+    with:
+      platform: react-native
+
+  coverage-base-protocol:
+    name: Coverage baseline (protocol)
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.protocol == 'true'
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    uses: ./.github/workflows/coverage-baseline.yml
+    with:
+      platform: protocol
 
   scripts-test:
     name: Scripts
