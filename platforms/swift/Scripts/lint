@@ -115,6 +115,35 @@ if [[ "$VERBOSE" == "false" ]]; then
 	QUIET_FLAG="--quiet"
 fi
 
+# In GitHub Actions, report violations as annotations. SwiftLint writes file
+# paths relative to the current directory, but GitHub resolves annotation
+# paths from the workspace root, so prefix them with the current directory's
+# path inside the workspace.
+swiftlint_check() {
+	if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+		$SWIFTLINT lint "$@"
+		return
+	fi
+
+	local workspace directory prefix
+	workspace="$(cd "${GITHUB_WORKSPACE:-.}" && pwd -P)"
+	directory="$(pwd -P)"
+	case "$directory" in
+	"$workspace") prefix="" ;;
+	"$workspace"/*) prefix="${directory#"$workspace"/}/" ;;
+	*) prefix="$directory/" ;;
+	esac
+
+	$SWIFTLINT lint "$@" --reporter github-actions-logging |
+		PREFIX="$prefix" awk '
+			match($0, /^::[a-z]+ file=[^\/]/) {
+				$0 = substr($0, 1, RLENGTH - 1) ENVIRON["PREFIX"] substr($0, RLENGTH)
+			}
+			{ print }
+		'
+	return "${PIPESTATUS[0]}"
+}
+
 # Run from the directory containing .swiftlint.yml so its `included:` and
 # `excluded:` paths resolve consistently.
 PROJECT_ROOT="$REPO_ROOT"
@@ -125,7 +154,7 @@ fi
 
 # SwiftLint doesn't report errors when running in fix mode
 # Running again in strict mode to ensure no errors are missed.
-(cd "$PROJECT_ROOT" && $SWIFTLINT lint --strict --no-cache $QUIET_FLAG)
+(cd "$PROJECT_ROOT" && swiftlint_check --strict --no-cache $QUIET_FLAG)
 LINT_STATUS=$?
 
 if [ $LINT_STATUS -eq 0 ]; then

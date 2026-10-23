@@ -211,9 +211,88 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
                 invalidExpectation.fulfill()
             }
         }
-        invalid.checkoutIdentifier = ["variantId": "gid://shopify/ProductVariant/1", "quantity": 0]
+        invalid.checkoutIdentifier = ["variantId": "   "]
 
         wait(for: [invalidExpectation], timeout: 2)
+    }
+
+    func testButtonsViewAcceptsBuyNowVariant() {
+        configureAcceleratedCheckouts(includeApplePay: false)
+
+        let viewExpectation = expectation(description: "Buy Now variant renders non-zero height")
+        var fulfilled = false
+        let view = RCTAcceleratedCheckoutButtonsView()
+        view.onSizeChange = { payload in
+            if fulfilled { return }
+
+            let height = (payload?["height"] as? NSNumber)?.doubleValue ?? 0
+            if height > 0 {
+                fulfilled = true
+                viewExpectation.fulfill()
+            }
+        }
+        view.checkoutIdentifier = ["variantId": "gid://shopify/ProductVariant/1"]
+
+        wait(for: [viewExpectation], timeout: 2)
+        XCTAssertNotNil(view.instance)
+    }
+
+    @MainActor
+    func testBuyNowCartRequestForwardsTheWalletAndResumesWithTheJavaScriptCart() async throws {
+        let cartRequested = expectation(description: "requests a cart after an accepted wallet tap")
+        let view = RCTAcceleratedCheckoutButtonsView()
+        view.onCartRequest = { payload in
+            guard
+                let payload,
+                let requestId = payload["requestId"] as? String,
+                let wallet = payload["wallet"] as? String
+            else {
+                return XCTFail("Expected a Buy Now cart request")
+            }
+            XCTAssertEqual(wallet, Wallet.applePay.rawValue)
+            view.cartRequestResponses = [[
+                "requestId": requestId,
+                "cartId": "gid://shopify/Cart/buy-now"
+            ]]
+            cartRequested.fulfill()
+        }
+
+        let result = try await view.requestCart(for: .applePay)
+
+        await fulfillment(of: [cartRequested], timeout: 2)
+        XCTAssertEqual(result.resolvedCartID, "gid://shopify/Cart/buy-now")
+    }
+
+    @MainActor
+    func testConcurrentBuyNowCartRequestsResumeEveryWallet() async throws {
+        let view = RCTAcceleratedCheckoutButtonsView()
+        var requests: [(requestId: String, wallet: String)] = []
+        view.onCartRequest = { payload in
+            guard
+                let payload,
+                let requestId = payload["requestId"] as? String,
+                let wallet = payload["wallet"] as? String
+            else {
+                return XCTFail("Expected a Buy Now cart request")
+            }
+
+            requests.append((requestId, wallet))
+            guard requests.count == 2 else { return }
+
+            view.cartRequestResponses = requests.map {
+                [
+                    "requestId": $0.requestId,
+                    "cartId": "gid://shopify/Cart/\($0.wallet)"
+                ]
+            } as NSArray
+        }
+
+        async let applePayResult = view.requestCart(for: .applePay)
+        async let shopPayResult = view.requestCart(for: .shopPay)
+        let (applePay, shopPay) = try await (applePayResult, shopPayResult)
+
+        XCTAssertEqual(applePay.resolvedCartID, "gid://shopify/Cart/applePay")
+        XCTAssertEqual(shopPay.resolvedCartID, "gid://shopify/Cart/shopPay")
     }
 
     func testButtonsViewAcceptsCartIdWithWhitespace() {
@@ -239,58 +318,52 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         XCTAssertNotNil(view.instance)
     }
 
-    func testButtonsViewAcceptsVariantAndQuantity_withDefaultWallets() {
+    func testButtonsViewAcceptsCartId_withDefaultWallets() {
         configureAcceleratedCheckouts(includeApplePay: false)
 
-        let viewExpectation = expectation(description: "variant + quantity renders non-zero height")
-        var fulfilledVariant = false
+        let viewExpectation = expectation(description: "cartId renders the expected height")
+        var fulfilledCart = false
 
         let view = RCTAcceleratedCheckoutButtonsView()
         view.onSizeChange = { payload in
-            if fulfilledVariant { return }
+            if fulfilledCart { return }
             guard let payload else { return }
 
             let height = (payload["height"] as? NSNumber)?.doubleValue ?? -1
 
             // "Wallets" prop is nil, so default rendered (2 buttons)
             if height == WalletButtons.two {
-                fulfilledVariant = true
+                fulfilledCart = true
                 viewExpectation.fulfill()
             }
         }
-        view.checkoutIdentifier = [
-            "variantId": "gid://shopify/ProductVariant/123",
-            "quantity": NSNumber(value: 2)
-        ]
+        view.checkoutIdentifier = ["cartId": "gid://shopify/Cart/123"]
 
         wait(for: [viewExpectation], timeout: 2)
         XCTAssertNotNil(view.instance)
     }
 
-    func testButtonsViewAcceptsVariantAndQuantity_withExplicitWallets() {
+    func testButtonsViewAcceptsCartId_withExplicitWallets() {
         configureAcceleratedCheckouts(includeApplePay: false)
 
-        let viewExpectation = expectation(description: "variant + quantity renders non-zero height")
-        var fulfilledVariant = false
+        let viewExpectation = expectation(description: "cartId renders the expected height")
+        var fulfilledCart = false
 
         let view = RCTAcceleratedCheckoutButtonsView()
         view.wallets = ["shopPay"]
         view.onSizeChange = { payload in
-            if fulfilledVariant { return }
+            if fulfilledCart { return }
             guard let payload else { return }
 
             let height = (payload["height"] as? NSNumber)?.doubleValue ?? -1
 
             // Wallets prop is explicitly set, so must be respected
             if height == WalletButtons.one {
-                fulfilledVariant = true
+                fulfilledCart = true
                 viewExpectation.fulfill()
             }
         }
-        view.checkoutIdentifier = [
-            "variantId": "gid://shopify/ProductVariant/123",
-            "quantity": NSNumber(value: 2)
-        ]
+        view.checkoutIdentifier = ["cartId": "gid://shopify/Cart/123"]
 
         wait(for: [viewExpectation], timeout: 2)
         XCTAssertNotNil(view.instance)
@@ -299,27 +372,24 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     func testButtonsViewRendersEmptyWhenWalletsArrayIsEmpty() {
         configureAcceleratedCheckouts(includeApplePay: false)
 
-        let viewExpectation = expectation(description: "variant + quantity renders non-zero height")
-        var fulfilledVariant = false
+        let viewExpectation = expectation(description: "cartId renders the expected height")
+        var fulfilledCart = false
 
         let view = RCTAcceleratedCheckoutButtonsView()
         view.wallets = []
         view.onSizeChange = { payload in
-            if fulfilledVariant { return }
+            if fulfilledCart { return }
             guard let payload else { return }
 
             let height = (payload["height"] as? NSNumber)?.doubleValue ?? -1
 
             // Wallets prop is explicitly set, so must be respected
             if height == WalletButtons.zero {
-                fulfilledVariant = true
+                fulfilledCart = true
                 viewExpectation.fulfill()
             }
         }
-        view.checkoutIdentifier = [
-            "variantId": "gid://shopify/ProductVariant/123",
-            "quantity": NSNumber(value: 2)
-        ]
+        view.checkoutIdentifier = ["cartId": "gid://shopify/Cart/123"]
 
         wait(for: [viewExpectation], timeout: 2)
         XCTAssertNil(view.instance)
@@ -360,7 +430,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
         configureAcceleratedCheckouts(includeApplePay: false)
         let checkout = try JSONDecoder().decode(Checkout.self, from: Data(#"{"id":"checkout-1","currency":"USD","status":"incomplete","line_items":[],"links":[],"totals":[]}"#.utf8))
         let link = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.test/policy")))
-        for action in ["open", "handled", "cancel"] {
+        for action in ["default", "handled", "cancel"] {
             let view = RCTAcceleratedCheckoutButtonsView()
             view.checkoutIdentifier = ["cartId": "gid://shopify/Cart/1"]
             view.linkAction = action

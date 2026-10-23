@@ -72,11 +72,11 @@ internal object CheckoutAppearanceConfiguration {
      * optional color restores its default.
      */
     private fun applyColors(configuration: ReadableMap?, colors: ColorsBuilder) {
-        parseColor(stringFor(configuration, "webViewBackgroundColor"))?.let { colors.webViewBackground = it }
-        parseColor(stringFor(configuration, "headerBackgroundColor"))?.let { colors.headerBackground = it }
-        parseColor(stringFor(configuration, "headerTitleColor"))?.let { colors.headerFont = it }
-        parseColor(stringFor(configuration, "progressIndicatorColor"))?.let { colors.progressIndicator = it }
-        applyOptionalColor(configuration, "closeIconTintColor") { colors.closeIconTint = it }
+        parseColor(stringFor(configuration, "webViewBackgroundColor"))?.let { colors.webViewBackgroundColor = it }
+        parseColor(stringFor(configuration, "headerBackgroundColor"))?.let { colors.headerBackgroundColor = it }
+        parseColor(stringFor(configuration, "headerTitleColor"))?.let { colors.headerTitleColor = it }
+        parseColor(stringFor(configuration, "progressIndicatorColor"))?.let { colors.progressIndicatorColor = it }
+        applyOptionalColor(configuration, "closeIconTintColor") { colors.closeIconTintColor = it }
         applyOptionalColor(configuration, "headerBorderColor") { colors.headerBorderColor = it }
         applyOptionalColor(configuration, "dragHandleColor") { colors.dragHandleColor = it }
     }

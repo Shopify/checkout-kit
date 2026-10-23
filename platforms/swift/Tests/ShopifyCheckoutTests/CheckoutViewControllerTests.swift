@@ -13,8 +13,8 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure { $0 = Configuration() }
+        ShopifyCheckout.configure {
             $0.title = customTitle ?? "Checkout"
         }
         viewController = MockCheckoutWebViewController(
@@ -26,7 +26,7 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     override func tearDown() async throws {
         customTitle = nil
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -51,7 +51,7 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     func testTitleCanBeCustomized() {
         customTitle = "Custom title"
-        ShopifyCheckoutKit.configure { $0.title = customTitle ?? "Checkout" }
+        ShopifyCheckout.configure { $0.title = customTitle ?? "Checkout" }
         viewController = MockCheckoutWebViewController(
             checkoutURL: checkoutURL
         )
@@ -142,7 +142,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testCloseButtonUsesSystemDefaultWhenCloseIconTintColorIsNil() {
-        ShopifyCheckoutKit.configure { $0.appearance = .storefront() }
+        ShopifyCheckout.configure { $0.appearance = .storefront() }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem
@@ -154,7 +154,7 @@ class CheckoutViewDelegateTests: XCTestCase {
 
     func testCloseButtonUsesCustomImageAndTintWhenCloseIconTintColorIsSet() {
         let customColor = UIColor.red
-        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: customColor)) }
+        ShopifyCheckout.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: customColor)) }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem
@@ -166,7 +166,7 @@ class CheckoutViewDelegateTests: XCTestCase {
     }
 
     func testCloseButtonHasAnImageWhenCloseIconTintColorIsSet() {
-        ShopifyCheckoutKit.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: .blue)) }
+        ShopifyCheckout.configure { $0.appearance = .storefront(colors: CheckoutColors(closeIconTintColor: .blue)) }
         let controller = MockCheckoutWebViewController(checkoutURL: checkoutURL)
 
         let closeButton = controller.navigationItem.rightBarButtonItem

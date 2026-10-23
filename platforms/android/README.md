@@ -1,5 +1,27 @@
 # Shopify Checkout Kit - Android
 
+## Migrating checkout lifecycle APIs
+
+Checkout lifecycle APIs now live on `ShopifyCheckout`. This is a breaking change;
+the old `ShopifyCheckoutKit` lifecycle entry points have been removed.
+
+| Previous API | Replacement |
+| --- | --- |
+| `ShopifyCheckoutKit.present(...)` | `ShopifyCheckout.present(...)` |
+| `ShopifyCheckoutKit.preload(...)` | `ShopifyCheckout.preload(...)` |
+| `ShopifyCheckoutKit.invalidate()` | `ShopifyCheckout.clearPreload()` |
+| `ShopifyCheckoutKit.configure { ... }` | `ShopifyCheckout.configure { ... }` |
+| `ShopifyCheckoutKit.getConfiguration()` | `ShopifyCheckout.getConfiguration()` |
+
+Every `ShopifyCheckout` entry point takes the checkout URL first, including the embedded view:
+`ShopifyCheckout.create(checkoutUrl, context) { ... }` and `ShopifyCheckout(checkoutUrl, context, listener)`.
+Dependency coordinates, the package namespace, and SDK version metadata are unchanged.
+Update explicit lifecycle imports from `com.shopify.checkoutkit.checkout.ShopifyCheckoutKit`
+to `com.shopify.checkoutkit.checkout.ShopifyCheckout`. Configuration and preloads remain
+shared across checkout entry points, not scoped to individual views.
+In Java, qualify shared calls with `ShopifyCheckout`, not an embedded view instance.
+An embedded view's `invalidate()` still requests an Android redraw; it does not clear preloads.
+
 The Android build separates internal feature modules from the SDK publication:
 
 - `shopify-checkout/` owns the existing checkout implementation, resources and tests.
@@ -18,7 +40,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 > [!WARNING]
 > **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.10`.
+> production-ready. The current Checkout Kit for Android alpha is `4.0.0-alpha.11`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
 **Checkout Kit for Android** lets Android apps present Shopify checkout in a native bottom sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods.
@@ -61,7 +83,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 ## Install
 
-For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.10`.
+For alpha testing, install the exact version shown below. The current Checkout Kit for Android alpha is `4.0.0-alpha.11`.
 
 The checkout event API in `4.0.0-alpha.7` replaces the protocol-client API in `4.0.0-alpha.6`;
 see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) when upgrading.
@@ -70,7 +92,7 @@ see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) wh
 
 ```groovy
 dependencies {
-    implementation "com.shopify:checkout-kit:4.0.0-alpha.10"
+    implementation "com.shopify:checkout-kit:4.0.0-alpha.11"
 }
 ```
 
@@ -80,7 +102,7 @@ dependencies {
 <dependency>
   <groupId>com.shopify</groupId>
   <artifactId>checkout-kit</artifactId>
-  <version>4.0.0-alpha.10</version>
+  <version>4.0.0-alpha.11</version>
 </dependency>
 ```
 
@@ -101,10 +123,10 @@ For production use, see the [Storefront API GraphiQL Explorer](https://shopify.d
 Use the Kotlin builder when presenting from a `ComponentActivity`:
 
 ```kotlin
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 
 fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
-    ShopifyCheckoutKit.present(checkoutUrl, activity) {
+    ShopifyCheckout.present(checkoutUrl, activity) {
         onComplete { event ->
             handleCompletedCheckout(event.checkout)
         }
@@ -121,6 +143,10 @@ fun presentCheckout(checkoutUrl: String, activity: ComponentActivity) {
 ```
 
 Checkout Kit adds the required checkout protocol parameters when checkout loads.
+
+`ShopifyCheckout` names the embedded checkout view. Its companion APIs (`configure`,
+`preload`, and `clearPreload`) manage checkout-wide defaults and reusable preloads;
+`ShopifyCheckout.present` manages SDK-owned bottom-sheet presentation.
 
 For Java integrations or shared listener implementations, extend `DefaultCheckoutListener`:
 
@@ -139,13 +165,13 @@ val listener = object : DefaultCheckoutListener() {
     }
 }
 
-ShopifyCheckoutKit.present(checkoutUrl, activity, listener)
+ShopifyCheckout.present(checkoutUrl, activity, listener)
 ```
 
 The `present` call returns a `CheckoutHandle?`. Keep it if you need to dismiss checkout programmatically:
 
 ```kotlin
-val checkout = ShopifyCheckoutKit.present(checkoutUrl, activity) {
+val checkout = ShopifyCheckout.present(checkoutUrl, activity) {
     onDismiss { resetCheckoutUi() }
 }
 
@@ -183,7 +209,7 @@ fun CartScreen(checkoutUrl: String) {
     ) {
         AndroidView(
             factory = { context ->
-                ShopifyCheckout.create(context, checkoutUrl) {
+                ShopifyCheckout.create(checkoutUrl, context) {
                     onComplete { event ->
                         handleCompletedCheckout(event.checkout)
                     }
@@ -203,7 +229,7 @@ fun CartScreen(checkoutUrl: String) {
 }
 ```
 
-View-system and Java hosts can construct `ShopifyCheckout(context, checkoutUrl, listener)` directly and
+View-system and Java hosts can construct `ShopifyCheckout(checkoutUrl, context, listener)` directly and
 must follow the same `destroy()` contract when removing it from their hierarchy.
 
 The close control and system back invoke `onDismiss`; back navigates WebView history first when possible. Sheet gestures
@@ -222,20 +248,20 @@ nearest lifecycle owner is destroyed, but cannot infer that every detachment is 
 
 The embedded header uses the configured checkout appearance, title alignment, toolbar elevation, and close icon styles.
 Sheet-specific configuration such as corner radius, scrim, drag handle, snap points, and gesture policy remains the
-host's responsibility. The imperative `present` API continues to apply all `CheckoutSheetOptions` itself.
+host's responsibility. `ShopifyCheckout.present` continues to apply all `CheckoutSheetOptions` itself.
 
 ## Preload checkout
 
 Call `preload` when your app has a strong signal that the buyer is likely to check out soon, such as when they open the cart screen or move toward a checkout action:
 
 ```kotlin
-ShopifyCheckoutKit.preload(checkoutUrl, activity)
+ShopifyCheckout.preload(checkoutUrl, activity)
 ```
 
 `preload` returns a nullable `CheckoutPreload` handle. You can ignore it when preloading is only a performance hint, or retain it to observe the preload lifecycle:
 
 ```kotlin
-val preload = ShopifyCheckoutKit.preload(checkoutUrl, activity) { state ->
+val preload = ShopifyCheckout.preload(checkoutUrl, activity) { state ->
     when (state) {
         PreloadState.Loading -> showPreloadProgress()
         PreloadState.Ready -> enableCheckoutAffordance()
@@ -275,7 +301,7 @@ When migrating, replace `PreloadState.Idle` values with `PreloadState.Idle()`, u
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```kotlin
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
+ShopifyCheckout.present(checkoutUrl, activity) {
     onFail { event -> handleCheckoutError(event.error) }
     onDismiss { resetCheckoutUi() }
 }
@@ -283,7 +309,9 @@ ShopifyCheckoutKit.present(checkoutUrl, activity) {
 
 Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
 
-A valid checkout preloaded and presented with `ShopifyCheckoutKit.present` is retained when its bottom sheet is dismissed, so presenting the same checkout URL again can reuse the loaded checkout. Invalidate the preload when the cart changes or the loaded checkout should no longer be reused.
+When the SDK-managed bottom sheet is dismissed, its WebView is destroyed, even if preloading is enabled and that WebView came from a valid preload. Checkout Kit does not reuse the dismissed WebView because reattaching it can crash some Android System WebView versions.
+
+Presenting the same checkout URL again loads a fresh checkout unless a new matching preload is available. If buyer intent warrants another preload, call `ShopifyCheckout.preload` again before the next presentation. Use `ShopifyCheckout.clearPreload()` when cached checkout work should no longer be reused.
 
 Checkout events received during preload, before presentation callbacks are bound, are not replayed when checkout is
 presented. In particular, `onStart` only observes start events received during its presentation; it is not guaranteed
@@ -291,20 +319,20 @@ to run for every presentation or when reusing a loaded checkout. Use the preload
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
-Clear unused preloaded checkout work with `invalidate`:
+Clear unused preloaded checkout work with `clearPreload`:
 
 ```kotlin
-ShopifyCheckoutKit.invalidate()
+ShopifyCheckout.clearPreload()
 ```
 
-Updating configuration through `ShopifyCheckoutKit.configure {}` triggers `ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a stale checkout. If a preload may already have run when configuration changes, call `preload` again.
+Updating configuration through `ShopifyCheckout.configure {}` triggers `ShopifyCheckout.clearPreload()`. Discarding cached preloads avoids presenting a stale checkout. If a preload may already have run when configuration changes, call `preload` again.
 
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
 ```kotlin
 import com.shopify.checkoutkit.checkout.Preloading
 
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.preloading = Preloading { enabled = false }
 }
 ```
@@ -314,7 +342,7 @@ ShopifyCheckoutKit.configure {
 Configure global presentation defaults before presenting checkout:
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.appearance = CheckoutAppearance.Storefront()
     it.sheet = CheckoutSheetOptions {
         dismissal = CheckoutSheetDismissal {
@@ -347,7 +375,7 @@ operating system for delivery.
 ### Color schemes
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.appearance = CheckoutAppearance.App(ColorScheme.Light())
     it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
     it.appearance = CheckoutAppearance.App(ColorScheme.Automatic())
@@ -359,7 +387,7 @@ Storefront checkout currently uses a light color scheme. Customize the surroundi
 colors to match the merchant's storefront branding:
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.appearance = CheckoutAppearance.Storefront().customize {
         headerBackgroundColor = Color.ResourceId(R.color.storefront_header)
         headerTitleColor = Color.ResourceId(R.color.storefront_header_text)
@@ -373,7 +401,7 @@ ShopifyCheckoutKit.configure {
 Customize automatic app colors with separate light and dark palettes:
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.appearance = CheckoutAppearance.App(ColorScheme.Automatic().customize(
         light = {
             headerBackgroundColor = Color.ResourceId(R.color.checkout_header_light)
@@ -396,12 +424,23 @@ ShopifyCheckoutKit.configure {
 On `ColorScheme.Light` or `ColorScheme.Dark`, `customize(light, dark)` applies only the matching
 block, so one shared customization works for whichever scheme the app selects.
 
+#### Changing the system theme mid-checkout
+
+With `ColorScheme.Automatic`, the native checkout colors follow the system theme. `ColorScheme.Light`, `ColorScheme.Dark`, and `CheckoutAppearance.Storefront` keep their colors when the theme changes. What happens when the system theme changes during checkout depends on your host Activity's `android:configChanges`:
+
+| Host Activity manifest | On theme change | Native colors after change |
+| --- | --- | --- |
+| Default (no `uiMode` in `configChanges`) | Android destroys and recreates the Activity. Checkout closes without calling `onDismiss`, so the buyer must reopen checkout | The next presentation uses the new theme's colors. |
+| `android:configChanges="uiMode"` | Android keeps the Activity and calls `onConfigurationChanged`; the sheet stays open and checkout does not reload | The header, title, close icon, header border, progress bar, web view background, drag handle, and navigation bar buttons switch to the new theme's colors. A `ShopifyCheckout` view that you embed updates the same way. |
+
+Add `uiMode` to the values your Activity already declares, for example `android:configChanges="orientation|keyboardHidden|uiMode"`.
+
 ### Sheet options
 
 Customize native sheet presentation independently from checkout colors:
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.sheet = CheckoutSheetOptions {
         snapPoints = listOf(CheckoutSheetSnapPoint.Expanded {
             topMarginDp = 72f
@@ -448,7 +487,7 @@ The checkout sheet header title resolves from two sources, in order:
 Set a title at runtime for parity with iOS. This value is a fixed string that the system does not re-localize:
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.title = "Buy now"
 }
 ```
@@ -483,7 +522,7 @@ The header title is resolved once, when the checkout sheet is presented, and doe
 ### Current configuration
 
 ```kotlin
-val configuration = ShopifyCheckoutKit.getConfiguration()
+val configuration = ShopifyCheckout.getConfiguration()
 ```
 
 ### Incoming message origin validation
@@ -495,7 +534,7 @@ origin and Shopify-owned `shop.app` and `shop.com` domains (including their subd
 always trusted as well.
 
 ```kotlin
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
     it.allowedMessageOrigins = setOf(
         "https://checkout.example.com",
         "https://*.example.org",
@@ -533,7 +572,7 @@ that the order completed; it does not report presentation closure, and `onDismis
 checkout.
 
 ```kotlin
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
+ShopifyCheckout.present(checkoutUrl, activity) {
     onStart { event ->
         recordCheckoutStarted(event.checkout)
     }
@@ -670,7 +709,7 @@ Link handlers receive `CheckoutLink.url` as an Android `Uri` and return `Checkou
 Android apps must decide how to handle file choosers, web permissions, and geolocation prompts requested by checkout.
 
 ```kotlin
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
+ShopifyCheckout.present(checkoutUrl, activity) {
     onShowFileChooser { webView, filePathCallback, fileChooserParams ->
         // Launch your ActivityResultContract and return true if handled.
         false
@@ -726,7 +765,7 @@ custom-scheme links open through Android intents. Register `onLinkClick` to choo
 For example, open links with Android intent handling instead of Custom Tabs:
 
 ```kotlin
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
+ShopifyCheckout.present(checkoutUrl, activity) {
     onLinkClick { link ->
         try {
             activity.startActivity(Intent(Intent.ACTION_VIEW, link.url))

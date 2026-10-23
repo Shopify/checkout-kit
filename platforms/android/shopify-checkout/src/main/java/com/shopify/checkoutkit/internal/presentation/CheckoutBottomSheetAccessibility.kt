@@ -6,8 +6,8 @@ import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.ComponentActivity
 import com.shopify.checkoutkit.checkout.R
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.checkout.resolveCheckoutTitle
 
 /**
@@ -68,7 +68,7 @@ private fun ComponentActivity.isTouchExplorationEnabled(): Boolean {
 
 @Suppress("DEPRECATION")
 private fun View.announceCheckoutTitleForAccessibility(activity: ComponentActivity) {
-    announceForAccessibility(ShopifyCheckoutKit.configuration.resolveCheckoutTitle(activity))
+    announceForAccessibility(ShopifyCheckout.configuration.resolveCheckoutTitle(activity))
 }
 
 private const val LOG_TAG = "CheckoutBottomSheet"

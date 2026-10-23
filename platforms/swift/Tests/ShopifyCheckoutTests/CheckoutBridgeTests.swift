@@ -7,7 +7,7 @@ class CheckoutBridgeTests: XCTestCase {
     func testApplicationNameDelegatesToUserAgent() {
         XCTAssertEqual(
             CheckoutBridge.applicationName,
-            UserAgent.string(platform: ShopifyCheckoutKit.configuration.platform)
+            UserAgent.string(platform: ShopifyCheckout.configuration.platform)
         )
     }
 
@@ -15,7 +15,7 @@ class CheckoutBridgeTests: XCTestCase {
         XCTAssertEqual(
             CheckoutBridge.applicationName(entryPoint: .acceleratedCheckouts),
             UserAgent.string(
-                platform: ShopifyCheckoutKit.configuration.platform,
+                platform: ShopifyCheckout.configuration.platform,
                 entryPoint: .acceleratedCheckouts
             )
         )

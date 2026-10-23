@@ -53,8 +53,8 @@ internal fun AppOwnedCheckoutSheet(
                 // Create one ShopifyCheckout for this presentation. Its checkout URL and callbacks
                 // are fixed at creation, so create a new view when starting a new checkout.
                 ShopifyCheckout.create(
-                    context = context,
                     checkoutUrl = checkoutUrl,
+                    context = context,
                 ) {
                     cartViewModel.configureCheckout(
                         presentation = this,

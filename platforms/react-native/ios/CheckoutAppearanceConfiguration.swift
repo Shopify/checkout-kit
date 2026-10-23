@@ -78,18 +78,18 @@ enum CheckoutAppearanceConfiguration {
 
     private static func applyColors(_ configuration: [String: Any]?, to colors: inout CheckoutColors) {
         if let color = parseColor(configuration?["webViewBackgroundColor"]) {
-            colors.webViewBackground = color
+            colors.webViewBackgroundColor = color
         }
         if let color = parseColor(configuration?["headerBackgroundColor"]) {
-            colors.headerBackground = color
+            colors.headerBackgroundColor = color
         }
         if let color = parseColor(configuration?["headerTitleColor"]) {
-            colors.headerFont = color
+            colors.headerTitleColor = color
         }
         if let color = parseColor(configuration?["progressIndicatorColor"]) {
-            colors.progressIndicator = color
+            colors.progressIndicatorColor = color
         }
-        applyOptionalColor(configuration, key: "closeIconTintColor") { colors.closeIconTint = $0 }
+        applyOptionalColor(configuration, key: "closeIconTintColor") { colors.closeIconTintColor = $0 }
         applyOptionalColor(configuration, key: "headerBorderColor") { colors.headerBorderColor = $0 }
     }
 

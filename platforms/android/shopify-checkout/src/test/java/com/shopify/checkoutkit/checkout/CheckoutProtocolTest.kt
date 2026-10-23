@@ -369,7 +369,7 @@ class CheckoutProtocolTest {
 
     @Test
     fun `process logs decode failure for notification params at error level`() {
-        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        ShopifyCheckout.configure { it.logLevel = LogLevel.WARN }
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.error) {}
 
@@ -386,7 +386,7 @@ class CheckoutProtocolTest {
 
     @Test
     fun `process logs decode failure for delegation params at error level`() {
-        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        ShopifyCheckout.configure { it.logLevel = LogLevel.WARN }
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { windowOpenSuccess() }
 
@@ -402,7 +402,7 @@ class CheckoutProtocolTest {
 
     @Test
     fun `process logs raw decode failure params at debug level in debug mode`() {
-        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.DEBUG }
+        ShopifyCheckout.configure { it.logLevel = LogLevel.DEBUG }
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.error) {}
 
@@ -419,7 +419,7 @@ class CheckoutProtocolTest {
 
     @Test
     fun `process omits raw decode failure params when not in debug mode`() {
-        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.WARN }
+        ShopifyCheckout.configure { it.logLevel = LogLevel.WARN }
         val client = CheckoutProtocol.Client()
             .on(CheckoutProtocol.error) {}
 

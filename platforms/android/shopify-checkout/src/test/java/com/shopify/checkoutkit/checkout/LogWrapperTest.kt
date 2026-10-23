@@ -17,21 +17,21 @@ class LogWrapperTest {
     @Before
     fun beforeEach() {
         log = LogWrapper()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.ERROR
         }
     }
 
     @After
     fun afterEach() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.ERROR
         }
     }
 
     @Test
     fun `should emit debug logs when LogLevel is DEBUG`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.DEBUG
         }
 
@@ -45,7 +45,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress debug logs when LogLevel is WARN`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.WARN
         }
 
@@ -59,7 +59,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress debug logs when LogLevel is ERROR`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.WARN
         }
 
@@ -73,7 +73,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit warn logs when LogLevel is DEBUG`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.DEBUG
         }
 
@@ -87,7 +87,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit warn logs when LogLevel is WARN`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.WARN
         }
 
@@ -101,7 +101,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress warn logs when LogLevel is ERROR`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.ERROR
         }
 
@@ -115,7 +115,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit error logs when LogLevel is DEBUG`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.DEBUG
         }
 
@@ -129,7 +129,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit error logs when LogLevel is WARN`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.WARN
         }
 
@@ -143,7 +143,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit error logs when LogLevel is ERROR`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.ERROR
         }
 
@@ -157,7 +157,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress warn logs when LogLevel is NONE`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.NONE
         }
 
@@ -171,7 +171,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress error logs when LogLevel is NONE`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.NONE
         }
 
@@ -185,7 +185,7 @@ class LogWrapperTest {
 
     @Test
     fun `should suppress error logs with throwable when LogLevel is NONE`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.NONE
         }
 
@@ -199,7 +199,7 @@ class LogWrapperTest {
 
     @Test
     fun `should emit error logs with throwable when LogLevel is ERROR`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.logLevel = LogLevel.ERROR
         }
 

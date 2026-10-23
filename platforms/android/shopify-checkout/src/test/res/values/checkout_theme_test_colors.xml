@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colors with night variants for CheckoutThemeChangeTest. -->
+<resources>
+    <color name="checkout_test_web_view_background">#FFFAFAFA</color>
+    <color name="checkout_test_header_background">#FFF0F0F0</color>
+    <color name="checkout_test_header_font">#FF101010</color>
+    <color name="checkout_test_progress_indicator">#FF1773B0</color>
+    <color name="checkout_test_close_icon_tint">#FF404040</color>
+    <color name="checkout_test_drag_handle">#FF336699</color>
+    <color name="checkout_test_header_border">#FFE1E3E5</color>
+</resources>

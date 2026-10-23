@@ -45,8 +45,8 @@ class TelemetryIntegrationTest {
     @Before
     fun setUp() {
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
-        originalConfiguration = ShopifyCheckoutKit.getConfiguration()
-        ShopifyCheckoutKit.configure { it.telemetry = Telemetry(enabled = true) }
+        originalConfiguration = ShopifyCheckout.getConfiguration()
+        ShopifyCheckout.configure { it.telemetry = Telemetry(enabled = true) }
         recorder = RecordingTelemetry()
         CheckoutTelemetry.overrideRecorderForTesting(recorder)
     }
@@ -54,7 +54,7 @@ class TelemetryIntegrationTest {
     @After
     fun tearDown() {
         CheckoutTelemetry.overrideRecorderForTesting(null)
-        ShopifyCheckoutKit.configure { it.telemetry = originalConfiguration.telemetry }
+        ShopifyCheckout.configure { it.telemetry = originalConfiguration.telemetry }
         CheckoutWebView.clearCache()
         shadowOf(Looper.getMainLooper()).runToEndOfTasks()
     }
@@ -263,7 +263,7 @@ class TelemetryIntegrationTest {
 
     @Test
     fun `does not record metrics when telemetry is disabled`() {
-        ShopifyCheckoutKit.configure { it.telemetry = Telemetry(enabled = false) }
+        ShopifyCheckout.configure { it.telemetry = Telemetry(enabled = false) }
         val view = CheckoutWebView(activity, FakeWebMessageTransport())
         val bridge = EmbeddedCheckoutProtocolBridge(
             view = view,

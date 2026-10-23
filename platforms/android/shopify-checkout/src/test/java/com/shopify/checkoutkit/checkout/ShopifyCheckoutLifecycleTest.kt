@@ -22,14 +22,14 @@ import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
-class ShopifyCheckoutKitTest {
+class ShopifyCheckoutLifecycleTest {
 
     private lateinit var initialConfiguration: Configuration
     private lateinit var webMessageTransport: FakeWebMessageTransport
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        initialConfiguration = ShopifyCheckout.getConfiguration()
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
@@ -39,7 +39,7 @@ class ShopifyCheckoutKitTest {
     fun tearDown() {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
@@ -55,7 +55,7 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
             val listener = mock<DefaultCheckoutListener>()
 
-            val checkout = ShopifyCheckoutKit.present(
+            val checkout = CheckoutService.present(
                 "https://shopify.dev",
                 activity,
                 listener,
@@ -77,7 +77,7 @@ class ShopifyCheckoutKitTest {
             val activity = activityController.get()
             activity.finish()
 
-            val checkout = ShopifyCheckoutKit.present(
+            val checkout = CheckoutService.present(
                 "https://shopify.dev",
                 activity,
                 noopDefaultCheckoutListener(),
@@ -180,7 +180,7 @@ class ShopifyCheckoutKitTest {
         Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
             val activity = activityController.get()
 
-            ShopifyCheckoutKit.present(
+            CheckoutService.present(
                 "https://shopify.dev",
                 activity,
                 noopDefaultCheckoutListener(),
@@ -242,7 +242,7 @@ class ShopifyCheckoutKitTest {
 
     @Test
     fun `preload does nothing when disabled`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.preloading = Preloading(enabled = false)
         }
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
@@ -263,7 +263,7 @@ class ShopifyCheckoutKitTest {
             ShadowLooper.shadowMainLooper().idle()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-            ShopifyCheckoutKit.configure {
+            ShopifyCheckout.configure {
                 it.logLevel = LogLevel.DEBUG
             }
             ShadowLooper.shadowMainLooper().idle()
@@ -274,14 +274,14 @@ class ShopifyCheckoutKitTest {
     }
 
     @Test
-    fun `invalidate clears cached checkout view`() {
+    fun `clearPreload clears cached checkout view`() {
         Robolectric.buildActivity(ComponentActivity::class.java).use { activityController ->
             val activity = activityController.get()
             preload("https://shopify.dev/cart/123", activity)
             ShadowLooper.shadowMainLooper().idle()
             val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
 
-            ShopifyCheckoutKit.invalidate()
+            ShopifyCheckout.clearPreload()
             ShadowLooper.shadowMainLooper().idle()
 
             assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
@@ -290,14 +290,14 @@ class ShopifyCheckoutKitTest {
     }
 
     private fun preload(url: String, activity: ComponentActivity) {
-        ShopifyCheckoutKit.preload(url, activity, webMessageTransport)
+        CheckoutService.preload(url, activity, webMessageTransport)
     }
 
     private fun presentCheckout(
         activity: ComponentActivity,
         url: String = "https://shopify.dev",
     ): CheckoutHandle? {
-        return ShopifyCheckoutKit.present(
+        return CheckoutService.present(
             url,
             activity,
             noopDefaultCheckoutListener(),

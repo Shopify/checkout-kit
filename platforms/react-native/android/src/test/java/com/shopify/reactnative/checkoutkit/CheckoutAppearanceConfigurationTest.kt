@@ -14,9 +14,9 @@ import org.robolectric.RobolectricTestRunner
 class CheckoutAppearanceConfigurationTest {
     private val customAppearance = CheckoutAppearance.App(
         ColorScheme.Dark().customize {
-            webViewBackground = Color.SRGB(0xFF800080.toInt())
-            progressIndicator = Color.SRGB(0xFFFF0000.toInt())
-            closeIconTint = Color.SRGB(0xFF0000FF.toInt())
+            webViewBackgroundColor = Color.SRGB(0xFF800080.toInt())
+            progressIndicatorColor = Color.SRGB(0xFFFF0000.toInt())
+            closeIconTintColor = Color.SRGB(0xFF0000FF.toInt())
             dragHandleColor = Color.SRGB(0xFF00FF00.toInt())
         }
     )
@@ -47,11 +47,11 @@ class CheckoutAppearanceConfigurationTest {
         listOf("light", "dark").forEach { scheme ->
             val colors = colorsOf(update(makeConfiguration(scheme, makeColorsConfiguration())))
 
-            assertThat(colors.webViewBackground).isEqualTo(Color.SRGB(0xFF112233.toInt()))
-            assertThat(colors.headerBackground).isEqualTo(Color.SRGB(0xFF445566.toInt()))
-            assertThat(colors.headerFont).isEqualTo(Color.SRGB(0xFF778899.toInt()))
-            assertThat(colors.progressIndicator).isEqualTo(Color.SRGB(0xFFAABBCC.toInt()))
-            assertThat(colors.closeIconTint).isEqualTo(Color.SRGB(0xFFDDEEFF.toInt()))
+            assertThat(colors.webViewBackgroundColor).isEqualTo(Color.SRGB(0xFF112233.toInt()))
+            assertThat(colors.headerBackgroundColor).isEqualTo(Color.SRGB(0xFF445566.toInt()))
+            assertThat(colors.headerTitleColor).isEqualTo(Color.SRGB(0xFF778899.toInt()))
+            assertThat(colors.progressIndicatorColor).isEqualTo(Color.SRGB(0xFFAABBCC.toInt()))
+            assertThat(colors.closeIconTintColor).isEqualTo(Color.SRGB(0xFFDDEEFF.toInt()))
             assertThat(colors.headerBorderColor).isEqualTo(Color.SRGB(0xFF123456.toInt()))
             assertThat(colors.dragHandleColor).isEqualTo(Color.SRGB(0xFF654321.toInt()))
         }
@@ -60,11 +60,11 @@ class CheckoutAppearanceConfigurationTest {
     @Test
     fun `storefront applies every color field`() {
         val expected = CheckoutAppearance.Storefront().customize {
-            webViewBackground = Color.SRGB(0xFF112233.toInt())
-            headerBackground = Color.SRGB(0xFF445566.toInt())
-            headerFont = Color.SRGB(0xFF778899.toInt())
-            progressIndicator = Color.SRGB(0xFFAABBCC.toInt())
-            closeIconTint = Color.SRGB(0xFFDDEEFF.toInt())
+            webViewBackgroundColor = Color.SRGB(0xFF112233.toInt())
+            headerBackgroundColor = Color.SRGB(0xFF445566.toInt())
+            headerTitleColor = Color.SRGB(0xFF778899.toInt())
+            progressIndicatorColor = Color.SRGB(0xFFAABBCC.toInt())
+            closeIconTintColor = Color.SRGB(0xFFDDEEFF.toInt())
             headerBorderColor = Color.SRGB(0xFF123456.toInt())
             dragHandleColor = Color.SRGB(0xFF654321.toInt())
         }
@@ -84,10 +84,10 @@ class CheckoutAppearanceConfigurationTest {
             )
         )
 
-        assertThat(colorsOf(appearance, isDark = false).webViewBackground).isEqualTo(Color.SRGB(0xFFFFFFFF.toInt()))
-        assertThat(colorsOf(appearance, isDark = false).progressIndicator).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
-        assertThat(colorsOf(appearance, isDark = true).webViewBackground).isEqualTo(Color.SRGB(0xFF000000.toInt()))
-        assertThat(colorsOf(appearance, isDark = true).progressIndicator).isEqualTo(Color.SRGB(0xFF0000FF.toInt()))
+        assertThat(colorsOf(appearance, isDark = false).webViewBackgroundColor).isEqualTo(Color.SRGB(0xFFFFFFFF.toInt()))
+        assertThat(colorsOf(appearance, isDark = false).progressIndicatorColor).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
+        assertThat(colorsOf(appearance, isDark = true).webViewBackgroundColor).isEqualTo(Color.SRGB(0xFF000000.toInt()))
+        assertThat(colorsOf(appearance, isDark = true).progressIndicatorColor).isEqualTo(Color.SRGB(0xFF0000FF.toInt()))
     }
 
     @Test
@@ -97,7 +97,7 @@ class CheckoutAppearanceConfigurationTest {
         )
 
         assertThat(colorsOf(appearance, isDark = false)).isEqualTo(
-            ColorScheme.Light().colors.copy(webViewBackground = Color.SRGB(0xFFFF0000.toInt()))
+            ColorScheme.Light().colors.copy(webViewBackgroundColor = Color.SRGB(0xFFFF0000.toInt()))
         )
         assertThat(colorsOf(appearance, isDark = true)).isEqualTo(ColorScheme.Dark().colors)
     }
@@ -107,10 +107,10 @@ class CheckoutAppearanceConfigurationTest {
         val appearance = update(makeConfiguration("automatic", JavaOnlyMap.of("progressIndicatorColor", "#FF0000")))
 
         assertThat(colorsOf(appearance, isDark = false)).isEqualTo(
-            ColorScheme.Light().colors.copy(progressIndicator = Color.SRGB(0xFFFF0000.toInt()))
+            ColorScheme.Light().colors.copy(progressIndicatorColor = Color.SRGB(0xFFFF0000.toInt()))
         )
         assertThat(colorsOf(appearance, isDark = true)).isEqualTo(
-            ColorScheme.Dark().colors.copy(progressIndicator = Color.SRGB(0xFFFF0000.toInt()))
+            ColorScheme.Dark().colors.copy(progressIndicatorColor = Color.SRGB(0xFFFF0000.toInt()))
         )
     }
 
@@ -126,8 +126,8 @@ class CheckoutAppearanceConfigurationTest {
             )
         )
 
-        assertThat(colorsOf(appearance, isDark = false).progressIndicator).isEqualTo(Color.SRGB(0xFF00FF00.toInt()))
-        assertThat(colorsOf(appearance, isDark = true).progressIndicator).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
+        assertThat(colorsOf(appearance, isDark = false).progressIndicatorColor).isEqualTo(Color.SRGB(0xFF00FF00.toInt()))
+        assertThat(colorsOf(appearance, isDark = true).progressIndicatorColor).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
     }
 
     @Test
@@ -145,7 +145,7 @@ class CheckoutAppearanceConfigurationTest {
         ))
 
         assertThat(colors).isEqualTo(
-            ColorScheme.Light().colors.copy(webViewBackground = Color.SRGB(0xFF0000FF.toInt()))
+            ColorScheme.Light().colors.copy(webViewBackgroundColor = Color.SRGB(0xFF0000FF.toInt()))
         )
     }
 
@@ -164,7 +164,7 @@ class CheckoutAppearanceConfigurationTest {
         )
 
         assertThat(colorsOf(appearance, isDark = false)).isEqualTo(ColorScheme.Light().colors)
-        assertThat(colorsOf(appearance, isDark = true).closeIconTint).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
+        assertThat(colorsOf(appearance, isDark = true).closeIconTintColor).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
         assertThat(colorsOf(appearance, isDark = true).headerBorderColor).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
         assertThat(colorsOf(appearance, isDark = true).dragHandleColor).isEqualTo(Color.SRGB(0xFFFF0000.toInt()))
     }
@@ -294,7 +294,7 @@ class CheckoutAppearanceConfigurationTest {
                 ))
 
                 assertThat(colors).isEqualTo(
-                    ColorScheme.Light().colors.copy(webViewBackground = Color.SRGB(0xFFAABBCC.toInt()))
+                    ColorScheme.Light().colors.copy(webViewBackgroundColor = Color.SRGB(0xFFAABBCC.toInt()))
                 )
             }
     }
@@ -312,9 +312,9 @@ class CheckoutAppearanceConfigurationTest {
             )
         ))
 
-        assertThat(colors.webViewBackground).isEqualTo(Color.SRGB(0x80112233.toInt()))
-        assertThat(colors.progressIndicator).isEqualTo(Color.SRGB(0xFFAABBCC.toInt()))
-        assertThat(colors.headerFont).isEqualTo(Color.SRGB(0x00FFFFFF))
+        assertThat(colors.webViewBackgroundColor).isEqualTo(Color.SRGB(0x80112233.toInt()))
+        assertThat(colors.progressIndicatorColor).isEqualTo(Color.SRGB(0xFFAABBCC.toInt()))
+        assertThat(colors.headerTitleColor).isEqualTo(Color.SRGB(0x00FFFFFF))
     }
 
     @Test

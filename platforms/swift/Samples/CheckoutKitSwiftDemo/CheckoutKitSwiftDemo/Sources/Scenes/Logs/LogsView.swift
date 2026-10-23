@@ -49,7 +49,7 @@ struct LogsView: View {
     }
 
     private func clearLogs() {
-        ShopifyCheckoutKit.configuration.logger.clearLogs()
+        ShopifyCheckout.configuration.logger.clearLogs()
         logs = readLogs()
     }
 

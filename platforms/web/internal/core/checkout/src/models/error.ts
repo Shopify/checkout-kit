@@ -17,6 +17,28 @@ export interface CheckoutError {
   message: string;
 }
 
+/**
+ * The error codes of the multi-checkout elements: every checkout code, plus
+ * `sdk_error` for a failure inside Checkout Kit. Unrecognized codes become `unknown`.
+ */
+export type CheckoutFailureCode = CheckoutErrorCode | "sdk_error";
+
+/** A failure a multi-checkout element reports, with a stable code and diagnostic text. */
+export interface CheckoutFailure {
+  readonly code: CheckoutFailureCode;
+  /** Diagnostic text; use `code` for application behavior. */
+  readonly message: string;
+  readonly httpStatusCode?: number;
+}
+
+/** Why the browser kept a checkout window from opening. */
+export type CheckoutBlockedCode = "popup_blocked";
+
+/** The `blocked` event's detail: the browser kept the checkout window from opening. */
+export interface CheckoutBlockedDetail {
+  readonly code: CheckoutBlockedCode;
+}
+
 // Browser capability errors originate locally, never from a checkout message.
 type ProtocolCheckoutErrorCode = Exclude<CheckoutErrorCode, "unsupported_browser">;
 

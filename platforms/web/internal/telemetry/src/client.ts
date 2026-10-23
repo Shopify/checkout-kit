@@ -17,7 +17,6 @@ import type {
   TelemetryNavigationRetryMetric,
   TelemetryPlatform,
   TelemetryProtocolDecodeErrorMetric,
-  TelemetryProduct,
 } from './types';
 
 const DEFAULT_EXPORT_INTERVAL_MS = 60_000;
@@ -28,7 +27,7 @@ const MAX_EXPORT_BACKOFF_EXPONENT = 4;
 class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
   readonly #sdkVersion: string;
   readonly #protocolMethods: readonly string[];
-  readonly #product: TelemetryProduct;
+  readonly #product: string;
   readonly #platform: TelemetryPlatform;
   readonly #endpoint: string;
   readonly #exportIntervalMs: number;

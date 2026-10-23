@@ -101,10 +101,15 @@ static const void *RCTShopifyCheckoutKitEventEmitterCallbackKey =
 @interface RCT_EXTERN_MODULE (RCTAcceleratedCheckoutButtonsManager, RCTViewManager)
 
 /**
- * Unified checkout identifier payload.
- * Accepts either { cartId } or { variantId, quantity }.
+ * Checkout identifier payload. Accepts an existing { cartId } or Buy Now { variantId }.
  */
 RCT_EXPORT_VIEW_PROPERTY(checkoutIdentifier, NSDictionary*)
+
+/** Completes app-owned Buy Now cart requests. */
+RCT_EXPORT_VIEW_PROPERTY(cartRequestResponses, NSArray*)
+
+/** Emitted after a wallet tap when Checkout Kit needs an app-owned Buy Now cart. */
+RCT_EXPORT_VIEW_PROPERTY(onCartRequest, RCTDirectEventBlock)
 
 /**
  * Corner radius for rendered buttons, in points. Defaults to 8.

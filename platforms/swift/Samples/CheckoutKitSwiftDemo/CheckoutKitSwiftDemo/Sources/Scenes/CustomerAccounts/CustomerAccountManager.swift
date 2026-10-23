@@ -45,7 +45,7 @@ enum CustomerAccountError: LocalizedError {
 final class CustomerAccountManager: ObservableObject {
     static let shared = CustomerAccountManager()
 
-    private let logger = OSLogger(prefix: "CustomerAccount", logLevel: ShopifyCheckoutKit.configuration.logLevel)
+    private let logger = OSLogger(prefix: "CustomerAccount", logLevel: ShopifyCheckout.configuration.logLevel)
     private let shopId: String?
     private let clientId: String?
 
@@ -239,7 +239,7 @@ final class CustomerAccountManager: ObservableObject {
         extractEmailFromIdToken(tokens.idToken)
 
         CartManager.shared.resetCart()
-        ShopifyCheckoutKit.invalidate()
+        ShopifyCheckout.clearPreload()
 
         codeVerifier = nil
         savedState = nil
@@ -363,7 +363,7 @@ final class CustomerAccountManager: ObservableObject {
         savedState = nil
 
         CartManager.shared.resetCart()
-        ShopifyCheckoutKit.invalidate()
+        ShopifyCheckout.clearPreload()
     }
 
     func checkExistingSession() {

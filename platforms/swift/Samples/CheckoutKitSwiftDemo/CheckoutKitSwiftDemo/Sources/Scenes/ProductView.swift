@@ -236,7 +236,7 @@ struct ProductView: View {
 
                 let diff = Date().timeIntervalSince(start)
                 let message = "Added item to cart in \(String(format: "%.0f", diff * 1000))ms"
-                ShopifyCheckoutKit.configuration.logger.log(message)
+                ShopifyCheckout.configuration.logger.log(message)
                 addedToCart = true
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
@@ -245,7 +245,7 @@ struct ProductView: View {
             } catch {
                 addedToCart = false
                 addToCartError = "We couldn't add this item to your cart. Please try again."
-                ShopifyCheckoutKit.configuration.logger.log(
+                ShopifyCheckout.configuration.logger.log(
                     "Failed to add item to cart: \(error.localizedDescription)"
                 )
             }

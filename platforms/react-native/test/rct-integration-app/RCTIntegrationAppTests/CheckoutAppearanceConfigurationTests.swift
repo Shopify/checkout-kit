@@ -9,7 +9,7 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
     private var originalConfiguration: Configuration!
 
     private var customAppearance: CheckoutAppearance {
-        .app(.dark(colors: CheckoutColors(progressIndicator: .red, closeIconTint: .blue)))
+        .app(.dark(colors: CheckoutColors(progressIndicatorColor: .red, closeIconTintColor: .blue)))
     }
 
     override func setUp() async throws {
@@ -57,8 +57,8 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
         ]))
 
         let expected = CheckoutAppearance.app(.automatic(
-            lightColors: CheckoutColors(progressIndicator: makeColor(rgb: 0xFF0000)),
-            darkColors: CheckoutColors(progressIndicator: makeColor(rgb: 0x0000FF))
+            lightColors: CheckoutColors(progressIndicatorColor: makeColor(rgb: 0xFF0000)),
+            darkColors: CheckoutColors(progressIndicatorColor: makeColor(rgb: 0x0000FF))
         ))
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, expected)
     }
@@ -96,10 +96,10 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
             "dark": ["webViewBackgroundColor": "#000000", "progressIndicatorColor": "#0000FF"]
         ]))
 
-        XCTAssertEqual(colors(isDark: false).webViewBackground, makeColor(rgb: 0xFFFFFF))
-        XCTAssertEqual(colors(isDark: false).progressIndicator, makeColor(rgb: 0xFF0000))
-        XCTAssertEqual(colors(isDark: true).webViewBackground, makeColor(rgb: 0x000000))
-        XCTAssertEqual(colors(isDark: true).progressIndicator, makeColor(rgb: 0x0000FF))
+        XCTAssertEqual(colors(isDark: false).webViewBackgroundColor, makeColor(rgb: 0xFFFFFF))
+        XCTAssertEqual(colors(isDark: false).progressIndicatorColor, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: true).webViewBackgroundColor, makeColor(rgb: 0x000000))
+        XCTAssertEqual(colors(isDark: true).progressIndicatorColor, makeColor(rgb: 0x0000FF))
     }
 
     func testAutomaticPreservesDefaultsForAnOmittedPalette() {
@@ -107,8 +107,8 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
             "light": ["webViewBackgroundColor": "#FF0000"]
         ]))
 
-        XCTAssertEqual(colors(isDark: false).webViewBackground, makeColor(rgb: 0xFF0000))
-        XCTAssertEqual(colors(isDark: false).progressIndicator, CheckoutColors().progressIndicator)
+        XCTAssertEqual(colors(isDark: false).webViewBackgroundColor, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: false).progressIndicatorColor, CheckoutColors().progressIndicatorColor)
         XCTAssertEqual(colors(isDark: true), CheckoutColors())
     }
 
@@ -116,8 +116,8 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
         module.setConfig(makeConfiguration(type: "app", colorScheme: "automatic", colors: ["progressIndicatorColor": "#FF0000"]))
 
         for isDark in [false, true] {
-            XCTAssertEqual(colors(isDark: isDark).progressIndicator, makeColor(rgb: 0xFF0000))
-            XCTAssertEqual(colors(isDark: isDark).webViewBackground, CheckoutColors().webViewBackground)
+            XCTAssertEqual(colors(isDark: isDark).progressIndicatorColor, makeColor(rgb: 0xFF0000))
+            XCTAssertEqual(colors(isDark: isDark).webViewBackgroundColor, CheckoutColors().webViewBackgroundColor)
         }
     }
 
@@ -127,8 +127,8 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
             "light": ["progressIndicatorColor": "#00FF00"]
         ]))
 
-        XCTAssertEqual(colors(isDark: false).progressIndicator, makeColor(rgb: 0x00FF00))
-        XCTAssertEqual(colors(isDark: true).progressIndicator, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: false).progressIndicatorColor, makeColor(rgb: 0x00FF00))
+        XCTAssertEqual(colors(isDark: true).progressIndicatorColor, makeColor(rgb: 0xFF0000))
     }
 
     func testResetColorsDoNotDiscardValidOverrides() {
@@ -138,7 +138,7 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
         ]))
 
         XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .app(.light(colors: CheckoutColors(
-            webViewBackground: makeColor(rgb: 0x0000FF)
+            webViewBackgroundColor: makeColor(rgb: 0x0000FF)
         ))))
     }
 
@@ -149,9 +149,9 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
             "light": ["resetColors": ["closeIconTintColor", "headerBorderColor"]]
         ]))
 
-        XCTAssertNil(colors(isDark: false).closeIconTint)
+        XCTAssertNil(colors(isDark: false).closeIconTintColor)
         XCTAssertNil(colors(isDark: false).headerBorderColor)
-        XCTAssertEqual(colors(isDark: true).closeIconTint, makeColor(rgb: 0xFF0000))
+        XCTAssertEqual(colors(isDark: true).closeIconTintColor, makeColor(rgb: 0xFF0000))
         XCTAssertEqual(colors(isDark: true).headerBorderColor, makeColor(rgb: 0xFF0000))
     }
 
@@ -321,9 +321,9 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
                 "headerTitleColor": 42
             ]))
 
-            XCTAssertEqual(colors().webViewBackground, makeColor(rgb: 0xAABBCC))
-            XCTAssertEqual(colors().progressIndicator, CheckoutColors().progressIndicator)
-            XCTAssertEqual(colors().headerFont, CheckoutColors().headerFont)
+            XCTAssertEqual(colors().webViewBackgroundColor, makeColor(rgb: 0xAABBCC))
+            XCTAssertEqual(colors().progressIndicatorColor, CheckoutColors().progressIndicatorColor)
+            XCTAssertEqual(colors().headerTitleColor, CheckoutColors().headerTitleColor)
         }
     }
 
@@ -342,8 +342,8 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
             "progressIndicatorColor": "aabbcc"
         ]))
 
-        XCTAssertEqual(colors().webViewBackground, makeColor(rgb: 0x112233, alpha: 0x80))
-        XCTAssertEqual(colors().progressIndicator, makeColor(rgb: 0xAABBCC))
+        XCTAssertEqual(colors().webViewBackgroundColor, makeColor(rgb: 0x112233, alpha: 0x80))
+        XCTAssertEqual(colors().progressIndicatorColor, makeColor(rgb: 0xAABBCC))
     }
 
     func testAndroidOnlyColorFieldsDoNotChangeIosColors() {
@@ -409,11 +409,11 @@ final class CheckoutAppearanceConfigurationTests: XCTestCase {
 
     private func makeExpectedColors() -> CheckoutColors {
         CheckoutColors(
-            webViewBackground: makeColor(rgb: 0x112233),
-            headerBackground: makeColor(rgb: 0x445566),
-            headerFont: makeColor(rgb: 0x778899),
-            progressIndicator: makeColor(rgb: 0xAABBCC),
-            closeIconTint: makeColor(rgb: 0xDDEEFF),
+            webViewBackgroundColor: makeColor(rgb: 0x112233),
+            headerBackgroundColor: makeColor(rgb: 0x445566),
+            headerTitleColor: makeColor(rgb: 0x778899),
+            progressIndicatorColor: makeColor(rgb: 0xAABBCC),
+            closeIconTintColor: makeColor(rgb: 0xDDEEFF),
             headerBorderColor: makeColor(rgb: 0x123456)
         )
     }

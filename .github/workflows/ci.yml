@@ -34,8 +34,7 @@ jobs:
       reactNative: ${{ steps.platform.outputs.reactNative == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       reactNativeAndroid: ${{ steps.platform.outputs.reactNativeAndroid == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.reactNativeCommon == 'true' || steps.infra.outputs.reactNativeAndroid == 'true' }}
       reactNativeSwift: ${{ steps.platform.outputs.reactNativeSwift == 'true' || steps.infra.outputs.reactNativeSwift == 'true' }}
-      web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
-      telemetry: ${{ steps.platform.outputs.telemetry == 'true' || steps.infra.outputs.telemetry == 'true' }}
+      web: ${{ steps.platform.outputs.web == 'true' || steps.platform.outputs.telemetryContract == 'true' || steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.web == 'true' }}
       # compat/check.sh builds the Kotlin, Java, Swift, and TypeScript consumers, so every binding selects it.
       protocol: ${{ steps.platform.outputs.protocolTypescript == 'true' || steps.platform.outputs.protocolSwift == 'true' || steps.platform.outputs.protocolKotlin == 'true' || steps.platform.outputs.protocolShared == 'true' || steps.infra.outputs.protocol == 'true' }}
       scripts: ${{ steps.infra.outputs.scripts == 'true' }}
@@ -102,11 +101,6 @@ jobs:
               - 'scripts/report_coverage'
               - 'scripts/lib/coverage_report.rb'
               - '.github/workflows/web.yml'
-              - '.github/actions/setup/**'
-              - '.ci/changed-file-filters.yml'
-              - '.github/workflows/ci.yml'
-            telemetry:
-              - '.github/workflows/telemetry-test.yml'
               - '.github/actions/setup/**'
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
@@ -209,14 +203,6 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/web.yml
 
-  telemetry-test:
-    name: Telemetry
-    needs: changes
-    if: needs.changes.outputs.telemetry == 'true'
-    permissions:
-      contents: read
-    uses: ./.github/workflows/telemetry-test.yml
-
   protocol-test:
     name: Protocol
     needs: changes
@@ -307,7 +293,6 @@ jobs:
       - rn-check-packed-files
       - rn-lint
       - web
-      - telemetry-test
       - protocol-test
       - scripts-test
       - changesets

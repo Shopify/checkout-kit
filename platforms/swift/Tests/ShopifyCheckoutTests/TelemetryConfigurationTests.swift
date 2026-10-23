@@ -9,19 +9,19 @@ final class TelemetryConfigurationTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        originalConfiguration = ShopifyCheckoutKit.configuration
+        originalConfiguration = ShopifyCheckout.configuration
         recorder = RecordingCheckoutTelemetryRecorder()
         CheckoutTelemetry.overrideRecorderForTesting(recorder)
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
+        ShopifyCheckout.configure { $0 = originalConfiguration }
         CheckoutTelemetry.overrideRecorderForTesting(nil)
         try await super.tearDown()
     }
 
     func testDisabledTelemetryDoesNotForwardMetrics() {
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
+        ShopifyCheckout.configure { $0.telemetry.enabled = false }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -31,7 +31,7 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testEnabledTelemetryForwardsMetrics() {
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
+        ShopifyCheckout.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -41,8 +41,8 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testReenabledTelemetryUsesInstalledRecorder() {
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
+        ShopifyCheckout.configure { $0.telemetry.enabled = false }
+        ShopifyCheckout.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder.recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)
@@ -52,7 +52,7 @@ final class TelemetryConfigurationTests: XCTestCase {
     }
 
     func testRecorderStampsProductPerEntryPoint() {
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = true }
+        ShopifyCheckout.configure { $0.telemetry.enabled = true }
 
         CheckoutTelemetry.recorder(for: nil).recordError(
             .init(category: .http, stage: .load, code: .server, retryable: true)

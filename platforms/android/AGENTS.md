@@ -28,7 +28,9 @@ The library and sample resolve the pinned protocol artifact from Maven Central b
 
 ## Key components
 
-- **`ShopifyCheckoutKit.kt`** — the public singleton. Entry point for all consumer interactions (configure, present).
+- **`ShopifyCheckout.kt`** — the public checkout feature entry point. Companion APIs manage shared configuration, preloading, and SDK-owned presentation; instances provide app-hosted checkout content.
+- **`CheckoutService.kt`** — internal shared checkout state and lifecycle implementation behind `ShopifyCheckout`.
+- **`ShopifyCheckoutKit.kt`** — SDK version metadata.
 - **`CheckoutBottomSheet.kt`** — the bottom sheet that hosts the WebView, including the progress indicator, gesture coordination, and checkout error coordination.
 - **`CheckoutWebView.kt`** — the Checkout WebView. Configures WebView behavior, instruments page loads, and owns the ECP bridge.
 - **`CheckoutProtocol.kt`** — the curated consumer-facing Checkout Kit protocol API. This is where supported events/delegations are intentionally exposed.

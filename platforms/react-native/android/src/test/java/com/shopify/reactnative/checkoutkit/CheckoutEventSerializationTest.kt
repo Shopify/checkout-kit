@@ -48,7 +48,7 @@ class CheckoutEventSerializationTest {
         val constructor = CheckoutLink::class.java.getDeclaredConstructor(Uri::class.java)
         constructor.isAccessible = true
         val link = constructor.newInstance(Uri.parse("https://example.test/policy"))
-        listOf("open" to CheckoutLinkAction.Open, "handled" to CheckoutLinkAction.Handled, "cancel" to CheckoutLinkAction.Cancel).forEach { (action, expected) ->
+        listOf("default" to CheckoutLinkAction.Default, "handled" to CheckoutLinkAction.Handled, "cancel" to CheckoutLinkAction.Cancel).forEach { (action, expected) ->
             val events = mutableListOf<String>()
             val listener = CustomCheckoutListener(DispatchCallback { events.add(it) })
             listener.configure(action) {}

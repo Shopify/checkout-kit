@@ -165,7 +165,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
         window.tintColor = ColorPalette.primaryColor
-        window.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
+        window.overrideUserInterfaceStyle = ShopifyCheckout.configuration.appearance.userInterfaceStyle
         return window
     }
 
@@ -299,7 +299,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     @objc func appearanceChanged() {
-        window?.overrideUserInterfaceStyle = ShopifyCheckoutKit.configuration.appearance.userInterfaceStyle
+        window?.overrideUserInterfaceStyle = ShopifyCheckout.configuration.appearance.userInterfaceStyle
     }
 }
 

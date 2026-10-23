@@ -6,7 +6,7 @@ import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.shopify.checkoutkit.checkout.CheckoutException
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.concurrent.onMainThread
 import com.shopify.checkoutkit.internal.protocol.ECP_LOG_TAG
 import com.shopify.checkoutkit.internal.protocol.EmbeddedCheckoutProtocolBridge

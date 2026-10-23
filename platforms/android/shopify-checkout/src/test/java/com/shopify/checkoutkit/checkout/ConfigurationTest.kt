@@ -12,12 +12,12 @@ class ConfigurationTest {
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        initialConfiguration = ShopifyCheckout.getConfiguration()
     }
 
     @After
     fun tearDown() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
@@ -132,21 +132,21 @@ class ConfigurationTest {
 
     @Test
     fun `get configuration returns a snapshot`() {
-        val snapshot = ShopifyCheckoutKit.getConfiguration()
+        val snapshot = ShopifyCheckout.getConfiguration()
 
         snapshot.logLevel = LogLevel.DEBUG
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().logLevel).isNotEqualTo(LogLevel.DEBUG)
+        assertThat(ShopifyCheckout.getConfiguration().logLevel).isNotEqualTo(LogLevel.DEBUG)
     }
 
     @Test
     fun `can set appearance via configure function - app light`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
         assertThat(
-            ShopifyCheckoutKit.getConfiguration().appearance
+            ShopifyCheckout.getConfiguration().appearance
         ).isEqualTo(
             CheckoutAppearance.App(ColorScheme.Light())
         )
@@ -154,12 +154,12 @@ class ConfigurationTest {
 
     @Test
     fun `can set appearance via configure function - app dark`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
         }
 
         assertThat(
-            ShopifyCheckoutKit.getConfiguration().appearance
+            ShopifyCheckout.getConfiguration().appearance
         ).isEqualTo(
             CheckoutAppearance.App(ColorScheme.Dark())
         )
@@ -167,23 +167,23 @@ class ConfigurationTest {
 
     @Test
     fun `can set appearance via configure function - storefront`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.Storefront()
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(
+        assertThat(ShopifyCheckout.getConfiguration().appearance).isEqualTo(
             CheckoutAppearance.Storefront()
         )
     }
 
     @Test
     fun `can set appearance via configure function - app automatic`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Automatic())
         }
 
         assertThat(
-            ShopifyCheckoutKit.getConfiguration().appearance
+            ShopifyCheckout.getConfiguration().appearance
         ).isEqualTo(
             CheckoutAppearance.App(ColorScheme.Automatic())
         )
@@ -191,41 +191,41 @@ class ConfigurationTest {
 
     @Test
     fun `preloading defaults to enabled`() {
-        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isTrue()
+        assertThat(ShopifyCheckout.getConfiguration().preloading.enabled).isTrue()
     }
 
     @Test
     fun `telemetry defaults to enabled`() {
-        assertThat(ShopifyCheckoutKit.getConfiguration().telemetry.enabled).isTrue()
+        assertThat(ShopifyCheckout.getConfiguration().telemetry.enabled).isTrue()
     }
 
     @Test
     fun `appearance defaults to storefront`() {
-        assertThat(ShopifyCheckoutKit.getConfiguration().appearance).isEqualTo(CheckoutAppearance.Storefront())
+        assertThat(ShopifyCheckout.getConfiguration().appearance).isEqualTo(CheckoutAppearance.Storefront())
     }
 
     @Test
     fun `sheet dismissal defaults to enabled`() {
-        assertThat(ShopifyCheckoutKit.getConfiguration().sheet.dismissal.dragToDismissEnabled).isTrue()
-        assertThat(ShopifyCheckoutKit.getConfiguration().sheet.dismissal.tapAwayToDismissEnabled).isTrue()
+        assertThat(ShopifyCheckout.getConfiguration().sheet.dismissal.dragToDismissEnabled).isTrue()
+        assertThat(ShopifyCheckout.getConfiguration().sheet.dismissal.tapAwayToDismissEnabled).isTrue()
     }
 
     @Test
     fun `can disable preloading via configure function`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.preloading = Preloading(enabled = false)
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().preloading.enabled).isFalse()
+        assertThat(ShopifyCheckout.getConfiguration().preloading.enabled).isFalse()
     }
 
     @Test
     fun `can disable telemetry via configure function`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.telemetry = Telemetry(enabled = false)
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().telemetry.enabled).isFalse()
+        assertThat(ShopifyCheckout.getConfiguration().telemetry.enabled).isFalse()
     }
 
     @Test
@@ -244,11 +244,11 @@ class ConfigurationTest {
             snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 12f)),
         )
 
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = sheet
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().sheet).isEqualTo(sheet)
+        assertThat(ShopifyCheckout.getConfiguration().sheet).isEqualTo(sheet)
     }
 
     @Test
@@ -285,12 +285,12 @@ class ConfigurationTest {
 
     @Test
     fun `can disable sheet tap away dismissal via configure function`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(tapAwayToDismissEnabled = false)
             )
         }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().sheet.dismissal.tapAwayToDismissEnabled).isFalse()
+        assertThat(ShopifyCheckout.getConfiguration().sheet.dismissal.tapAwayToDismissEnabled).isFalse()
     }
 }

@@ -11,7 +11,7 @@ final class TestableOSLogger: Sendable {
     }
 
     convenience init() {
-        self.init(prefix: "ShopifyCheckoutKit", logLevel: ShopifyCheckoutKit.configuration.logLevel)
+        self.init(prefix: "ShopifyCheckout", logLevel: ShopifyCheckout.configuration.logLevel)
     }
 
     init(prefix: String, logLevel: LogLevel) {
@@ -53,11 +53,11 @@ final class OSLoggerTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        originalConfiguration = ShopifyCheckoutKit.configuration
+        originalConfiguration = ShopifyCheckout.configuration
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
+        ShopifyCheckout.configure { $0 = originalConfiguration }
         try await super.tearDown()
     }
 
@@ -74,7 +74,7 @@ final class OSLoggerTests: XCTestCase {
     }
 
     func test_defaultInitializer_withNoParameters_shouldUseConfigurationLogLevel() {
-        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+        ShopifyCheckout.configure { $0.logLevel = .debug }
 
         let logger = OSLogger()
 
@@ -155,7 +155,7 @@ final class OSLoggerTests: XCTestCase {
     }
 
     func test_sharedLogger_withConfigurationLogLevel_shouldMaintainBackwardsCompatibility() {
-        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+        ShopifyCheckout.configure { $0.logLevel = .debug }
         OSLogger.shared.info("test message")
     }
 

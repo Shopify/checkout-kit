@@ -18,19 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  swiftlint:
-    name: SwiftLint
-    if: inputs.swift
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
-        env:
-          WORKING_DIRECTORY: platforms/react-native
-        with:
-          args: --strict ios --config .swiftlint.yml
-
   swiftformat:
     name: SwiftFormat & SwiftLint
     if: inputs.swift

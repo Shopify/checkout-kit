@@ -41,8 +41,8 @@ import com.shopify.checkoutkit.checkout.CheckoutPreload
 import com.shopify.checkoutkit.checkout.NoopCheckoutListener
 import com.shopify.checkoutkit.checkout.PreloadState
 import com.shopify.checkoutkit.checkout.PreloadStateListener
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.preload.PreloadCache
 import com.shopify.checkoutkit.internal.preload.PreloadKey
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
@@ -587,7 +587,7 @@ internal class CheckoutWebView private constructor(
             listener: PreloadStateListener? = null,
         ): CheckoutPreload? {
             return when {
-                !ShopifyCheckoutKit.configuration.preloading.enabled -> null
+                !ShopifyCheckout.configuration.preloading.enabled -> null
                 !OriginAllowlist.isHttpsUrl(url) -> {
                     runOnUiThreadBlocking(activity) {
                         val handle = CheckoutPreload(preloadCache)
@@ -632,7 +632,7 @@ internal class CheckoutWebView private constructor(
             if (!OriginAllowlist.isHttpsUrl(url)) {
                 throw insecureCheckoutUrlException(url)
             }
-            val cachedView = if (ShopifyCheckoutKit.configuration.preloading.enabled) {
+            val cachedView = if (ShopifyCheckout.configuration.preloading.enabled) {
                 preloadCache.take(PreloadKey.forUrl(url))
             } else {
                 preloadCache.invalidate()
@@ -791,7 +791,7 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
 
 private fun checkoutUserAgentSuffix(): String {
     val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
-    val platformPart = ShopifyCheckoutKit.configuration.platform?.run {
+    val platformPart = ShopifyCheckout.configuration.platform?.run {
         " $identifier${version?.let { "/$it" } ?: ""}"
     } ?: ""
     val suffix = "ShopifyCheckoutKit/${BuildConfig.SDK_VERSION} (Android; Kotlin $kotlinVersion)$platformPart"

@@ -31,7 +31,7 @@ func checkoutLinkAction(_ value: String) -> CheckoutLinkAction {
     switch value {
     case "handled": return .handled
     case "cancel": return .cancel
-    default: return .open
+    default: return .default
     }
 }
 

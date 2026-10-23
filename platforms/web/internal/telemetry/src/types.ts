@@ -107,11 +107,12 @@ export type TelemetryFetch = (
 export interface CheckoutKitTelemetryOptions {
   /** Additional fixed method labels owned by the calling protocol implementation. */
   protocolMethods?: readonly string[];
+  /** A fixed product label owned by the calling implementation. Defaults to `checkout_kit`. */
+  product?: TelemetryProduct | (string & {});
 }
 
 export interface CheckoutKitTelemetryTestingOptions extends CheckoutKitTelemetryOptions {
   sdkVersion: string;
-  product?: TelemetryProduct;
   platform?: TelemetryPlatform;
   endpoint?: string;
   exportIntervalMs?: number;

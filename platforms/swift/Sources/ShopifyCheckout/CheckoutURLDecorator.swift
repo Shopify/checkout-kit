@@ -6,7 +6,7 @@ import Foundation
 enum CheckoutURLDecorator {
     static func decorate(
         _ url: URL,
-        configuration: Configuration = ShopifyCheckoutKit.configuration
+        configuration: Configuration = ShopifyCheckout.configuration
     ) -> URL {
         let decorated = EmbeddedCheckoutProtocol.url(
             for: url,

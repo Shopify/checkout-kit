@@ -32,9 +32,14 @@ function componentDefinitions() {
           },
         ];
       }
-      // TypeScript `this` parameters are type annotations, not arguments.
       for (const module of modules) {
         for (const declaration of module.declarations ?? []) {
+          // Elements extend Kit's server-safe stand-in for `HTMLElement`, an internal module
+          // that isn't published; to consumers they are plain `HTMLElement` subclasses.
+          if (declaration.superclass?.name === 'HTMLElementBase') {
+            declaration.superclass = {name: 'HTMLElement'};
+          }
+          // TypeScript `this` parameters are type annotations, not arguments.
           for (const member of declaration.members ?? []) {
             if (member.parameters) {
               member.parameters = member.parameters.filter(({name}) => name !== 'this');

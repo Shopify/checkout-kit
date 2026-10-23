@@ -7,7 +7,7 @@ import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
 import com.shopify.checkoutkit.androiddemo.settings.data.toCheckoutSheetOptions
 import com.shopify.checkoutkit.checkout.LogLevel
 import com.shopify.checkoutkit.checkout.Preloading
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -31,7 +31,7 @@ class CheckoutKitAndroidDemo : Application() {
     private fun initCheckoutKit(preferencesManager: PreferencesManager) {
         applicationScope.launch {
             val settings = preferencesManager.userPreferencesFlow.first()
-            ShopifyCheckoutKit.configure {
+            ShopifyCheckout.configure {
                 it.logLevel = LogLevel.DEBUG
                 it.appearance = settings.appearance.withCustomCloseIcon()
                 it.sheet = settings.checkoutPresentationMode.toCheckoutSheetOptions(

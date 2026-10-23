@@ -8,11 +8,11 @@ class CheckoutAppearanceRenderingTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -128,7 +128,7 @@ class CheckoutAppearanceRenderingTests: XCTestCase {
     }
 
     func testStorefrontCanCustomizeNativeColorsAndPreserveTheTitle() throws {
-        ShopifyCheckoutKit.configure { $0.title = "Complete your order" }
+        ShopifyCheckout.configure { $0.title = "Complete your order" }
         let colors = makeColors(background: .purple)
         let controller = makeViewController(appearance: .storefront(colors: colors))
         let checkoutController = try checkoutController(of: controller)
@@ -207,9 +207,9 @@ class CheckoutAppearanceRenderingTests: XCTestCase {
     }
 
     func testPresentedPreloadedWebViewUsesThePresentingConfigurationColors() throws {
-        ShopifyCheckoutKit.configure { $0.appearance = .app(.automatic(lightColors: CheckoutColors(webViewBackgroundColor: .red))) }
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
-        var configuration = ShopifyCheckoutKit.configuration
+        ShopifyCheckout.configure { $0.appearance = .app(.automatic(lightColors: CheckoutColors(webViewBackgroundColor: .red))) }
+        ShopifyCheckout.preload(checkout: checkoutURL)
+        var configuration = ShopifyCheckout.configuration
         configuration.appearance = .app(.automatic(lightColors: CheckoutColors(webViewBackgroundColor: .blue)))
         let decoratedURL = CheckoutURLDecorator.decorate(checkoutURL, configuration: configuration)
 
@@ -222,7 +222,7 @@ class CheckoutAppearanceRenderingTests: XCTestCase {
     }
 
     private func makeViewController(appearance: CheckoutAppearance) -> CheckoutViewController {
-        ShopifyCheckoutKit.configure { $0.appearance = appearance }
+        ShopifyCheckout.configure { $0.appearance = appearance }
         return CheckoutViewController(checkout: checkoutURL)
     }
 

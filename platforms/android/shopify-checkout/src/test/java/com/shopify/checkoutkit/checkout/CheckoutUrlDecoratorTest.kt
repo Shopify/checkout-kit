@@ -16,15 +16,15 @@ class CheckoutUrlDecoratorTest {
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
-        ShopifyCheckoutKit.configure {
+        initialConfiguration = ShopifyCheckout.getConfiguration()
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App()
         }
     }
 
     @After
     fun tearDown() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = initialConfiguration.appearance
             it.preloading = initialConfiguration.preloading
             it.platform = initialConfiguration.platform
@@ -93,7 +93,7 @@ class CheckoutUrlDecoratorTest {
         expectedColorScheme: String,
         expectedBranding: String,
     ) {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = appearance
         }
 

@@ -249,6 +249,33 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertEqual(result["reason"] as? String, "webContentUnavailable")
     }
 
+    func testSerializePreloadStatePreservesIdleReasons() {
+        let initial = shopifyCheckoutKit.serializePreloadState(.idle())
+        let invalidated = shopifyCheckoutKit.serializePreloadState(.idle(reason: .invalidated))
+        let expired = shopifyCheckoutKit.serializePreloadState(.idle(reason: .expired))
+        let futureReason = PreloadState.IdleReason(rawValue: "futureReason")
+        let future = shopifyCheckoutKit.serializePreloadState(.idle(reason: futureReason))
+
+        XCTAssertEqual(initial as NSDictionary, ["type": "idle"] as NSDictionary)
+        XCTAssertEqual(invalidated as NSDictionary, ["type": "idle", "reason": "invalidated"] as NSDictionary)
+        XCTAssertEqual(expired as NSDictionary, ["type": "idle", "reason": "expired"] as NSDictionary)
+        XCTAssertEqual(future as NSDictionary, ["type": "idle", "reason": "futureReason"] as NSDictionary)
+    }
+
+    func testSerializePreloadStatePreservesLoadingAndReadyEvents() {
+        let loading = shopifyCheckoutKit.serializePreloadState(.loading)
+        let ready = shopifyCheckoutKit.serializePreloadState(.ready)
+
+        XCTAssertEqual(loading as NSDictionary, ["type": "loading"] as NSDictionary)
+        XCTAssertEqual(ready as NSDictionary, ["type": "ready"] as NSDictionary)
+    }
+
+    func testSerializePreloadStatePreservesFailureDetails() {
+        let result = shopifyCheckoutKit.serializePreloadState(.failed(reason: .httpError(statusCode: 503), message: "Unavailable"))
+
+        XCTAssertEqual(result as NSDictionary, ["type": "failed", "reason": "httpError", "statusCode": 503] as NSDictionary)
+    }
+
     func testConfigureCanDisableTelemetry() {
         shopifyCheckoutKit.setConfig(["telemetry": false])
 
@@ -362,7 +389,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func testFailedPresentDoesNotRetainCheckoutSheet() {
         let presentAttemptCompleted = expectation(description: "present attempt completed")
 
-        shopifyCheckoutKit.present("", linkAction: "open", onResult: { _ in })
+        shopifyCheckoutKit.present("", linkAction: "default", onResult: { _ in })
 
         DispatchQueue.main.async {
             XCTAssertNil(self.shopifyCheckoutKit.checkoutSheet)
@@ -513,7 +540,7 @@ private final class PresentationTrackingModule: RCTShopifyCheckoutKit {
     var results: [Bool?] = []
     var onEvent: (() -> Void)?
 
-    func attemptPresentation(_ url: String, linkAction: String = "open") {
+    func attemptPresentation(_ url: String, linkAction: String = "default") {
         present(url, linkAction: linkAction, onResult: { self.results.append($0?.first as? Bool) })
     }
 

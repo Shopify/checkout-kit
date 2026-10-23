@@ -5,7 +5,7 @@ import XCTest
 @MainActor
 final class CheckoutViewControllerPackageInitializerTests: XCTestCase {
     func testInjectedConfigurationIsAppliedToCheckout() throws {
-        var configuration = ShopifyCheckoutKit.configuration
+        var configuration = ShopifyCheckout.configuration
         configuration.title = "Instance checkout"
 
         let viewController = try CheckoutViewController(

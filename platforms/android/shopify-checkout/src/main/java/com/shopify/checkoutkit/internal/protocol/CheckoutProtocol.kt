@@ -2,7 +2,7 @@ package com.shopify.checkoutkit.internal.protocol
 import android.os.Looper
 import com.shopify.checkoutkit.checkout.CheckoutException
 import com.shopify.checkoutkit.checkout.CheckoutListener
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.concurrent.onMainThread
 import com.shopify.ucp.embedded.checkout.Checkout
 import com.shopify.ucp.embedded.checkout.EcpRequest

@@ -32,12 +32,12 @@ public class InteropTest {
 
     @Before
     public void setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration();
+        initialConfiguration = ShopifyCheckout.getConfiguration();
     }
 
     @After
     public void tearDown() {
-        ShopifyCheckoutKit.configure(config -> {
+        ShopifyCheckout.configure(config -> {
             config.setAppearance(initialConfiguration.getAppearance());
             config.setSheet(initialConfiguration.getSheet());
             config.setPreloading(initialConfiguration.getPreloading());
@@ -162,22 +162,22 @@ public class InteropTest {
 
     @Test
     public void canConfigureCheckoutKit() {
-        ShopifyCheckoutKit.configure(configuration -> {
+        ShopifyCheckout.configure(configuration -> {
             configuration.setAppearance(new CheckoutAppearance.App(new ColorScheme.Dark()));
         });
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getAppearance()).isEqualTo(new CheckoutAppearance.App(new ColorScheme.Dark()));
     }
 
     @Test
     public void canConfigureStorefrontAppearance() {
-        ShopifyCheckoutKit.configure(configuration -> {
+        ShopifyCheckout.configure(configuration -> {
             configuration.setAppearance(new CheckoutAppearance.Storefront());
         });
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getAppearance()).isEqualTo(new CheckoutAppearance.Storefront());
     }
@@ -195,24 +195,24 @@ public class InteropTest {
 
     @Test
     public void canConfigureTitle() {
-        ShopifyCheckoutKit.configure(configuration -> {
+        ShopifyCheckout.configure(configuration -> {
             configuration.setTitle("Java Title");
         });
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getTitle()).isEqualTo("Java Title");
     }
 
     @Test
     public void canConfigurePreloading() {
-        ShopifyCheckoutKit.configure(configuration -> {
+        ShopifyCheckout.configure(configuration -> {
             Preloading.Builder preloading = Preloading.builder();
             preloading.setEnabled(false);
             configuration.setPreloading(preloading.build());
         });
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getPreloading().getEnabled()).isFalse();
     }
@@ -238,9 +238,9 @@ public class InteropTest {
         sheetBuilder.setMaxWidthDp(480f);
         CheckoutSheetOptions sheet = sheetBuilder.build();
 
-        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheet));
+        ShopifyCheckout.configure(configuration -> configuration.setSheet(sheet));
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getSheet()).isEqualTo(sheet);
     }
@@ -254,20 +254,20 @@ public class InteropTest {
         CheckoutSheetOptions.Builder sheetBuilder = CheckoutSheetOptions.builder();
         sheetBuilder.setDismissal(dismissal);
 
-        ShopifyCheckoutKit.configure(configuration -> configuration.setSheet(sheetBuilder.build()));
+        ShopifyCheckout.configure(configuration -> configuration.setSheet(sheetBuilder.build()));
 
-        Configuration configuration = ShopifyCheckoutKit.getConfiguration();
+        Configuration configuration = ShopifyCheckout.getConfiguration();
 
         assertThat(configuration.getSheet().getDismissal()).isEqualTo(dismissal);
     }
 
     @Test
-    public void canPreloadAndInvalidate() {
+    public void canPreloadAndClearPreload() {
         try (ActivityController<ComponentActivity> controller = Robolectric.buildActivity(ComponentActivity.class)) {
             ComponentActivity activity = controller.get();
 
-            ShopifyCheckoutKit.preload("https://shopify.dev", activity);
-            ShopifyCheckoutKit.invalidate();
+            ShopifyCheckout.preload("https://shopify.dev", activity);
+            ShopifyCheckout.clearPreload();
         }
     }
 
@@ -293,7 +293,7 @@ public class InteropTest {
                 ComponentActivity finishingActivity = finishingController.get();
                 finishingActivity.finish();
 
-                CheckoutPreload skippedPreload = ShopifyCheckoutKit.preload(
+                CheckoutPreload skippedPreload = ShopifyCheckout.preload(
                         "https://shopify.dev",
                         finishingActivity,
                         ignored -> {}
@@ -314,7 +314,7 @@ public class InteropTest {
             preload.setListener(states::add);
             assertThat(preload.getState()).isNotNull();
             assertThat(states).containsExactly(PreloadState.Loading.INSTANCE, PreloadState.Loading.INSTANCE);
-            ShopifyCheckoutKit.invalidate();
+            ShopifyCheckout.clearPreload();
         }
     }
 
@@ -325,7 +325,7 @@ public class InteropTest {
             // Avoid constructing a WebView; fake-transport Kotlin tests cover presentation behavior.
             activity.finish();
 
-            CheckoutHandle checkout = ShopifyCheckoutKit.present(
+            CheckoutHandle checkout = ShopifyCheckout.present(
                     "https://shopify.dev",
                     activity,
                     new DefaultCheckoutListener() {
@@ -371,7 +371,7 @@ public class InteropTest {
                 }
             };
 
-            ShopifyCheckout checkout = new ShopifyCheckout(activity, "https://shopify.dev", listener);
+            ShopifyCheckout checkout = new ShopifyCheckout("https://shopify.dev", activity, listener);
             checkout.destroy();
 
             assertThat(checkout).isNotNull();

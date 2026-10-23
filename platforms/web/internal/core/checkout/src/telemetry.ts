@@ -9,11 +9,15 @@ import { CK_VERSION } from "./version";
 
 export type { CheckoutKitTelemetry } from "@shopify/checkout-kit-telemetry";
 
-function createConsoleTelemetry(protocolMethods: readonly string[]): CheckoutKitTelemetry {
+function createConsoleTelemetry(
+  protocolMethods: readonly string[],
+  product?: string,
+): CheckoutKitTelemetry {
   // Use the normal aggregation and label filtering with a local-only transport.
   return createCheckoutKitTelemetryForTesting({
     sdkVersion: CK_VERSION,
     protocolMethods,
+    product,
     exportIntervalMs: 1000,
     fetch: (_url, init) => {
       // oxlint-disable-next-line no-console -- The dev transport intentionally logs instead of sending.
@@ -27,18 +31,23 @@ function createConsoleTelemetry(protocolMethods: readonly string[]): CheckoutKit
 // local unless production reporting is explicitly requested.
 const defaultTelemetryFactory =
   !import.meta.env.DEV || import.meta.env.VITE_CK_TELEMETRY === "production"
-    ? (protocolMethods: readonly string[]) =>
-        createCheckoutKitTelemetry(CK_VERSION, { protocolMethods })
+    ? (protocolMethods: readonly string[], product?: string) =>
+        createCheckoutKitTelemetry(CK_VERSION, { protocolMethods, product })
     : createConsoleTelemetry;
 
 let telemetryFactory = defaultTelemetryFactory;
 
-export function createTelemetry(protocolMethods: readonly string[] = []): CheckoutKitTelemetry {
-  return telemetryFactory(protocolMethods);
+export function createTelemetry(
+  protocolMethods: readonly string[] = [],
+  product?: string,
+): CheckoutKitTelemetry {
+  return telemetryFactory(protocolMethods, product);
 }
 
 export function overrideTelemetryFactoryForTesting(
-  factory: ((protocolMethods: readonly string[]) => CheckoutKitTelemetry) | undefined,
+  factory:
+    | ((protocolMethods: readonly string[], product?: string) => CheckoutKitTelemetry)
+    | undefined,
 ): void {
   telemetryFactory = factory ?? defaultTelemetryFactory;
 }

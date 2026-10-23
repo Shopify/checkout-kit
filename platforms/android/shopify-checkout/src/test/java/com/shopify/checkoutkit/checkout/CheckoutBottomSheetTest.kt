@@ -58,7 +58,7 @@ class CheckoutBottomSheetTest {
 
     @Before
     fun setUp() {
-        configuration = ShopifyCheckoutKit.getConfiguration()
+        configuration = ShopifyCheckout.getConfiguration()
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
         processor = noopDefaultCheckoutListener()
     }
@@ -68,7 +68,7 @@ class CheckoutBottomSheetTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = configuration.appearance
             it.sheet = configuration.sheet
             it.preloading = configuration.preloading
@@ -87,7 +87,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet leaves configured window top margin without grabber chrome`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 12f))
             )
@@ -104,7 +104,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet clamps configured window top margin below status bar`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 snapPoints = listOf(CheckoutSheetSnapPoint.Expanded(topMarginDp = 12f))
             )
@@ -127,7 +127,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `material expanded snap point uses wide window top margin above width threshold`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 snapPoints = listOf(CheckoutSheetSnapPoint.MaterialExpanded)
             )
@@ -201,7 +201,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet applies configured maximum width`() {
         val configuredMaxWidthDp = 480f
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(maxWidthDp = configuredMaxWidthDp)
         }
 
@@ -213,7 +213,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet uses default maximum width when configured width is invalid`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(maxWidthDp = 0f)
         }
 
@@ -503,7 +503,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet applies configured drag to dismiss setting`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(dragToDismissEnabled = false)
             )
@@ -679,7 +679,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `present returns handle allowing dismissal of checkout`() {
-        val checkout = ShopifyCheckoutKit.present(
+        val checkout = CheckoutService.present(
             "https://shopify.com",
             activity,
             processor,
@@ -705,7 +705,7 @@ class CheckoutBottomSheetTest {
     fun `present delivers checkout updates without a protocol client`() {
         var received = false
 
-        ShopifyCheckoutKit.present("https://shopify.com", activity, webMessageTransport) {
+        CheckoutService.present("https://shopify.com", activity, webMessageTransport) {
             onUpdate { received = true }
         }
 
@@ -899,7 +899,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `outside touch target does not cancel when tap away to dismiss is disabled`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(tapAwayToDismissEnabled = false)
             )
@@ -934,7 +934,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `storefront appearance applies customized native colors`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.Storefront().customize {
+        ShopifyCheckout.configuration.appearance = CheckoutAppearance.Storefront().customize {
             headerBackgroundColor = customColors.headerBackgroundColor
         }
 
@@ -949,7 +949,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `rounds only top header corners`() {
-        ShopifyCheckoutKit.configuration.sheet = CheckoutSheetOptions(cornerRadiusDp = 18f)
+        ShopifyCheckout.configuration.sheet = CheckoutSheetOptions(cornerRadiusDp = 18f)
 
         val sheet = presentBottomSheet()
 
@@ -972,7 +972,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `centers header title without toolbar elevation`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
+        ShopifyCheckout.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
 
         val sheet = presentBottomSheet()
 
@@ -999,7 +999,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `applies custom title to header when configured`() {
-        ShopifyCheckoutKit.configure { it.title = "Custom Title" }
+        ShopifyCheckout.configure { it.title = "Custom Title" }
 
         val sheet = presentBottomSheet()
 
@@ -1010,18 +1010,18 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `resolveCheckoutTitle returns configured title or falls back to default string`() {
-        assertThat(ShopifyCheckoutKit.getConfiguration().resolveCheckoutTitle(activity))
+        assertThat(ShopifyCheckout.getConfiguration().resolveCheckoutTitle(activity))
             .isEqualTo(activity.getString(R.string.checkout_web_view_title))
 
-        ShopifyCheckoutKit.configure { it.title = "Custom Title" }
+        ShopifyCheckout.configure { it.title = "Custom Title" }
 
-        assertThat(ShopifyCheckoutKit.getConfiguration().resolveCheckoutTitle(activity))
+        assertThat(ShopifyCheckout.getConfiguration().resolveCheckoutTitle(activity))
             .isEqualTo("Custom Title")
     }
 
     @Test
     fun `applies configured header title alignment and toolbar elevation`() {
-        ShopifyCheckoutKit.configuration.sheet = CheckoutSheetOptions(
+        ShopifyCheckout.configuration.sheet = CheckoutSheetOptions(
             titleAlignment = CheckoutSheetTitleAlignment.START,
             toolbarElevationDp = 6f,
         )
@@ -1044,7 +1044,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `sets WebView container background color based on current configuration`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
+        ShopifyCheckout.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
 
         val sheet = presentBottomSheet()
 
@@ -1060,7 +1060,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `header border appears while checkout is scrolled`() {
         val customColors = customColors()
-        ShopifyCheckoutKit.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
+        ShopifyCheckout.configuration.appearance = CheckoutAppearance.App(ColorScheme.Light(customColors))
         val sheet = presentBottomSheet()
         val toolbar = sheet.findViewById<Toolbar>(R.id.checkout_header)!!
         val headerBorder = sheet.findViewById<View>(R.id.checkout_header_border)!!
@@ -1096,7 +1096,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet applies custom close icon when provided`() {
         val customIcon = DrawableResource(android.R.drawable.ic_delete)
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(closeIcon = customIcon)
         }
 
@@ -1117,7 +1117,7 @@ class CheckoutBottomSheetTest {
     @Test
     fun `bottom sheet applies close icon tint when provided and no custom icon`() {
         val tintColor = Color.SRGB(0xFF0000)
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(closeIconTintColor = tintColor)
         }
 
@@ -1139,7 +1139,7 @@ class CheckoutBottomSheetTest {
 
     @Test
     fun `bottom sheet uses default close icon when no customization provided`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Light())
             it.sheet = CheckoutSheetOptions()
         }
@@ -1164,7 +1164,7 @@ class CheckoutBottomSheetTest {
         val customIcon = DrawableResource(android.R.drawable.ic_delete)
         val tintColor = Color.SRGB(0xFF0000)
 
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 closeIcon = customIcon,
                 closeIconTintColor = tintColor,

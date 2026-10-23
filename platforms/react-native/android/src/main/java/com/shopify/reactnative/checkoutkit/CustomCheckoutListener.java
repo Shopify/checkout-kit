@@ -20,12 +20,12 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
-  private CheckoutLinkAction linkAction = CheckoutLinkAction.Open;
+  private CheckoutLinkAction linkAction = CheckoutLinkAction.Default;
   private Runnable onTerminal = () -> {};
 
   public void configure(String action, Runnable onTerminal) {
     this.linkAction = "handled".equals(action) ? CheckoutLinkAction.Handled
-        : "cancel".equals(action) ? CheckoutLinkAction.Cancel : CheckoutLinkAction.Open;
+        : "cancel".equals(action) ? CheckoutLinkAction.Cancel : CheckoutLinkAction.Default;
     this.onTerminal = onTerminal;
   }
 

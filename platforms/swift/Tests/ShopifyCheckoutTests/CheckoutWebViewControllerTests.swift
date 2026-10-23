@@ -198,8 +198,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
     }
 
     func test_presentationControllerDidDismiss_doesNotCleanUpBeforeViewDisappears() throws {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        ShopifyCheckout.preload(checkout: url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutURLDecorator.decorate(url), entryPoint: nil)
         viewController.loadViewIfNeeded()
 
@@ -216,8 +216,8 @@ class CheckoutWebViewControllerTests: XCTestCase {
     }
 
     func test_viewDidDisappear_cleansUpConsumedPreloadedWebViewWhenDismissed() throws {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        ShopifyCheckout.preload(checkout: url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: CheckoutURLDecorator.decorate(url), entryPoint: nil)
         viewController.loadViewIfNeeded()
 
@@ -238,16 +238,16 @@ class CheckoutWebViewControllerTests: XCTestCase {
     }
 
     func test_viewDidDisappear_preservesReplacementPreloadWhenPresentedCheckoutIsDismissed() throws {
-        ShopifyCheckoutKit.invalidate()
-        defer { ShopifyCheckoutKit.invalidate() }
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckout.clearPreload()
+        defer { ShopifyCheckout.clearPreload() }
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        ShopifyCheckout.preload(checkout: url)
         let checkoutURL = CheckoutURLDecorator.decorate(url)
         let viewController = TestableCheckoutWebViewController(checkoutURL: checkoutURL, entryPoint: nil)
         viewController.loadViewIfNeeded()
         let presentedView = try XCTUnwrap(viewController.checkoutView)
 
-        ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckout.preload(checkout: url)
         let replacementView = CheckoutWebView.for(checkout: checkoutURL)
 
         XCTAssertFalse(replacementView === presentedView)

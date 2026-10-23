@@ -70,7 +70,7 @@ public fun interface PreloadStateListener {
 }
 
 /**
- * Returned by [ShopifyCheckoutKit.preload] exposing that preload's latest observed state.
+ * Returned by [ShopifyCheckout.preload] exposing that preload's latest observed state.
  *
  * The cache retains the current instance while its preload is active. A subsequent
  * preload replaces the observer; the earlier handle retains its last observed [state]

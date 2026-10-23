@@ -23,11 +23,11 @@ import { PropsWithChildren } from 'react';
 export const AcceleratedCheckoutButtons: default_2.FC<AcceleratedCheckoutButtonsProps>;
 
 // Warning: (ae-forgotten-export) The symbol "CartProps" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "VariantProps" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "CommonAcceleratedCheckoutButtonsProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "BuyNowProps" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) & CommonAcceleratedCheckoutButtonsProps;
+export type AcceleratedCheckoutButtonsProps = (CartProps & CommonAcceleratedCheckoutButtonsProps) | (BuyNowProps & CommonAcceleratedCheckoutButtonsProps);
 
 // @public
 export interface AcceleratedCheckoutConfiguration {
@@ -132,6 +132,11 @@ export enum ApplePayStyle {
 export type AutomaticColors<Palette extends CheckoutColors = CheckoutColors> = Palette & {
     light?: Palette | null;
     dark?: Palette | null;
+};
+
+// @public (undocumented)
+export type CartRequest = {
+    wallet: AcceleratedCheckoutWallet;
 };
 
 // @public
@@ -274,7 +279,7 @@ export interface CheckoutLink {
 }
 
 // @public (undocumented)
-export type CheckoutLinkAction = 'open' | 'handled' | 'cancel';
+export type CheckoutLinkAction = 'cancel' | 'default' | 'handled';
 
 // @public
 export type CheckoutNativeError = {
@@ -361,12 +366,11 @@ export interface PreloadOptions {
 // @public
 export type PreloadState = {
     type: 'idle';
+    reason?: string;
 } | {
     type: 'loading';
 } | {
     type: 'ready';
-} | {
-    type: 'expired';
 } | {
     type: 'failed';
     reason: PreloadFailureReason;

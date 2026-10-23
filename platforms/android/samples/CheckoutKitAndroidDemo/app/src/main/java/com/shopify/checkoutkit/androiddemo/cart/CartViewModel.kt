@@ -31,7 +31,7 @@ import com.shopify.checkoutkit.checkout.CheckoutLink
 import com.shopify.checkoutkit.checkout.CheckoutLinkAction
 import com.shopify.checkoutkit.checkout.CheckoutPresentation
 import com.shopify.checkoutkit.checkout.PreloadState
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -150,7 +150,7 @@ class CartViewModel(
     }
 
     fun clearCart() {
-        ShopifyCheckoutKit.invalidate()
+        ShopifyCheckout.clearPreload()
         _cartState.value = CartState.Empty
     }
 
@@ -160,7 +160,7 @@ class CartViewModel(
         navController: NavController,
     ) {
         Timber.i("Presenting checkout")
-        ShopifyCheckoutKit.present(
+        ShopifyCheckout.present(
             checkoutUrl = url,
             context = activity,
         ) {
@@ -218,7 +218,7 @@ class CartViewModel(
         if (!checkoutPreloadingEnabled) return
 
         Timber.i("Preloading checkout")
-        ShopifyCheckoutKit.preload(url, activity) { state ->
+        ShopifyCheckout.preload(url, activity) { state ->
             Timber.i("Preload state changed to $state")
             _preloadState.value = state
             _preloadStateTestId.value = PreloadStateMarker.testId(state)

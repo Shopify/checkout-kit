@@ -45,18 +45,12 @@ reactNativeSwift:
 web:
   - 'platforms/web/**'
   - 'platforms/web/internal/telemetry/**'
-  - 'platforms/shared/telemetry/contract/**'
   - *exclude-markdown
   - *exclude-docs-directory
-# Markdown stays included here: the metrics contract is a markdown document
-# and contract changes must run the telemetry checks.
-telemetry:
-  - 'platforms/shared/telemetry/**'
-  - 'platforms/swift/Sources/Internal/Telemetry/**'
-  - 'platforms/swift/Tests/Internal/CheckoutKitTelemetryTests/**'
-  - 'platforms/web/internal/telemetry/**'
-  - 'platforms/android/shopify-checkout/src/main/java/com/shopify/checkoutkit/internal/telemetry/**'
-  - 'platforms/android/shopify-checkout/src/test/java/com/shopify/checkoutkit/checkout/telemetry/**'
+# Markdown stays included here: the metrics contract is a markdown document,
+# and contract changes must run the web job's telemetry checks.
+telemetryContract:
+  - 'platforms/shared/telemetry/contract/**'
   - *exclude-docs-directory
 protocol:
   - 'protocols/universal-commerce-protocol/embedded-checkout-protocol/**'

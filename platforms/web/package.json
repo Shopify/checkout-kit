@@ -62,7 +62,7 @@
     "dev": "vite build --watch",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run scripts:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
+    "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run scripts:typecheck && pnpm run telemetry:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
     "lint:compat": "eslint --config eslint.compat.config.mjs src components internal",
     "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal",
     "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src components internal sample scripts && pnpm --dir test/e2e lint",
@@ -83,6 +83,7 @@
     "compare-snapshot": "./scripts/compare_snapshot",
     "prepack": "pnpm run build:npm",
     "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
+    "telemetry:typecheck": "tsc --noEmit -p internal/telemetry/tsconfig.json",
     "build:npm": "vite build && pnpm run build:manifest",
     "build:cdn": "vite build --config vite.cdn.config.ts"
   },
