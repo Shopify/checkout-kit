@@ -8,6 +8,7 @@
     "./checkout": "./checkout/src/checkout.types.ts",
     "./checkout/presentation": "./checkout/src/checkout-element.ts",
     "./checkout/browser-capabilities": "./checkout/src/browser-capabilities.ts",
+    "./checkout/custom-element": "./checkout/src/custom-element.ts",
     "./checkout/types": "./checkout/src/checkout.types.ts",
     "./checkout/logger": "./checkout/src/logger.ts",
     "./checkout/utils": "./checkout/src/utils.ts",

@@ -11,5 +11,6 @@ export {
 } from '@shopify/checkout-kit-react-native-accelerated';
 export type {
   AcceleratedCheckoutButtonsProps,
+  CartRequest,
   RenderStateChangeEvent,
 } from '@shopify/checkout-kit-react-native-accelerated';

@@ -19,8 +19,11 @@ class ChangedFileFiltersTest < Minitest::Test
     {
       "web" => [
         "platforms/web/components/shopify-checkout/src/shopify-checkout.ts",
-        "platforms/web/internal/telemetry/src/types.ts",
-        "platforms/shared/telemetry/contract/schema.json"
+        "platforms/web/internal/telemetry/src/types.ts"
+      ],
+      "telemetryContract" => [
+        "platforms/shared/telemetry/contract/schema.json",
+        "platforms/shared/telemetry/contract/metrics.md"
       ],
       "swift" => [
         "platforms/swift/Sources/Checkout.swift",
@@ -60,15 +63,35 @@ class ChangedFileFiltersTest < Minitest::Test
     assert_equal ["swift"], github_areas(["ShopifyCheckoutKit.podspec"])
   end
 
-  def test_android_telemetry_sources_and_tests_select_android_and_telemetry
+  def test_android_telemetry_sources_and_tests_select_only_android
     paths = [
       "platforms/android/shopify-checkout/src/main/java/com/shopify/checkoutkit/internal/telemetry/CheckoutKitTelemetry.kt",
       "platforms/android/shopify-checkout/src/test/java/com/shopify/checkoutkit/checkout/telemetry/CheckoutKitTelemetryTest.kt"
     ]
     paths.each do |path|
       assert File.file?(File.expand_path("../../#{path}", __dir__)), "Test the current source layout: #{path}"
-      assert_equal ["android", "telemetry"], github_areas([path])
+      assert_equal ["android"], github_areas([path])
     end
+  end
+
+  # The metrics contract is markdown, which the web filter excludes as docs.
+  def test_telemetry_contract_selects_web
+    path = "platforms/shared/telemetry/contract/metrics.md"
+    assert File.file?(File.expand_path("../../#{path}", __dir__)), "Test the current contract layout: #{path}"
+    assert_equal ["web"], github_areas([path])
+  end
+
+  def test_web_telemetry_sources_and_tests_select_web
+    [
+      "platforms/web/internal/telemetry/src/client.ts",
+      "platforms/web/internal/telemetry/test/client.test.ts"
+    ].each do |path|
+      assert_equal ["web"], github_areas([path])
+    end
+  end
+
+  def test_shared_telemetry_readme_selects_no_jobs
+    assert_empty github_areas(["platforms/shared/telemetry/README.md"])
   end
 
   def test_android_rn_infrastructure_keeps_common_and_android_validation

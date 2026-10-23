@@ -1,5 +1,20 @@
 # Checkout Kit for Swift changelog
 
+## 4.0.0-alpha.11
+
+### Major Changes
+
+- Move checkout lifecycle APIs from `ShopifyCheckoutKit` to `ShopifyCheckout` without compatibility forwarding methods. Replace `ShopifyCheckoutKit.present`, `preload`, and `configure` with their `ShopifyCheckout` equivalents. Replace `ShopifyCheckoutKit.invalidate()` with `ShopifyCheckout.clearPreload()`, and read configuration using `ShopifyCheckout.configuration`.
+
+  These operations retain shared checkout state; constructing embedded checkout content does not create an isolated SDK client. Package/import names and SDK version metadata are unchanged. The default checkout log prefix changes from `ShopifyCheckoutKit` to `ShopifyCheckout`; the OSLog subsystem remains `com.shopify.checkoutkit`.
+
+  Embedded `ShopifyCheckout` now reads shared appearance and title defaults when it is displayed, not when it is created; `.appearance(...)` and `.title(...)` modifiers still take precedence.
+- Add optional reasons to `PreloadState.idle` to distinguish the initial state from invalidation and expiry. Replace `.idle` values with `.idle()` and the former `.expired` state with `.idle(reason: .expired)`. Explicit invalidation and preloads that become inapplicable now report `.idle(reason: .invalidated)`; operational failures remain `.failed(reason:message:)`.
+
+  Invalidating an empty cache preserves its last state, including an expiry or failure reason, without notifying observers.
+
+  `IdleReason` is an extensible string-backed value with named constants. Compare known reasons or use a `default` branch so future reasons do not require source changes.
+
 ## 4.0.0-alpha.10
 
 ### Major Changes
@@ -17,11 +32,6 @@
 
   The initializer is now `CheckoutColors(webViewBackgroundColor:headerBackgroundColor:headerTitleColor:progressIndicatorColor:closeIcon:closeIconTintColor:headerBorderColor:)`. For example, replace `CheckoutColors(progressIndicator: .systemBlue)` with `CheckoutColors(progressIndicatorColor: .systemBlue)`, and `$0.headerFont = .label` with `$0.headerTitleColor = .label`.
 - Replace the `Wallet` enum with an extensible value type. Existing `.applePay` and `.shopPay` values remain available; update exhaustive `switch` statements to handle unknown wallet values.
-- Add optional reasons to `PreloadState.idle` to distinguish the initial state from invalidation and expiry. Replace `.idle` values with `.idle()` and the former `.expired` state with `.idle(reason: .expired)`. Explicit invalidation and preloads that become inapplicable now report `.idle(reason: .invalidated)`; operational failures remain `.failed(reason:message:)`.
-
-  Invalidating an empty cache preserves its last state, including an expiry or failure reason, without notifying observers.
-
-  `IdleReason` is an extensible string-backed value with named constants. Compare known reasons or use a `default` branch so future reasons do not require source changes.
 - Rename `CheckoutLinkAction.open` to `default`. Return `default` when your app does not handle a checkout link and Checkout Kit should use its default link-opening behavior.
 
 ### Patch Changes

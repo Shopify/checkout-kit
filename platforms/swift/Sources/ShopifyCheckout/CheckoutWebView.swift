@@ -438,7 +438,7 @@ class CheckoutWebView: WKWebView {
     static func `for`(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil) -> CheckoutWebView {
         OSLogger.shared.debug("Creating webview for URL: \(LogSafeURL.string(url))")
 
-        guard ShopifyCheckoutKit.configuration.preloading.enabled else {
+        guard ShopifyCheckout.configuration.preloading.enabled else {
             OSLogger.shared.debug("Preloading not enabled")
             return CheckoutWebView(entryPoint: entryPoint)
         }
@@ -449,7 +449,7 @@ class CheckoutWebView: WKWebView {
         }
 
         OSLogger.shared.debug("Presenting cached entry")
-        let configuration = ShopifyCheckoutKit.configuration
+        let configuration = ShopifyCheckout.configuration
         if cacheWasReady, configuration.logLevel == .debug {
             configuration.logger.log(preloadCacheHitLogMessage)
         }
@@ -457,7 +457,7 @@ class CheckoutWebView: WKWebView {
     }
 
     static func preload(checkout url: URL, entryPoint: MetaData.EntryPoint? = nil, createdAt: Date = Date()) {
-        guard ShopifyCheckoutKit.configuration.preloading.enabled else {
+        guard ShopifyCheckout.configuration.preloading.enabled else {
             return
         }
 
@@ -533,7 +533,7 @@ class CheckoutWebView: WKWebView {
         translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentInsetAdjustmentBehavior = .never
 
-        applyColorScheme(ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme)
+        applyColorScheme(ShopifyCheckout.configuration.appearance.effectiveColorScheme)
         connectBridge()
 
         if #available(iOS 17.0, *) {
@@ -620,7 +620,7 @@ class CheckoutWebView: WKWebView {
         loadedCheckoutURL = url
         var request = URLRequest(url: url)
 
-        if isPreload, ShopifyCheckoutKit.configuration.preloading.enabled {
+        if isPreload, ShopifyCheckout.configuration.preloading.enabled {
             isPreloadRequest = true
             request.setValue(Self.prefetchPurpose, forHTTPHeaderField: Self.purposeHeader)
         }
@@ -718,7 +718,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
         }
 
         let ingressPolicy = CheckoutMessageIngressPolicy(
-            configuredOrigins: ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            configuredOrigins: ShopifyCheckout.configuration.allowedMessageOrigins,
             checkoutURL: loadedCheckoutURL
         )
 
@@ -1066,7 +1066,7 @@ extension CheckoutWebView: WKNavigationDelegate {
             let diff = milliseconds(from: startTime) / 1000
             let message = "Loaded checkout in \(String(format: "%.2f", diff))s"
 
-            ShopifyCheckoutKit.configuration.logger.log(message)
+            ShopifyCheckout.configuration.logger.log(message)
         }
         recordNavigationDuration(result: .success)
 

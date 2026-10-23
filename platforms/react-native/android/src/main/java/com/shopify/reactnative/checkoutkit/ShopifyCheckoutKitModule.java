@@ -152,10 +152,10 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
           state -> emitPreloadStateChange(requestId, state));
 
       if (checkoutPreload == null) {
-        emitPreloadStateChange(requestId, PreloadState.Idle.INSTANCE);
+        emitPreloadStateChange(requestId, new PreloadState.Idle());
       }
     } else {
-      emitPreloadStateChange(requestId, PreloadState.Idle.INSTANCE);
+      emitPreloadStateChange(requestId, new PreloadState.Idle());
     }
   }
 
@@ -172,13 +172,13 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
       event.put("requestId", requestId);
 
       if (state instanceof PreloadState.Idle) {
+        PreloadState.IdleReason reason = ((PreloadState.Idle) state).getReason();
         event.put("type", "idle");
+        if (reason != null) event.put("reason", reason.getRawValue());
       } else if (state instanceof PreloadState.Loading) {
         event.put("type", "loading");
       } else if (state instanceof PreloadState.Ready) {
         event.put("type", "ready");
-      } else if (state instanceof PreloadState.Expired) {
-        event.put("type", "expired");
       } else if (state instanceof PreloadState.Failed) {
         PreloadState.FailureReason reason = ((PreloadState.Failed) state).getReason();
         event.put("type", "failed");

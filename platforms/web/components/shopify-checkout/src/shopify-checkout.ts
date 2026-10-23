@@ -38,6 +38,10 @@ import {
   type CheckoutPresentation,
 } from "@shopify/checkout-kit-core/checkout/presentation";
 
+import {
+  HTMLElementBase,
+  registerCustomElement,
+} from "@shopify/checkout-kit-core/checkout/custom-element";
 import { Logger, coerceLogLevel } from "@shopify/checkout-kit-core/checkout/logger";
 import {
   createTelemetry,
@@ -104,7 +108,7 @@ const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as c
  * @tagname shopify-checkout
  */
 export class ShopifyCheckout
-  extends HTMLElement
+  extends HTMLElementBase
   implements CheckoutAttributes, CheckoutMethods, CheckoutProperties
 {
   static observedAttributes = ["src", "target", "appearance", "telemetry"] as const;
@@ -128,15 +132,7 @@ export class ShopifyCheckout
     name: string = "shopify-checkout",
     registry: CustomElementRegistry = customElements,
   ): T {
-    const existing = registry.get(name);
-    if (existing !== undefined) {
-      if (existing === this || existing.prototype instanceof this) return existing as T;
-      throw new Error(`Cannot register <${name}>: another element already uses that name.`);
-    }
-    const element =
-      name === "shopify-checkout" ? this : class extends (this as typeof ShopifyCheckout) {};
-    registry.define(name, element);
-    return element as T;
+    return registerCustomElement(this, name, "shopify-checkout", registry);
   }
 
   constructor() {

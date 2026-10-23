@@ -9,7 +9,7 @@ import type {
 type NativePreloadStateEvent = {
   requestId: string;
   type: PreloadState['type'];
-  reason?: PreloadFailureReason;
+  reason?: string;
   statusCode?: number;
 };
 
@@ -26,9 +26,7 @@ let nativeSubscription: {remove: () => void} | undefined;
 let requestSequence = 0;
 
 function isTerminal(state: PreloadState): boolean {
-  return (
-    state.type === 'idle' || state.type === 'expired' || state.type === 'failed'
-  );
+  return state.type === 'idle' || state.type === 'failed';
 }
 
 class PreloadSubscription implements CheckoutPreloadSubscription {
@@ -95,17 +93,17 @@ function parsePreloadStateEvent(
       type !== 'idle' &&
       type !== 'loading' &&
       type !== 'ready' &&
-      type !== 'expired' &&
       type !== 'failed'
     ) {
       return undefined;
     }
 
+    if (reason !== undefined && typeof reason !== 'string') {
+      return undefined;
+    }
+
     if (type === 'failed') {
-      if (
-        typeof reason !== 'string' ||
-        !failureReasons.has(reason as PreloadFailureReason)
-      ) {
+      if (!reason || !failureReasons.has(reason as PreloadFailureReason)) {
         return undefined;
       }
 
@@ -117,7 +115,7 @@ function parsePreloadStateEvent(
     return {
       requestId,
       type,
-      reason: reason as PreloadFailureReason | undefined,
+      reason,
       statusCode: statusCode as number | undefined,
     };
   } catch {
@@ -129,9 +127,15 @@ function stateFromNativeEvent(event: NativePreloadStateEvent): PreloadState {
   if (event.type === 'failed') {
     return {
       type: 'failed',
-      reason: event.reason ?? 'unknown',
+      reason: (event.reason as PreloadFailureReason | undefined) ?? 'unknown',
       ...(event.statusCode === undefined ? {} : {statusCode: event.statusCode}),
     };
+  }
+
+  if (event.type === 'idle') {
+    return event.reason === undefined
+      ? {type: 'idle'}
+      : {type: 'idle', reason: event.reason};
   }
 
   return {type: event.type};

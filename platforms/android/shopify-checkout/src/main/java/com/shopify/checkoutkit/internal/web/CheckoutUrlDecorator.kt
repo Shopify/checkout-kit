@@ -3,7 +3,7 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.shopify.checkoutkit.checkout.CheckoutAppearance
 import com.shopify.checkoutkit.checkout.Configuration
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.checkout.effectiveColorScheme
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
@@ -11,7 +11,7 @@ import com.shopify.ucp.embedded.checkout.EmbeddedCheckoutProtocol
 internal object CheckoutUrlDecorator {
     fun decorate(
         checkoutUrl: String,
-        configuration: Configuration = ShopifyCheckoutKit.getConfiguration(),
+        configuration: Configuration = ShopifyCheckout.getConfiguration(),
     ): String {
         val decorated = EmbeddedCheckoutProtocol.url(
             checkoutUrl,

@@ -176,7 +176,7 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     try {
       RNShopifyCheckoutKit.present(
         checkoutUrl,
-        callbacks?.linkAction ?? 'open',
+        callbacks?.linkAction ?? 'default',
         accepted => {
           // Native can ignore the attempt while the previous sheet is closing.
           // Release only this attempt, without reporting a checkout dismissal.

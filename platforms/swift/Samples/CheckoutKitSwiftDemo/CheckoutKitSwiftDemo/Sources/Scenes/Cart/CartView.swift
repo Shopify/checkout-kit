@@ -120,7 +120,7 @@ struct CartView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         cartManager.resetCart()
-                        ShopifyCheckoutKit.invalidate()
+                        ShopifyCheckout.clearPreload()
                     }) {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
@@ -154,12 +154,12 @@ struct CartView: View {
     private func preloadCheckoutIfNeeded() {
         guard checkoutPreloadingEnabled, let url = cartManager.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutKit.invalidate()
-        checkoutPreload = ShopifyCheckoutKit.preload(checkout: url)
+        ShopifyCheckout.clearPreload()
+        checkoutPreload = ShopifyCheckout.preload(checkout: url)
         checkoutPreload?.onStateChange = { state in
             preloadStateTestId = PreloadStateMarker.testId(for: state)
             print("[Preload] state changed to \(state)")
-            ShopifyCheckoutKit.configuration.logger.log("Preload state changed to \(state)")
+            ShopifyCheckout.configuration.logger.log("Preload state changed to \(state)")
         }
     }
 }

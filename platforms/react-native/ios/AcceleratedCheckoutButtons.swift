@@ -58,6 +58,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     private weak var parentViewController: UIViewController?
     internal var instance: AcceleratedCheckoutButtons?
     private var checkoutIsActive = false
+    private var pendingCartRequests: [String: CheckedContinuation<CartResult, Error>] = [:]
 
     @objc var onSizeChange: RCTDirectEventBlock?
 
@@ -66,13 +67,24 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     // Note that prop values are intentionally nil so that the kit defaults are used
 
     /**
-     * Accepts either { cartId } or { variantId, quantity }.
+     * Accepts an existing { cartId }, or { variantId } for Buy Now.
      */
     @objc var checkoutIdentifier: NSDictionary? {
         didSet {
             updateView()
         }
     }
+
+    /** Completes pending Buy Now cart requests from JavaScript. */
+    @objc var cartRequestResponses: NSArray? {
+        didSet {
+            for case let response as NSDictionary in cartRequestResponses ?? [] {
+                resolveCartRequest(response)
+            }
+        }
+    }
+
+    @objc var onCartRequest: RCTDirectEventBlock?
 
     @objc var cornerRadius: NSNumber? {
         didSet {
@@ -100,7 +112,7 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         }
     }
 
-    @objc var linkAction: String = "open"
+    @objc var linkAction: String = "default"
     @objc var onDismiss: RCTDirectEventBlock?
     @objc var onRenderStateChange: RCTBubblingEventBlock?
     @objc var onDispatch: RCTDirectEventBlock?
@@ -126,6 +138,12 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupView()
+    }
+
+    deinit {
+        for continuation in pendingCartRequests.values {
+            continuation.resume(throwing: CancellationError())
+        }
     }
 
     override func layoutSubviews() {
@@ -266,11 +284,11 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
 
         if let cartIdentifier = extractCartIdentifier(from: checkoutIdentifierDictionary) {
             buttons = AcceleratedCheckoutButtons(cartID: cartIdentifier)
-        } else if let productIdentifier = extractProductIdentifier(from: checkoutIdentifierDictionary) {
-            buttons = AcceleratedCheckoutButtons(
-                variantID: productIdentifier.variantId,
-                quantity: productIdentifier.quantity
-            )
+        } else if let variantIdentifier = extractVariantIdentifier(from: checkoutIdentifierDictionary) {
+            buttons = AcceleratedCheckoutButtons(variantID: variantIdentifier) { [weak self] request in
+                guard let self else { return .failed }
+                return try await self.requestCart(for: request.wallet)
+            }
         } else {
             renderEmptyView()
             return
@@ -367,16 +385,38 @@ class RCTAcceleratedCheckoutButtonsView: UIView {
         return trimmedCartId.isEmpty ? nil : trimmedCartId
     }
 
-    /// Parses `variantId` and `quantity` from `checkoutIdentifier` NSDictionary
-    private func extractProductIdentifier(from dictionary: [String: Any]) -> (variantId: String, quantity: Int)? {
+    /// Parses the selected Buy Now variant from `checkoutIdentifier`.
+    private func extractVariantIdentifier(from dictionary: [String: Any]) -> String? {
         guard let rawVariantId = dictionary["variantId"] as? String else { return nil }
-        guard let rawQuantity = dictionary["quantity"] as? NSNumber else { return nil }
-
         let trimmedVariantId = rawVariantId.trimmingCharacters(in: .whitespacesAndNewlines)
-        let quantityValue = rawQuantity.intValue
+        return trimmedVariantId.isEmpty ? nil : trimmedVariantId
+    }
 
-        guard !trimmedVariantId.isEmpty, quantityValue > 0 else { return nil }
-        return (variantId: trimmedVariantId, quantity: quantityValue)
+    /// Requests the app-owned Buy Now cart after a wallet accepts a tap.
+    /// Internal so the React Native integration tests can exercise the bridge.
+    func requestCart(for wallet: Wallet) async throws -> CartResult {
+        guard let onCartRequest else { return .failed }
+        let requestId = UUID().uuidString
+        return try await withCheckedThrowingContinuation { continuation in
+            pendingCartRequests[requestId] = continuation
+            onCartRequest(["requestId": requestId, "wallet": wallet.rawValue])
+        }
+    }
+
+    private func resolveCartRequest(_ response: NSDictionary?) {
+        guard
+            let response,
+            let requestId = response["requestId"] as? String,
+            let continuation = pendingCartRequests.removeValue(forKey: requestId)
+        else { return }
+
+        if let message = response["error"] as? String {
+            continuation.resume(throwing: NSError(domain: "ShopifyAcceleratedCheckouts", code: 1, userInfo: [NSLocalizedDescriptionKey: message]))
+        } else if let cartId = response["cartId"] as? String, !cartId.isEmpty {
+            continuation.resume(returning: .cart(cartId))
+        } else {
+            continuation.resume(returning: .failed)
+        }
     }
 
     private func renderEmptyView() {

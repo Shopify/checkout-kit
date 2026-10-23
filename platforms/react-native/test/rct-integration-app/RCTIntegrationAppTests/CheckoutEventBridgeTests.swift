@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class CheckoutEventBridgeTests: XCTestCase {
     func testLinkActionNotifiesAndReturnsSynchronousPolicy() throws {
-        for action in ["open", "handled", "cancel"] {
+        for action in ["default", "handled", "cancel"] {
             var events: [String] = []
             let bridge = CheckoutEventBridge(linkAction: action, dispatch: { events.append($0) }, onTerminal: { _ in })
             let link = try CheckoutLink(url: XCTUnwrap(URL(string: "https://example.test/policy")))
@@ -44,7 +44,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
     func testCompletionDoesNotReleaseCallbacks() throws {
         var events: [String] = []
         var terminalCount = 0
-        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
+        let bridge = CheckoutEventBridge(linkAction: "default", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         let checkout = try checkout()
         bridge.checkoutDidStart(CheckoutStartEvent(checkout: checkout))
         bridge.checkoutDidUpdate(CheckoutUpdateEvent(checkout: checkout))
@@ -60,7 +60,7 @@ final class CheckoutEventBridgeTests: XCTestCase {
     func testFailureUsesErrorEventAndKeepsCallbacksUntilDismissal() throws {
         var events: [String] = []
         var terminalCount = 0
-        let bridge = CheckoutEventBridge(linkAction: "open", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
+        let bridge = CheckoutEventBridge(linkAction: "default", dispatch: { events.append($0) }, onTerminal: { _ in terminalCount += 1 })
         bridge.checkoutDidFail(CheckoutFailureEvent(error: CheckoutError(code: .sdkError, message: "Failed")))
         XCTAssertEqual(terminalCount, 0)
         bridge.checkoutDidDismiss()

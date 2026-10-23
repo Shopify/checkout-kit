@@ -1,42 +1,22 @@
 package com.shopify.checkoutkit.checkout
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.ColorStateList
-import android.content.res.Configuration.UI_MODE_NIGHT_MASK
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.MenuItem
-import android.view.View
-import android.view.View.INVISIBLE
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.annotation.ColorInt
 import androidx.annotation.MainThread
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.Toolbar
-import androidx.core.graphics.drawable.DrawableCompat
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
+import com.shopify.checkoutkit.internal.logging.LogWrapper
 import com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheetLayout
 import com.shopify.checkoutkit.internal.presentation.clearBottomSheetScrollHandoff
-import com.shopify.checkoutkit.internal.presentation.dpToPx
 import com.shopify.checkoutkit.internal.presentation.installBottomSheetScrollHandoff
-import com.shopify.checkoutkit.internal.presentation.roundedTopCornerDrawable
-import com.shopify.checkoutkit.internal.presentation.showsDragHandle
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
 import com.shopify.checkoutkit.internal.web.CheckoutWebViewListener
@@ -46,7 +26,16 @@ import com.shopify.checkoutkit.internal.web.WebMessageTransport
 import com.shopify.checkoutkit.internal.web.removeFromParent
 
 /**
- * Embeddable Shopify checkout content for hosts that own their presentation container.
+ * Entry point for Checkout Kit's checkout feature, and the embeddable checkout view.
+ *
+ * `ShopifyCheckout` has two roles:
+ *
+ * - **Companion (`ShopifyCheckout.configure`, [preload], [clearPreload], [present]):** operations on
+ *   shared checkout state. Configuration and preloads apply to every checkout entry point, and
+ *   [present] shows checkout in an SDK-managed bottom sheet. Call these on the type, including from
+ *   Java, not on a view instance.
+ * - **Instance (created with [create] or the listener constructor):** checkout content hosted by your
+ *   app. Instance members, such as [destroy], affect only that view.
  *
  * This view must be created programmatically because checkout state is required at construction;
  * XML inflation is not supported.
@@ -59,8 +48,8 @@ import com.shopify.checkoutkit.internal.web.removeFromParent
  */
 @SuppressLint("ViewConstructor")
 public class ShopifyCheckout @MainThread internal constructor(
-    context: Context,
     checkoutUrl: String,
+    context: Context,
     webMessageTransport: WebMessageTransport,
     private val hostConfiguration: CheckoutHostConfiguration,
 ) : FrameLayout(context) {
@@ -73,12 +62,12 @@ public class ShopifyCheckout @MainThread internal constructor(
      */
     @MainThread
     public constructor(
-        context: Context,
         checkoutUrl: String,
+        context: Context,
         checkoutListener: DefaultCheckoutListener,
     ) : this(
-        context = context,
         checkoutUrl = checkoutUrl,
+        context = context,
         webMessageTransport = WebMessageListenerTransport,
         hostConfiguration = CheckoutHostConfiguration(
             listener = checkoutListener,
@@ -89,21 +78,45 @@ public class ShopifyCheckout @MainThread internal constructor(
         ),
     )
 
+    private val colorScheme = ShopifyCheckout.configuration.appearance.effectiveColorScheme
+    private val chrome = CheckoutChrome(
+        root = this,
+        colorScheme = colorScheme,
+        sheetOptions = ShopifyCheckout.configuration.sheet,
+        onCloseRequested = ::notifyCheckoutDismissed,
+    )
+
+    /**
+     * Follows the system theme for automatic color schemes only. Explicit light, dark and storefront color
+     * schemes keep their colors.
+     */
+    private val systemTheme: SystemThemeObserver? = if (colorScheme is ColorScheme.Automatic) {
+        SystemThemeObserver(this) { isDarkTheme ->
+            if (!chrome.applyTheme(isDarkTheme)) return@SystemThemeObserver
+
+            log.d(LOG_TAG, "System theme changed, applied ${if (isDarkTheme) "dark" else "light"} colors.")
+            onThemeColorsChanged?.invoke(isDarkTheme)
+        }
+    } else {
+        null
+    }
     private var checkoutWebView: CheckoutWebView? = null
     private var lifecycleOwner: LifecycleOwner? = null
     private var dismissNotified = false
     private var destroyed = false
     private var webViewResumed = false
-    private var headerBorderIsVisible = false
     internal var initializationError: CheckoutException? = null
         private set
 
-    @ColorInt
-    internal var webViewBackgroundColor: Int = android.graphics.Color.TRANSPARENT
-        private set
+    /**
+     * Invoked after this view applies the colors for a new system theme, so the presenting sheet can
+     * update the chrome it owns.
+     */
+    internal var onThemeColorsChanged: ((isDarkTheme: Boolean) -> Unit)? = null
 
-    private val progressBar: ProgressBar
-        get() = findViewById(R.id.checkout_progress_bar)
+    @get:ColorInt
+    internal val webViewBackgroundColor: Int
+        get() = chrome.webViewBackgroundColor
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onDestroy(owner: LifecycleOwner) {
@@ -122,16 +135,13 @@ public class ShopifyCheckout @MainThread internal constructor(
     }
 
     init {
-        LayoutInflater.from(context).inflate(R.layout.checkout_view_content, this, true)
-        configureChrome()
-
         try {
             val webView = CheckoutWebView.checkoutViewFor(checkoutUrl, context, webMessageTransport)
             checkoutWebView = webView
             webView.markPresented()
             webView.setListener(webViewListener())
             webView.setClient(hostConfiguration.protocolClient)
-            addWebViewToContainer(webView)
+            chrome.attachWebView(webView)
         } catch (error: UnsupportedWebViewException) {
             val checkoutError = error.checkoutError
             initializationError = checkoutError
@@ -167,10 +177,11 @@ public class ShopifyCheckout @MainThread internal constructor(
         backNavigationCallback.remove()
         lifecycleOwner?.lifecycle?.removeObserver(lifecycleObserver)
         lifecycleOwner = null
+        systemTheme?.release()
         checkoutWebView?.let { webView ->
             webView.setClient(null)
             webView.setListener(CheckoutWebViewListener(NoopCheckoutListener()))
-            webView.setOnScrollChangeListener(null)
+            chrome.detachWebView()
             pauseWebView()
             webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
@@ -187,6 +198,8 @@ public class ShopifyCheckout @MainThread internal constructor(
 
         resumeWebView()
         bindLifecycleOwner()
+        systemTheme?.bind()
+        systemTheme?.checkNow()
         backNavigationCallback.isEnabled = !dismissNotified
         findViewTreeOnBackPressedDispatcherOwner()
             ?.onBackPressedDispatcher
@@ -195,32 +208,25 @@ public class ShopifyCheckout @MainThread internal constructor(
 
     override fun onDetachedFromWindow() {
         backNavigationCallback.remove()
+        systemTheme?.unbind()
         pauseWebView()
         super.onDetachedFromWindow()
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        systemTheme?.scheduleCheck()
     }
 
     /**
      * Applies the sheet-owned parts of presentation configuration for the imperative presenter.
      */
     internal fun configureForBottomSheet(sheet: CheckoutSheetOptions) {
-        val colorScheme = ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme
-        val headerBackgroundColor = colorScheme.headerBackgroundColor(context.isDarkTheme()).getValue(context)
-        findViewById<Toolbar>(R.id.checkout_header).background =
-            roundedTopCornerDrawable(context, headerBackgroundColor, sheet.cornerRadiusDp)
-        findViewById<TextView>(R.id.checkout_header_title).apply {
-            (layoutParams as? Toolbar.LayoutParams)?.let { params ->
-                params.topMargin = if (sheet.showsDragHandle) {
-                    resources.getDimensionPixelSize(R.dimen.checkout_sheet_drag_handle_title_top_margin)
-                } else {
-                    0
-                }
-                layoutParams = params
-            }
-        }
+        chrome.configureForBottomSheet(sheet)
     }
 
     internal fun applyBottomInsetPadding() {
-        findViewById<View>(R.id.checkout_container).applyCheckoutBottomInsetPadding()
+        chrome.applyBottomInsetPadding()
     }
 
     internal fun bindToBottomSheet(sheet: CheckoutBottomSheetLayout) {
@@ -230,81 +236,18 @@ public class ShopifyCheckout @MainThread internal constructor(
         }
     }
 
-    internal fun resumeForPresentation() {
-        resumeWebView()
+    internal fun resumeWebView() {
+        if (webViewResumed || destroyed) return
+
+        checkoutWebView?.onResume()
+        webViewResumed = checkoutWebView != null
     }
 
-    private fun configureChrome() {
-        val colorScheme = ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme
-        val sheet = ShopifyCheckoutKit.configuration.sheet
-        val isDarkTheme = context.isDarkTheme()
-        val headerBackgroundColor = colorScheme.headerBackgroundColor(isDarkTheme).getValue(context)
-        val headerTitleColor = colorScheme.headerTitleColor(isDarkTheme).getValue(context)
-        webViewBackgroundColor = colorScheme.webViewBackgroundColor(isDarkTheme).getValue(context)
+    private fun pauseWebView() {
+        if (!webViewResumed) return
 
-        findViewById<Toolbar>(R.id.checkout_header).apply {
-            background = headerBackgroundColor.toDrawable()
-            elevation = sheet.toolbarElevationDp.dpToPx(context)
-            setTitleTextColor(headerTitleColor)
-            inflateMenu(R.menu.checkout_menu)
-            menu.findItem(R.id.checkout_close_button).setupCheckoutCloseButton(
-                context = context,
-                colorScheme = colorScheme,
-                sheet = sheet,
-                onClick = ::notifyCheckoutDismissed,
-            )
-        }
-
-        findViewById<TextView>(R.id.checkout_header_title).apply {
-            text = ShopifyCheckoutKit.configuration.resolveCheckoutTitle(context)
-            setTextColor(headerTitleColor)
-            (layoutParams as? Toolbar.LayoutParams)?.let { params ->
-                params.topMargin = 0
-                params.gravity = when (sheet.titleAlignment) {
-                    CheckoutSheetTitleAlignment.START -> Gravity.START or Gravity.CENTER_VERTICAL
-                    CheckoutSheetTitleAlignment.CENTER -> Gravity.CENTER
-                }
-                layoutParams = params
-            }
-        }
-
-        findViewById<RelativeLayout>(R.id.checkout_container).setBackgroundColor(webViewBackgroundColor)
-        findViewById<View>(R.id.checkout_loading_background).setBackgroundColor(webViewBackgroundColor)
-        findViewById<View>(R.id.checkout_header_border).setBackgroundColor(
-            colorScheme.headerBorderColor(isDarkTheme).getValue(context)
-        )
-        progressBar.progressTintList = ColorStateList.valueOf(
-            colorScheme.progressIndicatorColor(isDarkTheme).getValue(context)
-        )
-    }
-
-    private fun addWebViewToContainer(webView: CheckoutWebView) {
-        webView.removeFromParent()
-        webView.setBackgroundColor(webViewBackgroundColor)
-        val headerBorder = findViewById<View>(R.id.checkout_header_border)
-        webView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            val shouldShowBorder = scrollY > 0
-            if (headerBorderIsVisible == shouldShowBorder) return@setOnScrollChangeListener
-
-            headerBorderIsVisible = shouldShowBorder
-            headerBorder.animate().cancel()
-            headerBorder.animate()
-                .alpha(if (shouldShowBorder) 1f else 0f)
-                .setDuration(HEADER_BORDER_FADE_DURATION_MS)
-                .start()
-        }
-        headerBorderIsVisible = webView.scrollY > 0
-        headerBorder.animate().cancel()
-        headerBorder.alpha = if (headerBorderIsVisible) 1f else 0f
-        findViewById<RelativeLayout>(R.id.checkout_container).apply {
-            addView(webView, 0, RelativeLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-            progressBar.bringToFront()
-        }
-
-        if (webView.hasFinishedLoading()) {
-            progressBar.visibility = INVISIBLE
-            hideLoadingBackground()
-        }
+        checkoutWebView?.onPause()
+        webViewResumed = false
     }
 
     private fun notifyCheckoutDismissed() {
@@ -321,14 +264,10 @@ public class ShopifyCheckout @MainThread internal constructor(
             checkoutWebView?.endPresentationEvents()
             hostConfiguration.onFailure(error)
         },
-        setProgressBarVisibility = { progressBar.visibility = it },
-        hideLoadingBackground = ::hideLoadingBackground,
-        updateProgressBarPercentage = { percentage -> progressBar.setProgressCompat(percentage) },
+        setProgressBarVisibility = chrome::setProgressBarVisibility,
+        hideLoadingBackground = chrome::hideLoadingBackground,
+        updateProgressBarPercentage = chrome::setProgress,
     )
-
-    private fun hideLoadingBackground() {
-        findViewById<View>(R.id.checkout_loading_background).visibility = INVISIBLE
-    }
 
     private fun bindLifecycleOwner() {
         val nextOwner = findViewTreeLifecycleOwner() ?: return
@@ -339,23 +278,118 @@ public class ShopifyCheckout @MainThread internal constructor(
         nextOwner.lifecycle.addObserver(lifecycleObserver)
     }
 
-    private fun resumeWebView() {
-        if (webViewResumed || destroyed) return
-
-        checkoutWebView?.onResume()
-        webViewResumed = checkoutWebView != null
-    }
-
-    private fun pauseWebView() {
-        if (!webViewResumed) return
-
-        checkoutWebView?.onPause()
-        webViewResumed = false
-    }
-
     public companion object {
         private const val LOG_TAG = "ShopifyCheckout"
-        private const val HEADER_BORDER_FADE_DURATION_MS = 120L
+
+        internal val configuration: Configuration
+            get() = CheckoutService.configuration
+
+        internal val log: LogWrapper
+            get() = CheckoutService.log
+
+        /**
+         * Returns a snapshot of the currently applied shared checkout configuration.
+         * Configuration changes should be made through [configure].
+         *
+         * @return the currently applied configuration
+         * @see configure
+         */
+        @JvmStatic
+        public fun getConfiguration(): Configuration = CheckoutService.configurationSnapshot()
+
+        /**
+         * Updates the shared checkout configuration, not the configuration of an individual view.
+         *
+         * Calling this function invalidates any cached preload.
+         * Call through `ShopifyCheckout.configure(...)`, including from Java.
+         *
+         * Kotlin example:
+         * ```kotlin
+         * ShopifyCheckout.configure { it.appearance = CheckoutAppearance.App(ColorScheme.Dark()) }
+         * ```
+         *
+         * @param setter a function that modifies the configuration object
+         * @see Configuration
+         */
+        @JvmStatic
+        public fun configure(setter: ConfigurationUpdater) {
+            CheckoutService.configure(setter)
+        }
+
+        /**
+         * Clears any shared checkout cached by [preload], not an individual view's rendering state.
+         *
+         * If the preloaded checkout is already being presented, this does not destroy the active
+         * buyer session. The WebView will be discarded after it is dismissed or detached.
+         *
+         * Call through `ShopifyCheckout.clearPreload()`, including from Java.
+         * An embedded view's `invalidate()` requests an Android redraw; it does not clear preloads.
+         */
+        @JvmStatic
+        public fun clearPreload() {
+            CheckoutService.clearPreload()
+        }
+
+        /**
+         * Preloads a Shopify checkout in a background WebView as a best-effort performance hint.
+         *
+         * Preloaded checkouts are reused only when [present] is later called or a [ShopifyCheckout] is
+         * created with the same fully parameterized checkout URL. Otherwise the cached checkout is
+         * discarded and checkout loads normally.
+         *
+         * @param checkoutUrl The URL of the checkout to preload, obtained via the Storefront API.
+         * @param context The activity used to create the background WebView.
+         * @param listener optional listener invoked on the main thread whenever the preload state changes.
+         * @return A [CheckoutPreload] handle exposing the current preload state, or `null` if preloading
+         * is disabled or the context is unavailable and no preload was started.
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun preload(
+            checkoutUrl: String,
+            context: ComponentActivity,
+            listener: PreloadStateListener? = null,
+        ): CheckoutPreload? = CheckoutService.preload(checkoutUrl, context, listener)
+
+        /**
+         * Presents a Shopify checkout within an SDK-managed bottom sheet, not an existing embedded view.
+         *
+         * Must be called on the main thread.
+         *
+         * @param checkoutUrl The URL of the checkout to be presented, obtained via the Storefront API.
+         * @param context The activity the checkout is being presented from.
+         * @param configure a Kotlin-first builder for checkout events and browser/system hooks
+         * @return A [CheckoutHandle] if the sheet was successfully created and displayed, the existing
+         * handle if checkout is already presented, or `null` if the activity is unavailable or presentation cannot start.
+         */
+        @JvmStatic
+        @JvmSynthetic
+        @MainThread
+        public fun present(
+            checkoutUrl: String,
+            context: ComponentActivity,
+            configure: CheckoutPresentation.() -> Unit,
+        ): CheckoutHandle? = CheckoutService.present(checkoutUrl, context, configure)
+
+        /**
+         * Presents a Shopify checkout within an SDK-managed bottom sheet, not an existing embedded view.
+         *
+         * Must be called on the main thread. Call through `ShopifyCheckout.present(...)`, including from Java.
+         *
+         * @param checkoutUrl The URL of the checkout to be presented, obtained via the Storefront API.
+         * @param context The activity the checkout is being presented from.
+         * @param checkoutListener provides callbacks to allow clients to listen for and respond to checkout lifecycle events
+         * (start, updates, completion, failure, dismissal, links, permission prompts, file chooser).
+         * @return A [CheckoutHandle] if the sheet was successfully created and displayed, the existing
+         * handle if checkout is already presented, or `null` if the activity is unavailable or presentation cannot start.
+         */
+        @JvmStatic
+        @MainThread
+        public fun <T : DefaultCheckoutListener> present(
+            checkoutUrl: String,
+            context: ComponentActivity,
+            checkoutListener: T,
+        ): CheckoutHandle? = CheckoutService.present(checkoutUrl, context, checkoutListener)
 
         /**
          * Creates checkout content using the Kotlin presentation builder.
@@ -368,33 +402,30 @@ public class ShopifyCheckout @MainThread internal constructor(
         @JvmSynthetic
         @MainThread
         public fun create(
-            context: Context,
             checkoutUrl: String,
+            context: Context,
             configure: CheckoutPresentation.() -> Unit,
         ): ShopifyCheckout = ShopifyCheckout(
-            context = context,
             checkoutUrl = checkoutUrl,
+            context = context,
             webMessageTransport = WebMessageListenerTransport,
             hostConfiguration = buildCheckoutHostConfiguration(configure),
         )
 
         @MainThread
         internal fun create(
-            context: Context,
             checkoutUrl: String,
+            context: Context,
             webMessageTransport: WebMessageTransport,
             configure: CheckoutPresentation.() -> Unit,
         ): ShopifyCheckout = ShopifyCheckout(
-            context = context,
             checkoutUrl = checkoutUrl,
+            context = context,
             webMessageTransport = webMessageTransport,
             hostConfiguration = buildCheckoutHostConfiguration(configure),
         )
     }
 }
-
-private fun Context.isDarkTheme(): Boolean =
-    resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
 
 internal data class CheckoutHostConfiguration(
     val listener: CheckoutListener,
@@ -416,50 +447,4 @@ private fun buildCheckoutHostConfiguration(
         onFailure = { listener.onCheckoutFailed(CheckoutFailureEvent(it)) },
         reportInitializationFailure = true,
     )
-}
-
-private fun View.applyCheckoutBottomInsetPadding() {
-    ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-        val systemBarsBottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-        val imeBottomInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-        val bottomInset = maxOf(systemBarsBottomInset, imeBottomInset)
-        if (paddingBottom != bottomInset) {
-            setPadding(paddingLeft, paddingTop, paddingRight, bottomInset)
-        }
-        insets
-    }
-    ViewCompat.requestApplyInsets(this)
-}
-
-private fun ProgressBar.setProgressCompat(percentage: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        setProgress(percentage, true)
-    } else {
-        progress = percentage
-    }
-}
-
-private fun MenuItem.setupCheckoutCloseButton(
-    context: Context,
-    colorScheme: ColorScheme,
-    sheet: CheckoutSheetOptions,
-    onClick: () -> Unit,
-) {
-    val isDarkTheme = context.isDarkTheme()
-    val customCloseIcon = sheet.closeIcon ?: colorScheme.closeIcon(isDarkTheme)
-    if (customCloseIcon != null) {
-        icon = AppCompatResources.getDrawable(context, customCloseIcon.id)
-    } else {
-        val customTint = sheet.closeIconTintColor ?: colorScheme.closeIconTintColor(isDarkTheme)
-        val closeIcon = icon
-        if (customTint != null && closeIcon != null) {
-            val wrappedDrawable = DrawableCompat.wrap(closeIcon)
-            DrawableCompat.setTint(wrappedDrawable.mutate(), customTint.getValue(context))
-        }
-    }
-
-    setOnMenuItemClickListener {
-        onClick()
-        true
-    }
 }

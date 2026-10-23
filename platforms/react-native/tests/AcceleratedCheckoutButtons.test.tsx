@@ -81,26 +81,73 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(getByTestId('accelerated-checkout-buttons')).toBeTruthy();
     });
 
-    it('renders without crashing with variant', () => {
+    it('requests a Buy Now cart only after a wallet tap', async () => {
+      const getCart = jest.fn().mockResolvedValue('gid://shopify/Cart/buy-now');
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
-          variantId={'gid://shopify/ProductVariant/456'}
-          quantity={1}
+          variantId="gid://shopify/ProductVariant/456"
+          getCart={getCart}
         />,
       );
+      const component = getByTestId('accelerated-checkout-buttons');
 
-      expect(getByTestId('accelerated-checkout-buttons')).toBeTruthy();
+      expect(getCart).not.toHaveBeenCalled();
+      await act(async () => {
+        await component.props.onCartRequest({
+          nativeEvent: {requestId: 'request-1', wallet: 'applePay'},
+        });
+      });
+
+      expect(getCart).toHaveBeenCalledWith({wallet: 'applePay'});
+      expect(
+        getByTestId('accelerated-checkout-buttons').props.cartRequestResponses,
+      ).toEqual([
+        {requestId: 'request-1', cartId: 'gid://shopify/Cart/buy-now'},
+      ]);
     });
 
-    it('renders without crashing with variant and quantity', () => {
+    it('preserves simultaneous Buy Now cart responses', async () => {
+      let resolveCart: (cartId: string) => void = () => {};
+      const cart = new Promise<string>(resolve => {
+        resolveCart = resolve;
+      });
+      const getCart = jest.fn().mockReturnValue(cart);
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
-          variantId={'gid://shopify/ProductVariant/456'}
-          quantity={2}
+          variantId="gid://shopify/ProductVariant/456"
+          getCart={getCart}
         />,
       );
+      const component = getByTestId('accelerated-checkout-buttons');
 
-      expect(getByTestId('accelerated-checkout-buttons')).toBeTruthy();
+      await act(async () => {
+        const applePayRequest = component.props.onCartRequest({
+          nativeEvent: {requestId: 'apple-pay', wallet: 'applePay'},
+        });
+        const shopPayRequest = component.props.onCartRequest({
+          nativeEvent: {requestId: 'shop-pay', wallet: 'shopPay'},
+        });
+        resolveCart('gid://shopify/Cart/buy-now');
+        await Promise.all([applePayRequest, shopPayRequest]);
+      });
+
+      expect(getCart).toHaveBeenCalledTimes(2);
+      expect(
+        getByTestId('accelerated-checkout-buttons').props.cartRequestResponses,
+      ).toEqual([
+        {requestId: 'apple-pay', cartId: 'gid://shopify/Cart/buy-now'},
+        {requestId: 'shop-pay', cartId: 'gid://shopify/Cart/buy-now'},
+      ]);
+    });
+
+    it('passes only the cart ID as the checkout identifier', () => {
+      const {getByTestId} = render(
+        <AcceleratedCheckoutButtons cartId={'gid://shopify/Cart/123'} />,
+      );
+
+      expect(
+        getByTestId('accelerated-checkout-buttons').props.checkoutIdentifier,
+      ).toEqual({cartId: 'gid://shopify/Cart/123'});
     });
 
     it('passes through props to native component', () => {
@@ -179,7 +226,7 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(onStart).not.toHaveBeenCalled();
     });
 
-    it.each(['open', 'handled', 'cancel'] as const)(
+    it.each(['default', 'handled', 'cancel'] as const)(
       'passes the %s link policy to native',
       linkAction => {
         const {getByTestId} = render(
@@ -196,10 +243,7 @@ describe('AcceleratedCheckoutButtons', () => {
 
     it('uses default values for cornerRadius', () => {
       const {getByTestId} = render(
-        <AcceleratedCheckoutButtons
-          variantId="gid://shopify/ProductVariant/456"
-          quantity={1}
-        />,
+        <AcceleratedCheckoutButtons cartId="gid://shopify/Cart/123" />,
       );
 
       const nativeComponent = getByTestId('accelerated-checkout-buttons');
@@ -207,11 +251,10 @@ describe('AcceleratedCheckoutButtons', () => {
       expect(nativeComponent.props.cornerRadius).toBeUndefined();
     });
 
-    it('passes through custom quantity and cornerRadius', () => {
+    it('passes through custom cornerRadius', () => {
       const {getByTestId} = render(
         <AcceleratedCheckoutButtons
-          variantId="gid://shopify/ProductVariant/456"
-          quantity={3}
+          cartId="gid://shopify/Cart/123"
           cornerRadius={16}
         />,
       );
@@ -384,7 +427,7 @@ describe('AcceleratedCheckoutButtons', () => {
       });
       nativeComponent = getByTestId('accelerated-checkout-buttons');
       expect(nativeComponent.props.style).toEqual({
-        flex: 1,
+        flexGrow: 1,
         height: 42,
       });
     });
@@ -396,12 +439,12 @@ describe('AcceleratedCheckoutButtons', () => {
       const warn = jest.spyOn(global.console, 'warn').mockImplementation();
 
       const {queryByTestId} = render(
-        // invalid: no cartId and invalid variant path
-        <AcceleratedCheckoutButtons variantId="" quantity={0} />,
+        // invalid: no cartId
+        <AcceleratedCheckoutButtons {...({} as any)} />,
       );
       expect(queryByTestId('accelerated-checkout-buttons')).toBeNull();
       expect(warn).toHaveBeenCalledWith(
-        'AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
+        'AcceleratedCheckoutButton: `cartId` or `variantId` with `getCart` must be provided',
       );
 
       warn.mockRestore();
@@ -441,7 +484,7 @@ describe('AcceleratedCheckoutButtons', () => {
     });
 
     it('does not warn on Android even without required props', () => {
-      render(<AcceleratedCheckoutButtons variantId="" quantity={0} />);
+      render(<AcceleratedCheckoutButtons {...({} as any)} />);
 
       expect(mockLog).not.toHaveBeenCalled();
     });

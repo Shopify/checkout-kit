@@ -81,7 +81,7 @@ enum CheckoutTelemetry {
     }
 
     static func recorder(for entryPoint: MetaData.EntryPoint?) -> any CheckoutTelemetryRecording {
-        guard ShopifyCheckoutKit.configuration.telemetry.enabled else {
+        guard ShopifyCheckout.configuration.telemetry.enabled else {
             return noOpCheckoutTelemetryRecorder
         }
 
@@ -98,7 +98,7 @@ enum CheckoutTelemetry {
 
             // Re-check under the lock so a concurrent disable() cannot race a
             // client creation that would keep exporting after opt-out.
-            guard ShopifyCheckoutKit.configuration.telemetry.enabled else {
+            guard ShopifyCheckout.configuration.telemetry.enabled else {
                 return
             }
 
@@ -137,7 +137,7 @@ enum CheckoutTelemetry {
     }
 
     private static func telemetryPlatform() -> TelemetryPlatform {
-        ShopifyCheckoutKit.configuration.platform?.identifier == "ReactNative"
+        ShopifyCheckout.configuration.platform?.identifier == "ReactNative"
             ? .reactNativeSwift
             : .swift
     }

@@ -73,7 +73,7 @@ Checkout Kit's Swift SDK accepts `EmbeddedCheckoutProtocol.Client` anywhere it a
 import ShopifyCheckoutKit
 import EmbeddedCheckoutProtocol
 
-ShopifyCheckoutKit.present(
+ShopifyCheckout.present(
   checkout: checkoutURL,
   from: viewController,
   delegate: checkoutDelegate,

@@ -5,7 +5,7 @@ import android.webkit.WebViewClient.ERROR_IO
 import android.webkit.WebViewClient.ERROR_TIMEOUT
 import com.shopify.checkoutkit.checkout.BuildConfig
 import com.shopify.checkoutkit.checkout.Platform
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 
 internal interface CheckoutTelemetryRecording {
     fun recordError(metric: TelemetryErrorMetric)
@@ -21,7 +21,7 @@ private interface CheckoutTelemetryClient : CheckoutTelemetryRecording {
 private class DefaultCheckoutTelemetryRecorder : CheckoutTelemetryClient {
     private val telemetry = CheckoutKitTelemetry(
         sdkVersion = BuildConfig.SDK_VERSION,
-        platform = if (ShopifyCheckoutKit.configuration.platform is Platform.ReactNative) {
+        platform = if (ShopifyCheckout.configuration.platform is Platform.ReactNative) {
             TelemetryPlatform.ReactNativeAndroid
         } else {
             TelemetryPlatform.Android
@@ -63,7 +63,7 @@ internal object CheckoutTelemetry {
 
     val recorder: CheckoutTelemetryRecording
         get() {
-            if (!ShopifyCheckoutKit.configuration.telemetry.enabled) {
+            if (!ShopifyCheckout.configuration.telemetry.enabled) {
                 return NoOpCheckoutTelemetryRecorder
             }
             recorderOverride?.let { return it }
@@ -71,7 +71,7 @@ internal object CheckoutTelemetry {
             return synchronized(lock) {
                 // Re-check under the lock so a concurrent disable() cannot race a
                 // recorder creation that would keep exporting after opt-out.
-                if (!ShopifyCheckoutKit.configuration.telemetry.enabled) {
+                if (!ShopifyCheckout.configuration.telemetry.enabled) {
                     return NoOpCheckoutTelemetryRecorder
                 }
                 recorderOverride

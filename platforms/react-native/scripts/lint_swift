@@ -70,10 +70,39 @@ if ! SWIFTFORMAT="$(resolve_tool swiftformat SwiftFormat)"; then
     exit 1
 fi
 
+# In GitHub Actions, report violations as annotations. SwiftLint writes file
+# paths relative to the current directory, but GitHub resolves annotation
+# paths from the workspace root, so prefix them with the current directory's
+# path inside the workspace.
+swiftlint_check() {
+    if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
+        "$SWIFTLINT" lint "$@"
+        return
+    fi
+
+    local workspace directory prefix
+    workspace="$(cd "${GITHUB_WORKSPACE:-.}" && pwd -P)"
+    directory="$(pwd -P)"
+    case "$directory" in
+        "$workspace") prefix="" ;;
+        "$workspace"/*) prefix="${directory#"$workspace"/}/" ;;
+        *) prefix="$directory/" ;;
+    esac
+
+    "$SWIFTLINT" lint "$@" --reporter github-actions-logging |
+        PREFIX="$prefix" awk '
+            match($0, /^::[a-z]+ file=[^\/]/) {
+                $0 = substr($0, 1, RLENGTH - 1) ENVIRON["PREFIX"] substr($0, RLENGTH)
+            }
+            { print }
+        '
+    return "${PIPESTATUS[0]}"
+}
+
 # Run SwiftLint
 if [[ "$MODE" == "check" ]]; then
     echo "🔄 Running SwiftLint in check mode..."
-    "$SWIFTLINT" lint --strict "${SWIFT_PATHS[@]}" --config .swiftlint.yml
+    swiftlint_check --strict "${SWIFT_PATHS[@]}" --config .swiftlint.yml
     LINT_STATUS=$?
 else
     echo "🔄 Running SwiftLint in fix mode..."

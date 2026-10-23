@@ -38,8 +38,9 @@ export interface Features {
 }
 
 /**
- * Colors of the native elements around checkout. The fields map to the color
- * fields of the native `CheckoutColors`.
+ * Colors of the native elements around checkout. Each field has the same name
+ * as the matching color field of the native `CheckoutColors` (iOS) or `Colors`
+ * (Android).
  *
  * Each value is a HEX color: `#RRGGBB`, or `#AARRGGBB` with opacity. Omitted or
  * invalid values use the native default for the appearance.
@@ -263,10 +264,9 @@ export type PreloadFailureReason =
 
 /** The observable lifecycle state of a preloaded checkout. */
 export type PreloadState =
-  | {type: 'idle'}
+  | {type: 'idle'; reason?: string}
   | {type: 'loading'}
   | {type: 'ready'}
-  | {type: 'expired'}
   | {
       type: 'failed';
       reason: PreloadFailureReason;

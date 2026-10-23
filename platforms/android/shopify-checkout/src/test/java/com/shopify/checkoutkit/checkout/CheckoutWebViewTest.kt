@@ -52,7 +52,7 @@ class CheckoutWebViewTest {
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        initialConfiguration = ShopifyCheckout.getConfiguration()
         webMessageTransport = FakeWebMessageTransport()
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
@@ -64,7 +64,7 @@ class CheckoutWebViewTest {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().idle()
         CheckoutWebView.cacheClock = PreloadCache.Clock()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
@@ -168,7 +168,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `user agent suffix appends platform identifier and version when set`() {
-        ShopifyCheckoutKit.configuration.platform = Platform.ReactNative("0.80.0")
+        ShopifyCheckout.configuration.platform = Platform.ReactNative("0.80.0")
         val view = checkoutWebView(activity)
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
@@ -180,7 +180,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `user agent suffix omits version when platform version is null`() {
-        ShopifyCheckoutKit.configuration.platform = Platform.ReactNative()
+        ShopifyCheckout.configuration.platform = Platform.ReactNative()
         val view = checkoutWebView(activity)
 
         val kotlinVersion = KotlinVersion.CURRENT.let { "${it.major}.${it.minor}" }
@@ -283,7 +283,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `web message from child frame is ignored`() {
-        ShopifyCheckoutKit.configure { it.logLevel = LogLevel.DEBUG }
+        ShopifyCheckout.configure { it.logLevel = LogLevel.DEBUG }
 
         assertWebMessageIgnored {
             webMessageTransport.dispatchMessage(ecMessagesChangeMessage(), isMainFrame = false)
@@ -321,31 +321,31 @@ class CheckoutWebViewTest {
 
     @Test
     fun `web message from the cart URL origin is accepted when an allowlist is configured`() {
-        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        ShopifyCheckout.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         assertWebMessageReceivedFrom("https://checkout.shopify.com")
     }
 
     @Test
     fun `web message from a shop app subdomain is accepted when an allowlist is configured`() {
-        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        ShopifyCheckout.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         assertWebMessageReceivedFrom("https://checkout.shop.app")
     }
 
     @Test
     fun `web message from a shop com subdomain is accepted when an allowlist is configured`() {
-        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        ShopifyCheckout.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         assertWebMessageReceivedFrom("https://checkout.shop.com")
     }
 
     @Test
     fun `web message from a configured origin is accepted`() {
-        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        ShopifyCheckout.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         assertWebMessageReceivedFrom("https://allowed.example.com")
     }
 
     @Test
     fun `web message from an untrusted origin is logged and dropped without failing checkout`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.allowedMessageOrigins = setOf("https://allowed.example.com")
         }
         val view = checkoutWebView(activity)
@@ -390,7 +390,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `web message from untrusted origin does not fail backgrounded preload`() {
-        ShopifyCheckoutKit.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
+        ShopifyCheckout.configure { it.allowedMessageOrigins = setOf("https://allowed.example.com") }
         val preload = CheckoutWebView.preload(
             "https://checkout.shopify.com/cart/123",
             activity,
@@ -725,7 +725,7 @@ class CheckoutWebViewTest {
 
     @Test
     fun `preload is ignored when preloading is disabled`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.preloading = Preloading(enabled = false)
         }
 

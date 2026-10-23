@@ -55,7 +55,7 @@ export interface CheckoutFailureEvent {
 export interface CheckoutLink {
   url: string;
 }
-export type CheckoutLinkAction = 'open' | 'handled' | 'cancel';
+export type CheckoutLinkAction = 'cancel' | 'default' | 'handled';
 
 /** Lifecycle callbacks shared by checkout sheets and accelerated buttons. */
 export interface CheckoutEventHandlers {
@@ -69,7 +69,7 @@ export interface CheckoutEventHandlers {
   onDismiss?: () => void;
   /** Notification only; use linkAction to choose the native response. */
   onLinkClick?: (link: CheckoutLink) => void;
-  /** Native link policy, chosen before presentation. Defaults to open. */
+  /** Native link policy, chosen before presentation. Defaults to default. */
   linkAction?: CheckoutLinkAction;
 }
 

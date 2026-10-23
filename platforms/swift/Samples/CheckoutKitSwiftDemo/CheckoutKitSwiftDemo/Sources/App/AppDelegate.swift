@@ -29,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             forKey: AppStorageKeys.checkoutPreloadingEnabled.rawValue
         ) as? Bool ?? true
 
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             $0.appearance = .app(.automatic().customize {
                 $0.progressIndicatorColor = ColorPalette.primaryColor
             })

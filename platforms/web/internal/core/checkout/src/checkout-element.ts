@@ -60,20 +60,23 @@ const CHECKOUT_APPEARANCES = new Map<string, { colorScheme: string; branding: st
   ["storefront", { colorScheme: "web_default", branding: "shop" }],
 ]);
 
-const SHADOW_TEMPLATE = createTemplate(html`
-  <div id="shopify-element-wrapper">
-    <style>
-      ${safe(stylesText)}
-    </style>
-    <div class="Shopify-target">
-      <dialog class="overlay" id="overlay">
-        <div class="overlay-background" part="overlay" id="overlay-background">
-          ${overlaySlot(false)}${overlaySlot(true)}
-        </div>
-      </dialog>
+// Built on first use rather than on import: server rendering has no document.
+let shadowTemplate: HTMLTemplateElement | undefined;
+const checkoutShadowTemplate = () =>
+  (shadowTemplate ??= createTemplate(html`
+    <div id="shopify-element-wrapper">
+      <style>
+        ${safe(stylesText)}
+      </style>
+      <div class="Shopify-target">
+        <dialog class="overlay" id="overlay">
+          <div class="overlay-background" part="overlay" id="overlay-background">
+            ${overlaySlot(false)}${overlaySlot(true)}
+          </div>
+        </dialog>
+      </div>
     </div>
-  </div>
-`);
+  `));
 
 export interface CheckoutPresentation {
   readonly checkoutWindow: WindowProxy | null;
@@ -94,7 +97,9 @@ interface OpenCheckoutPresentationOptions {
 
 export function attachCheckoutShadow(element: HTMLElement): void {
   if (supportsShadowDOM()) {
-    element.attachShadow({ mode: "open" }).appendChild(SHADOW_TEMPLATE.content.cloneNode(true));
+    element
+      .attachShadow({ mode: "open" })
+      .appendChild(checkoutShadowTemplate().content.cloneNode(true));
   }
 }
 

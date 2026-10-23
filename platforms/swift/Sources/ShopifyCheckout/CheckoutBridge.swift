@@ -14,7 +14,7 @@ enum CheckoutBridge: CheckoutBridgeProtocol {
 
     static func applicationName(entryPoint: MetaData.EntryPoint?) -> String {
         return UserAgent.string(
-            platform: ShopifyCheckoutKit.configuration.platform,
+            platform: ShopifyCheckout.configuration.platform,
             entryPoint: entryPoint
         )
     }

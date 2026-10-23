@@ -32,7 +32,7 @@ struct OAuthTokenResult: Codable {
 final class KeychainHelper {
     static let shared = KeychainHelper()
 
-    private let logger = OSLogger(prefix: "Keychain", logLevel: ShopifyCheckoutKit.configuration.logLevel)
+    private let logger = OSLogger(prefix: "Keychain", logLevel: ShopifyCheckout.configuration.logLevel)
     private let service = "com.shopify.mobilebuyintegration"
     private let tokensKey = "customer_account_tokens"
     private let emailKey = "customer_account_email"

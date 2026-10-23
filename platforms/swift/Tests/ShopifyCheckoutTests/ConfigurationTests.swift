@@ -15,15 +15,15 @@ class ConfigurationTests: XCTestCase {
     }
 
     private func resetConfigurationState() {
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
     }
 
     func testPreloadingDefaultsToEnabled() {
-        XCTAssertTrue(ShopifyCheckoutKit.configuration.preloading.enabled)
+        XCTAssertTrue(ShopifyCheckout.configuration.preloading.enabled)
     }
 
     func testAppearanceDefaultsToStorefront() {
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, .storefront())
+        XCTAssertEqual(ShopifyCheckout.configuration.appearance, .storefront())
     }
 
     func testReplacingAppearanceRestoresDefaultColors() {
@@ -37,40 +37,40 @@ class ConfigurationTests: XCTestCase {
         )
         XCTAssertNotEqual(custom, CheckoutColors())
 
-        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark(colors: custom)) }
-        ShopifyCheckoutKit.configure { $0.appearance = .app(.automatic()) }
+        ShopifyCheckout.configure { $0.appearance = .app(.dark(colors: custom)) }
+        ShopifyCheckout.configure { $0.appearance = .app(.automatic()) }
 
-        let colorScheme = ShopifyCheckoutKit.configuration.appearance.effectiveColorScheme
+        let colorScheme = ShopifyCheckout.configuration.appearance.effectiveColorScheme
         XCTAssertEqual(colorScheme.colors(isDark: false), CheckoutColors())
         XCTAssertEqual(colorScheme.colors(isDark: true), CheckoutColors())
     }
 
     func testAllowedMessageOriginsDefaultsToEmpty() {
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, [])
+        XCTAssertEqual(ShopifyCheckout.configuration.allowedMessageOrigins, [])
     }
 
     func testAllowedMessageOriginsCanBeSet() {
-        ShopifyCheckoutKit.configure { $0.allowedMessageOrigins = ["https://example.com", "*"] }
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.allowedMessageOrigins, ["https://example.com", "*"])
+        ShopifyCheckout.configure { $0.allowedMessageOrigins = ["https://example.com", "*"] }
+        XCTAssertEqual(ShopifyCheckout.configuration.allowedMessageOrigins, ["https://example.com", "*"])
     }
 
     func testPreloadingCanBeDisabled() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
+        ShopifyCheckout.preload(checkout: checkoutURL)
+        ShopifyCheckout.configure { $0.preloading.enabled = false }
 
-        XCTAssertFalse(ShopifyCheckoutKit.configuration.preloading.enabled)
+        XCTAssertFalse(ShopifyCheckout.configuration.preloading.enabled)
         XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
     }
 
     func testConfigureInvalidatesPreload() throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             $0.title = "Thank you!"
         }
 
@@ -80,10 +80,10 @@ class ConfigurationTests: XCTestCase {
     func testPreloadAfterConfigureIsRetained() async throws {
         let checkoutURL = try XCTUnwrap(URL(string: "https://shopify1.shopify.com/checkouts/cn/123"))
 
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             $0.title = "Thank you!"
         }
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
         for _ in 0 ..< 10 {
@@ -94,9 +94,9 @@ class ConfigurationTests: XCTestCase {
     }
 
     func testConfigureUpdatesLogger() {
-        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+        ShopifyCheckout.configure { $0.logLevel = .debug }
 
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.logLevel, .debug)
+        XCTAssertEqual(ShopifyCheckout.configuration.logLevel, .debug)
         XCTAssertEqual(OSLogger.shared.logLevel, .debug)
     }
 }

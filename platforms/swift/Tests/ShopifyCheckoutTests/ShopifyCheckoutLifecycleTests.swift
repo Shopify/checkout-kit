@@ -2,20 +2,20 @@
 import XCTest
 
 @MainActor
-class ShopifyCheckoutKitTests: XCTestCase {
+class ShopifyCheckoutLifecycleTests: XCTestCase {
     let checkoutURL = URL(string: "https://shop.example/checkouts/cn/123?key=cart_token")!
 
     private var originalConfiguration: Configuration!
 
     override func setUp() async throws {
         try await super.setUp()
-        originalConfiguration = ShopifyCheckoutKit.configuration
-        ShopifyCheckoutKit.configure { $0.appearance = .app(.dark()) }
+        originalConfiguration = ShopifyCheckout.configuration
+        ShopifyCheckout.configure { $0.appearance = .app(.dark()) }
     }
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
+        ShopifyCheckout.configure { $0 = originalConfiguration }
         try await super.tearDown()
     }
 
@@ -29,17 +29,28 @@ class ShopifyCheckoutKitTests: XCTestCase {
         XCTAssertEqual(error.localizedDescription, error.message)
     }
 
-    func test_configuration_whenLogLevelChanges_createsNewLogger() {
-        XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)
+    func test_configuration_whenLogLevelChanges_updatesExistingLogger() {
+        let logger = OSLogger.shared
+
+        ShopifyCheckout.configure { $0.logLevel = .debug }
+
+        XCTAssertTrue(OSLogger.shared === logger)
+        XCTAssertEqual(logger.logLevel, .debug)
     }
 
     func test_configuration_whenLogLevelSetsSameLevel_instanceRemainsSame() {
-        XCTAssertFalse(ShopifyCheckoutKit.version.isEmpty)
+        let logger = OSLogger.shared
+        let logLevel = logger.logLevel
+
+        ShopifyCheckout.configure { $0.logLevel = logLevel }
+
+        XCTAssertTrue(OSLogger.shared === logger)
+        XCTAssertEqual(logger.logLevel, logLevel)
     }
 
     func test_configuration_logLevelDefaultsToWarn() {
         XCTAssertEqual(
-            ShopifyCheckoutKit.configuration.logLevel,
+            ShopifyCheckout.configuration.logLevel,
             LogLevel.warn,
             "Default logLevel should be .warn"
         )
@@ -55,16 +66,16 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_configuration_canDisableTelemetry() {
-        ShopifyCheckoutKit.configure { $0.telemetry.enabled = false }
+        ShopifyCheckout.configure { $0.telemetry.enabled = false }
 
-        XCTAssertFalse(ShopifyCheckoutKit.configuration.telemetry.enabled)
+        XCTAssertFalse(ShopifyCheckout.configuration.telemetry.enabled)
     }
 
     func test_configuration_onLogLevelChange_usesExistingInstance() {
         let originalLogger = OSLogger.shared
         let originalLogLevel = OSLogger.shared.logLevel
 
-        ShopifyCheckoutKit.configure { $0.logLevel = originalLogLevel }
+        ShopifyCheckout.configure { $0.logLevel = originalLogLevel }
         let newLogger = OSLogger.shared
 
         XCTAssertTrue(
@@ -74,7 +85,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_present_decoratesCheckoutURL() throws {
-        let viewController = ShopifyCheckoutKit.present(
+        let viewController = ShopifyCheckout.present(
             checkout: checkoutURL,
             from: UIViewController()
         )
@@ -86,7 +97,7 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let delegate = MockCheckoutDelegate()
         let presenter = UIViewController()
 
-        let viewController = ShopifyCheckoutKit.present(
+        let viewController = ShopifyCheckout.present(
             checkout: checkoutURL,
             from: presenter,
             delegate: delegate
@@ -102,9 +113,9 @@ class ShopifyCheckoutKitTests: XCTestCase {
     func test_present_duplicatePreservesCheckoutAndDelegate() throws {
         let presenter = RecordingCheckoutPresenter()
         let originalDelegate = MockCheckoutDelegate()
-        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, delegate: originalDelegate)
+        let checkout = ShopifyCheckout.present(checkout: checkoutURL, from: presenter, delegate: originalDelegate)
 
-        let duplicate = try ShopifyCheckoutKit.present(
+        let duplicate = try ShopifyCheckout.present(
             checkout: XCTUnwrap(URL(string: "https://shop.example/checkouts/cn/other")),
             from: presenter,
             delegate: MockCheckoutDelegate()
@@ -118,11 +129,11 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     func test_present_fromCheckoutOrItsChildReturnsExistingCheckout() throws {
         let presenter = RecordingCheckoutPresenter()
-        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        let checkout = ShopifyCheckout.present(checkout: checkoutURL, from: presenter)
         let child = try XCTUnwrap(checkout.viewControllers.first)
 
-        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: checkout) === checkout)
-        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: child) === checkout)
+        XCTAssertTrue(ShopifyCheckout.present(checkout: checkoutURL, from: checkout) === checkout)
+        XCTAssertTrue(ShopifyCheckout.present(checkout: checkoutURL, from: child) === checkout)
         XCTAssertEqual(presenter.presentationCount, 1)
     }
 
@@ -130,62 +141,62 @@ class ShopifyCheckoutKitTests: XCTestCase {
         let presenter = RecordingCheckoutPresenter()
         let child = UIViewController()
         presenter.addChild(child)
-        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        let checkout = ShopifyCheckout.present(checkout: checkoutURL, from: presenter)
 
-        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: child) === checkout)
+        XCTAssertTrue(ShopifyCheckout.present(checkout: checkoutURL, from: child) === checkout)
         XCTAssertEqual(presenter.presentationCount, 1)
     }
 
     func test_present_acceleratedEntryPointUsesSameGuard() {
         let presenter = RecordingCheckoutPresenter()
-        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts)
+        let checkout = ShopifyCheckout.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts)
 
-        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter) === checkout)
-        XCTAssertTrue(ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts) === checkout)
+        XCTAssertTrue(ShopifyCheckout.present(checkout: checkoutURL, from: presenter) === checkout)
+        XCTAssertTrue(ShopifyCheckout.present(checkout: checkoutURL, from: presenter, entryPoint: .acceleratedCheckouts) === checkout)
         XCTAssertEqual(presenter.presentationCount, 1)
     }
 
     func test_present_afterDismissalCreatesNewCheckoutEvenWhenOldControllerIsRetained() {
         let presenter = RecordingCheckoutPresenter()
-        let checkout = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        let checkout = ShopifyCheckout.present(checkout: checkoutURL, from: presenter)
         presenter.modal = nil
 
-        let next = ShopifyCheckoutKit.present(checkout: checkoutURL, from: presenter)
+        let next = ShopifyCheckout.present(checkout: checkoutURL, from: presenter)
 
         XCTAssertFalse(next === checkout)
         XCTAssertEqual(presenter.presentationCount, 2)
     }
 
     func test_present_independentPresentersCanPresentTheirOwnCheckout() {
-        let first = ShopifyCheckoutKit.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
-        let second = ShopifyCheckoutKit.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
+        let first = ShopifyCheckout.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
+        let second = ShopifyCheckout.present(checkout: checkoutURL, from: RecordingCheckoutPresenter())
 
         XCTAssertFalse(first === second)
     }
 
     func test_logger_withDifferentLogLevels_shouldHaveCorrectLogLevel() {
-        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+        ShopifyCheckout.configure { $0.logLevel = .debug }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .debug,
             "Logger should have .debug log level"
         )
 
-        ShopifyCheckoutKit.configure { $0.logLevel = .debug }
+        ShopifyCheckout.configure { $0.logLevel = .debug }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .debug,
             "Logger should have .debug log level"
         )
 
-        ShopifyCheckoutKit.configure { $0.logLevel = .error }
+        ShopifyCheckout.configure { $0.logLevel = .error }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .error,
             "Logger should have .error log level"
         )
 
-        ShopifyCheckoutKit.configure { $0.logLevel = .none }
+        ShopifyCheckout.configure { $0.logLevel = .none }
         XCTAssertEqual(
             OSLogger.shared.logLevel,
             .none,
@@ -194,13 +205,13 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_preload_returnsNilWhenDisabled() {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
-        XCTAssertNil(ShopifyCheckoutKit.preload(checkout: checkoutURL))
+        ShopifyCheckout.configure { $0.preloading.enabled = false }
+        XCTAssertNil(ShopifyCheckout.preload(checkout: checkoutURL))
     }
 
     func test_preload_decoratesCheckoutURL() throws {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        let preload = ShopifyCheckout.preload(checkout: checkoutURL)
         let expectedURL = CheckoutURLDecorator.decorate(checkoutURL)
         let checkoutView = try XCTUnwrap(
             CheckoutWebView.preloadCache.view(
@@ -213,8 +224,8 @@ class ShopifyCheckoutKitTests: XCTestCase {
     }
 
     func test_preload_returnsPreloadWhenEnabled() {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        let preload = ShopifyCheckout.preload(checkout: checkoutURL)
         var states: [PreloadState] = []
 
         preload?.onStateChange = { state in

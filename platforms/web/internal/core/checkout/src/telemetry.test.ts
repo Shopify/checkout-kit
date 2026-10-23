@@ -86,7 +86,7 @@ describe("checkout telemetry factory", () => {
     const factory = vi.fn(() => overriddenClient);
     overrideTelemetryFactoryForTesting(factory);
     expect(createTelemetry(["custom.update"])).toBe(overriddenClient);
-    expect(factory).toHaveBeenCalledWith(["custom.update"]);
+    expect(factory).toHaveBeenCalledWith(["custom.update"], undefined);
 
     overrideTelemetryFactoryForTesting(undefined);
     const client = createTelemetry();

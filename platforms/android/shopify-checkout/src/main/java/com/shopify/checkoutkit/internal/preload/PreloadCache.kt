@@ -7,7 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.shopify.checkoutkit.checkout.CheckoutPreload
 import com.shopify.checkoutkit.checkout.PreloadState
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.internal.web.CheckoutUrlDecorator
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
 import com.shopify.checkoutkit.internal.web.removeFromParent
@@ -71,7 +71,7 @@ internal class PreloadCache(
         val cached = entry
         val isCurrentEntry = cached?.view === view
         if (isCurrentEntry && cached?.isFresh(clock.elapsedRealtime()) == false) {
-            ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding expired preloaded WebView.")
+            ShopifyCheckout.log.d(LOG_TAG, "Discarding expired preloaded WebView.")
             evict(PreloadState.Idle(PreloadState.IdleReason.Expired))
         }
         return entry?.view === view
@@ -115,7 +115,7 @@ internal class PreloadCache(
         val validEntry = if (cached.isValid(key, clock.elapsedRealtime())) {
             cached
         } else {
-            ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
+            ShopifyCheckout.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
             val reason = if (cached.key == key) PreloadState.IdleReason.Expired else PreloadState.IdleReason.Invalidated
             evict(PreloadState.Idle(reason))
             // `evict` notifies synchronously, and its observer may re-enter `preload`.
@@ -126,10 +126,10 @@ internal class PreloadCache(
         validEntry?.let { cached ->
             cancelExpiry()
             if (cached.view.isPresented) {
-                ShopifyCheckoutKit.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
+                ShopifyCheckout.log.d(LOG_TAG, "Preloaded WebView is already presented; creating a new WebView.")
                 null
             } else {
-                ShopifyCheckoutKit.log.d(LOG_TAG, PRELOAD_CACHE_HIT_LOG_MESSAGE)
+                ShopifyCheckout.log.d(LOG_TAG, PRELOAD_CACHE_HIT_LOG_MESSAGE)
                 observer = null
                 cached.view.markPreloadConsumed()
                 cached.view
@@ -211,7 +211,7 @@ internal class PreloadCache(
 
     override fun onDestroy(owner: LifecycleOwner) {
         if (entry?.lifecycleOwner === owner) {
-            ShopifyCheckoutKit.log.d(LOG_TAG, "Discarding preloaded WebView for destroyed lifecycle owner.")
+            ShopifyCheckout.log.d(LOG_TAG, "Discarding preloaded WebView for destroyed lifecycle owner.")
             evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
         }
     }

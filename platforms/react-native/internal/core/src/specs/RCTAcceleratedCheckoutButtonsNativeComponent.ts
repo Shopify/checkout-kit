@@ -21,11 +21,23 @@ type SizeChangeEvent = Readonly<{height: Double}>;
 type CheckoutIdentifierSpec = Readonly<{
   cartId?: string;
   variantId?: string;
-  quantity?: Double;
+}>;
+
+type CartRequestResponse = Readonly<{
+  requestId: string;
+  cartId?: string;
+  error?: string;
+}>;
+
+type CartRequestEvent = Readonly<{
+  requestId: string;
+  wallet: string;
 }>;
 
 interface NativeProps extends ViewProps {
   checkoutIdentifier: CheckoutIdentifierSpec;
+  cartRequestResponses?: ReadonlyArray<CartRequestResponse>;
+  onCartRequest?: DirectEventHandler<CartRequestEvent>;
   cornerRadius?: Float;
   wallets?: ReadonlyArray<string>;
   applePayLabel?: string;

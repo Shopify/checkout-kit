@@ -114,8 +114,9 @@ pnpm --dir protocols/universal-commerce-protocol/embedded-checkout-protocol test
 A failing threshold fails the test command and its CI job. Add tests for the
 uncovered behavior instead of lowering the threshold. The thresholds live in
 `platforms/web/vite.config.ts`, `platforms/react-native/jest.config.js`, and
-`protocols/universal-commerce-protocol/embedded-checkout-protocol/vitest.config.ts`. Swift, Android, and standalone telemetry tests do
-not yet enforce coverage thresholds.
+`protocols/universal-commerce-protocol/embedded-checkout-protocol/vitest.config.ts`. Swift and Android tests do
+not yet enforce coverage thresholds. The TypeScript telemetry tests run in the web test command, so the web
+thresholds cover them.
 
 CI updates one **Coverage Report** comment on same-repository pull requests for
 Web, React Native JavaScript, and Embedded Checkout Protocol (TS). The table
@@ -235,8 +236,9 @@ Close the checkout sheet after the buyer completes an order.
 
 Maintainers release a platform with `pnpm changeset <platform> version`. It bumps
 that platform's version, writes its `CHANGELOG.md`, and updates its native version
-files; other platforms are unaffected. Releases reach this repository already
-versioned.
+files; other platforms are unaffected. In the release pull request, update the root
+`README.md` version table and the platform's installation snippets and version
+callouts in its `README.md`. Releases reach this repository already versioned.
 
 The Release package workflow prepends `.github/RELEASE_TEMPLATE.md` to GitHub's
 generated release notes. Before publishing a draft release, complete the
@@ -377,8 +379,8 @@ It sets the version in `platforms/swift/package.json`, then copies it to
 `platforms/swift/Sources/ShopifyCheckout/ShopifyCheckoutKit.swift`,
 `platforms/swift/Sources/ShopifyCheckout/MetaData.swift`, and
 `ShopifyCheckoutKit.podspec` (at the repo root). In that pull request, update the
-SwiftPM/CocoaPods snippets in `platforms/swift/README.md`. See
-[Versions and release notes](#versions-and-release-notes).
+root `README.md` version table and the SwiftPM/CocoaPods snippets and version callouts
+in `platforms/swift/README.md`. See [Versions and release notes](#versions-and-release-notes).
 
 All Swift version declarations must match exactly. Supported release versions are `X.Y.Z` and prerelease versions are `X.Y.Z-{alpha|beta|rc}.N`.
 
@@ -451,8 +453,9 @@ Once merged, run the [Release package workflow](../../actions/workflows/release.
 Maintainers prepare the release pull request with `pnpm changeset android version`.
 It sets the version in `platforms/android/package.json`, then copies it to
 `checkoutKitAndroid` in `platforms/android/gradle/libs.versions.toml`. In that
-pull request, update the Gradle/Maven snippets in `platforms/android/README.md`.
-See [Versions and release notes](#versions-and-release-notes).
+pull request, update the root `README.md` version table and the Gradle/Maven snippets
+and version callouts in `platforms/android/README.md`. See
+[Versions and release notes](#versions-and-release-notes).
 
 If Kit needs a new protocol version, publish that protocol release first, then
 update `embeddedCheckoutProtocolAndroid` to it in the pull request that adopts it.

@@ -51,13 +51,13 @@ Handlers run synchronously on the calling thread. The client does not provide a 
 ## Connect to Checkout Kit
 
 Android apps using Checkout Kit should use its high-level
-`com.shopify.checkoutkit.checkout.ShopifyCheckoutKit` API rather than
+`com.shopify.checkoutkit.checkout.ShopifyCheckout` API rather than
 constructing the low-level protocol client directly:
 
 ```kotlin
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 
-ShopifyCheckoutKit.present(checkoutUrl, activity) {
+ShopifyCheckout.present(checkoutUrl, activity) {
     onStart { event ->
         println("Checkout started: ${event.checkout.id}")
     }

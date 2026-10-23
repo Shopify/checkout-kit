@@ -9,12 +9,12 @@ class CartCheckoutPresentationTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        originalConfiguration = ShopifyCheckoutKit.configuration
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = false }
+        originalConfiguration = ShopifyCheckout.configuration
+        ShopifyCheckout.configure { $0.preloading.enabled = false }
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = originalConfiguration }
+        ShopifyCheckout.configure { $0 = originalConfiguration }
         try await super.tearDown()
     }
 

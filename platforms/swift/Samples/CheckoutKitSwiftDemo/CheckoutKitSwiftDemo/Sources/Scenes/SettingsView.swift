@@ -53,7 +53,7 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.checkoutKitLogLevel.rawValue)
     var checkoutKitLogLevel: LogLevel = .debug {
         didSet {
-            ShopifyCheckoutKit.configure {
+            ShopifyCheckout.configure {
                 $0.logLevel = checkoutKitLogLevel
             }
         }
@@ -66,7 +66,7 @@ struct SettingsView: View {
     var windowOpenHandler: WindowOpenHandlerOption = .default
 
     @State private var logs: [String?] = LogReader.shared.readLogs() ?? []
-    @State private var selectedAppearanceOption = AppearanceOption(appearance: ShopifyCheckoutKit.configuration.appearance)
+    @State private var selectedAppearanceOption = AppearanceOption(appearance: ShopifyCheckout.configuration.appearance)
     @State private var isResettingSession = false
     @State private var showingSessionReset = false
 
@@ -91,7 +91,7 @@ struct SettingsView: View {
 
                     Toggle("Checkout preloading", isOn: $checkoutPreloadingEnabled)
                         .onChange(of: checkoutPreloadingEnabled) { _ in
-                            ShopifyCheckoutKit.configure {
+                            ShopifyCheckout.configure {
                                 $0.preloading.enabled = checkoutPreloadingEnabled
                             }
                         }
@@ -171,7 +171,7 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selectedAppearanceOption = option
-                            ShopifyCheckoutKit.configure {
+                            ShopifyCheckout.configure {
                                 $0.appearance = option.appearance
                             }
                             NotificationCenter.default.post(

@@ -176,12 +176,12 @@ class RCTShopifyCheckoutKit: NSObject {
             self.checkoutPreload = nil
 
             guard let url = URL(string: checkoutURL) else {
-                self.emitPreloadStateChange(requestId: requestId, state: .idle)
+                self.emitPreloadStateChange(requestId: requestId, state: .idle())
                 return
             }
 
             guard let checkoutPreload = ShopifyCheckoutKit.preload(checkout: url) else {
-                self.emitPreloadStateChange(requestId: requestId, state: .idle)
+                self.emitPreloadStateChange(requestId: requestId, state: .idle())
                 return
             }
 
@@ -332,21 +332,8 @@ class RCTShopifyCheckoutKit: NSObject {
 
 extension RCTShopifyCheckoutKit {
     private func emitPreloadStateChange(requestId: String, state: PreloadState) {
-        var event: [String: Any] = ["requestId": requestId]
-
-        switch state {
-        case .idle:
-            event["type"] = "idle"
-        case .loading:
-            event["type"] = "loading"
-        case .ready:
-            event["type"] = "ready"
-        case .expired:
-            event["type"] = "expired"
-        case let .failed(reason, _):
-            event["type"] = "failed"
-            event.merge(serializePreloadFailure(reason)) { _, new in new }
-        }
+        var event = serializePreloadState(state)
+        event["requestId"] = requestId
 
         do {
             let data = try JSONSerialization.data(withJSONObject: event, options: [])
@@ -355,6 +342,27 @@ extension RCTShopifyCheckoutKit {
         } catch {
             NSLog("[ShopifyCheckoutKit] Failed to serialize preload state: \(error)")
         }
+    }
+
+    func serializePreloadState(_ state: PreloadState) -> [String: Any] {
+        var event: [String: Any] = [:]
+
+        switch state {
+        case let .idle(reason):
+            event["type"] = "idle"
+            if let reason {
+                event["reason"] = reason.rawValue
+            }
+        case .loading:
+            event["type"] = "loading"
+        case .ready:
+            event["type"] = "ready"
+        case let .failed(reason, _):
+            event["type"] = "failed"
+            event.merge(serializePreloadFailure(reason)) { _, new in new }
+        }
+
+        return event
     }
 
     func serializePreloadFailure(_ reason: PreloadState.FailureReason) -> [String: Any] {

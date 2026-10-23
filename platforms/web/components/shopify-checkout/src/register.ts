@@ -4,7 +4,7 @@ import { ShopifyCheckout } from "./shopify-checkout";
 
 // A page may load Checkout Kit more than once (an npm bundle plus the CDN loader,
 // or two copies of a bundle). Leave an existing <shopify-checkout> in place rather
-// than failing the import.
-if (customElements.get("shopify-checkout") === undefined) {
+// than failing the import. Server rendering has no registry, so importing does nothing there.
+if (globalThis.customElements && customElements.get("shopify-checkout") === undefined) {
   ShopifyCheckout.register();
 }

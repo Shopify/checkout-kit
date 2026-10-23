@@ -14,6 +14,7 @@ import com.shopify.checkoutkit.androiddemo.settings.data.WindowOpenHandler
 import com.shopify.checkoutkit.androiddemo.settings.data.toCheckoutSheetOptions
 import com.shopify.checkoutkit.checkout.CheckoutAppearance
 import com.shopify.checkoutkit.checkout.Preloading
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,7 +52,7 @@ class SettingsViewModel(
     }
 
     fun setAppearance(appearance: CheckoutAppearance) = viewModelScope.launch {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = appearance.withCustomCloseIcon()
         }
         settingsRepository.setAppearance(appearance)
@@ -62,7 +63,7 @@ class SettingsViewModel(
     }
 
     fun setCheckoutPreloadingEnabled(enabled: Boolean) = viewModelScope.launch {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.preloading = Preloading { this.enabled = enabled }
         }
         settingsRepository.setCheckoutPreloadingEnabled(enabled)
@@ -70,7 +71,7 @@ class SettingsViewModel(
 
     fun setCheckoutPresentationMode(mode: CheckoutPresentationMode) = viewModelScope.launch {
         val settings = currentSettings()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = mode.toCheckoutSheetOptions(
                 preset = settings?.checkoutSheetPreset ?: CheckoutSheetPreset.NewDefaults,
                 dragToDismissEnabled = settings?.dragToDismissEnabled ?: true,
@@ -85,7 +86,7 @@ class SettingsViewModel(
         val checkoutSheetPreset = settings?.checkoutSheetPreset ?: CheckoutSheetPreset.NewDefaults
         val checkoutPresentationMode = settings?.checkoutPresentationMode ?: CheckoutPresentationMode.CheckoutKitSheet
         val dragToDismissEnabled = settings?.dragToDismissEnabled ?: true
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = checkoutPresentationMode.toCheckoutSheetOptions(
                 preset = checkoutSheetPreset,
                 dragToDismissEnabled = dragToDismissEnabled,
@@ -104,7 +105,7 @@ class SettingsViewModel(
         val checkoutPresentationMode = settings?.checkoutPresentationMode ?: CheckoutPresentationMode.CheckoutKitSheet
         val dragToDismissEnabled = settings?.dragToDismissEnabled ?: true
         val tapAwayToDismissEnabled = settings?.tapAwayToDismissEnabled ?: true
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = checkoutPresentationMode.toCheckoutSheetOptions(
                 preset = preset,
                 dragToDismissEnabled = dragToDismissEnabled,
@@ -119,7 +120,7 @@ class SettingsViewModel(
         val checkoutSheetPreset = settings?.checkoutSheetPreset ?: CheckoutSheetPreset.NewDefaults
         val checkoutPresentationMode = settings?.checkoutPresentationMode ?: CheckoutPresentationMode.CheckoutKitSheet
         val tapAwayToDismissEnabled = settings?.tapAwayToDismissEnabled ?: true
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = checkoutPresentationMode.toCheckoutSheetOptions(
                 preset = checkoutSheetPreset,
                 dragToDismissEnabled = enabled,

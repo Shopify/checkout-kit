@@ -1,5 +1,21 @@
 # Shopify Checkout Kit - Swift
 
+## Migrating checkout lifecycle APIs
+
+Checkout lifecycle APIs now live on `ShopifyCheckout`. This is a breaking change;
+the old `ShopifyCheckoutKit` lifecycle entry points have been removed.
+
+| Previous API | Replacement |
+| --- | --- |
+| `ShopifyCheckoutKit.present(...)` | `ShopifyCheckout.present(...)` |
+| `ShopifyCheckoutKit.preload(...)` | `ShopifyCheckout.preload(...)` |
+| `ShopifyCheckoutKit.invalidate()` | `ShopifyCheckout.clearPreload()` |
+| `ShopifyCheckoutKit.configure { ... }` | `ShopifyCheckout.configure { ... }` |
+| `ShopifyCheckoutKit.configuration` | `ShopifyCheckout.configuration` |
+
+Package/import names and SDK version metadata are unchanged. Configuration and
+preloads remain shared across checkout entry points, not scoped to individual views.
+
 [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](../../LICENSE)
 [![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-2ebb4e.svg?style=flat)](https://swift.org/package-manager/)
 
@@ -7,7 +23,7 @@
 
 > [!WARNING]
 > **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The current Checkout Kit for Swift alpha is `4.0.0-alpha.10`.
+> production-ready. The current Checkout Kit for Swift alpha is `4.0.0-alpha.11`.
 > Stability is not guaranteed, and breaking changes may occur in any release.
 
 **Checkout Kit for Swift** lets iOS apps present Shopify checkout in a native sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods. The Swift package also includes `ShopifyAcceleratedCheckouts`, a SwiftUI library for rendering Shop Pay and Apple Pay buttons on iOS 16+.
@@ -49,7 +65,7 @@
 
 ## Install
 
-The current Checkout Kit for Swift alpha is `4.0.0-alpha.10`. For alpha testing, use that exact version until a stable `4.x` release is available.
+The current Checkout Kit for Swift alpha is `4.0.0-alpha.11`. For alpha testing, use that exact version until a stable `4.x` release is available.
 
 ### Swift Package Manager
 
@@ -63,7 +79,7 @@ Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.10")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.11")
 ]
 ```
 
@@ -84,10 +100,10 @@ Then add the products you need to your app target:
 The CocoaPods spec exists so that [Checkout Kit for React Native](../react-native) can consume the native SDK. Native apps should use Swift Package Manager.
 
 ```ruby
-pod "ShopifyCheckoutKit", "4.0.0-alpha.10"
+pod "ShopifyCheckoutKit", "4.0.0-alpha.11"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
-pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.10"
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.11"
 ```
 
 ### Compatibility
@@ -120,7 +136,7 @@ import UIKit
 
 final class CartViewController: UIViewController, CheckoutDelegate {
   func presentCheckout(checkoutURL: URL) {
-    ShopifyCheckoutKit.present(
+    ShopifyCheckout.present(
       checkout: checkoutURL,
       from: self,
       delegate: self
@@ -169,6 +185,8 @@ struct CartView: View {
 
 `CheckoutSheet` remains available as a deprecated typealias for `ShopifyCheckout`. Use `ShopifyCheckout` in new code.
 
+`ShopifyCheckout` creates app-hosted SwiftUI content and provides checkout-wide `configure`, `preload`, and `clearPreload` APIs. `ShopifyCheckout.present` manages SDK-owned sheet presentation.
+
 Checkout Kit adds the required UCP query parameters automatically when it loads checkout.
 
 ## Preload checkout
@@ -176,7 +194,7 @@ Checkout Kit adds the required UCP query parameters automatically when it loads 
 Call `preload` when your app has a strong signal that the buyer is likely to check out soon, such as when they open the cart screen or move toward a checkout action:
 
 ```swift
-ShopifyCheckoutKit.preload(checkout: checkoutURL)
+ShopifyCheckout.preload(checkout: checkoutURL)
 ```
 
 Each call refreshes the cached checkout, even when `checkoutURL` is unchanged. Call `preload` again after cart changes so the preloaded checkout reflects the latest cart state. A preload request made while checkout is presented leaves the active checkout session untouched.
@@ -184,7 +202,7 @@ Each call refreshes the cached checkout, even when `checkoutURL` is unchanged. C
 `preload` returns an optional `CheckoutPreload` handle. You can ignore it when preloading is only a performance hint, or retain it to observe the preload lifecycle:
 
 ```swift
-let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+let preload = ShopifyCheckout.preload(checkout: checkoutURL)
 preload?.onStateChange = { state in
   switch state {
   case .idle(let reason):
@@ -224,7 +242,7 @@ A successful background preload normally transitions from `.loading` to `.ready`
 Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
 
 ```swift
-ShopifyCheckoutKit.present(
+ShopifyCheckout.present(
   checkout: checkoutURL,
   from: self,
   delegate: self
@@ -235,37 +253,39 @@ Preloading is a best-effort performance hint, not a guarantee. If the preload is
 
 Avoid preloading on every add-to-cart or cart mutation. Preload only when buyer intent is strong enough to justify the additional client and network work.
 
-Clear unused preloaded checkout work with `invalidate`:
+Clear unused preloaded checkout work with `clearPreload`:
 
 ```swift
-ShopifyCheckoutKit.invalidate()
+ShopifyCheckout.clearPreload()
 ```
 
-Updating configuration through `ShopifyCheckoutKit.configure {}` triggers `ShopifyCheckoutKit.invalidate()`. Discarding cached preloads avoids presenting a stale checkout. If a preload may already have run when configuration changes, call `preload` again.
+Updating configuration through `ShopifyCheckout.configure {}` triggers `ShopifyCheckout.clearPreload()`. Discarding cached preloads avoids presenting a stale checkout. If a preload may already have run when configuration changes, call `preload` again.
 
 Preloading is enabled by default. Disable it when appropriate, for example for data-saver modes or app-specific runtime conditions:
 
 ```swift
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
   $0.preloading.enabled = false
 }
 ```
 
 ## Configure checkout
 
-Configure global presentation defaults before presenting checkout. `ShopifyCheckoutKit.configuration` is read-only; `configure {}` is the only way to change it and must be called on the main actor:
+Configure global presentation defaults before presenting checkout. `ShopifyCheckout.configuration` is read-only; `configure {}` is the only way to change it and must be called on the main actor:
 
 ```swift
 import ShopifyCheckoutKit
 
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
   $0.appearance = .storefront(colors: CheckoutColors(progressIndicatorColor: .systemBlue))
   $0.logLevel = .debug
   $0.telemetry.enabled = false
 }
 ```
 
-`ShopifyCheckout` uses the global configuration as its defaults. When present, modifiers such as `.appearance(...)` and `.title(...)` take precedence over the corresponding `ShopifyCheckoutKit.configuration` values for that checkout. Modifiers do not mutate `ShopifyCheckoutKit.configuration`, so they do not invalidate a cached preload.
+Embedded `ShopifyCheckout` resolves shared appearance and title defaults when SwiftUI creates its backing view controller, not when the `ShopifyCheckout` value is initialized. Explicit `.appearance(...)` and `.title(...)` modifiers take precedence over the corresponding `ShopifyCheckout.configuration` values. Later shared configuration changes do not restyle or retitle that controller.
+
+Modifiers do not mutate `ShopifyCheckout.configuration`, so they do not invalidate a cached preload.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
@@ -304,7 +324,7 @@ To localize the title, add `shopify_checkout_kit_title` to your app's `Localizab
 Light and dark schemes each own one palette. Automatic appearance owns independent `lightColors` and `darkColors`, and switches natively when the system appearance changes:
 
 ```swift
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
   $0.appearance = .app(.automatic(
     lightColors: CheckoutColors(progressIndicatorColor: .systemBlue, closeIconTintColor: .systemBlue),
     darkColors: CheckoutColors(progressIndicatorColor: .systemTeal, closeIconTintColor: .systemTeal)
@@ -322,7 +342,7 @@ let appearance = CheckoutAppearance.app(
   )
 )
 
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
   $0.appearance = appearance
 }
 ```
@@ -353,7 +373,7 @@ Shopify-owned `shop.app` and `shop.com` domains (including their subdomains) are
 trusted as well.
 
 ```swift
-ShopifyCheckoutKit.configure {
+ShopifyCheckout.configure {
   $0.allowedMessageOrigins = [
     "https://checkout.example.com",
     "https://*.example.com",
@@ -378,10 +398,10 @@ body is untrusted and is not logged.
 ### Current configuration
 
 ```swift
-let configuration = ShopifyCheckoutKit.configuration
+let configuration = ShopifyCheckout.configuration
 ```
 
-`ShopifyCheckoutKit.configuration` returns a copy. Changing that copy does not change the configuration; use `ShopifyCheckoutKit.configure {}` instead.
+`ShopifyCheckout.configuration` returns a copy. Changing that copy does not change the configuration; use `ShopifyCheckout.configure {}` instead.
 
 ## Checkout lifecycle
 
@@ -713,7 +733,7 @@ Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and 
 
 ## Troubleshooting
 
-- Use `ShopifyCheckoutKit.configure { $0.logLevel = .debug }` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
+- Use `ShopifyCheckout.configure { $0.logLevel = .debug }` or `ShopifyAcceleratedCheckouts.logLevel = .debug` while integrating.
 - If checkout reports an expired, completed, or invalid cart, create a new cart and use its `checkoutUrl`.
 - If Apple Pay dismisses immediately, verify the merchant ID, entitlements, payment processing certificate, and device wallet setup.
 - If Universal Links do not open the app, verify the associated domain entitlement and the `/.well-known/apple-app-site-association` file on your custom storefront domain.

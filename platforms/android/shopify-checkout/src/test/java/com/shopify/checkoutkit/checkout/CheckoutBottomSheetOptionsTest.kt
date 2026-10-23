@@ -37,7 +37,7 @@ class CheckoutBottomSheetOptionsTest {
 
     @Before
     fun setUp() {
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        initialConfiguration = ShopifyCheckout.getConfiguration()
         activityController = Robolectric.buildActivity(ComponentActivity::class.java)
         activity = activityController.get()
     }
@@ -48,7 +48,7 @@ class CheckoutBottomSheetOptionsTest {
         presentedSheet = null
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = initialConfiguration.appearance
             it.sheet = initialConfiguration.sheet
             it.preloading = initialConfiguration.preloading
@@ -72,7 +72,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `applies configured scrim color without platform window dim`() {
         val scrimColor = Color.SRGB(0x66010203)
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(scrimColor = scrimColor)
         }
 
@@ -101,7 +101,7 @@ class CheckoutBottomSheetOptionsTest {
     @Config(sdk = [29])
     @Test
     fun `uses dark navigation bar buttons over light checkout backgrounds`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
@@ -114,7 +114,7 @@ class CheckoutBottomSheetOptionsTest {
     @Config(sdk = [29])
     @Test
     fun `uses light navigation bar buttons over dark checkout backgrounds`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
         }
 
@@ -127,7 +127,7 @@ class CheckoutBottomSheetOptionsTest {
     @Config(sdk = [25])
     @Test
     fun `uses navigation bar scrim over light checkout backgrounds when dark nav buttons are unavailable`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(ColorScheme.Light())
         }
 
@@ -139,7 +139,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `disabling drag to dismiss keeps outside touch cancellation enabled`() {
         val listener = RecordingCheckoutListener()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(dragToDismissEnabled = false)
             )
@@ -171,7 +171,7 @@ class CheckoutBottomSheetOptionsTest {
 
     @Test
     fun `drag handle is visual only when enabled`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(dragHandle = CheckoutSheetDragHandle(visible = true))
         }
 
@@ -199,7 +199,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `drag handle applies configured color scheme color when provided`() {
         val customDragHandleColor = Color.SRGB(0xFF336699.toInt())
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(
                 colorScheme = ColorScheme.Light().customize {
                     dragHandleColor = customDragHandleColor
@@ -218,7 +218,7 @@ class CheckoutBottomSheetOptionsTest {
     @Test
     fun `drag handle derives its color from a customized header title color`() {
         val customHeaderTitleColor = Color.SRGB(0xFF336699.toInt())
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = CheckoutAppearance.App(
                 colorScheme = ColorScheme.Light().customize {
                     headerBackgroundColor = Color.SRGB(0xFF000000.toInt())
@@ -237,7 +237,7 @@ class CheckoutBottomSheetOptionsTest {
 
     @Test
     fun `drag handle remains hidden when drag to dismiss is disabled`() {
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
                 dismissal = CheckoutSheetDismissal(dragToDismissEnabled = false),
                 dragHandle = CheckoutSheetDragHandle(visible = true),

@@ -37,7 +37,7 @@ public final class OSLogger: Sendable {
     }
 
     public convenience init() {
-        self.init(prefix: "ShopifyCheckoutKit", logLevel: ShopifyCheckoutKit.configuration.logLevel)
+        self.init(prefix: "ShopifyCheckout", logLevel: ShopifyCheckout.configuration.logLevel)
     }
 
     public convenience init(prefix: String, logLevel: LogLevel) {

@@ -16,7 +16,7 @@ This sample demonstrates how to integrate Checkout Kit with the Shopify Storefro
 
 ## Checkout flow
 
-The sample's cart flow can use the Kotlin-first `ShopifyCheckoutKit.present(checkoutUrl, activity) { ... }` API or embed
+The sample's cart flow can use the Kotlin-first `ShopifyCheckout.present(checkoutUrl, activity) { ... }` API or embed
 `ShopifyCheckout` in an app-owned Compose sheet. Both modes register `onStart`, `onUpdate`, and `onComplete` to observe
 typed checkout snapshots, unwrap `onFail` events for cart recovery, and configure dismissal, file chooser, and
 geolocation callbacks. Settings also demonstrate Checkout Kit sheet presets and dismissal behavior. The
@@ -68,7 +68,7 @@ Do not edit files in `app/build/generated/source/apollo/` by hand. Update `.grap
 
 1. `StorefrontApiClient.kt` wraps an `ApolloClient`, points it at the configured Storefront API endpoint, and executes generated query and mutation types.
 2. Repository classes such as `CartRepository`, `ProductRepository`, and `ProductCollectionRepository` map generated Storefront API responses into local UI state.
-3. `CartViewModel.kt` shares checkout event and link handlers between `ShopifyCheckoutKit.present` and
+3. `CartViewModel.kt` shares checkout event and link handlers between `ShopifyCheckout.present` and
    `AppOwnedCheckoutSheet.kt`, which embeds checkout in app-owned Compose UI. Both forward browser/system callbacks
    to `MainActivity`. The log viewer groups Kit events by checkout and compares successive checkout snapshots.
 4. Apollo decodes responses into generated Kotlin types, so schema or operation changes surface as compile errors.

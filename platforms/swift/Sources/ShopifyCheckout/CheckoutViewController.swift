@@ -9,13 +9,13 @@ public class CheckoutViewController: UINavigationController {
     public convenience init(checkout url: URL, delegate: (any CheckoutDelegate)? = nil) {
         self.init(
             checkout: url,
-            configuration: ShopifyCheckoutKit.configuration,
+            configuration: ShopifyCheckout.configuration,
             delegate: delegate
         )
     }
 
     /// Shared initializer that lets SwiftUI inject instance-scoped configuration while package callers use the global default.
-    package init(checkout url: URL, configuration: Configuration = ShopifyCheckoutKit.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
+    package init(checkout url: URL, configuration: Configuration = ShopifyCheckout.configuration, delegate: (any CheckoutDelegate)? = nil, client: (any CheckoutCommunicationProtocol)? = nil, entryPoint: MetaData.EntryPoint? = nil) {
         let decoratedURL = CheckoutURLDecorator.decorate(url, configuration: configuration)
         let rootViewController = CheckoutWebViewController(
             checkoutURL: decoratedURL,
@@ -50,11 +50,45 @@ public class CheckoutViewController: UINavigationController {
     }
 }
 
+/// Entry point for Checkout Kit's checkout feature, and the SwiftUI checkout content type.
+///
+/// `ShopifyCheckout` has two roles:
+///
+/// - **Static members** (``configure(_:)``, ``configuration``, ``preload(checkout:)``,
+///   ``clearPreload()``, and ``present(checkout:from:delegate:)``) operate on shared checkout
+///   state. Configuration and preloads apply to every checkout entry point.
+/// - **Instances** created with ``init(checkout:)`` are checkout content that your app hosts.
+///   Modifiers such as ``title(_:)`` and ``onComplete(_:)`` affect only that instance and do not
+///   change the shared configuration.
+///
+/// ``present(checkout:from:delegate:)`` is a UIKit API on a SwiftUI type by design. The type
+/// represents the checkout feature, so SDK-managed presentation lives alongside app-hosted
+/// content rather than on a separate type. UIKit apps can call it without adopting SwiftUI.
 public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurable {
     public typealias UIViewControllerType = CheckoutViewController
 
+    /// Values set by instance modifiers such as ``title(_:)`` and ``appearance(_:)``.
+    ///
+    /// Only these values can vary per instance. Every other setting is always read from the shared
+    /// ``ShopifyCheckout/configuration``.
+    struct Overrides {
+        var appearance: CheckoutAppearance?
+        var title: String?
+
+        func applied(to base: Configuration) -> Configuration {
+            var resolved = base
+            if let appearance {
+                resolved.appearance = appearance
+            }
+            if let title {
+                resolved.title = title
+            }
+            return resolved
+        }
+    }
+
     var checkoutURL: URL
-    var configuration: Configuration
+    var overrides = Overrides()
     var onStartAction: ((CheckoutStartEvent) -> Void)?
     var onUpdateAction: ((CheckoutUpdateEvent) -> Void)?
     var onCompleteAction: ((CheckoutCompleteEvent) -> Void)?
@@ -64,13 +98,19 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
 
     public init(checkout url: URL) {
         checkoutURL = url
-        configuration = ShopifyCheckoutKit.configuration
+    }
+
+    /// The shared configuration with this instance's overrides applied.
+    func resolvedConfiguration(base: Configuration = ShopifyCheckout.configuration) -> Configuration {
+        overrides.applied(to: base)
     }
 
     public func makeUIViewController(context _: Self.Context) -> CheckoutViewController {
+        // Resolve once: appearance and title stay fixed for this checkout's lifetime, even if the
+        // shared configuration changes while it is on screen.
         let viewController = CheckoutViewController(
             checkout: checkoutURL,
-            configuration: configuration
+            configuration: resolvedConfiguration()
         )
         configureWebViewController(viewController)
         return viewController
@@ -163,19 +203,19 @@ public protocol CheckoutConfigurable {
 
 extension CheckoutConfigurable {
     @discardableResult public func appearance(_ appearance: CheckoutAppearance) -> Self {
-        modifyingConfiguration { $0.appearance = appearance }
+        modifyingOverrides { $0.appearance = appearance }
     }
 
     @discardableResult public func title(_ title: String) -> Self {
-        modifyingConfiguration { $0.title = title }
+        modifyingOverrides { $0.title = title }
     }
 
-    private func modifyingConfiguration(_ update: (inout Configuration) -> Void) -> Self {
+    private func modifyingOverrides(_ update: (inout ShopifyCheckout.Overrides) -> Void) -> Self {
         guard var copy = self as? ShopifyCheckout else {
             return self
         }
 
-        update(&copy.configuration)
+        update(&copy.overrides)
         return copy as? Self ?? self
     }
 }

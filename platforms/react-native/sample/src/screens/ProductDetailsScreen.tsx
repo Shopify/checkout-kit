@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -23,8 +23,10 @@ import {
   useShopifyCheckout,
 } from '@shopify/checkout-kit-react-native';
 import {useConfig} from '../context/Config';
+import useShopify from '../hooks/useShopify';
 import {useShopifyEventHandlers} from '../hooks/useCheckoutEventHandlers';
 import {AccessibilityIdentifiers} from '../accessibility/accessibilityIdentifiers';
+import {createBuyerIdentityCartInput} from '../utils';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 
@@ -75,10 +77,22 @@ function ProductDetails({
   const image = product.images?.edges[0]?.node;
   const variant = getVariant(product);
   const {acceleratedCheckoutsAvailable} = useShopifyCheckout();
+  const {mutations} = useShopify();
+  const [createCart] = mutations.cartCreate;
+  const eventHandlers = useShopifyEventHandlers('PDP - AcceleratedCheckoutButtons');
 
-  const eventHandlers = useShopifyEventHandlers(
-    'PDP - AcceleratedCheckoutButtons',
-  );
+  const getBuyNowCart = useCallback(async () => {
+    if (!variant?.id) return undefined;
+    const result = await createCart({
+      variables: {
+        input: {
+          ...createBuyerIdentityCartInput(appConfig),
+          lines: [{quantity: 1, merchandiseId: variant.id}],
+        },
+      },
+    });
+    return result.data?.cartCreate.cart?.id;
+  }, [appConfig, createCart, variant?.id]);
 
   return (
     <View key={product.id} style={styles.productItem}>
@@ -109,7 +123,7 @@ function ProductDetails({
               applePayStyle={appConfig.applePayStyle}
               wallets={[AcceleratedCheckoutWallet.applePay]}
               variantId={variant.id}
-              quantity={1}
+              getCart={getBuyNowCart}
               cornerRadius={cornerRadius}
             />
           )}

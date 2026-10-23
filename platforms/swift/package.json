@@ -1,6 +1,6 @@
 {
   "name": "@shopify/checkout-kit-swift",
-  "version": "4.0.0-alpha.10",
+  "version": "4.0.0-alpha.11",
   "private": true,
   "description": "Version manifest for Changesets. ShopifyCheckoutKit ships through Swift Package Manager and CocoaPods; do not publish this file."
 }

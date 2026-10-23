@@ -1,5 +1,20 @@
 # Checkout Kit for Android changelog
 
+## 4.0.0-alpha.11
+
+### Major Changes
+
+- Move checkout lifecycle APIs from `ShopifyCheckoutKit` to `ShopifyCheckout` without compatibility forwarding methods. Replace `ShopifyCheckoutKit.present`, `preload`, and `configure` with their `ShopifyCheckout` equivalents. The embedded view now takes the checkout URL first, matching `present` and `preload`: use `ShopifyCheckout.create(checkoutUrl, context) { ... }` and `ShopifyCheckout(checkoutUrl, context, listener)`. Replace `ShopifyCheckoutKit.invalidate()` with `ShopifyCheckout.clearPreload()`, and read configuration using `ShopifyCheckout.getConfiguration()`.
+
+  These operations retain shared checkout state; constructing embedded checkout content does not create an isolated SDK client. Dependency coordinates, the package namespace, and SDK version metadata are unchanged. Update explicit lifecycle imports from `com.shopify.checkoutkit.checkout.ShopifyCheckoutKit` to `com.shopify.checkoutkit.checkout.ShopifyCheckout`. SDK log messages previously tagged `ShopifyCheckoutKit` are now tagged `ShopifyCheckout`.
+- Add optional reasons to `PreloadState.Idle` to distinguish the initial state from invalidation and expiry. Replace `PreloadState.Idle` values with `PreloadState.Idle()` and the former `PreloadState.Expired` state with `PreloadState.Idle(PreloadState.IdleReason.Expired)`. Match idle states with `is PreloadState.Idle`. Java callers replace `PreloadState.Idle.INSTANCE` with `new PreloadState.Idle()` and inspect `getReason()`.
+
+  `IdleReason` is an extensible string-backed value with `Invalidated` and `Expired` constants. Compare known reasons or use an `else` branch so future reasons do not require source changes. Invalidating an empty cache preserves its last state and reason without notifying observers. Operational failures remain `Failed(reason, message)`.
+
+### Patch Changes
+
+- Update native checkout colors when the system theme changes while checkout is open. With `ColorScheme.Automatic` and `uiMode` in the host activity's `android:configChanges`, the header, title, close icon, header border, progress bar, web view background, drag handle and navigation bar buttons switch to the new theme's colors, and checkout stays open.
+
 ## 4.0.0-alpha.10
 
 ### Major Changes
@@ -23,9 +38,6 @@
   Java accessors follow the same names, for example `getHeaderFont()` becomes `getHeaderTitleColor()` and `setCloseIconTint(...)` becomes `setCloseIconTintColor(...)`. `closeIcon`, `dragHandleColor`, `headerBorderColor`, and `scrimColor` are unchanged.
 
   The `@Serializable` key names of `Colors` also change to the new property names. Color schemes that were serialized with an earlier version do not decode with this version. Serialize them again after you upgrade.
-- Add optional reasons to `PreloadState.Idle` to distinguish the initial state from invalidation and expiry. Replace `PreloadState.Idle` values with `PreloadState.Idle()` and the former `PreloadState.Expired` state with `PreloadState.Idle(PreloadState.IdleReason.Expired)`. Match idle states with `is PreloadState.Idle`. Java callers replace `PreloadState.Idle.INSTANCE` with `new PreloadState.Idle()` and inspect `getReason()`.
-
-  `IdleReason` is an extensible string-backed value with `Invalidated` and `Expired` constants. Compare known reasons or use an `else` branch so future reasons do not require source changes. Invalidating an empty cache preserves its last state and reason without notifying observers. Operational failures remain `Failed(reason, message)`.
 - Rename `CheckoutLinkAction.Open` to `CheckoutLinkAction.Default`. Return `Default` when your app does not handle a checkout link and Checkout Kit should use its default link-opening behavior.
 
 ## 4.0.0-alpha.9

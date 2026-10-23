@@ -9,7 +9,7 @@ class CheckoutViewControllerTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             $0 = Configuration()
             $0.appearance = .app(.dark())
             $0.preloading.enabled = false
@@ -20,7 +20,7 @@ class CheckoutViewControllerTests: XCTestCase {
 
     override func tearDown() async throws {
         CheckoutWebView.invalidate()
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -39,8 +39,8 @@ class CheckoutViewControllerTests: XCTestCase {
     }
 
     func testInitReusesCheckoutPreloadedFromTheSameUndecoratedURL() throws {
-        ShopifyCheckoutKit.configure { $0.preloading.enabled = true }
-        let preload = ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.configure { $0.preloading.enabled = true }
+        let preload = ShopifyCheckout.preload(checkout: checkoutURL)
         let preloadedView = try XCTUnwrap(
             CheckoutWebView.preloadCache.view(
                 for: PreloadKey(url: CheckoutURLDecorator.decorate(checkoutURL), entryPoint: nil)
@@ -73,7 +73,7 @@ class ShopifyCheckoutTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             $0 = Configuration()
             $0.appearance = .app(.dark())
             $0.preloading.enabled = false
@@ -83,7 +83,7 @@ class ShopifyCheckoutTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
@@ -138,10 +138,91 @@ class ShopifyCheckoutTests: XCTestCase {
 
     func testCheckoutViewControllerDecoratesCheckoutURLAfterAppearanceModifierRuns() async throws {
         let sheet = shopifyCheckout.appearance(.storefront())
+        try await withHostedCheckout(sheet) { checkoutViewController, _ in
+            try assertDecoratedCheckoutURL(
+                loadedCheckoutURL(from: checkoutViewController),
+                colorScheme: "light",
+                branding: "shop"
+            )
+        }
+    }
+
+    func test_makeUIViewController_usesSharedDefaultsChangedAfterViewCreation() async throws {
+        let sheet = ShopifyCheckout(checkout: checkoutURL)
+
+        ShopifyCheckout.configure {
+            $0.appearance = .app(.light())
+            $0.title = "Updated shared title"
+        }
+
+        try await withHostedCheckout(sheet) { controller, _ in
+            XCTAssertEqual(controller.topViewController?.title, "Updated shared title")
+            XCTAssertEqual(controller.overrideUserInterfaceStyle, .light)
+            try assertDecoratedCheckoutURL(loadedCheckoutURL(from: controller), colorScheme: "light", branding: "app")
+        }
+    }
+
+    func test_makeUIViewController_modifiersOverrideLaterSharedDefaults() async throws {
+        let sheet = ShopifyCheckout(checkout: checkoutURL)
+            .appearance(.app(.light()))
+            .title("Instance title")
+
+        ShopifyCheckout.configure {
+            $0.appearance = .storefront()
+            $0.title = "Updated shared title"
+        }
+
+        try await withHostedCheckout(sheet) { controller, _ in
+            XCTAssertEqual(controller.topViewController?.title, "Instance title")
+            XCTAssertEqual(controller.overrideUserInterfaceStyle, .light)
+            try assertDecoratedCheckoutURL(loadedCheckoutURL(from: controller), colorScheme: "light", branding: "app")
+        }
+    }
+
+    func test_updateUIViewController_preservesDefaultsResolvedWhenMounted() async throws {
+        ShopifyCheckout.configure { $0.title = "Original title" }
+        let sheet = ShopifyCheckout(checkout: checkoutURL)
+
+        try await withHostedCheckout(sheet) { controller, host in
+            XCTAssertEqual(controller.topViewController?.title, "Original title")
+            XCTAssertEqual(controller.overrideUserInterfaceStyle, .dark)
+
+            ShopifyCheckout.configure {
+                $0.appearance = .app(.light())
+                $0.title = "Updated shared title"
+            }
+
+            // Re-evaluate the SwiftUI content without changing its identity.
+            var updatedCallbackCalled = false
+            host.rootView = ShopifyCheckout(checkout: checkoutURL)
+                .onDismiss { updatedCallbackCalled = true }
+            for _ in 0 ..< 10 {
+                host.view.layoutIfNeeded()
+                await Task.yield()
+            }
+
+            XCTAssertTrue(descendantCheckoutViewController(from: host) === controller)
+            let content = try XCTUnwrap(controller.topViewController as? CheckoutWebViewController)
+            content.onDismiss?()
+            XCTAssertTrue(updatedCallbackCalled, "SwiftUI must apply the updated view before checking configuration stability")
+            XCTAssertEqual(controller.topViewController?.title, "Original title")
+            XCTAssertEqual(controller.overrideUserInterfaceStyle, .dark)
+            try assertDecoratedCheckoutURL(loadedCheckoutURL(from: controller), colorScheme: "dark", branding: "app")
+        }
+    }
+
+    private func withHostedCheckout(
+        _ sheet: ShopifyCheckout,
+        assertions: @MainActor (CheckoutViewController, UIHostingController<ShopifyCheckout>) async throws -> Void
+    ) async throws {
         let hostingController = UIHostingController(rootView: sheet)
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = hostingController
         window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
         hostingController.loadViewIfNeeded()
 
         var descendant: CheckoutViewController?
@@ -151,13 +232,8 @@ class ShopifyCheckoutTests: XCTestCase {
             await Task.yield()
         }
 
-        let checkoutViewController = try XCTUnwrap(descendant)
-        try assertDecoratedCheckoutURL(
-            loadedCheckoutURL(from: checkoutViewController),
-            colorScheme: "light",
-            branding: "shop"
-        )
-        withExtendedLifetime(window) {}
+        let controller = try XCTUnwrap(descendant)
+        try await assertions(controller, hostingController)
     }
 
     private func descendantCheckoutViewController(from viewController: UIViewController) -> CheckoutViewController? {
@@ -176,30 +252,30 @@ class CheckoutConfigurableTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         checkoutURL = URL(string: "https://www.shopify.com")
         shopifyCheckout = ShopifyCheckout(checkout: checkoutURL)
     }
 
     override func tearDown() async throws {
-        ShopifyCheckoutKit.configure { $0 = Configuration() }
+        ShopifyCheckout.configure { $0 = Configuration() }
         try await super.tearDown()
     }
 
     func testAppearanceIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalAppearance = ShopifyCheckoutKit.configuration.appearance
+        let globalAppearance = ShopifyCheckout.configuration.appearance
         let appearance = CheckoutAppearance.app(.light())
 
         let sheet = shopifyCheckout.appearance(appearance)
 
-        XCTAssertEqual(sheet.configuration.appearance, appearance)
-        XCTAssertEqual(shopifyCheckout.configuration.appearance, globalAppearance)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
+        XCTAssertEqual(sheet.resolvedConfiguration().appearance, appearance)
+        XCTAssertEqual(shopifyCheckout.resolvedConfiguration().appearance, globalAppearance)
+        XCTAssertEqual(ShopifyCheckout.configuration.appearance, globalAppearance)
     }
 
     func testAppearanceDecoratesCheckoutURLFromCapturedConfiguration() throws {
         let sheet = shopifyCheckout.appearance(.app(.dark()))
-        let decoratedURL = CheckoutURLDecorator.decorate(checkoutURL, configuration: sheet.configuration)
+        let decoratedURL = CheckoutURLDecorator.decorate(checkoutURL, configuration: sheet.resolvedConfiguration())
         let items = try XCTUnwrap(URLComponents(url: decoratedURL, resolvingAgainstBaseURL: false)?.queryItems)
 
         XCTAssertEqual(items.first(where: { $0.name == "ec_color_scheme" })?.value, "dark")
@@ -207,28 +283,51 @@ class CheckoutConfigurableTests: XCTestCase {
     }
 
     func testAppearanceColorsAreCapturedWithoutChangingGlobalConfiguration() {
-        let globalAppearance = ShopifyCheckoutKit.configuration.appearance
+        let globalAppearance = ShopifyCheckout.configuration.appearance
         let colors = CheckoutColors(webViewBackgroundColor: .red, progressIndicatorColor: .blue, closeIconTintColor: .green)
 
         let sheet = shopifyCheckout.appearance(.app(.light(colors: colors)))
 
-        XCTAssertEqual(sheet.configuration.appearance.effectiveColorScheme.colors(isDark: false), colors)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.appearance, globalAppearance)
+        XCTAssertEqual(sheet.resolvedConfiguration().appearance.effectiveColorScheme.colors(isDark: false), colors)
+        XCTAssertEqual(ShopifyCheckout.configuration.appearance, globalAppearance)
     }
 
     func testTitleIsCapturedWithoutChangingGlobalConfiguration() {
-        let globalTitle = ShopifyCheckoutKit.configuration.title
+        let globalTitle = ShopifyCheckout.configuration.title
         let title = "Test Title"
 
         let sheet = shopifyCheckout.title(title)
 
-        XCTAssertEqual(sheet.configuration.title, title)
-        XCTAssertEqual(shopifyCheckout.configuration.title, globalTitle)
-        XCTAssertEqual(ShopifyCheckoutKit.configuration.title, globalTitle)
+        XCTAssertEqual(sheet.resolvedConfiguration().title, title)
+        XCTAssertEqual(shopifyCheckout.resolvedConfiguration().title, globalTitle)
+        XCTAssertEqual(ShopifyCheckout.configuration.title, globalTitle)
+    }
+
+    func testNonOverriddenSettingsFollowSharedConfiguration() {
+        let sheet = shopifyCheckout.title("Instance title")
+
+        ShopifyCheckout.configure { $0.appearance = .app(.dark()) }
+
+        let resolved = sheet.resolvedConfiguration()
+        XCTAssertEqual(resolved.title, "Instance title")
+        XCTAssertEqual(resolved.appearance, .app(.dark()))
+    }
+
+    func testOverridesTakePrecedenceOverLaterSharedConfiguration() {
+        let sheet = shopifyCheckout.appearance(.app(.light())).title("Instance title")
+
+        ShopifyCheckout.configure {
+            $0.appearance = .app(.dark())
+            $0.title = "Shared title"
+        }
+
+        let resolved = sheet.resolvedConfiguration()
+        XCTAssertEqual(resolved.appearance, .app(.light()))
+        XCTAssertEqual(resolved.title, "Instance title")
     }
 
     func testModifiersDoNotInvalidatePreload() {
-        ShopifyCheckoutKit.preload(checkout: checkoutURL)
+        ShopifyCheckout.preload(checkout: checkoutURL)
         XCTAssertTrue(CheckoutWebView.preloadCache.hasEntry())
 
         _ = shopifyCheckout

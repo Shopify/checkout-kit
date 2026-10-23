@@ -27,8 +27,7 @@ import com.shopify.checkoutkit.checkout.CheckoutSheetSnapPoint
 import com.shopify.checkoutkit.checkout.ColorScheme
 import com.shopify.checkoutkit.checkout.R
 import com.shopify.checkoutkit.checkout.ShopifyCheckout
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.checkout.effectiveColorScheme
 import com.shopify.checkoutkit.checkout.resolveMaxWidthDp
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
@@ -74,17 +73,17 @@ internal class CheckoutBottomSheet(
         notifyDismissalOnFinalize = false
 
         setContentView(R.layout.checkout_sheet_content)
-        val appearance = ShopifyCheckoutKit.configuration.appearance
+        val appearance = ShopifyCheckout.configuration.appearance
         val colorScheme = appearance.effectiveColorScheme
-        val sheet = ShopifyCheckoutKit.configuration.sheet
+        val sheet = ShopifyCheckout.configuration.sheet
         window?.configureCheckoutBottomSheetWindow()
         configureSheet(sheet, colorScheme)
 
         log.d(LOG_TAG, "Configured appearance $appearance")
         log.d(LOG_TAG, "Finding or creating checkout view.")
         val checkoutView = ShopifyCheckout(
-            context = activity,
             checkoutUrl = checkoutUrl,
+            context = activity,
             webMessageTransport = webMessageTransport,
             hostConfiguration = CheckoutHostConfiguration(
                 listener = checkoutListener,
@@ -103,8 +102,12 @@ internal class CheckoutBottomSheet(
             presentedCheckoutView = null
         } else {
             checkoutView.configureForBottomSheet(sheet)
+            checkoutView.onThemeColorsChanged = { isDarkTheme ->
+                applyDragHandleStyle(sheet, colorScheme, isDarkTheme)
+                window?.setTransparentSystemBars(navigationBackgroundColor = checkoutView.webViewBackgroundColor)
+            }
             addCheckoutViewToContainer(checkoutView)
-            checkoutView.resumeForPresentation()
+            checkoutView.resumeWebView()
             show()
             // Dialog.show() can apply default window sizing and decor flags after the initial configuration.
             window?.setCheckoutBottomSheetWindowLayout()
@@ -136,10 +139,7 @@ internal class CheckoutBottomSheet(
             isClickable = sheet.dismissal.tapAwayToDismissEnabled
         }
 
-        findViewById<View>(R.id.checkout_drag_handle)?.applyCheckoutSheetDragHandleStyle(
-            color = colorScheme.dragHandleColor(activity.isDarkTheme()).getValue(activity),
-            sheet = sheet,
-        )
+        applyDragHandleStyle(sheet, colorScheme, activity.isDarkTheme())
 
         findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)?.apply {
             val maxWidthDp = sheet.resolveMaxWidthDp(activity)
@@ -156,6 +156,13 @@ internal class CheckoutBottomSheet(
                 }
             }
         }
+    }
+
+    private fun applyDragHandleStyle(sheet: CheckoutSheetOptions, colorScheme: ColorScheme, isDarkTheme: Boolean) {
+        findViewById<View>(R.id.checkout_drag_handle)?.applyCheckoutSheetDragHandleStyle(
+            color = colorScheme.dragHandleColor(isDarkTheme).getValue(activity),
+            sheet = sheet,
+        )
     }
 
     override fun cancel() {

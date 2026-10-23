@@ -361,6 +361,29 @@ describe('ShopifyCheckoutKit', () => {
       expect(subscription.state).toEqual({type: 'ready'});
     });
 
+    it('preserves native idle reasons', () => {
+      const onStateChange = jest.fn();
+      const instance = new ShopifyCheckout();
+      const subscription = instance.preload(checkoutUrl, {onStateChange});
+
+      preloadDispatch()(
+        JSON.stringify({
+          requestId: preloadRequestId(),
+          type: 'idle',
+          reason: 'invalidated',
+        }),
+      );
+
+      expect(onStateChange).toHaveBeenCalledWith({
+        type: 'idle',
+        reason: 'invalidated',
+      });
+      expect(subscription.state).toEqual({
+        type: 'idle',
+        reason: 'invalidated',
+      });
+    });
+
     it('normalizes preload failures with HTTP status codes', () => {
       const onStateChange = jest.fn();
       const instance = new ShopifyCheckout();
@@ -465,7 +488,7 @@ describe('ShopifyCheckoutKit', () => {
       totals: [],
     };
 
-    it.each(['open', 'handled', 'cancel'] as const)(
+    it.each(['default', 'handled', 'cancel'] as const)(
       'passes the %s link policy to native',
       linkAction => {
         const instance = new ShopifyCheckout();
@@ -480,7 +503,7 @@ describe('ShopifyCheckoutKit', () => {
 
     it('presents checkout without a session ID', () => {
       new ShopifyCheckout().present(checkoutUrl);
-      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
+      expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'default', expect.any(Function));
     });
 
     it('keeps a reentrant presentation subscribed when the first present throws', () => {
@@ -891,7 +914,7 @@ describe('ShopifyCheckoutKit', () => {
       it('subscribes to dispatch events when the default handler is enabled, even without callbacks', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'default', expect.any(Function));
         expect(NativeModule.onDispatch).toHaveBeenCalledWith(
           expect.any(Function),
         );
@@ -902,7 +925,7 @@ describe('ShopifyCheckoutKit', () => {
           handleGeolocationRequests: false,
         });
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'default', expect.any(Function));
       });
 
       it('handles geolocation permission grant correctly', async () => {
@@ -1087,7 +1110,7 @@ describe('ShopifyCheckoutKit', () => {
       it('presents with the default link policy on iOS', () => {
         const instance = new ShopifyCheckout();
         instance.present(checkoutUrl);
-        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'open', expect.any(Function));
+        expect(NativeModule.present).toHaveBeenCalledWith(checkoutUrl, 'default', expect.any(Function));
       });
 
       it('does not run the default geolocation handler on iOS even if dispatcher fires', async () => {

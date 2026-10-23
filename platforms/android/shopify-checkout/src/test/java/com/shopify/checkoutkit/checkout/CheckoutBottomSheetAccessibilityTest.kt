@@ -29,7 +29,7 @@ class CheckoutBottomSheetAccessibilityTest {
 
     @Before
     fun setUp() {
-        configuration = ShopifyCheckoutKit.configuration
+        configuration = ShopifyCheckout.configuration
         activity = Robolectric.buildActivity(ComponentActivity::class.java).get()
     }
 
@@ -37,7 +37,7 @@ class CheckoutBottomSheetAccessibilityTest {
     fun tearDown() {
         CheckoutWebView.clearCache()
         ShadowLooper.shadowMainLooper().runToEndOfTasks()
-        ShopifyCheckoutKit.configure {
+        ShopifyCheckout.configure {
             it.appearance = configuration.appearance
             it.preloading = configuration.preloading
             it.platform = configuration.platform

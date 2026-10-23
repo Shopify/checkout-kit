@@ -81,7 +81,7 @@ final class GraphQLClient: Sendable {
 
         // Set User-Agent header
         let userAgent = UserAgent.string(
-            platform: ShopifyCheckoutKit.configuration.platform,
+            platform: ShopifyCheckout.configuration.platform,
             entryPoint: .acceleratedCheckouts
         )
         urlRequest.setValue(userAgent, forHTTPHeaderField: "User-Agent")

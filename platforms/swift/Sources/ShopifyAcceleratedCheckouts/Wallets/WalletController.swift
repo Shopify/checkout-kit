@@ -44,7 +44,7 @@ class WalletController: ObservableObject, CheckoutDelegate {
         guard let topViewController = getTopViewController() else {
             throw ShopifyAcceleratedCheckouts.Error.invariant(expected: "topViewController")
         }
-        checkoutViewController = ShopifyCheckoutKit.present(
+        checkoutViewController = ShopifyCheckout.present(
             checkout: url,
             from: topViewController,
             entryPoint: .acceleratedCheckouts,

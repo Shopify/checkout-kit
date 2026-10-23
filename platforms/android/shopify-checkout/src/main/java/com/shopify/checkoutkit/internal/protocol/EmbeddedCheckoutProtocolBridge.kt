@@ -4,8 +4,8 @@ import com.shopify.checkoutkit.checkout.CheckoutException
 import com.shopify.checkoutkit.checkout.CheckoutLink
 import com.shopify.checkoutkit.checkout.CheckoutLinkAction
 import com.shopify.checkoutkit.checkout.PreloadState
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit.log
+import com.shopify.checkoutkit.checkout.ShopifyCheckout
+import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.concurrent.onMainThread
 import com.shopify.checkoutkit.internal.telemetry.CheckoutTelemetry
 import com.shopify.checkoutkit.internal.telemetry.TelemetryDecodeFailureType
@@ -126,7 +126,7 @@ internal class EmbeddedCheckoutProtocolBridge(
             isMainFrame = isMainFrame,
         )
         val ingressPolicy = CheckoutMessageIngressPolicy(
-            configuredOrigins = ShopifyCheckoutKit.configuration.allowedMessageOrigins,
+            configuredOrigins = ShopifyCheckout.configuration.allowedMessageOrigins,
             checkoutOrigin = view.checkoutOrigin,
         )
 

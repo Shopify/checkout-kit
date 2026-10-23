@@ -92,8 +92,8 @@ class ShopifyCheckoutTest {
     fun `Kotlin factory connects callbacks to checkout chrome`() {
         var dismissCount = 0
         val view = ShopifyCheckout.create(
-            context = activity,
             checkoutUrl = CHECKOUT_URL,
+            context = activity,
             webMessageTransport = webMessageTransport,
         ) {
             onDismiss { dismissCount += 1 }
@@ -143,8 +143,8 @@ class ShopifyCheckoutTest {
         var protocolMessages = 0
         var failure: CheckoutFailureEvent? = null
         val view = ShopifyCheckout.create(
-            context = activity,
             checkoutUrl = CHECKOUT_URL,
+            context = activity,
             webMessageTransport = webMessageTransport,
         ) {
             onStart { events.add("start") }
@@ -194,8 +194,8 @@ class ShopifyCheckoutTest {
         var failureReportedAfterConstruction = false
 
         val view = ShopifyCheckout.create(
-            context = activity,
             checkoutUrl = CHECKOUT_URL,
+            context = activity,
             webMessageTransport = webMessageTransport,
         ) {
             onFail {
@@ -221,8 +221,8 @@ class ShopifyCheckoutTest {
         var receivedError: CheckoutException? = null
 
         val view = ShopifyCheckout.create(
-            context = activity,
             checkoutUrl = "http://checkout.shopify.com/cart/123",
+            context = activity,
             webMessageTransport = webMessageTransport,
         ) {
             onFail { receivedError = it.error }
@@ -245,8 +245,8 @@ class ShopifyCheckoutTest {
         webMessageTransport.supported = false
         var failed = false
         val view = ShopifyCheckout.create(
-            context = activity,
             checkoutUrl = CHECKOUT_URL,
+            context = activity,
             webMessageTransport = webMessageTransport,
         ) {
             onFail { failed = true }
@@ -340,8 +340,8 @@ class ShopifyCheckoutTest {
     ): ShopifyCheckout {
         val listener = noopDefaultCheckoutListener()
         return ShopifyCheckout(
-            context = activity,
             checkoutUrl = CHECKOUT_URL,
+            context = activity,
             webMessageTransport = webMessageTransport,
             hostConfiguration = CheckoutHostConfiguration(
                 listener = listener,

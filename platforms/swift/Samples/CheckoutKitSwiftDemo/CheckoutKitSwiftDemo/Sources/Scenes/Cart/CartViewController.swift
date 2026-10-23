@@ -364,12 +364,12 @@ class CartViewController: UIViewController, UITableViewDelegate, UITableViewData
     @objc private func presentCheckout() {
         guard let url = CartManager.shared.cart?.checkoutURL else { return }
 
-        ShopifyCheckoutKit.present(checkout: url, from: self, delegate: checkoutDelegate)
+        ShopifyCheckout.present(checkout: url, from: self, delegate: checkoutDelegate)
     }
 
     @objc private func resetCart() {
         CartManager.shared.resetCart()
-        ShopifyCheckoutKit.invalidate()
+        ShopifyCheckout.clearPreload()
     }
 
     private func node(at indexPath: IndexPath) -> CartLineNode {

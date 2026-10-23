@@ -27,10 +27,10 @@ class CheckoutCompletionCacheTest {
     @Before
     fun setUp() {
         CheckoutTelemetry.overrideRecorderForTesting(NoOpTestCheckoutTelemetryRecorder)
-        initialConfiguration = ShopifyCheckoutKit.getConfiguration()
+        initialConfiguration = ShopifyCheckout.getConfiguration()
         CheckoutWebView.clearCache()
         shadowOf(Looper.getMainLooper()).idle()
-        ShopifyCheckoutKit.configure { it.preloading = Preloading(enabled = true) }
+        ShopifyCheckout.configure { it.preloading = Preloading(enabled = true) }
         activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
     }
 
@@ -44,7 +44,7 @@ class CheckoutCompletionCacheTest {
             }
         }
         shadowOf(Looper.getMainLooper()).idle()
-        ShopifyCheckoutKit.configure { it.preloading = initialConfiguration.preloading }
+        ShopifyCheckout.configure { it.preloading = initialConfiguration.preloading }
         CheckoutTelemetry.overrideRecorderForTesting(null)
     }
 

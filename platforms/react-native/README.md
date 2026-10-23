@@ -440,9 +440,10 @@ checkout branding.
 
 #### Colors
 
-`appearance.colors.ios` and `appearance.colors.android` map to the color
-fields of the native `CheckoutColors`. Every field is optional. A field that
-you omit uses the native default of the appearance.
+Each field of `appearance.colors.ios` and `appearance.colors.android` has the
+same name as the matching color field of the native `CheckoutColors` (iOS) or
+`Colors` (Android). Every field is optional. A field that you omit uses the
+native default of the appearance.
 
 | Field | iOS | Android |
 | --- | --- | --- |
@@ -784,14 +785,14 @@ subscription retains its last state but receives no further callbacks.
 
 | State     | Meaning                                                                                                |
 | --------- | ------------------------------------------------------------------------------------------------------ |
-| `idle`    | No checkout is currently being preloaded.                                                              |
+| `idle`    | No checkout is currently being preloaded. `reason` is absent initially, or identifies why a cached checkout became unavailable, such as `invalidated` or `expired`. |
 | `loading` | Checkout is loading in the background.                                                                 |
 | `ready`   | The matching checkout is ready for presentation.                                                       |
-| `expired` | The cached checkout reached its lifetime and was discarded.                                            |
 | `failed`  | Preload could not retain usable checkout content. Inspect `reason` and the optional HTTP `statusCode`. |
 
 Preload state is not presentation lifecycle state. Do not disable checkout while
-waiting for `ready`, and do not automatically retry from `failed` or `expired`.
+waiting for `ready`, and do not automatically retry from `failed` or an `idle`
+state with a reason.
 Calling `present(checkoutUrl)` still loads checkout normally when a preload is
 unavailable or incomplete.
 
@@ -950,9 +951,9 @@ can be presented once the native session ends.
 
 Set `linkAction` before presentation (or on the accelerated buttons):
 
-- `open` (default): let the native SDK open links.
-- `handled`: your app opens or routes links itself.
 - `cancel`: prevent links from opening.
+- `default`: let the native SDK open links.
+- `handled`: your app opens or routes links itself.
 
 `onLinkClick` is an asynchronous notification. Its return value cannot change the
 native decision. For custom routing, pair it with `linkAction: 'handled'`:
@@ -1210,7 +1211,7 @@ function App() {
 
 ### Render accelerated checkout buttons
 
-Use `AcceleratedCheckoutButtons` to attach accelerated checkout calls-to-action to product or cart surfaces once you have a valid cart ID or product variant ID from the Storefront API.
+Use `AcceleratedCheckoutButtons` to attach accelerated checkout calls-to-action to product or cart surfaces.
 
 ```tsx
 import {
@@ -1228,15 +1229,19 @@ function CartFooter({cartId}: {cartId: string}) {
 }
 ```
 
-You can also render buttons for a single product variant:
+Checkout starts from an existing Storefront cart, or from an app-owned Buy Now cart. On a product page, pass the selected variant and create or reuse its cart only when the buyer taps a wallet button. The callback runs once per accepted tap, never while the buttons render:
 
 ```tsx
 <AcceleratedCheckoutButtons
-  variantId={variantId}
-  quantity={1}
+  variantId={selectedVariant.id}
+  getCart={async ({wallet}) => {
+    return createOrReuseBuyNowCart(selectedVariant.id, wallet);
+  }}
   wallets={[AcceleratedCheckoutWallet.applePay]}
 />
 ```
+
+Return `undefined` when your app has already handled cart creation failure. Reject the promise to report the failure through `onFail`.
 
 #### Customize wallet options
 

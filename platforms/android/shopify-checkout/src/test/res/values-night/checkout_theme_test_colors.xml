@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="checkout_test_web_view_background">#FF121212</color>
+    <color name="checkout_test_header_background">#FF202020</color>
+    <color name="checkout_test_header_font">#FFF5F5F5</color>
+    <color name="checkout_test_progress_indicator">#FF1E8CC8</color>
+    <color name="checkout_test_close_icon_tint">#FFC0C0C0</color>
+    <color name="checkout_test_drag_handle">#FF99CCFF</color>
+    <color name="checkout_test_header_border">#FF454545</color>
+</resources>

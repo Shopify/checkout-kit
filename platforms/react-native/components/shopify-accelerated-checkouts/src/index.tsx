@@ -43,13 +43,18 @@ export enum ApplePayStyle {
 }
 
 type CheckoutIdentifier =
-  | {
-      cartId: string;
-    }
-  | {
-      variantId: string;
-      quantity: number;
-    };
+  | {cartId: string}
+  | {variantId: string};
+
+type CartRequestResponse = {
+  requestId: string;
+  cartId?: string;
+  error?: string;
+};
+
+export type CartRequest = {
+  wallet: AcceleratedCheckoutWallet;
+};
 
 interface CommonAcceleratedCheckoutButtonsProps extends CheckoutEventHandlers {
   /**
@@ -87,45 +92,44 @@ interface CommonAcceleratedCheckoutButtonsProps extends CheckoutEventHandlers {
 }
 
 interface CartProps {
-  /**
-   * The cart ID for cart-based checkout
-   */
+  /** An existing Storefront cart ID, including its access key. */
   cartId: string;
 }
 
-interface VariantProps {
-  /**
-   * The variant ID for product-based checkout
-   */
+interface BuyNowProps {
+  /** The selected Storefront product variant ID. */
   variantId: string;
 
   /**
-   * The quantity for product-based checkout
+   * Creates or resolves the Buy Now cart after the buyer taps a wallet button.
+   * Return no ID when the app has already handled the failure; reject to emit
+   * an onFail event.
    */
-  quantity: number;
+  getCart: (
+    request: CartRequest,
+  ) => Promise<string | undefined> | string | undefined;
 }
 
-export type AcceleratedCheckoutButtonsProps = (CartProps | VariantProps) &
-  CommonAcceleratedCheckoutButtonsProps;
+export type AcceleratedCheckoutButtonsProps =
+  | (CartProps & CommonAcceleratedCheckoutButtonsProps)
+  | (BuyNowProps & CommonAcceleratedCheckoutButtonsProps);
 
 /**
  * AcceleratedCheckoutButton provides pre-built payment UI components for Shop Pay and Apple Pay.
- * It enables faster checkout with fewer steps and supports both cart and product page checkout.
+ * Checkout starts from an existing Storefront cart or, for Buy Now, asks the app
+ * for a cart only after the buyer taps a wallet button.
  *
- * @example Cart-based checkout
- * <AcceleratedCheckoutButtons
- *   cartId="gid://shopify/Cart/123"
- *   onFail={({error}) => console.error('Checkout failed:', error.message)}
- * />
+ * @example
+ * <AcceleratedCheckoutButtons cartId="gid://shopify/Cart/123" />
  *
- * @example Product-based checkout
+ * @example
  * <AcceleratedCheckoutButtons
  *   variantId="gid://shopify/ProductVariant/456"
- *   quantity={1}
+ *   getCart={async () => createBuyNowCart()}
  * />
  */
 
-const defaultStyles = {flex: 1};
+const defaultStyles = {flexGrow: 1};
 export const AcceleratedCheckoutButtons: React.FC<
   AcceleratedCheckoutButtonsProps
 > = ({
@@ -140,14 +144,15 @@ export const AcceleratedCheckoutButtons: React.FC<
   onComplete,
   onRenderStateChange,
   onLinkClick,
-  linkAction = 'open',
+  linkAction = 'default',
   ...props
 }) => {
-  const isCart = isCartProps(props);
-  const isVariant = isVariantProps(props);
   const [dynamicHeight, setDynamicHeight] = useState<number | undefined>(
     undefined,
   );
+  const [cartRequestResponses, setCartRequestResponses] = useState<
+    CartRequestResponse[]
+  >([]);
 
   const handleDismiss = useCallback(() => onDismiss?.(), [onDismiss]);
 
@@ -191,16 +196,36 @@ export const AcceleratedCheckoutButtons: React.FC<
     [],
   );
 
+  const handleCartRequest = useCallback(
+    async (event: {nativeEvent: {requestId: string; wallet: string}}) => {
+      if (!isBuyNowProps(props)) return;
+      const {requestId, wallet} = event.nativeEvent;
+      try {
+        const cartId = await props.getCart({
+          wallet: wallet as AcceleratedCheckoutWallet,
+        });
+        setCartRequestResponses(responses => [
+          ...responses,
+          {requestId, cartId},
+        ]);
+      } catch (error) {
+        setCartRequestResponses(responses => [
+          ...responses,
+          {
+            requestId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        ]);
+      }
+    },
+    [props],
+  );
+
   const checkoutIdentifier: CheckoutIdentifier | undefined = useMemo(() => {
-    switch (true) {
-      case isCart:
-        return {cartId: props.cartId};
-      case isVariant:
-        return {variantId: props.variantId, quantity: props.quantity};
-      default:
-        return undefined;
-    }
-  }, [isCart, isVariant, props]);
+    if (isCartProps(props)) return {cartId: props.cartId};
+    if (isBuyNowProps(props)) return {variantId: props.variantId};
+    return undefined;
+  }, [props]);
 
   // Only render on iOS for now since ShopifyAcceleratedCheckouts is iOS-only
   if (Platform.OS !== 'ios' || parseInt(Platform.Version, 10) < 16) {
@@ -220,7 +245,7 @@ export const AcceleratedCheckoutButtons: React.FC<
      */
 
     const error = new Error(
-      'AcceleratedCheckoutButton: Either `cartId` or `variantId` and `quantity` must be provided',
+      'AcceleratedCheckoutButton: `cartId` or `variantId` with `getCart` must be provided',
     );
     if (__DEV__) {
       throw error;
@@ -238,6 +263,8 @@ export const AcceleratedCheckoutButtons: React.FC<
       applePayStyle={applePayStyle}
       style={{...defaultStyles, height: dynamicHeight}}
       checkoutIdentifier={checkoutIdentifier}
+      cartRequestResponses={cartRequestResponses}
+      onCartRequest={handleCartRequest}
       cornerRadius={cornerRadius}
       wallets={wallets}
       onDismiss={handleDismiss}
@@ -270,12 +297,12 @@ function validRenderState(state: string): RenderState {
 
 function isCartProps(
   props: AcceleratedCheckoutButtonsProps,
-): props is CartProps {
+): props is CartProps & CommonAcceleratedCheckoutButtonsProps {
   return 'cartId' in props;
 }
 
-function isVariantProps(
+function isBuyNowProps(
   props: AcceleratedCheckoutButtonsProps,
-): props is VariantProps {
-  return 'variantId' in props && 'quantity' in props && props.quantity > 0;
+): props is BuyNowProps & CommonAcceleratedCheckoutButtonsProps {
+  return 'variantId' in props && typeof props.getCart === 'function';
 }

@@ -155,7 +155,7 @@ public class ShopifyCheckoutKitModuleTest {
       String checkoutUrl = "https://shopify.com";
       mockedShopifyCheckoutKit.when(() -> ShopifyCheckoutKit.present(
           eq(checkoutUrl), any(), any())).thenReturn(mock(CheckoutHandle.class));
-      shopifyCheckoutKitModule.present(checkoutUrl, "open", presentationResult);
+      shopifyCheckoutKitModule.present(checkoutUrl, "default", presentationResult);
 
       verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
       runnableCaptor.getValue().run();
@@ -215,7 +215,7 @@ public class ShopifyCheckoutKitModuleTest {
       nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, secondSheet);
 
-      shopifyCheckoutKitModule.present("https://example.com/first", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/first", "default", presentationResult);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       CustomCheckoutListener firstListener = listeners.getValue();
@@ -233,7 +233,7 @@ public class ShopifyCheckoutKitModuleTest {
       shopifyCheckoutKitModule.dismiss();
       shadowOf(Looper.getMainLooper()).idle();
       when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
-      shopifyCheckoutKitModule.present("https://example.com/second", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/second", "default", presentationResult);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/second"), eq(mockComponentActivity), listeners.capture()));
       assertThat(listeners.getValue().isReleased()).isFalse();
@@ -307,13 +307,13 @@ public class ShopifyCheckoutKitModuleTest {
       Callback ignoredResult = mock(Callback.class);
       nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, firstSheet, firstSheet, secondSheet);
-      shopifyCheckoutKitModule.present("https://example.com/first", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/first", "default", presentationResult);
       verify(presentationResult).invoke(true);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       shopifyCheckoutKitModule.onDispatch = event -> {
         shopifyCheckoutKitModule.onDispatch = null;
-        shopifyCheckoutKitModule.present("https://example.com/ignored", "open", ignoredResult);
+        shopifyCheckoutKitModule.present("https://example.com/ignored", "default", ignoredResult);
       };
 
       if (terminal.equals("buyer")) listeners.getValue().onCheckoutDismissed();
@@ -325,14 +325,14 @@ public class ShopifyCheckoutKitModuleTest {
       verify(ignoredResult).invoke(false);
 
       // Repeated explicit attempts still recognize the closing handle.
-      shopifyCheckoutKitModule.present("https://example.com/still-closing", "open", ignoredResult);
+      shopifyCheckoutKitModule.present("https://example.com/still-closing", "default", ignoredResult);
       verify(ignoredResult, times(2)).invoke(false);
       nativeKit.clearInvocations();
       shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6));
       nativeKit.verifyNoInteractions();
       assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(1);
 
-      shopifyCheckoutKitModule.present("https://example.com/after-close", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/after-close", "default", presentationResult);
       verify(presentationResult, times(2)).invoke(true);
       nativeKit.verify(() -> ShopifyCheckoutKit.present(
           eq("https://example.com/after-close"), eq(mockComponentActivity), listeners.capture()));
@@ -356,7 +356,7 @@ public class ShopifyCheckoutKitModuleTest {
             listener.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
             return null;
           });
-      shopifyCheckoutKitModule.present("https://example.com/failing", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/failing", "default", presentationResult);
       verify(presentationResult).invoke(true);
       assertThat(shopifyCheckoutKitModule.dispatchEvents).hasSize(2);
       assertThat(shopifyCheckoutKitModule.dispatchEvents.get(0)).contains("\"type\":\"fail\"");
@@ -367,12 +367,12 @@ public class ShopifyCheckoutKitModuleTest {
   @Test
   public void testInvalidationCancelsQueuedPresentation() {
     try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
-      shopifyCheckoutKitModule.present("https://example.com/checkout", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/checkout", "default", presentationResult);
       verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
       shopifyCheckoutKitModule.invalidate();
       runnableCaptor.getValue().run();
       shadowOf(Looper.getMainLooper()).idle();
-      shopifyCheckoutKitModule.present("https://example.com/checkout", "open", presentationResult);
+      shopifyCheckoutKitModule.present("https://example.com/checkout", "default", presentationResult);
       nativeKit.verifyNoInteractions();
       verify(presentationResult, times(2)).invoke(false);
       assertThat(shopifyCheckoutKitModule.dispatchEvents).isEmpty();
@@ -445,6 +445,42 @@ public class ShopifyCheckoutKitModuleTest {
       assertThat(shopifyCheckoutKitModule.preloadStateEvent)
           .contains("\"requestId\":\"preload-request\"")
           .contains("\"type\":\"idle\"");
+    }
+  }
+
+  @Test
+  public void testPreloadPreservesJavaScriptStateEventsAndIdleReasons() throws Exception {
+    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+      ArgumentCaptor<PreloadStateListener> listenerCaptor =
+          ArgumentCaptor.forClass(PreloadStateListener.class);
+      nativeKit.when(() -> ShopifyCheckoutKit.preload(
+          eq("https://example.com/checkout"), eq(mockComponentActivity), any(PreloadStateListener.class)))
+          .thenReturn(mock(CheckoutPreload.class));
+      shopifyCheckoutKitModule.preload("https://example.com/checkout", "preload-request");
+      nativeKit.verify(() -> ShopifyCheckoutKit.preload(
+          eq("https://example.com/checkout"), eq(mockComponentActivity), listenerCaptor.capture()));
+
+      PreloadState[] states = {
+          new PreloadState.Idle(),
+          new PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+          new PreloadState.Idle(PreloadState.IdleReason.Expired),
+          new PreloadState.Idle(new PreloadState.IdleReason("futureReason")),
+          PreloadState.Loading.INSTANCE,
+          PreloadState.Ready.INSTANCE
+      };
+      String[] reasons = {null, "invalidated", "expired", "futureReason", null, null};
+      String[] types = {"idle", "idle", "idle", "idle", "loading", "ready"};
+      for (int index = 0; index < states.length; index++) {
+        listenerCaptor.getValue().onStateChanged(states[index]);
+        org.json.JSONObject event = new org.json.JSONObject(shopifyCheckoutKitModule.preloadStateEvent);
+        assertThat(event.getString("requestId")).isEqualTo("preload-request");
+        assertThat(event.getString("type")).isEqualTo(types[index]);
+        if (reasons[index] == null) {
+          assertThat(event.has("reason")).isFalse();
+        } else {
+          assertThat(event.getString("reason")).isEqualTo(reasons[index]);
+        }
+      }
     }
   }
 
@@ -662,7 +698,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()).isEqualTo(new CheckoutAppearance.App(
         new ColorScheme.Dark().customize(colors -> {
-          colors.setProgressIndicator(new Color.SRGB(0xFF112233));
+          colors.setProgressIndicatorColor(new Color.SRGB(0xFF112233));
           return kotlin.Unit.INSTANCE;
         })));
 
