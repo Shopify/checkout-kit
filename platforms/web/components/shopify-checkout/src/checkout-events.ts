@@ -47,7 +47,7 @@ export class ShopifyCheckoutCompleteEvent extends CustomEvent<ShopifyCheckoutCom
   }
 }
 
-export class ShopifyCheckoutCloseEvent extends CustomEvent<undefined> {
+export class ShopifyCheckoutCloseEvent extends CustomEvent<null> {
   declare type: "close";
 
   constructor() {

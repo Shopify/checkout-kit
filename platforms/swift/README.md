@@ -21,11 +21,6 @@ preloads remain shared across checkout entry points, not scoped to individual vi
 
 <img width="3200" height="800" alt="Checkout Kit" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
 
-> [!WARNING]
-> **Alpha - early preview.** This software is an early preview and is **not**
-> production-ready. The current Checkout Kit for Swift alpha is `4.0.0-alpha.11`.
-> Stability is not guaranteed, and breaking changes may occur in any release.
-
 **Checkout Kit for Swift** lets iOS apps present Shopify checkout in a native sheet while preserving store checkout customizations such as Checkout UI extensions, Shopify Functions, branding, and supported payment methods. The Swift package also includes `ShopifyAcceleratedCheckouts`, a SwiftUI library for rendering Shop Pay and Apple Pay buttons on iOS 16+.
 
 - [Requirements](#requirements)
@@ -65,7 +60,7 @@ preloads remain shared across checkout entry points, not scoped to individual vi
 
 ## Install
 
-The current Checkout Kit for Swift alpha is `4.0.0-alpha.11`. For alpha testing, use that exact version until a stable `4.x` release is available.
+Install Checkout Kit for Swift `4.0.0`:
 
 ### Swift Package Manager
 
@@ -79,7 +74,7 @@ Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.11")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0")
 ]
 ```
 
@@ -100,10 +95,10 @@ Then add the products you need to your app target:
 The CocoaPods spec exists so that [Checkout Kit for React Native](../react-native) can consume the native SDK. Native apps should use Swift Package Manager.
 
 ```ruby
-pod "ShopifyCheckoutKit", "4.0.0-alpha.11"
+pod "ShopifyCheckoutKit", "4.0.0"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
-pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0-alpha.11"
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0"
 ```
 
 ### Compatibility

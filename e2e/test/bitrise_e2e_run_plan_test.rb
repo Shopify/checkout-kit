@@ -81,6 +81,11 @@ class BitriseE2ERunPlanTest < Minitest::Test
     end
   end
 
+  def test_bitrise_secret_environment_generator_change_selects_every_application
+    ids = JSON.parse(plan(["scripts/generate_env_files"]).bitrise_env.fetch("E2E_DIRECT_SELECTED_APPLICATIONS"))
+    assert_equal ["react-native-ios", "react-native-android", "kotlin-android", "swift-ios"], ids
+  end
+
   def test_unrelated_changes_publish_an_explicit_empty_plan
     [
       [],

@@ -1,6 +1,6 @@
 {
   "name": "@shopify/checkout-kit-android",
-  "version": "4.0.0-alpha.11",
+  "version": "4.0.0",
   "private": true,
   "description": "Version manifest for Changesets. com.shopify:checkout-kit ships through Maven Central; do not publish this file."
 }

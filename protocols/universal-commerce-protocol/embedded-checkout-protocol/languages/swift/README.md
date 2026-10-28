@@ -28,7 +28,7 @@ Add the Checkout Kit repository:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0-alpha.2")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0")
 ]
 ```
 

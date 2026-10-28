@@ -55,6 +55,22 @@ describe("createColumnResizer.applyWidths", () => {
     expect(dom.layout.style.getPropertyValue("--col-right")).toBe("420px");
   });
 
+  it("reads and writes a page's own storage keys", () => {
+    const storageKeys = { left: "example:col-left", right: "example:col-right" };
+    localStorage.setItem("checkout-kit:web-demo:col-left", "300");
+    localStorage.setItem(storageKeys.right, "420");
+    const resizer = createColumnResizer({ ...dom, storageKeys });
+
+    resizer.applyWidths();
+    dom.rightHandle.dispatchEvent(arrow("ArrowLeft"));
+
+    expect(dom.layout.style.getPropertyValue("--col-left")).toBe("");
+    expect(dom.layout.style.getPropertyValue("--col-right")).not.toBe("");
+    expect(localStorage.getItem(storageKeys.right)).not.toBeNull();
+    expect(localStorage.getItem("checkout-kit:web-demo:col-left")).toBe("300");
+    expect(localStorage.getItem("checkout-kit:web-demo:col-right")).toBeNull();
+  });
+
   it("leaves the variables unset when nothing is persisted", () => {
     const resizer = createColumnResizer(dom);
     resizer.applyWidths();

@@ -1,7 +1,7 @@
 # Web browser tests
 
-Playwright loads the built `platforms/web/dist/shopify-checkout.js` in Chromium and exercises
-the real custom element, popup, and cross-origin `postMessage` exchange. A routed
+Playwright loads the built npm and CDN distributions in Chromium and exercises
+the real custom element, popup, native module retries, and cross-origin `postMessage` exchange. A routed
 HTTPS checkout fixture supplies synthetic protocol messages; telemetry is disabled
 and unexpected external requests are blocked and fail the test. No storefront,
 tokens, or `.env` values are needed to run the suite.
@@ -40,8 +40,12 @@ invalid URLs, popup presentation, and host/overlay closing. The protocol specs
 cover the `ec.ready` handshake, public `start`/`update`/`complete` events and
 snapshots, window delegation, and terminal errors. They test the built SDK's
 browser integration; they do not place a real order or exercise checkout-web.
+The CDN retry spec returns one temporary HTTP 503 per requested module URL,
+including any shared dependency, and loads every component again on the same
+page. This catches dependency failures that remain cached even when a component
+entry is retried with a fresh query string.
 
-- `server.mjs` serves the host page and built bundle.
+- `server.mjs` serves the host pages and built npm/CDN JavaScript.
 - `fixtures/` contains the host page and synthetic checkout.
 - `support/fixtures.ts` provides a host page object and installs the network guard.
 - `support/checkout-host-page.ts` owns host controls and typed public event/state reads.
@@ -51,3 +55,4 @@ browser integration; they do not place a real order or exercise checkout-web.
 - `support/checkout-fixture.ts` contains synthetic URLs and expected public checkout data.
 - `tests/synthetic/presentation.spec.ts` uses blank popups to isolate presentation behavior.
 - `tests/synthetic/protocol.spec.ts` exercises cross-origin protocol exchanges and public events.
+- `tests/synthetic/cdn-retry.spec.ts` exercises transient module failures through the built CDN loader.

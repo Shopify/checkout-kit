@@ -443,8 +443,6 @@ public final class com/shopify/checkoutkit/checkout/ColorScheme$Automatic : com/
 	public final fun getDarkColors ()Lcom/shopify/checkoutkit/checkout/Colors;
 	public final fun getLightColors ()Lcom/shopify/checkoutkit/checkout/Colors;
 	public fun hashCode ()I
-	public final fun setDarkColors (Lcom/shopify/checkoutkit/checkout/Colors;)V
-	public final fun setLightColors (Lcom/shopify/checkoutkit/checkout/Colors;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -478,7 +476,6 @@ public final class com/shopify/checkoutkit/checkout/ColorScheme$Dark : com/shopi
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColors ()Lcom/shopify/checkoutkit/checkout/Colors;
 	public fun hashCode ()I
-	public final fun setColors (Lcom/shopify/checkoutkit/checkout/Colors;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -508,7 +505,6 @@ public final class com/shopify/checkoutkit/checkout/ColorScheme$Light : com/shop
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getColors ()Lcom/shopify/checkoutkit/checkout/Colors;
 	public fun hashCode ()I
-	public final fun setColors (Lcom/shopify/checkoutkit/checkout/Colors;)V
 	public fun toString ()Ljava/lang/String;
 }
 

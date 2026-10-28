@@ -26,6 +26,7 @@ function runWithBrowser(script: string): unknown {
       globalThis.window = window;
       globalThis.document = window.document;
       globalThis.HTMLElement = window.HTMLElement;
+      globalThis.CustomEvent = window.CustomEvent;
       globalThis.customElements = window.customElements;
       try {
         const result = await (async () => { ${script} })();
@@ -53,29 +54,39 @@ describe("built distributions", () => {
     return fixture;
   }
 
-  it.each(["v4", "v4/unstable"])("CDN loader resolves its own chunks from %s", async (prefix) => {
+  const cdnComponents = ["shopify-checkout", "shopify-universal-checkout", "shop-pay"];
+
+  it.each(
+    ["v4", "v4/unstable"].flatMap((prefix) =>
+      cdnComponents.map((component) => [prefix, component]),
+    ),
+  )("CDN loader resolves its own chunks from %s for %s", async (prefix, component) => {
     const fixture = await createFixture("checkout-kit-cdn-");
     await writeFile(join(fixture, "package.json"), JSON.stringify({ type: "module" }));
     const channelDir = join(fixture, prefix);
     await mkdir(channelDir, { recursive: true });
-    await cp(join(cdnDistDir, "web-components.js"), join(channelDir, "web-components.js"));
+    await cp(join(cdnDistDir, "checkout-kit.js"), join(channelDir, "checkout-kit.js"));
     await cp(join(cdnDistDir, "assets"), join(channelDir, "assets"), { recursive: true });
 
     // Only this channel's artifacts are present, so imports into the npm
     // output or another CDN channel would fail.
-    const loaderUrl = pathToFileURL(join(channelDir, "web-components.js")).href;
+    const loaderUrl = pathToFileURL(join(channelDir, "checkout-kit.js")).href;
     const result = runWithBrowser(`
       const { loadComponents, version } = await import(${JSON.stringify(loaderUrl)});
-      const registeredBefore = customElements.get("shopify-checkout") !== undefined;
-      await loadComponents(["shopify-checkout"]);
-      await loadComponents(["shopify-checkout"]);
-      const open = typeof customElements.get("shopify-checkout")?.prototype.open;
-      return { version, registeredBefore, open };
+      const name = ${JSON.stringify(component)};
+      const registeredBefore = customElements.get(name) !== undefined;
+      await loadComponents([name]);
+      await loadComponents([name]);
+      const open = typeof customElements.get(name)?.prototype.open;
+      const siblings = ${JSON.stringify(cdnComponents)}.filter((sibling) => sibling !== name);
+      const siblingRegistered = siblings.some((sibling) => customElements.get(sibling) !== undefined);
+      return { version, registeredBefore, open, siblingRegistered };
     `);
     expect(result).toEqual({
       version: expect.stringMatching(/^\d+\.\d+\.\d+/),
       registeredBefore: false,
       open: "function",
+      siblingRegistered: false,
     });
   });
 
@@ -86,7 +97,7 @@ describe("built distributions", () => {
     await cp(cdnDistDir, join(fixture, "cdn"), { recursive: true });
     return {
       npm: (entry: string) => pathToFileURL(join(fixture, "npm", entry)).href,
-      cdn: pathToFileURL(join(fixture, "cdn/web-components.js")).href,
+      cdn: pathToFileURL(join(fixture, "cdn/checkout-kit.js")).href,
     };
   }
 
@@ -111,11 +122,13 @@ describe("built distributions", () => {
       const checkout = document.createElement("shopify-checkout");
       checkout.logLevel = "none";
       document.body.append(checkout);
+      const errors = [];
+      checkout.addEventListener("error", (event) => errors.push(event.detail.error.code));
       // An empty source records invalid_url without opening a checkout or making a real request.
       checkout.open();
       checkout.remove();
       await Promise.resolve();
-      return { requests, logs };
+      return { requests, logs, errors };
     `);
 
     expect(result).toEqual({
@@ -126,6 +139,7 @@ describe("built distributions", () => {
         },
       ],
       logs: [],
+      errors: ["sdk_error"],
     });
   });
 

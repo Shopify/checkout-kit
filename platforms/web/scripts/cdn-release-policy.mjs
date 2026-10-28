@@ -16,5 +16,5 @@ const prefix = stable ? `v${parsed.major}` : `v${parsed.major}/unstable`;
 
 appendFileSync(process.env.GITHUB_OUTPUT, `channel=${channel}\nprefix=${prefix}\n`);
 process.stdout.write(
-  `::notice::Version '${version}' selects the ${channel} CDN URL: /checkout-kit/${prefix}/web-components.js\n`,
+  `::notice::Version '${version}' selects the ${channel} CDN URL: /checkout-kit/${prefix}/checkout-kit.js\n`,
 );

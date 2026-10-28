@@ -372,4 +372,29 @@ describe('CheckoutKitTelemetry', () => {
       sum: 450,
     });
   });
+
+  it('records finite non-negative ready durations', async () => {
+    const fetch = vi.fn().mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordReadyDuration({milliseconds: -1, result: 'not_ready', preloaded: false});
+    telemetry.recordReadyDuration({milliseconds: 450, result: 'ready', preloaded: false});
+
+    await telemetry.flush();
+    const body = JSON.parse(fetch.mock.calls[0]![1].body as string);
+    const [metric] = body.resourceMetrics[0].scopeMetrics[0].metrics;
+    expect(metric).toMatchObject({name: 'checkout_kit_ready_duration_ms', unit: 'ms'});
+    expect(metric.histogram.dataPoints[0]).toMatchObject({
+      count: '1',
+      sum: 450,
+      attributes: expect.arrayContaining([
+        {key: 'result', value: {stringValue: 'ready'}},
+        {key: 'preloaded', value: {boolValue: false}},
+      ]),
+    });
+  });
 });

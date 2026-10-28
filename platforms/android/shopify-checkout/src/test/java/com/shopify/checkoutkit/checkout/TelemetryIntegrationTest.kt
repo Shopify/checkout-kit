@@ -12,6 +12,7 @@ import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.checkoutkit.internal.protocol.EmbeddedCheckoutProtocolBridge
 import com.shopify.checkoutkit.internal.telemetry.CheckoutTelemetry
 import com.shopify.checkoutkit.internal.telemetry.CheckoutTelemetryRecording
+import com.shopify.checkoutkit.internal.telemetry.TelemetryConfirmationReachedMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryDecodeFailureType
 import com.shopify.checkoutkit.internal.telemetry.TelemetryErrorCategory
 import com.shopify.checkoutkit.internal.telemetry.TelemetryErrorCode
@@ -22,7 +23,10 @@ import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryReason
 import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryResult
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolDecodeErrorMetric
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationMetric
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationResult
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
+import com.shopify.checkoutkit.internal.web.CheckoutWebViewListener
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
@@ -262,6 +266,65 @@ class TelemetryIntegrationTest {
     }
 
     @Test
+    fun `records a presentation that ends on the confirmation page without completion`() {
+        val transport = FakeWebMessageTransport()
+        val view = CheckoutWebView(activity, transport)
+        val bridge = presentedBridge(view, transport)
+
+        view.loadUrl(CONFIRMATION_URL)
+        bridge.invalidateEventAdapter()
+
+        assertThat(recorder.confirmations).containsExactly(
+            TelemetryConfirmationReachedMetric(completionReceived = false),
+        )
+    }
+
+    @Test
+    fun `records a presentation that ends on the confirmation page after completion once`() {
+        val transport = FakeWebMessageTransport()
+        val view = CheckoutWebView(activity, transport)
+        val bridge = presentedBridge(view, transport)
+
+        bridge.receiveMessage(completeMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        view.loadUrl(CONFIRMATION_URL)
+        bridge.invalidateEventAdapter()
+        bridge.invalidateEventAdapter()
+
+        assertThat(recorder.confirmations).containsExactly(
+            TelemetryConfirmationReachedMetric(completionReceived = true),
+        )
+    }
+
+    @Test
+    fun `records a completed presentation that ends before the confirmation page`() {
+        val transport = FakeWebMessageTransport()
+        val view = CheckoutWebView(activity, transport)
+        val bridge = presentedBridge(view, transport)
+
+        bridge.receiveMessage(completeMessage())
+        shadowOf(Looper.getMainLooper()).runToEndOfTasks()
+        view.loadUrl("https://checkout-sdk.myshopify.com/checkouts/cn/synthetic/processing")
+        bridge.invalidateEventAdapter()
+
+        assertThat(recorder.confirmations).containsExactly(
+            TelemetryConfirmationReachedMetric(completionReceived = true),
+        )
+    }
+
+    @Test
+    fun `does not record confirmation metrics when the presentation ends before the confirmation page`() {
+        val transport = FakeWebMessageTransport()
+        val view = CheckoutWebView(activity, transport)
+        val bridge = presentedBridge(view, transport)
+
+        view.loadUrl("https://checkout-sdk.myshopify.com/checkouts/cn/synthetic")
+        bridge.invalidateEventAdapter()
+
+        assertThat(recorder.confirmations).isEmpty()
+    }
+
+    @Test
     fun `does not record metrics when telemetry is disabled`() {
         ShopifyCheckout.configure { it.telemetry = Telemetry(enabled = false) }
         val view = CheckoutWebView(activity, FakeWebMessageTransport())
@@ -320,6 +383,66 @@ class TelemetryIntegrationTest {
         assertThat(recorder.errors.single().retryable).isFalse()
     }
 
+    @Test
+    fun `records ready once when checkout sends ec ready`() {
+        val view = loadedView()
+        view.markPresented()
+        val bridge = bridgeFor(view)
+
+        bridge.receiveMessage(EC_READY_MESSAGE)
+        bridge.receiveMessage(EC_READY_MESSAGE)
+        shadowOf(Looper.getMainLooper()).idle()
+        view.destroy()
+
+        val ready = recorder.readyDurations.single()
+        assertThat(ready.result).isEqualTo(TelemetryReadyDurationResult.Ready)
+        assertThat(ready.preloaded).isFalse()
+    }
+
+    @Test
+    fun `records not ready when a presented view is destroyed before ready`() {
+        val view = loadedView()
+        view.markPresented()
+
+        view.destroy()
+
+        assertThat(recorder.readyDurations.single().result).isEqualTo(TelemetryReadyDurationResult.NotReady)
+    }
+
+    @Test
+    fun `records not ready for a preload only once it has been presented`() {
+        val url = "https://checkout-sdk.myshopify.com/cart/secret"
+        val transport = FakeWebMessageTransport()
+        CheckoutWebView.preload(url, activity, transport)
+        shadowOf(Looper.getMainLooper()).idle()
+        CheckoutWebView.invalidate()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertThat(recorder.readyDurations).isEmpty()
+
+        CheckoutWebView.preload(url, activity, transport)
+        shadowOf(Looper.getMainLooper()).idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, transport)
+        view.markPresented()
+        view.destroy()
+
+        val notReady = recorder.readyDurations.single()
+        assertThat(notReady.result).isEqualTo(TelemetryReadyDurationResult.NotReady)
+        assertThat(notReady.preloaded).isTrue()
+    }
+
+    private fun loadedView(): CheckoutWebView {
+        val view = CheckoutWebView(activity, FakeWebMessageTransport())
+        view.loadCheckout("https://checkout-sdk.myshopify.com/cart/secret")
+        shadowOf(Looper.getMainLooper()).idle()
+        return view
+    }
+
+    private fun bridgeFor(view: CheckoutWebView) = EmbeddedCheckoutProtocolBridge(
+        view = view,
+        webMessageTransport = FakeWebMessageTransport(),
+        protocolMessageExecutor = { command -> command.run() },
+    )
+
     private fun mainFrameRequest(url: String): WebResourceRequest = mock<WebResourceRequest>().also {
         whenever(it.url).thenReturn(Uri.parse(url))
         whenever(it.isForMainFrame).thenReturn(true)
@@ -343,11 +466,38 @@ class TelemetryIntegrationTest {
     }
 }
 
+private const val CONFIRMATION_URL = "https://checkout-sdk.myshopify.com/checkouts/cn/synthetic/thank-you"
+
+private fun presentedBridge(view: CheckoutWebView, transport: FakeWebMessageTransport) =
+    EmbeddedCheckoutProtocolBridge(
+        view = view,
+        webMessageTransport = transport,
+        protocolMessageExecutor = { command -> command.run() },
+    ).also { bridge ->
+        bridge.setPresentationListener(
+            CheckoutWebViewListener(object : DefaultCheckoutListener() {
+                override fun onCheckoutFailed(event: CheckoutFailureEvent) = Unit
+
+                override fun onCheckoutDismissed() = Unit
+            }),
+        )
+    }
+
+private fun completeMessage(): String = """{
+    "jsonrpc":"2.0","method":"ec.complete","params":{"checkout":{
+      "id":"checkout-1","currency":"USD","status":"completed","line_items":[],"links":[],
+      "totals":[{"type":"total","amount":1}],
+      "ucp":{"payment_handlers":{},"version":"${CheckoutProtocol.SPEC_VERSION}"}
+    }}
+}"""
+
 private class RecordingTelemetry : CheckoutTelemetryRecording {
     val errors = mutableListOf<TelemetryErrorMetric>()
     val decodeErrors = mutableListOf<TelemetryProtocolDecodeErrorMetric>()
+    val confirmations = mutableListOf<TelemetryConfirmationReachedMetric>()
     val retries = mutableListOf<TelemetryNavigationRetryMetric>()
     val durations = mutableListOf<TelemetryNavigationDurationMetric>()
+    val readyDurations = mutableListOf<TelemetryReadyDurationMetric>()
 
     override fun recordError(metric: TelemetryErrorMetric) {
         errors += metric
@@ -357,6 +507,10 @@ private class RecordingTelemetry : CheckoutTelemetryRecording {
         decodeErrors += metric
     }
 
+    override fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric) {
+        confirmations += metric
+    }
+
     override fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric) {
         retries += metric
     }
@@ -364,11 +518,19 @@ private class RecordingTelemetry : CheckoutTelemetryRecording {
     override fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric) {
         durations += metric
     }
+
+    override fun recordReadyDuration(metric: TelemetryReadyDurationMetric) {
+        readyDurations += metric
+    }
 }
 
 internal object NoOpTestCheckoutTelemetryRecorder : CheckoutTelemetryRecording {
     override fun recordError(metric: TelemetryErrorMetric) = Unit
     override fun recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric) = Unit
+    override fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric) = Unit
     override fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric) = Unit
     override fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric) = Unit
+    override fun recordReadyDuration(metric: TelemetryReadyDurationMetric) = Unit
 }
+
+private const val EC_READY_MESSAGE = """{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"""

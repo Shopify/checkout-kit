@@ -15,8 +15,6 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.logging.LogWrapper
 import com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheetLayout
-import com.shopify.checkoutkit.internal.presentation.clearBottomSheetScrollHandoff
-import com.shopify.checkoutkit.internal.presentation.installBottomSheetScrollHandoff
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
 import com.shopify.checkoutkit.internal.web.CheckoutWebViewListener
@@ -183,7 +181,6 @@ public class ShopifyCheckout @MainThread internal constructor(
             webView.setListener(CheckoutWebViewListener(NoopCheckoutListener()))
             chrome.detachWebView()
             pauseWebView()
-            webView.clearBottomSheetScrollHandoff()
             webView.removeFromParent()
             CheckoutWebView.discardAfterPresentation(webView)
             log.d(LOG_TAG, "Destroying checkout WebView.")
@@ -230,10 +227,7 @@ public class ShopifyCheckout @MainThread internal constructor(
     }
 
     internal fun bindToBottomSheet(sheet: CheckoutBottomSheetLayout) {
-        checkoutWebView?.let { webView ->
-            sheet.bindScrollableChild(webView)
-            webView.installBottomSheetScrollHandoff(sheet)
-        }
+        checkoutWebView?.let(sheet::bindScrollableChild)
     }
 
     internal fun resumeWebView() {
@@ -299,6 +293,12 @@ public class ShopifyCheckout @MainThread internal constructor(
 
         /**
          * Updates the shared checkout configuration, not the configuration of an individual view.
+         *
+         * [setter] receives a copy of the current configuration. Checkout Kit applies the copy when
+         * [setter] returns. If [setter] throws, the configuration does not change. Changes to the copy
+         * after [setter] returns have no effect. Do not call [configure] from inside [setter].
+         * [setter] runs while Checkout Kit holds its configuration lock, so keep it short and do not wait
+         * for another thread that may call [configure], as that can deadlock.
          *
          * Calling this function invalidates any cached preload.
          * Call through `ShopifyCheckout.configure(...)`, including from Java.

@@ -77,3 +77,78 @@ the original model.
 
 `COVERED_TYPES.md` and `covered-types.json` list the protocol types inside Checkout Kit's compatibility promise: the types Checkout Kit's public API baselines expose, directly or through model fields. Regenerate them with `node scripts/generate_coverage_inventory.mjs` after regenerating models or updating Checkout Kit's API baselines; a test fails if they're out of date.
 
+## Property-based testing
+
+The TypeScript tests use `fast-check` alongside Vitest. Each property runs 200
+generated cases by default, with a fresh seed on each run. They run in the normal
+protocol test suite; `fast-check` is a development dependency of protocol tooling.
+
+From the repository root, run the property tests:
+
+```bash
+dev protocol test typescript .property.test.ts
+```
+
+The properties check these contracts:
+
+- URL decoration is idempotent, and the latest options replace earlier protocol
+  options, including removal of omitted optional parameters.
+- Unrelated query parameters retain their original bytes and order, including
+  duplicates, flags, plus signs, and malformed percent escapes. Protocol
+  parameters have the requested decoded values and no stale duplicates; the
+  base URL and fragment survive unchanged.
+- The handwritten codec runtime preserves nested extension data, arbitrary
+  payment-handler dictionary keys, and future status strings without mutating
+  its input. Explicit decoded-field assertions also check renaming independently
+  of round-trip equality.
+- Structured-clone and JSON delivery agree when optional model properties are
+  `undefined`; reserved camel-case aliases are rejected, and malformed required
+  strings produce validation errors without payload values.
+- Generated `Convert` helpers preserve nested extensions, arbitrary handler keys,
+  and future status strings across JSON round trips.
+
+The generated-model property exposed a key-preservation bug: an own `__proto__`
+payment-handler key changed the decoded map's prototype and disappeared on
+re-encoding. The generator now emits own data-property definitions, preserving
+the key and the ordinary object prototype. A minimized counterexample is kept
+in `languages/typescript/test/extension-preservation.test.ts` alongside the
+broader property.
+
+Generators construct small wire payloads independently of the generated rename
+map. Extension values are bounded, nested JSON. URL strings use Unicode scalar
+values, excluding lone surrogates that `encodeURIComponent` cannot encode.
+The wire dictionary generator uses ordinary objects, as produced by JSON.parse;
+preserving an input object's prototype is not part of the wire contract. Node's
+deep comparison treats an own `constructor` key as ordinary data, avoiding
+Vitest strict equality's interpretation of that key as type information.
+The optional-field delivery comparison starts from JSON-canonical values so it
+does not conflate omission of `undefined` with JSON's conversion of `-0` to `0`.
+
+Handler-key generators also include identifiers outside the schema's
+reverse-domain naming rule. The converters accept these strings, so the
+properties check that handling them preserves data and object prototypes.
+
+### Replaying a failure
+
+`fast-check` reports the seed, shrink path, counterexample, and underlying
+assertion. Select the exact failing test and supply its reported seed and path
+through `FC_SEED` and `FC_PATH`. For example, replacing these illustrative values
+with the failure report:
+
+```bash
+FC_SEED=12345 FC_PATH='0:1:0' dev protocol test typescript url.property.test.ts \
+  -t 'decoration is idempotent'
+```
+
+`FC_NUM_RUNS` overrides the case count for a local exploration:
+
+```bash
+FC_NUM_RUNS=2000 dev protocol test typescript .property.test.ts
+```
+
+Keep the same lockfile and generator definitions when replaying a seed/path.
+After identifying a defect, retain the smallest useful counterexample as an
+ordinary regression test as well as keeping the broader property. Avoid fixing
+the default seed or disabling shrinking: varied runs explore more inputs, while
+the reported seed and path make failures reproducible.
+

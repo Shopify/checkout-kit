@@ -43,6 +43,7 @@ import com.shopify.checkoutkit.checkout.PreloadState
 import com.shopify.checkoutkit.checkout.PreloadStateListener
 import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
+import com.shopify.checkoutkit.internal.concurrent.onMainThread
 import com.shopify.checkoutkit.internal.preload.PreloadCache
 import com.shopify.checkoutkit.internal.preload.PreloadKey
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
@@ -57,6 +58,8 @@ import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationDurationRes
 import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryReason
 import com.shopify.checkoutkit.internal.telemetry.TelemetryNavigationRetryResult
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationMetric
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationResult
 import java.util.concurrent.CountDownLatch
 
 @Suppress("TooManyFunctions")
@@ -95,6 +98,9 @@ internal class CheckoutWebView private constructor(
 
     private var checkoutRequestRetryReason: TelemetryNavigationRetryReason? = null
     private var navigationTiming: NavigationTiming? = null
+
+    /** Separate from [navigationTiming], which page finish consumes before `ec.ready` arrives. Main thread only. */
+    private var readyTiming: NavigationTiming? = null
     private val touchHandler = CheckoutWebViewTouchHandler()
 
     /** Origin of the loaded checkout URL, trusted as a safe default for incoming-message validation. */
@@ -131,6 +137,8 @@ internal class CheckoutWebView private constructor(
     }
 
     override fun destroy() {
+        // Evicting or expiring a preload that was never presented is not a buyer leaving.
+        if (!isPreloadRequest) recordReadyDuration(TelemetryReadyDurationResult.NotReady)
         endPresentationEvents()
         embeddedCheckoutProtocol.detach()
         super.destroy()
@@ -144,10 +152,7 @@ internal class CheckoutWebView private constructor(
         isPresented = false
     }
 
-    /**
-     * Keeps checkout scrolling in the WebView, but lets a parent container intercept a downward
-     * gesture that starts while checkout is already at scroll-top.
-     */
+    /** Keeps gestures that begin in checkout content within the WebView. */
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         touchHandler.handle(this, event)
@@ -191,7 +196,9 @@ internal class CheckoutWebView private constructor(
             checkoutRequest = request
             didRetryCheckoutRequest = false
             checkoutRequestRetryReason = null
-            navigationTiming = NavigationTiming(SystemClock.elapsedRealtime(), preloaded = isPreload)
+            val startedAtMillis = SystemClock.elapsedRealtime()
+            navigationTiming = NavigationTiming(startedAtMillis, preloaded = isPreload)
+            readyTiming = NavigationTiming(startedAtMillis, preloaded = isPreload)
             loadCheckoutRequest(request)
         }
     }
@@ -237,6 +244,29 @@ internal class CheckoutWebView private constructor(
             ),
         )
         recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+        recordReadyDuration(TelemetryReadyDurationResult.NotReady)
+    }
+
+    /** Called from the protocol message thread when `ec.ready` arrives. */
+    internal fun onEmbeddedCheckoutReady() {
+        val receivedAtMillis = SystemClock.elapsedRealtime()
+        onMainThread { recordReadyDuration(TelemetryReadyDurationResult.Ready, receivedAtMillis) }
+    }
+
+    /** Records once per load, at the same failure sites as navigation duration. */
+    private fun recordReadyDuration(
+        result: TelemetryReadyDurationResult,
+        nowMillis: Long = SystemClock.elapsedRealtime(),
+    ) {
+        val timing = readyTiming ?: return
+        readyTiming = null
+        CheckoutTelemetry.recorder.recordReadyDuration(
+            TelemetryReadyDurationMetric(
+                milliseconds = (nowMillis - timing.startedAtMillis).toDouble(),
+                result = result,
+                preloaded = timing.preloaded,
+            ),
+        )
     }
 
     private fun recordNavigationDuration(result: TelemetryNavigationDurationResult) {
@@ -285,6 +315,7 @@ internal class CheckoutWebView private constructor(
                 ),
             )
             recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+            recordReadyDuration(TelemetryReadyDurationResult.NotReady)
 
             // didCrash is API 26; framework delivery of this callback also begins on API 26.
             val didCrash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) detail.didCrash() else null
@@ -371,6 +402,7 @@ internal class CheckoutWebView private constructor(
                     ),
                 )
                 recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+                recordReadyDuration(TelemetryReadyDurationResult.NotReady)
                 resetCheckoutRequestRetryState()
             }
         }
@@ -413,6 +445,7 @@ internal class CheckoutWebView private constructor(
                         ),
                     )
                     recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
+                    recordReadyDuration(TelemetryReadyDurationResult.NotReady)
                     preloadCache.evict(
                         PreloadState.Failed(
                             failureReason,
@@ -544,7 +577,7 @@ internal class CheckoutWebView private constructor(
         return false
     }
 
-    private fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
+    internal fun isOnConfirmationPage(): Boolean = url?.let(Uri::parse).isConfirmationPage()
 
     companion object {
         private const val SHOPIFY_PURPOSE_HEADER = "Shopify-Purpose"
@@ -711,31 +744,11 @@ private fun <T> runOnUiThreadBlocking(activity: ComponentActivity, action: () ->
 }
 
 internal class CheckoutWebViewTouchHandler {
-    private var lastTouchRawY = 0f
-    private var touchGestureOwnerResolved = false
-
     fun handle(webView: WebView, event: MotionEvent) {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                lastTouchRawY = event.rawY
-                touchGestureOwnerResolved = false
-                webView.requestDisallowInterceptTouchEvent(true)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                val dragDistance = event.rawY - lastTouchRawY
-                lastTouchRawY = event.rawY
-                if (!touchGestureOwnerResolved && dragDistance != 0f) {
-                    touchGestureOwnerResolved = true
-                    if (dragDistance > 0f && !webView.canScrollVertically(SCROLL_UP_DIRECTION)) {
-                        webView.requestDisallowInterceptTouchEvent(false)
-                    }
-                }
-            }
+            MotionEvent.ACTION_DOWN -> webView.requestDisallowInterceptTouchEvent(true)
             MotionEvent.ACTION_UP,
-            MotionEvent.ACTION_CANCEL -> {
-                webView.requestDisallowInterceptTouchEvent(false)
-                touchGestureOwnerResolved = false
-            }
+            MotionEvent.ACTION_CANCEL -> webView.requestDisallowInterceptTouchEvent(false)
         }
     }
 }

@@ -6,7 +6,8 @@ package com.shopify.checkoutkit.checkout
 public fun interface ConfigurationUpdater {
     /**
      * Configuration block that the SDK will run to update the SDK settings.
-     * @param configuration object that you can modify (via setters) to update the settings.
+     * @param configuration a copy of the current settings. Modify it (via setters) before this function
+     * returns; the SDK then applies it. Do not keep a reference to it.
      */
     public fun configure(configuration: Configuration)
 }

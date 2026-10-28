@@ -61,6 +61,7 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
     var progressObserver: NSKeyValueObservation?
     private var hasNotifiedDismissal = false
+    private var didComplete = false
 
     // MARK: Initializers
 
@@ -242,6 +243,9 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         progressObserver?.invalidate()
         progressObserver = nil
 
+        recordConfirmationReached()
+
+        checkoutView?.recordReadyDurationForDismissal()
         checkoutView?.isPresented = false
 
         if let checkoutView, CheckoutWebView.preloadCache.retainAfterPresentation(checkoutView) {
@@ -254,6 +258,23 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         }
 
         checkoutView = nil
+    }
+
+    /// Measures how often a presentation ends on the confirmation page without `ec.complete`.
+    ///
+    /// A completed presentation is recorded even before the confirmation page loads, because
+    /// `ec.complete` can precede that navigation and integrations often dismiss on completion.
+    ///
+    /// Counted once per view, not per presentation. `ec.complete` is what evicts a completed
+    /// view from the preload cache, so when it is missing, a preloaded view can be presented
+    /// again on the confirmation page, and each dismissal would record another `false`.
+    private func recordConfirmationReached() {
+        guard let checkoutView, !checkoutView.hasRecordedConfirmationReached else { return }
+        let isOnConfirmationPage = checkoutView.url.map { CheckoutURL(from: $0).isConfirmationPage() } ?? false
+        guard didComplete || isOnConfirmationPage else { return }
+
+        checkoutView.hasRecordedConfirmationReached = true
+        checkoutView.telemetry.recordConfirmationReached(.init(completionReceived: didComplete))
     }
 }
 
@@ -271,6 +292,7 @@ extension CheckoutWebViewController: CheckoutEventSink {
     }
 
     func checkoutDidComplete(_ checkout: Checkout) {
+        didComplete = true
         let event = CheckoutCompleteEvent(checkout: checkout)
         onComplete?(event)
         delegate?.checkoutDidComplete(event)

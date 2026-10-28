@@ -5,6 +5,11 @@ import {
   type Measurement,
 } from './otlp';
 import {toProtocolMethod} from './protocol-method';
+import {
+  isCatalogMetricName,
+  type RecordingMeasurement,
+  type UnreservedMeasurement,
+} from './recording';
 import type {
   CheckoutKitTelemetry as CheckoutKitTelemetryClient,
   CheckoutKitTelemetryTestingOptions,
@@ -17,6 +22,7 @@ import type {
   TelemetryNavigationRetryMetric,
   TelemetryPlatform,
   TelemetryProtocolDecodeErrorMetric,
+  TelemetryReadyDurationMetric,
 } from './types';
 
 const DEFAULT_EXPORT_INTERVAL_MS = 60_000;
@@ -91,11 +97,38 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     }));
   }
 
+  record<Name extends RecordingMeasurement['name']>(
+    measurement: UnreservedMeasurement<Name>,
+  ): void {
+    // The types reject reserved names, but a cast can still pass one.
+    if (isCatalogMetricName(measurement.name)) return;
+    const {product, ...rest} = measurement;
+    this.#record({
+      ...rest,
+      attributes: this.#attributes(rest.attributes, product),
+      timeUnixNano: this.#now(),
+    });
+  }
+
   recordNavigationDuration(metric: TelemetryNavigationDurationMetric): void {
-    if (!Number.isFinite(metric.milliseconds) || metric.milliseconds < 0) return;
     this.#record({
       type: 'histogram',
       name: 'checkout_kit_navigation_duration_ms',
+      value: metric.milliseconds,
+      unit: 'ms',
+      attributes: this.#attributes({
+        result: metric.result,
+        preloaded: metric.preloaded,
+      }),
+      timeUnixNano: this.#now(),
+    });
+  }
+
+  recordReadyDuration(metric: TelemetryReadyDurationMetric): void {
+    if (!Number.isFinite(metric.milliseconds) || metric.milliseconds < 0) return;
+    this.#record({
+      type: 'histogram',
+      name: 'checkout_kit_ready_duration_ms',
       value: metric.milliseconds,
       unit: 'ms',
       attributes: this.#attributes({
@@ -173,15 +206,19 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     });
   }
 
-  #attributes(attributes: Attributes): Attributes {
+  #attributes(attributes: Attributes, product = this.#product): Attributes {
     return {
       ...attributes,
-      product: this.#product,
+      product,
       platform: this.#platform,
     };
   }
 
   #record(measurement: Measurement): void {
+    if (
+      measurement.type === 'histogram' &&
+      (!Number.isFinite(measurement.value) || measurement.value < 0)
+    ) return;
     if (this.#stopped) return;
     if (this.#measurements.length >= this.#maxPendingMeasurements) return;
     this.#measurements.push(measurement);

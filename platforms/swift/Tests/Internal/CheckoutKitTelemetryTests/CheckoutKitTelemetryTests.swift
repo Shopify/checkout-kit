@@ -157,6 +157,26 @@ struct CheckoutKitTelemetryTests {
         #expect(string.contains("\"sum\":450"))
     }
 
+    @Test func recordsFiniteNonNegativeReadyDurationsOnly() async throws {
+        let recorder = RequestRecorder()
+        let client = CheckoutKitTelemetry(
+            configuration: .init(sdkVersion: "1.2.3"),
+            clock: { 1 },
+            transport: successfulTransport(recorder: recorder)
+        )
+        client.recordReadyDuration(.init(milliseconds: -1, result: .ready, preloaded: false))
+        client.recordReadyDuration(.init(milliseconds: 450, result: .notReady, preloaded: true))
+
+        _ = await client.flush()
+
+        let body = try #require(recorder.request?.httpBody)
+        let string = try #require(String(data: body, encoding: .utf8))
+        #expect(string.contains("checkout_kit_ready_duration_ms"))
+        #expect(string.contains("\"stringValue\":\"not_ready\""))
+        #expect(string.contains("\"count\":\"1\""))
+        #expect(string.contains("\"sum\":450"))
+    }
+
     @Test func shutdownBypassesExportBackoffAndRetriesFailedMeasurements() async throws {
         let attempts = LockedInt(0)
         let recorder = RequestRecorder()
@@ -197,6 +217,24 @@ struct CheckoutKitTelemetryTests {
 
         let body = try #require(recorder.request?.httpBody)
         #expect(String(data: body, encoding: .utf8)?.contains("ec.buyer.change") == true)
+    }
+
+    @Test func recordsConfirmationReachedWithWhetherCompletionWasReceived() async throws {
+        let recorder = RequestRecorder()
+        let client = CheckoutKitTelemetry(
+            configuration: .init(sdkVersion: "1.2.3"),
+            clock: { 1 },
+            transport: successfulTransport(recorder: recorder)
+        )
+
+        client.recordConfirmationReached(.init(completionReceived: false))
+
+        _ = await client.flush()
+
+        let body = try #require(recorder.request?.httpBody)
+        let payload = try #require(String(data: body, encoding: .utf8))
+        #expect(payload.contains("\"checkout_kit_confirmation_reached\""))
+        #expect(payload.contains("{\"key\":\"completion_received\",\"value\":{\"boolValue\":false}}"))
     }
 
     @Test func ordersGroupsWithMatchingNamesDeterministically() async throws {

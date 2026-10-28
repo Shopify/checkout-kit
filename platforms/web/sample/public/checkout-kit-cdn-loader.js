@@ -1,7 +1,7 @@
 import {
   loadComponents,
   version,
-} from "https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js";
+} from "https://cdn.shopify.com/checkout-kit/v4/unstable/checkout-kit.js";
 
 await loadComponents(["shopify-checkout"]);
 

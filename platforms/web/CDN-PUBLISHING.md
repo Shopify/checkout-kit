@@ -10,12 +10,12 @@ Checkout Kit has a dedicated CDN namespace. URLs are evergreen within a
 Checkout Kit major version:
 
 ```text
-https://cdn.shopify.com/checkout-kit/v4/web-components.js
+https://cdn.shopify.com/checkout-kit/v4/checkout-kit.js
 ```
 
 Compatible minor and patch releases replace the assets served from that major
 path. A breaking Checkout Kit API or browser-support change requires a new
-major URL, such as `/checkout-kit/v5/web-components.js`.
+major URL, such as `/checkout-kit/v5/checkout-kit.js`.
 
 The CDN major is the Checkout Kit library major; it is not a protocol version.
 
@@ -64,28 +64,28 @@ unnecessary coordinated upgrades as the set of components grows.
 
 ## Module loader
 
-`web-components.js` is a stable ES module loader rather than a bundle containing
-every Checkout Kit capability. The name mirrors Storefront Web Components
-(`/storefront/web-components.js`), but unlike that bundle, importing it alone
-registers nothing: consumers import it and load only the component they need.
-Per-component drop-in files, if added later, belong under
-`v<major>/web-components/<tag>.js`.
+`checkout-kit.js` is a stable ES module loader rather than a bundle containing
+every Checkout Kit capability. Unlike Storefront Web Components
+(`/storefront/web-components.js`), importing it alone registers nothing:
+consumers import it and load only the component they need. Per-component
+drop-in files, if added later, belong under `v<major>/web-components/<tag>.js`.
 
 ```js
-import {loadComponents} from "https://cdn.shopify.com/checkout-kit/v4/web-components.js";
+import {loadComponents} from "https://cdn.shopify.com/checkout-kit/v4/checkout-kit.js";
 
 await loadComponents(["shopify-checkout"]);
 ```
 
-The initial supported component is `shopify-checkout`; component names are the
-custom element tags they register. `loadComponents` takes an array so a page
+Supported components are `shopify-checkout`, `shopify-universal-checkout`, and
+`shop-pay`; component names are the custom element tags they register. `loadComponents` takes an array so a page
 can request several components in one call. Nothing is loaded implicitly: an
 empty list is rejected, every name is validated before anything is fetched,
 and the call rejects if any component fails to load. The
-loader resolves each component
-to a self-contained implementation chunk under the same major-version directory
-and registers `<shopify-checkout>`. Repeating a request for the same component
-is safe, and concurrent requests share one load.
+loader resolves each component to a self-contained implementation chunk under the
+same major-version directory and registers that element. Shared runtime code is
+bundled into each component, not fetched through a shared chunk: cache-busting a
+component entry must retry its whole dependency graph. Repeating a request for
+the same component is safe, and concurrent requests share one load.
 
 Browsers remember a failed dynamic import for that URL for the rest of the
 page, so a single transient network error would otherwise make the component
@@ -111,15 +111,25 @@ The Web package owns two separate builds from the same source and version:
 
 The npm component subpath (`@shopify/checkout-kit/shopify-checkout`) and CDN
 loader (`src/cdn-loader.ts`) both use
-`src/components/shopify-checkout/register.ts`, which registers the element
+`components/shopify-checkout/src/register.ts`, which registers the element
 through `ShopifyCheckout.register()`. The npm root import registers nothing.
-New components get their own npm subpaths and loader entries.
+New components get their own npm subpaths and loader entries. To promote a
+component into the CDN, first give it a public npm subpath, then add its custom
+element tag to `supportedComponents` and a static registration import to the
+CDN loader manifest. Add its standalone build entry in `vite.cdn.config.ts`
+and run that build mode before the loader in `build:cdn`, so the component
+keeps its dependency graph self-contained. The shared URL-injection helper
+wires its hashed retry chunk under `assets/<tag>/`; those paths remain
+deployment details.
 Component implementation and registration live together, with no separate CDN
 component source tree.
 
 - `pnpm build:npm` uses `vite.config.ts` to produce the npm package in `dist/`.
-- `pnpm build:cdn` uses `vite.cdn.config.ts` to produce the loader and hashed
-  implementation chunks in `dist-cdn/`, which is excluded from the npm package.
+- `pnpm build:cdn` uses `vite.cdn.config.ts` to build each component independently,
+  followed by the loader. The `shopify-checkout` build mode cleans `dist-cdn/`;
+  `shopify-universal-checkout`, `shop-pay`, and the loader append their outputs. Component
+  bundles use `codeSplitting: false`, and the loader imports their hashed paths.
+  `dist-cdn/` is excluded from the npm package.
 - `pnpm build` runs both; `pnpm verify` checks both distributions, including
   loading them together on the same page.
 
@@ -155,9 +165,9 @@ it runs:
 
 | Release | CDN loader |
 | --- | --- |
-| Stable package version, not marked as a GitHub prerelease, npm tag `latest` | `v<major>/web-components.js` |
-| SemVer prerelease or marked as a GitHub prerelease, with any npm tag | `v<major>/unstable/web-components.js` |
-| Stable package version on any other npm tag, including `next`, `beta`, or `experimental` | `v<major>/unstable/web-components.js` |
+| Stable package version, not marked as a GitHub prerelease, npm tag `latest` | `v<major>/checkout-kit.js` |
+| SemVer prerelease or marked as a GitHub prerelease, with any npm tag | `v<major>/unstable/checkout-kit.js` |
+| Stable package version on any other npm tag, including `next`, `beta`, or `experimental` | `v<major>/unstable/checkout-kit.js` |
 
 A manual `latest` override cannot promote a prerelease to the stable CDN URL.
 All preview npm channels share the same unstable CDN destination for that major;

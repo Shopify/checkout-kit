@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.min
 
+@Suppress("TooManyFunctions")
 internal class OtlpExporter(
     private val configuration: CheckoutKitTelemetryConfiguration,
     private val clock: () -> Long = { System.currentTimeMillis() * NANOS_PER_MILLISECOND },
@@ -69,6 +70,15 @@ internal class OtlpExporter(
         )
     }
 
+    fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric) {
+        recordCounter(
+            "checkout_kit_confirmation_reached",
+            attributes(
+                "completion_received" to AttributeValue.BooleanValue(metric.completionReceived),
+            ),
+        )
+    }
+
     fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric) {
         recordCounter(
             "checkout_kit_navigation_retry",
@@ -85,6 +95,23 @@ internal class OtlpExporter(
             Measurement(
                 type = MeasurementType.Histogram,
                 name = "checkout_kit_navigation_duration_ms",
+                value = metric.milliseconds,
+                unit = "ms",
+                attributes = attributes(
+                    "result" to AttributeValue.StringValue(metric.result.wireValue),
+                    "preloaded" to AttributeValue.BooleanValue(metric.preloaded),
+                ),
+                timeUnixNano = clock(),
+            ),
+        )
+    }
+
+    fun recordReadyDuration(metric: TelemetryReadyDurationMetric) {
+        if (!metric.milliseconds.isFinite() || metric.milliseconds < 0) return
+        record(
+            Measurement(
+                type = MeasurementType.Histogram,
+                name = "checkout_kit_ready_duration_ms",
                 value = metric.milliseconds,
                 unit = "ms",
                 attributes = attributes(

@@ -1,14 +1,8 @@
 # Shopify Checkout Kit - Web
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![npm next](https://img.shields.io/npm/v/@shopify/checkout-kit/next.svg?label=npm%20%40next)](https://www.npmjs.com/package/@shopify/checkout-kit)
+[![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/Shopify/checkout-kit/blob/main/LICENSE) [![npm](https://img.shields.io/npm/v/@shopify/checkout-kit.svg)](https://www.npmjs.com/package/@shopify/checkout-kit)
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/72813286-1bec-493b-b08a-6cc4ba23dbda" />
-
-> [!WARNING]
-> **Alpha — early preview.** This software is an early preview and is **not**
-> production-ready. Stability is not guaranteed, and breaking changes may
-> occur in any release. Published under the `next` dist-tag — see
-> [Installation](#installation).
 
 **Shopify Checkout Kit** is a web component library that enables any website to
 present the world's highest converting, customizable, one-page checkout. The
@@ -27,7 +21,10 @@ Check out our blog to
   - [Installation](#installation)
   - [CDN](#cdn)
 - [Basic Usage](#basic-usage)
+- [Universal Checkout](#universal-checkout)
+- [Shop Pay](#shop-pay)
 - [Programmatic Usage](#programmatic-usage)
+- [Manual registration and custom tag names](#manual-registration-and-custom-tag-names)
 - [Usage with other frameworks](#usage-with-other-frameworks)
   - [React](#react)
 - [Usage with the Shopify Storefront API](#usage-with-the-shopify-storefront-api)
@@ -64,26 +61,17 @@ Use the following steps to get started with adding it to your web application:
 
 ### Installation
 
-The package is currently in **pre-release**. There is no `latest` dist-tag
-published yet, so plain `pnpm add @shopify/checkout-kit` will fail with
-_no matching version_. Pin to the alpha explicitly, or follow the `next`
-dist-tag:
+Install Checkout Kit for Web `4.0.0`:
 
 ```sh
-# Pin to this alpha (recommended for now — prereleases can change shape)
-pnpm add @shopify/checkout-kit@4.0.0-alpha.5
+pnpm add @shopify/checkout-kit@4.0.0
 
-# Or track the latest prerelease via the `next` dist-tag
-pnpm add @shopify/checkout-kit@next
-
-# The same works with npm:
-npm install @shopify/checkout-kit@4.0.0-alpha.5
-# or
-npm install @shopify/checkout-kit@next
+# or using npm
+npm install @shopify/checkout-kit@4.0.0
 ```
 
-Once the first stable `4.0.0` ships, the standard `pnpm add @shopify/checkout-kit`
-(no version specifier) will work and pull from the `latest` dist-tag.
+Stable releases are published under the `latest` dist-tag. Omit the version
+specifier to install the latest stable release.
 
 ### CDN
 
@@ -92,7 +80,7 @@ as an ES module and register the component you need:
 
 ```html
 <script type="module">
-  import {loadComponents} from 'https://cdn.shopify.com/checkout-kit/v4/web-components.js';
+  import {loadComponents} from 'https://cdn.shopify.com/checkout-kit/v4/checkout-kit.js';
   await loadComponents(['shopify-checkout']);
 </script>
 ```
@@ -100,8 +88,6 @@ as an ES module and register the component you need:
 The URL is evergreen within a major version: compatible updates are delivered
 automatically, and a breaking change ships under a new major path. The loader
 also exports `version`, the Checkout Kit release it was built from.
-
-The CDN entrypoint becomes available with the first stable `4.0.0` release.
 
 ## Basic Usage
 
@@ -116,6 +102,10 @@ Components use separate entry points within the same npm package. Import only
 the components you need. The package root (`@shopify/checkout-kit`) exports the
 classes, events, and types without registering anything; see
 [manual registration](#manual-registration-and-custom-tag-names).
+
+Each component entry supplies tag-name typings for that component only. The
+package root exposes all component types, but types alone never register an
+element: import its registration entry or call its class's `register()` method.
 
 > [!IMPORTANT]
 > `import '@shopify/checkout-kit'` no longer registers `<shopify-checkout>`.
@@ -151,6 +141,37 @@ anywhere in your DOM.
 
 See [usage with the Storefront API](#usage-with-the-shopify-storefront-api)
 below for details on how to obtain a checkout URL.
+
+## Universal Checkout
+
+Use `<shopify-universal-checkout>` to present a Universal Checkout session spanning
+multiple shops. Register it with
+`import '@shopify/checkout-kit/shopify-universal-checkout'`, or import
+`ShopifyUniversalCheckout` from `@shopify/checkout-kit` for manual registration.
+The CDN loader accepts `loadComponents(['shopify-universal-checkout'])`.
+
+Universal Checkout takes a session URL created by your server, not a cart
+permalink, and emits batched lifecycle events. Events are its only state surface:
+attach listeners before `open()` and keep any aggregate state in your host.
+Standard checkout keeps its existing single-checkout event and state contract. See the
+[Universal Checkout guide](documentation/universal-checkout.md) and
+[sample](https://github.com/Shopify/checkout-kit/blob/main/platforms/web/sample/universal-checkout/README.md) for session setup, event handling,
+and presentation controls. For an overview, see
+[Universal Checkout on Shopify.dev](https://shopify.dev/docs/agents/carts-and-checkout/universal-checkout).
+
+## Shop Pay
+
+Use `<shop-pay>` to present a Universal session with Shop Pay. Add the `button`
+attribute to show Shop Pay's button, which opens checkout when tapped, or call
+`open()` from your own control. Register it with
+`import '@shopify/checkout-kit/shop-pay'`, or import `ShopPay` from
+`@shopify/checkout-kit` for manual registration. The CDN loader accepts
+`loadComponents(['shop-pay'])`.
+
+Like Universal Checkout, `<shop-pay>` takes a session URL created by your server
+and reports each shop's checkout through batched lifecycle events, its only state
+surface. See the [Shop Pay guide](documentation/shop-pay.md) and
+[sample](https://github.com/Shopify/checkout-kit/blob/main/platforms/web/sample/shop-pay/README.md).
 
 ## Programmatic Usage
 
@@ -515,7 +536,7 @@ cross-origin checkout page-finish. `ec.start` means checkout is loaded and
 interactive.
 
 ```html
-<shopify-checkout src="..." telemetry="false" />
+<shopify-checkout src="..." telemetry="false"></shopify-checkout>
 ```
 
 ```ts
@@ -564,8 +585,8 @@ element. Event payloads are available in `event.detail`.
 | `start`    | `{checkout}`   | Checkout has loaded and is interactive. |
 | `update`   | `{checkout}`   | A change to line items, fulfillment, totals, or checkout messages produces a different checkout snapshot. |
 | `complete` | `{checkout}`   | The buyer completed the order successfully. |
-| `error`    | `{error}`      | Checkout could not open or reported a terminal error, exposed as `{code, message}`. An open session closes automatically after this event. |
-| `close`    | _(none)_       | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
+| `error`    | `{error}`      | Checkout could not open or reported a terminal error, exposed as `{code, message}`. Protocol errors close the session after this event; opening failures close a previous presentation first. |
+| `close`    | `null`         | The open session ended through `close()`, overlay dismissal, or detection of a popup the buyer closed. If the browser blocked the window, no `start` precedes it. |
 | `blocked`  | `{code}`       | The browser blocked the checkout window, with `code` set to `"popup_blocked"`. Fires on every blocked attempt, whether or not the overlay is shown. |
 
 `start`, `update`, and `complete` carry a Checkout Kit `Checkout` snapshot in
@@ -607,11 +628,18 @@ checkout.addEventListener('close', () => {
 Protocol errors are terminal for the checkout session regardless of message
 severity. The component emits `error` before closing and emitting `close`.
 
+An empty, malformed, or non-HTTPS `src`, or a failure to open the checkout
+presentation, emits `error` with code `sdk_error` instead of throwing. Opening
+failures close any previous presentation before reporting the error, and
+`checkout.error` exposes that failure. A browser-blocked popup continues to emit
+the separate `blocked` event and keeps its retry overlay open.
+
 Before opening checkout, the component verifies that the browser supports Shadow
 DOM, native dialogs, and abortable event listeners. If a required capability is
 missing, it dispatches an `error` event with `event.detail.error.code ===
-"unsupported_browser"` without opening a checkout window. Use this to offer a
-normal checkout link or another fallback:
+"unsupported_browser"` after closing any previous presentation, without opening
+a new checkout window. Use this to offer a normal checkout link or another
+fallback:
 
 ```ts
 checkout.addEventListener('error', (event) => {
@@ -643,9 +671,80 @@ These properties are useful for handlers that don't have a reference to the
 originating event. TypeScript users get fully typed events through overloaded
 `addEventListener` signatures with no additional setup.
 
+Framework integrations can import an event map for each component from
+`@shopify/checkout-kit`:
+
+| Component | Event map |
+| --- | --- |
+| `<shopify-checkout>` | `ShopifyCheckoutEventMap` |
+| `<shopify-universal-checkout>` | `ShopifyUniversalCheckoutEventMap` |
+| `<shop-pay>` | `ShopPayEventMap` |
+
+Use `keyof ShopifyUniversalCheckoutEventMap` for all Universal Checkout event
+names, or `ShopifyUniversalCheckoutEventMap['complete']` for a particular event
+type. The maps include `start`, `update`, `complete`, `error`, `close`, and
+`blocked`. Every component's `close` event has `null` detail.
+
+The package root exports 25 names: three component classes and 22 types. In
+addition to the event maps above, consumers can import these types directly:
+
+| Purpose | Exported types |
+| --- | --- |
+| Configuration | `ShopifyCheckoutAppearance`, `ShopifyCheckoutTarget`, `ShopifyCheckoutLogLevel` |
+| Checkout snapshots | `ShopifyCheckoutSnapshot`, `ShopifyUniversalCheckoutSnapshot`, `ShopPaySnapshot` |
+| Resource entries | `ShopifyUniversalCheckoutResourceEventEntry`, `ShopPayResourceEventEntry` |
+| Error entries | `ShopifyUniversalCheckoutErrorEventEntry`, `ShopPayErrorEventEntry` |
+| Error objects | `ShopifyCheckoutError`, `ShopifyUniversalCheckoutFailure`, `ShopPayFailure` |
+| Error codes | `ShopifyCheckoutErrorCode`, `ShopifyUniversalCheckoutErrorCode`, `ShopPayErrorCode` |
+| Resource statuses | `ShopifyUniversalCheckoutResourceStatus`, `ShopPayResourceStatus` |
+| Rejected-message callback payload | `ShopifyCheckoutMessageRejectedDetail` |
+
+The target and log-level types are shared by all three components. Public names
+use the `Shopify` prefix, with `ShopPay` as the exception. Standard checkout
+snapshots remain mutable; Universal Checkout and Shop Pay snapshots and their
+nested data remain readonly. The component-specific error types preserve each
+component's error codes and fields.
+
+Use named types for data you store or pass to separate handlers. Listeners still
+infer their event types automatically. Derive event wrappers, context, and
+nested fields from the event maps or data types:
+
+```ts
+import type {
+  ShopifyCheckoutSnapshot,
+  ShopifyCheckoutMessageRejectedDetail,
+  ShopifyUniversalCheckoutEventMap,
+  ShopifyUniversalCheckoutResourceEventEntry,
+  ShopPaySnapshot,
+} from '@shopify/checkout-kit';
+
+let latestCheckout: ShopifyCheckoutSnapshot | undefined;
+const shops = new Map<string, ShopifyUniversalCheckoutResourceEventEntry>();
+const rejectedMessages: ShopifyCheckoutMessageRejectedDetail[] = [];
+
+type CompleteEvent = ShopifyUniversalCheckoutEventMap['complete'];
+type CompleteDetail = CompleteEvent['detail'];
+type ResourceContext = ShopifyUniversalCheckoutResourceEventEntry['context'];
+type ShopPayLineItem = ShopPaySnapshot['lineItems'][number];
+```
+
+When migrating existing imports, replace `CheckoutAppearance`, `CheckoutTarget`,
+and `LogLevel` with their `ShopifyCheckout`-prefixed names. Rename `Checkout` to
+`ShopifyCheckoutSnapshot`, `CheckoutError` and `CheckoutErrorCode` to their
+`ShopifyCheckout`-prefixed names, and `MessageRejectedDetail` to
+`ShopifyCheckoutMessageRejectedDetail`. Add the `Shopify` prefix to retained
+`UniversalCheckout…` types; retained `ShopPay…` names are unchanged.
+
+Individual event classes, payload wrappers, context types, and raw nested data
+types are no longer separate exports. Derive them as shown above; use `keyof`
+an event map instead of the incomplete `UniversalCheckoutEventType` and
+`ShopPayEventType` unions. Derive the blocked code from
+`ShopifyCheckoutEventMap['blocked']['detail']['code']`. Tests that simulate an
+event can dispatch a native `CustomEvent` with the corresponding detail.
+
 ## Explore the sample app
 
-See the [`sample/`](./sample) directory for a small Vite playground that mounts
+See the [`sample/`](https://github.com/Shopify/checkout-kit/tree/main/platforms/web/sample) directory for a small Vite playground that mounts
 the real `<shopify-checkout>` element next to a faux storefront. Run it from
 this directory with:
 

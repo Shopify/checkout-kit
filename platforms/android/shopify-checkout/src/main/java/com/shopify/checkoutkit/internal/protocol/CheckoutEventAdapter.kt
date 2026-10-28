@@ -17,6 +17,10 @@ internal class CheckoutEventAdapter(
 ) {
     private var active = true
     private var latestSnapshot: JsonElement? = null
+
+    /** Whether this presentation delivered a valid completion to the listener. */
+    @Volatile var hasCompleted = false
+        private set
     private val client = CheckoutProtocol.Client()
         .on(CheckoutProtocol.start, ::start)
         .on(CheckoutProtocol.lineItemsChange, ::update)
@@ -59,6 +63,7 @@ internal class CheckoutEventAdapter(
         if (!active) return
         val snapshot = Checkout.fromProtocol(checkout)
         remember(snapshot)
+        hasCompleted = true
         listener.onCheckoutCompleted(CheckoutCompleteEvent(snapshot))
     }
 

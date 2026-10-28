@@ -1,4 +1,3 @@
-import {writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
@@ -24,16 +23,6 @@ export default defineConfig({
     // module. Default options; `apply: 'build'` because Vitest shares this
     // config and the plugin needs Rolldown build input.
     ...dts().map((plugin) => ({...plugin, apply: 'build' as const})),
-    {
-      // `dist/<component>.d.ts` is the declaration file for the component
-      // entry (`@shopify/checkout-kit/shopify-checkout`). The entry has no
-      // exports of its own, so load the root declarations: a component import
-      // alone then brings the tag-name typing.
-      name: 'checkout-kit:component-entry-declarations',
-      async closeBundle() {
-        await writeFile(fromRoot('dist/shopify-checkout.d.ts'), 'import "./index.js";\n\nexport {};\n');
-      },
-    },
   ],
   build: {
     target: browserslistToEsbuild(),
@@ -45,6 +34,8 @@ export default defineConfig({
       entry: {
         index: fromRoot('src/index.ts'),
         'shopify-checkout': fromRoot('src/shopify-checkout.ts'),
+        'shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
+        'shop-pay': fromRoot('src/shop-pay.ts'),
       },
       formats: ['es'],
       fileName: (_, entryName) => `${entryName}.js`,
@@ -63,6 +54,10 @@ export default defineConfig({
     },
   },
   test: {
+    alias: {
+      '@shopify/checkout-kit/shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
+      '@shopify/checkout-kit/shop-pay': fromRoot('src/shop-pay.ts'),
+    },
     environment: 'happy-dom',
     environmentOptions: {
       happyDOM: {

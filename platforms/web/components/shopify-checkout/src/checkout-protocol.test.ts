@@ -379,6 +379,56 @@ describe("<shopify-checkout>", () => {
       });
     });
 
+    describe("ready duration telemetry", () => {
+      it("records ready measured from before the checkout window opens", async () => {
+        let now = 100;
+        vi.spyOn(performance, "now").mockImplementation(() => now);
+        const readySpy = vi.spyOn(mockTelemetry(), "recordReadyDuration");
+        const checkout = renderCheckout({ target: "popup" });
+        const mockCheckoutWindow = createMockWindow();
+        vi.spyOn(window, "open").mockImplementation(() => {
+          now = 200;
+          return mockCheckoutWindow;
+        });
+        vi.spyOn(HTMLDialogElement.prototype, "showModal").mockImplementation(() => {});
+        vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(() => {});
+
+        checkout.open();
+        now = 300;
+        simulateProtocolMessageEvent(
+          checkout,
+          "ec.ready",
+          { delegate: [] },
+          {
+            id: "ready-1",
+            source: mockCheckoutWindow,
+          },
+        );
+        await flushProtocolDispatch();
+        checkout.close();
+
+        expect(readySpy).toHaveBeenCalledExactlyOnceWith({
+          milliseconds: 200,
+          result: "ready",
+          preloaded: false,
+        });
+      });
+
+      it("records not_ready once when closed before ec.ready", () => {
+        const readySpy = vi.spyOn(mockTelemetry(), "recordReadyDuration");
+        const { checkout } = openPopupCheckout();
+
+        checkout.close();
+        checkout.close();
+
+        expect(readySpy).toHaveBeenCalledExactlyOnceWith({
+          milliseconds: expect.any(Number),
+          result: "not_ready",
+          preloaded: false,
+        });
+      });
+    });
+
     describe("ec.complete", () => {
       it("updates the checkout property and dispatches a complete event", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout();

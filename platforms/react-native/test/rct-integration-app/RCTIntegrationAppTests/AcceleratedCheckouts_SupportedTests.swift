@@ -37,7 +37,7 @@ class AcceleratedCheckouts_SupportedTests: XCTestCase {
     private func resetCheckoutKitDefaults() {
         // XCTest runs these synchronous tests on the main thread, which is what `configure` requires.
         MainActor.assumeIsolated {
-            ShopifyCheckoutKit.configure {
+            ShopifyCheckout.configure {
                 $0.appearance = .storefront()
             }
         }

@@ -8,6 +8,7 @@ import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.concurrent.onMainThread
 import com.shopify.checkoutkit.internal.telemetry.CheckoutTelemetry
+import com.shopify.checkoutkit.internal.telemetry.TelemetryConfirmationReachedMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryDecodeFailureType
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolDecodeErrorMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolMethod
@@ -115,9 +116,26 @@ internal class EmbeddedCheckoutProtocolBridge(
         eventAdapter = if (listener.isNoop) null else CheckoutEventAdapter(listener, ::recordParamsDecodeErrorOnce)
     }
 
+    /** Called on the main thread when the presentation ends or its listener is replaced. */
     internal fun invalidateEventAdapter() {
-        eventAdapter?.invalidate()
+        eventAdapter?.let { adapter ->
+            recordConfirmationReached(adapter)
+            adapter.invalidate()
+        }
         eventAdapter = null
+    }
+
+    /**
+     * Measures how often a presentation ends on the confirmation page without `ec.complete`.
+     *
+     * A completed presentation is recorded even before the confirmation page loads, because
+     * `ec.complete` can precede that navigation and integrations often dismiss on completion.
+     */
+    private fun recordConfirmationReached(adapter: CheckoutEventAdapter) {
+        if (!adapter.hasCompleted && !view.isOnConfirmationPage()) return
+        CheckoutTelemetry.recorder.recordConfirmationReached(
+            TelemetryConfirmationReachedMetric(completionReceived = adapter.hasCompleted),
+        )
     }
 
     private fun receiveWebMessage(message: String, sourceOrigin: String, isMainFrame: Boolean) {
@@ -162,6 +180,8 @@ internal class EmbeddedCheckoutProtocolBridge(
         try {
             val request = decodeProtocolRequest(message)
             val method = CheckoutProtocol.supportedProtocolMethod(request)
+            // Before the request id guard, so an `ec.ready` without an id still counts.
+            if (method == CheckoutProtocol.ready.method) view.onEmbeddedCheckoutReady()
             val requestId = jsonRpcRequestId(request.id)
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {

@@ -392,11 +392,15 @@ export interface ShopifyCheckoutKit {
   /**
    * Clear any checkout cached by `preload`.
    */
-  invalidate(): void;
+  clearPreload(): void;
   /**
    * Configure the checkout. See README.md for more details.
+   *
+   * The returned Promise resolves after the native SDK applies the
+   * configuration, with the configuration that native reports right after it
+   * applies this call.
    */
-  setConfig(config: Configuration): void;
+  setConfig(config: Configuration): Promise<Configuration>;
   /**
    * Return the current config for the checkout. See README.md for more details.
    */

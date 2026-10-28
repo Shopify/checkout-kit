@@ -3,6 +3,8 @@ import type {
   CheckoutProtocolRequestMethod,
 } from '@shopify/checkout-kit-protocol';
 
+import type {RecordingMeasurement, UnreservedMeasurement} from './recording';
+
 export type TelemetryErrorCategory =
   | 'http'
   | 'navigation'
@@ -54,6 +56,8 @@ export type TelemetryNavigationRetryResult =
 
 export type TelemetryNavigationDurationResult = 'success' | 'failure';
 
+export type TelemetryReadyDurationResult = 'ready' | 'not_ready';
+
 export type TelemetryProduct =
   | 'checkout_kit'
   | 'accelerated_checkouts'
@@ -85,12 +89,23 @@ export interface TelemetryNavigationDurationMetric {
   preloaded: boolean;
 }
 
+export interface TelemetryReadyDurationMetric {
+  milliseconds: number;
+  result: TelemetryReadyDurationResult;
+  preloaded: boolean;
+}
+
 export interface CheckoutKitTelemetry {
   start(): void;
   recordError(metric: TelemetryErrorMetric): void;
   recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric): void;
   recordNavigationRetry(metric: TelemetryNavigationRetryMetric): void;
   recordNavigationDuration(metric: TelemetryNavigationDurationMetric): void;
+  recordReadyDuration(metric: TelemetryReadyDurationMetric): void;
+  /** Records a component's own metric, through the same export, limits and shutdown. */
+  record<Name extends RecordingMeasurement['name']>(
+    measurement: UnreservedMeasurement<Name>,
+  ): void;
   flush(options?: FlushOptions): Promise<boolean>;
   shutdown(options?: ShutdownOptions): Promise<boolean>;
 }

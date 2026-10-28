@@ -132,7 +132,7 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `downward drag at scroll top releases gesture to parent`() {
+    fun `downward drag at scroll top stays with WebView`() {
         val parent = InterceptTrackingLayout(activity)
         val view = checkoutWebView(activity)
         parent.addView(view)
@@ -140,7 +140,7 @@ class CheckoutWebViewTest {
         view.sendTouchEvent(MotionEvent.ACTION_DOWN, y = 20f)
         view.sendTouchEvent(MotionEvent.ACTION_MOVE, y = 30f)
 
-        assertThat(parent.disallowInterceptRequested).isFalse()
+        assertThat(parent.disallowInterceptRequested).isTrue()
     }
 
     @Test

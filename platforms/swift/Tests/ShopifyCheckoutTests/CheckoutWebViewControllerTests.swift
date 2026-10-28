@@ -1,3 +1,4 @@
+import CheckoutKitTelemetry
 import EmbeddedCheckoutProtocol
 @testable import ShopifyCheckoutKit
 import WebKit
@@ -286,4 +287,104 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertNil(checkoutView.superview)
         XCTAssertFalse(checkoutView.isBridgeAttached)
     }
+
+    func test_cleanUp_recordsConfirmationReachedWithoutCompletion() {
+        let recorder = ConfirmationTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(recorder)
+        defer { CheckoutTelemetry.overrideRecorderForTesting(nil) }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.checkoutView = StubURLCheckoutWebView(currentURL: confirmationURL)
+
+        viewController.cleanUpCheckoutView()
+
+        XCTAssertEqual(recorder.completionReceived, [false])
+    }
+
+    func test_cleanUp_recordsConfirmationReachedAfterCompletion() {
+        let recorder = ConfirmationTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(recorder)
+        defer { CheckoutTelemetry.overrideRecorderForTesting(nil) }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.checkoutView = StubURLCheckoutWebView(currentURL: confirmationURL)
+
+        viewController.checkoutDidComplete(
+            Checkout(id: "checkout-1", status: .completed, currency: "USD", lineItems: [], totals: [])
+        )
+        viewController.cleanUpCheckoutView()
+
+        XCTAssertEqual(recorder.completionReceived, [true])
+    }
+
+    func test_cleanUp_recordsConfirmationReachedOncePerViewWhenPresentedAgain() {
+        let recorder = ConfirmationTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(recorder)
+        defer { CheckoutTelemetry.overrideRecorderForTesting(nil) }
+        let checkoutView = StubURLCheckoutWebView(currentURL: confirmationURL)
+        let firstPresentation = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        firstPresentation.checkoutView = checkoutView
+        firstPresentation.cleanUpCheckoutView()
+
+        let secondPresentation = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        secondPresentation.checkoutView = checkoutView
+        secondPresentation.cleanUpCheckoutView()
+
+        XCTAssertEqual(recorder.completionReceived, [false])
+    }
+
+    func test_cleanUp_recordsCompletionDismissedBeforeConfirmationPage() {
+        let recorder = ConfirmationTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(recorder)
+        defer { CheckoutTelemetry.overrideRecorderForTesting(nil) }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.checkoutView = StubURLCheckoutWebView(currentURL: url)
+
+        viewController.checkoutDidComplete(
+            Checkout(id: "checkout-1", status: .completed, currency: "USD", lineItems: [], totals: [])
+        )
+        viewController.cleanUpCheckoutView()
+
+        XCTAssertEqual(recorder.completionReceived, [true])
+    }
+
+    func test_cleanUp_doesNotRecordConfirmationReachedBeforeConfirmationPage() {
+        let recorder = ConfirmationTelemetryRecorder()
+        CheckoutTelemetry.overrideRecorderForTesting(recorder)
+        defer { CheckoutTelemetry.overrideRecorderForTesting(nil) }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.checkoutView = StubURLCheckoutWebView(currentURL: url)
+
+        viewController.cleanUpCheckoutView()
+
+        XCTAssertEqual(recorder.completionReceived, [])
+    }
+
+    private let confirmationURL = URL(string: "https://shopify1.shopify.com/checkouts/cn/123/thank-you")!
+}
+
+@MainActor
+private final class StubURLCheckoutWebView: CheckoutWebView {
+    private var currentURL: URL?
+
+    convenience init(currentURL: URL) {
+        self.init()
+        self.currentURL = currentURL
+    }
+
+    override var url: URL? {
+        currentURL
+    }
+}
+
+private final class ConfirmationTelemetryRecorder: CheckoutTelemetryRecording, @unchecked Sendable {
+    private(set) var completionReceived: [Bool] = []
+
+    func recordError(_: TelemetryErrorMetric) {}
+    func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordConfirmationReached(_ metric: TelemetryConfirmationReachedMetric) {
+        completionReceived.append(metric.completionReceived)
+    }
+
+    func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
+    func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+    func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
 }

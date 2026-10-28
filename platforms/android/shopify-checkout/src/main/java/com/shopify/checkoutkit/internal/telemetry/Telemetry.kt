@@ -10,8 +10,10 @@ import com.shopify.checkoutkit.checkout.ShopifyCheckout
 internal interface CheckoutTelemetryRecording {
     fun recordError(metric: TelemetryErrorMetric)
     fun recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric)
+    fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric)
     fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric)
     fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric)
+    fun recordReadyDuration(metric: TelemetryReadyDurationMetric)
 }
 
 private interface CheckoutTelemetryClient : CheckoutTelemetryRecording {
@@ -33,11 +35,17 @@ private class DefaultCheckoutTelemetryRecorder : CheckoutTelemetryClient {
     override fun recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric) =
         telemetry.recordProtocolDecodeError(metric)
 
+    override fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric) =
+        telemetry.recordConfirmationReached(metric)
+
     override fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric) =
         telemetry.recordNavigationRetry(metric)
 
     override fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric) =
         telemetry.recordNavigationDuration(metric)
+
+    override fun recordReadyDuration(metric: TelemetryReadyDurationMetric) =
+        telemetry.recordReadyDuration(metric)
 
     override fun shutdown() = telemetry.shutdown(discardPending = true)
 }
@@ -47,9 +55,13 @@ private object NoOpCheckoutTelemetryRecorder : CheckoutTelemetryRecording {
 
     override fun recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric) = Unit
 
+    override fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric) = Unit
+
     override fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric) = Unit
 
     override fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric) = Unit
+
+    override fun recordReadyDuration(metric: TelemetryReadyDurationMetric) = Unit
 }
 
 internal object CheckoutTelemetry {

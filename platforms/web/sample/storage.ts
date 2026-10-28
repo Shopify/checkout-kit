@@ -1,4 +1,4 @@
-import type { LogLevel } from "@shopify/checkout-kit";
+import type { ShopifyCheckoutLogLevel } from "@shopify/checkout-kit";
 
 export type SourceMode = "build" | "manual";
 
@@ -7,7 +7,7 @@ export type PersistedSettings = {
   storefrontDomain: string;
   target: string;
   appearance: string;
-  logLevel: LogLevel;
+  logLevel: ShopifyCheckoutLogLevel;
   settingsCollapsed: boolean;
   eventsCollapsed: boolean;
 };
@@ -24,12 +24,14 @@ export const STORAGE_KEYS = {
   columnRight: "checkout-kit:web-demo:col-right",
 } as const;
 
-export const DEFAULT_LOG_LEVEL: LogLevel = "warn";
+export const DEFAULT_LOG_LEVEL: ShopifyCheckoutLogLevel = "warn";
 
-const LOG_LEVELS: readonly LogLevel[] = ["debug", "warn", "error", "none"];
+const LOG_LEVELS: readonly ShopifyCheckoutLogLevel[] = ["debug", "warn", "error", "none"];
 
-export function coerceLogLevel(value: string): LogLevel {
-  return LOG_LEVELS.includes(value as LogLevel) ? (value as LogLevel) : DEFAULT_LOG_LEVEL;
+export function coerceLogLevel(value: string): ShopifyCheckoutLogLevel {
+  return LOG_LEVELS.includes(value as ShopifyCheckoutLogLevel)
+    ? (value as ShopifyCheckoutLogLevel)
+    : DEFAULT_LOG_LEVEL;
 }
 
 export function readStorage(key: string): string {

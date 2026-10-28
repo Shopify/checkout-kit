@@ -7,6 +7,7 @@ import {
   CheckoutAppearanceType,
   CheckoutColorScheme,
   type Configuration,
+  LogLevel,
 } from '../src';
 import {__resetPreloadForTests} from '../internal/core/src/preload';
 
@@ -185,6 +186,55 @@ describe('ShopifyCheckoutProvider', () => {
       [newConfig],
     ]);
   });
+
+  it('logs a rejected initial configuration without an unhandled rejection', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const error = new Error('native failure');
+    NativeModules.ShopifyCheckoutKit.setConfig.mockRejectedValueOnce(error);
+
+    render(
+      <TestComponent>
+        <MockChild />
+      </TestComponent>,
+    );
+    // Jest fails the test if a rejection is still unhandled here.
+    await act(() => new Promise(resolve => setImmediate(resolve)));
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[ShopifyCheckoutKit] Failed to apply the initial configuration with',
+      error,
+    );
+    errorSpy.mockRestore();
+  });
+
+  it('logs a rejected configuration prop update without an unhandled rejection', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const error = new Error('native failure');
+    const newConfig: Configuration = {title: 'Updated checkout'};
+    const {rerender} = render(
+      <ShopifyCheckoutProvider configuration={config}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+    NativeModules.ShopifyCheckoutKit.setConfig.mockRejectedValueOnce(error);
+
+    rerender(
+      <ShopifyCheckoutProvider configuration={newConfig}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+    // Jest fails the test if a rejection is still unhandled here.
+    await act(() => new Promise(resolve => setImmediate(resolve)));
+
+    expect(NativeModules.ShopifyCheckoutKit.setConfig).toHaveBeenLastCalledWith(
+      newConfig,
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[ShopifyCheckoutKit] Failed to apply the configuration prop with',
+      error,
+    );
+    errorSpy.mockRestore();
+  });
 });
 
 describe('useShopifyCheckout', () => {
@@ -320,7 +370,7 @@ describe('useShopifyCheckout', () => {
     expect(NativeModules.ShopifyCheckoutKit.preload).not.toHaveBeenCalled();
   });
 
-  it('provides invalidate function', () => {
+  it('provides clearPreload function', () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -333,10 +383,10 @@ describe('useShopifyCheckout', () => {
     );
 
     act(() => {
-      hookValue.invalidate();
+      hookValue.clearPreload();
     });
 
-    expect(NativeModules.ShopifyCheckoutKit.invalidateCache).toHaveBeenCalled();
+    expect(NativeModules.ShopifyCheckoutKit.clearPreload).toHaveBeenCalled();
   });
 
   it('forwards the native link policy through the provider present function', () => {
@@ -387,7 +437,7 @@ describe('useShopifyCheckout', () => {
     expect(NativeModules.ShopifyCheckoutKit.dismiss).toHaveBeenCalled();
   });
 
-  it('provides setConfig function', () => {
+  it('provides setConfig function', async () => {
     let hookValue: any;
     const onHookValue = (value: any) => {
       hookValue = value;
@@ -405,14 +455,49 @@ describe('useShopifyCheckout', () => {
         <HookTestComponent onHookValue={onHookValue} />
       </Wrapper>,
     );
-
+    NativeModules.ShopifyCheckoutKit.setConfig.mockResolvedValueOnce({
+      appearance: {type: 'app', colorScheme: 'light'},
+      logLevel: 'error',
+      preloading: true,
+    });
+    let returned: Promise<Configuration> | undefined;
     act(() => {
-      hookValue.setConfig(newConfig);
+      returned = hookValue.setConfig(newConfig);
     });
 
     expect(NativeModules.ShopifyCheckoutKit.setConfig).toHaveBeenCalledWith(
       newConfig,
     );
+    await expect(returned).resolves.toStrictEqual({
+      appearance: {
+        type: CheckoutAppearanceType.app,
+        colorScheme: CheckoutColorScheme.light,
+      },
+      logLevel: LogLevel.error,
+      preloading: true,
+    });
+  });
+
+  it('passes a native setConfig rejection to the caller', async () => {
+    let hookValue: any;
+    const onHookValue = (value: any) => {
+      hookValue = value;
+    };
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const error = new Error('native failure');
+
+    render(
+      <Wrapper>
+        <HookTestComponent onHookValue={onHookValue} />
+      </Wrapper>,
+    );
+    NativeModules.ShopifyCheckoutKit.setConfig.mockRejectedValueOnce(error);
+
+    await expect(hookValue.setConfig({title: 'Updated checkout'})).rejects.toBe(
+      error,
+    );
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('provides getConfig function', async () => {

@@ -1,0 +1,293 @@
+/* Protocol inspector: the overlay surface and the host page's Protocol messages section. */
+
+.uc-overlay-surface {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 14px;
+  width: min(980px, calc(100vw - 32px));
+  max-height: min(820px, calc(100dvh - 40px));
+  padding: 20px;
+  overflow: hidden;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.uc-overlay-header,
+.uc-overlay-activity-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Outranks the page's .panel h2: the overlay sits inside a panel. */
+.uc-overlay-surface .uc-overlay-header h2 {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 20px;
+  letter-spacing: normal;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.uc-overlay-eyebrow {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.uc-overlay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.uc-overlay-controls button,
+.uc-overlay-activity-header button {
+  white-space: nowrap;
+}
+
+.uc-overlay-notice {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--info-text);
+  background: var(--info-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.uc-overlay-resources,
+.uc-overlay-activity {
+  min-height: 0;
+  padding: 12px;
+  background: var(--surface-subdued);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.uc-overlay-resources h3,
+.uc-overlay-activity h3 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.uc-overlay-resources p {
+  margin: 8px 0 0;
+}
+
+.uc-overlay-resources ol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 112px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.uc-overlay-resources li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.uc-resource-error {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.uc-resource-status {
+  white-space: normal;
+}
+
+.uc-resource-status[data-status="failed"] {
+  color: var(--info-text);
+  background: var(--info-bg);
+  border: 1px dashed currentColor;
+}
+
+.uc-resource-status[data-status="ejected"] {
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid currentColor;
+}
+
+.uc-session-errors {
+  margin: 10px 0;
+  padding: 10px 12px;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid color-mix(in srgb, var(--error) 35%, var(--border));
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.uc-session-errors h3,
+.uc-session-errors h4 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.uc-session-errors ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.uc-overlay-activity {
+  container-type: inline-size;
+}
+
+.uc-event-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+}
+
+.uc-event-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.uc-event-column h3,
+.uc-event-column h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.uc-event-column > p {
+  margin: 0;
+}
+
+.uc-event-column-description {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.uc-overlay-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.uc-overlay-activity .uc-event-columns {
+  flex: 1;
+}
+
+.uc-overlay-event-log,
+.uc-protocol-event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.uc-event-entry {
+  min-width: 0;
+}
+
+.uc-event-entry details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.uc-event-entry details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.uc-event-entry details > summary::before {
+  content: "▸";
+  color: var(--text-muted);
+}
+
+.uc-event-entry details[open] > summary::before {
+  content: "▾";
+}
+
+.uc-event-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.uc-event-resource {
+  font-weight: 600;
+}
+
+.uc-event-status {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.uc-event-attribution {
+  margin: 8px 0 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+@container (max-width: 560px) {
+  .uc-event-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.uc-overlay-surface button:focus-visible,
+.uc-event-entry summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .uc-overlay-surface {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    grid-template-rows: auto;
+    gap: 10px;
+    padding: 14px;
+    overflow-y: auto;
+  }
+
+  .uc-overlay-header {
+    flex-direction: column;
+  }
+
+  .uc-overlay-activity {
+    overflow: visible;
+  }
+
+  .uc-overlay-event-log,
+  .uc-overlay-activity .uc-protocol-event-log {
+    max-height: 240px;
+  }
+}

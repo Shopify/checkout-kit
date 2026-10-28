@@ -1,6 +1,7 @@
 export interface CartLine {
   variantId: string;
   quantity: number;
+  sellingPlanId?: string;
 }
 
 export interface ProductVariantOption {
@@ -12,6 +13,7 @@ export interface ProductVariantOption {
   price: string;
   available: boolean;
   imageUrl?: string;
+  sellingPlan?: { id: string; name: string };
 }
 
 type ProductsJsonFetcher = (url: string) => Promise<ProductsJsonResponseLike>;
@@ -153,6 +155,7 @@ export function upsertCartLine(
   lines: readonly CartLine[],
   variantId: string,
   quantity: unknown,
+  sellingPlanId?: string,
 ): CartLine[] {
   const normalizedVariantId = variantId.trim();
   const nextQuantity = normalizeQuantity(quantity);
@@ -164,7 +167,11 @@ export function upsertCartLine(
 
   return normalizeCartLines([
     ...nextLines,
-    { variantId: normalizedVariantId, quantity: nextQuantity },
+    {
+      variantId: normalizedVariantId,
+      quantity: nextQuantity,
+      ...(sellingPlanId && { sellingPlanId }),
+    },
   ]);
 }
 
@@ -184,6 +191,7 @@ export function normalizeCartLines(lines: readonly CartLine[]): CartLine[] {
     merged.set(variantId, {
       variantId,
       quantity: Math.min(999, (existing?.quantity ?? 0) + quantity),
+      ...(line.sellingPlanId && { sellingPlanId: line.sellingPlanId }),
     });
   }
 

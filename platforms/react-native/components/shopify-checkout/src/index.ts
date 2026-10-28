@@ -97,7 +97,13 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
     this.features = {...defaultFeatures, ...features};
 
     if (configuration != null) {
-      this.setConfig(configuration);
+      this.setConfig(configuration).catch(error => {
+        // eslint-disable-next-line no-console
+        console.error(
+          '[ShopifyCheckoutKit] Failed to apply the initial configuration with',
+          error,
+        );
+      });
     }
   }
 
@@ -116,8 +122,8 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   /**
    * Clears any checkout cached by preload calls.
    */
-  public invalidate(): void {
-    RNShopifyCheckoutKit.invalidateCache();
+  public clearPreload(): void {
+    RNShopifyCheckoutKit.clearPreload();
   }
 
   /**
@@ -201,14 +207,19 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
   /**
    * Updates the checkout configuration
    * @param configuration New configuration settings to apply
+   * @returns A Promise that resolves after the native SDK applies the
+   * configuration, with the configuration that native reports right after it
+   * applies this call.
    */
-  public setConfig(configuration: Configuration): void {
+  public async setConfig(configuration: Configuration): Promise<Configuration> {
     if (configuration.acceleratedCheckouts) {
       this._acceleratedCheckoutsReady = this.configureAcceleratedCheckouts(
         configuration.acceleratedCheckouts,
       );
     }
-    RNShopifyCheckoutKit.setConfig(toNativeConfiguration(configuration));
+    return coerceConfigurationResult(
+      await RNShopifyCheckoutKit.setConfig(toNativeConfiguration(configuration)),
+    );
   }
 
   /**

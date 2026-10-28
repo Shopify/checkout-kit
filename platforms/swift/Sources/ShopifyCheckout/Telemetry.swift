@@ -6,8 +6,10 @@ import Foundation
 protocol CheckoutTelemetryRecording: Sendable {
     func recordError(_ metric: TelemetryErrorMetric)
     func recordProtocolDecodeError(_ metric: TelemetryProtocolDecodeErrorMetric)
+    func recordConfirmationReached(_ metric: TelemetryConfirmationReachedMetric)
     func recordNavigationRetry(_ metric: TelemetryNavigationRetryMetric)
     func recordNavigationDuration(_ metric: TelemetryNavigationDurationMetric)
+    func recordReadyDuration(_ metric: TelemetryReadyDurationMetric)
 }
 
 private protocol CheckoutTelemetryClient: CheckoutTelemetryRecording {
@@ -20,8 +22,10 @@ extension CheckoutKitTelemetry: CheckoutTelemetryClient {}
 private struct NoOpCheckoutTelemetryRecorder: CheckoutTelemetryRecording {
     func recordError(_: TelemetryErrorMetric) {}
     func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordConfirmationReached(_: TelemetryConfirmationReachedMetric) {}
     func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
     func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+    func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
 }
 
 private struct CheckoutTelemetryState {
@@ -54,6 +58,12 @@ private struct ProductScopedRecorder: CheckoutTelemetryRecording {
         )
     }
 
+    func recordConfirmationReached(_ metric: TelemetryConfirmationReachedMetric) {
+        base.recordConfirmationReached(
+            .init(completionReceived: metric.completionReceived, product: product)
+        )
+    }
+
     func recordNavigationRetry(_ metric: TelemetryNavigationRetryMetric) {
         base.recordNavigationRetry(
             .init(reason: metric.reason, result: metric.result, product: product)
@@ -62,6 +72,17 @@ private struct ProductScopedRecorder: CheckoutTelemetryRecording {
 
     func recordNavigationDuration(_ metric: TelemetryNavigationDurationMetric) {
         base.recordNavigationDuration(
+            .init(
+                milliseconds: metric.milliseconds,
+                result: metric.result,
+                preloaded: metric.preloaded,
+                product: product
+            )
+        )
+    }
+
+    func recordReadyDuration(_ metric: TelemetryReadyDurationMetric) {
+        base.recordReadyDuration(
             .init(
                 milliseconds: metric.milliseconds,
                 result: metric.result,

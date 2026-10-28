@@ -250,9 +250,11 @@ private enum LogSafeURL {
     private static let redactedQueryItemNames = Set([
         "checkout[email]",
         "checkout[phone]",
+        "code",
         "ec_auth",
         "key",
         "multipass",
+        "state",
         "token"
     ])
 
@@ -314,6 +316,10 @@ class CheckoutWebView: WKWebView {
     private let navigationClock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     private var navigationStartedAt: TimeInterval?
     private var didRecordInitialNavigationDuration = false
+
+    /// Separate from `navigationStartedAt`, which `didFinish` consumes before `ec.ready`.
+    private var readyStartedAt: TimeInterval?
+    private var didRecordReadyDuration = false
 
     private(set) var checkoutNavigation: WKNavigation?
     private var didRetryCheckoutNavigation = false
@@ -491,6 +497,11 @@ class CheckoutWebView: WKWebView {
     /// Tracks whether this view is currently backing a presented checkout.
     /// Background preload requests must not replace or reload a live session.
     var isPresented = false
+
+    /// Latches true once `checkout_kit_confirmation_reached` is recorded for this view.
+    /// Without `ec.complete`, nothing evicts a preloaded view that reached the confirmation
+    /// page, so the cache can present it again; this keeps each view counted once.
+    var hasRecordedConfirmationReached = false
 
     /// Ensures one terminal failure is handled per checkout session, regardless
     /// of whether it originated from `ec.error` or WebKit process termination.
@@ -739,7 +750,10 @@ extension CheckoutWebView: WKScriptMessageHandler {
             return
         }
 
-        guard let method = CheckoutProtocol.supportedProtocolMethod(body) else {
+        let supportedMethod = CheckoutProtocol.supportedProtocolMethod(body)
+        recordReadyDurationIfReady(method: supportedMethod)
+
+        guard let method = supportedMethod else {
             if isTerminalProtocolError(body) {
                 handleTerminalProtocolError(body, malformedEnvelope: true)
             } else if let response = CheckoutProtocol.methodNotFoundResponse(forUnsupportedProtocolRequest: body) {
@@ -827,6 +841,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
                 )
             )
             recordNavigationDuration(result: .failure)
+            recordReadyDuration(result: .notReady)
             viewDelegate?.checkoutViewDidFailWithError(error: failure)
         }
     }
@@ -983,6 +998,7 @@ extension CheckoutWebView: WKNavigationDelegate {
                 )
             )
             recordNavigationDuration(result: .failure)
+            recordReadyDuration(result: .notReady)
             didCancelNavigationForHTTPError = true
 
             OSLogger.shared.debug("Handling response for URL: \(LogSafeURL.string(response.url)), status code: \(statusCode)")
@@ -1008,6 +1024,9 @@ extension CheckoutWebView: WKNavigationDelegate {
         OSLogger.shared.info("Started provisional navigation - url:\(url)")
         if navigationStartedAt == nil, !didRecordInitialNavigationDuration {
             navigationStartedAt = navigationClock()
+        }
+        if readyStartedAt == nil, !didRecordReadyDuration {
+            readyStartedAt = navigationClock()
         }
         didCancelNavigationForHTTPError = false
         viewDelegate?.checkoutViewDidStartNavigation()
@@ -1090,6 +1109,7 @@ extension CheckoutWebView: WKNavigationDelegate {
 
         guard !wasBackgroundedPreload else {
             navigationStartedAt = nil
+            readyStartedAt = nil
             return
         }
 
@@ -1103,6 +1123,7 @@ extension CheckoutWebView: WKNavigationDelegate {
             )
         )
         recordNavigationDuration(result: .failure)
+        recordReadyDuration(result: .notReady)
         OSLogger.shared.error("Web content process terminated - url:\(LogSafeURL.string(webView.url))")
         viewDelegate?.checkoutViewDidFailWithError(
             error: CheckoutError.webContentProcessTerminated(
@@ -1174,6 +1195,7 @@ extension CheckoutWebView: WKNavigationDelegate {
             )
         )
         recordNavigationDuration(result: .failure)
+        recordReadyDuration(result: .notReady)
         resetProvisionalNavigationRetryState()
         handleCachedViewFailure(
             .navigationFailed,
@@ -1196,6 +1218,30 @@ extension CheckoutWebView: WKNavigationDelegate {
                 preloaded: isPreloadRequest
             )
         )
+    }
+
+    /// Records once per load, at the same failure sites as navigation duration.
+    private func recordReadyDuration(result: TelemetryReadyDurationResult) {
+        guard let startTime = readyStartedAt else { return }
+        readyStartedAt = nil
+        didRecordReadyDuration = true
+        telemetry.recordReadyDuration(
+            .init(
+                milliseconds: milliseconds(from: startTime),
+                result: result,
+                preloaded: isPreloadRequest
+            )
+        )
+    }
+
+    private func recordReadyDurationIfReady(method: String?) {
+        guard method == CheckoutProtocol.ready.method else { return }
+        recordReadyDuration(result: .ready)
+    }
+
+    /// Called when a presented checkout is dismissed, before the view is detached.
+    func recordReadyDurationForDismissal() {
+        recordReadyDuration(result: .notReady)
     }
 
     private func milliseconds(from startTime: TimeInterval) -> Double {

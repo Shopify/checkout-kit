@@ -1,0 +1,295 @@
+/* Shop Pay's additions to the Checkout playground's styles in ../styles.css. */
+
+/* Stores list */
+.add-store-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.add-store-row input {
+  flex: 1;
+  /* Let the input shrink, or the fieldset grows past the panel. */
+  min-width: 0;
+}
+
+.stores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.store-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* A fieldset is as wide as its content by default; let long domains shrink instead. */
+#storefront-fields {
+  min-width: 0;
+}
+
+.store-domain {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.store-status {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.store-status-error {
+  color: var(--error);
+}
+
+.store-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.store-remove:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.store-remove:active {
+  background: var(--active);
+}
+
+/* Store sections in products */
+.store-products-section {
+  margin-bottom: 24px;
+}
+
+.store-products-section:last-child {
+  margin-bottom: 0;
+}
+
+.store-products-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.store-currency {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.store-loading,
+.store-error,
+.store-empty {
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.store-error {
+  color: var(--error);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Cart grouped by store */
+.cart-store-group {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cart-store-group:last-child {
+  margin-bottom: 0;
+}
+
+.cart-store-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cart-store-currency {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cart-store-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.manual-source label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Until a storefront domain looks complete, only the empty state shows. */
+.workspace[data-ready="false"] .cart-banner,
+.workspace[data-ready="false"] .storefront-header,
+.workspace[data-ready="false"] .catalog-status,
+.workspace[data-ready="false"] .product-scroll {
+  display: none;
+}
+
+.workspace[data-ready="false"] .empty-state {
+  flex: none;
+}
+
+/* An existing session needs only the checkout card. */
+.workspace[data-mode="manual"] .storefront-header,
+.workspace[data-mode="manual"] .catalog-status,
+.workspace[data-mode="manual"] .empty-state,
+.workspace[data-mode="manual"] .product-scroll {
+  display: none;
+}
+
+.workspace[data-mode="manual"] .checkout-card {
+  width: min(560px, 100%);
+  margin: 0 auto;
+}
+
+.manual-source {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manual-source .field-help {
+  margin: 0;
+}
+
+/* Where a storefront puts its express checkout buttons. */
+.express-checkout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.express-checkout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.express-checkout-header h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.shop-pay-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* With the button attribute, <shop-pay> is a block that fills its slot. */
+.shop-pay-slot shop-pay[button] {
+  min-height: 44px;
+}
+
+.host-pay-button {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 8px;
+}
+
+.shop-pay-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.event-entry-summary {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.event-entry[data-type="error"] .event-entry-name,
+.event-entry[data-type="blocked"] .event-entry-name {
+  color: var(--error);
+}
+
+.event-entry[data-type="complete"] .event-entry-name {
+  color: var(--success);
+}
+
+/* The host page's Protocol messages section, under Events. */
+.protocol-section {
+  margin-top: 20px;
+}
+
+.protocol-section .uc-protocol-event-log {
+  max-height: 360px;
+}

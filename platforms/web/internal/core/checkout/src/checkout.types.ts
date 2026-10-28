@@ -29,8 +29,9 @@ export type {
 //   (e.g.: casing of attriute, property, and event names)
 // - Follow the web platform's conventions on reflecting attributes to properties,
 //   and on the default values of properties
-// - Follow the web platform's convention for preferring properties on an
-//   element over properties on events
+// - Follow each component's documented state contract: standard checkout exposes
+//   its latest checkout and error as properties; Universal Checkout and Shop Pay
+//   emit event batches, and hosts maintain their own aggregate state
 // - For events that require more complex handling, follow patterns established
 //   in more modern web APIs, like `FetchEvent.respondWith()` and
 //   `ExtendableEvent.waitUntil()`.

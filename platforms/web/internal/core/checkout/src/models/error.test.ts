@@ -127,7 +127,7 @@ describe("toCheckoutError", () => {
     expectTypeOf<CheckoutError["code"]>().toEqualTypeOf<CheckoutErrorCode>();
     expectTypeOf<CheckoutError["message"]>().toEqualTypeOf<string>();
     expectTypeOf<ReturnType<typeof toCheckoutError>["code"]>().toEqualTypeOf<
-      Exclude<CheckoutErrorCode, "unsupported_browser">
+      Exclude<CheckoutErrorCode, "unsupported_browser" | "sdk_error">
     >();
 
     const error = toCheckoutError(

@@ -17,13 +17,17 @@ Every metric includes these closed identity attributes:
 
 React Native values include the underlying native runtime so dashboards can query
 one bounded dimension without joining separate platform and integration
-attributes. Metric attributes are closed, low-cardinality values; callers cannot
-attach arbitrary attributes.
+attributes. Metric attributes are closed, low-cardinality values. For the
+metrics in this catalog, callers cannot attach arbitrary attributes. On Web, a
+component can also record its own metrics through the shared client. Those
+follow the same rule by convention: the component wraps them in typed functions
+that take closed values.
 
 Clients carry a default `product` and may override it per measurement, so one
 client instance can serve several products. Swift uses the override because it
 hosts multiple entry points; Kotlin and TypeScript host a single product each
-and intentionally keep the constructor-fixed default only.
+and keep the constructor-fixed default for their own metrics. A Web component
+that records its own metrics sets `product` on each one.
 
 ## Metrics
 
@@ -54,6 +58,29 @@ Attributes:
 
 The raw message and decoder error are never recorded.
 
+### `checkout_kit_confirmation_reached`
+
+Monotonic delta counter recorded once when a checkout presentation ends after a
+valid `ec.complete`, or while its main frame is on the order confirmation
+(`thank-you`) page. `ec.complete` can arrive before the confirmation page
+loads, so a presentation dismissed on completion still counts. Android and
+Swift only; web cannot observe navigation inside the cross-origin checkout
+frame.
+
+Attributes:
+
+- `completion_received`: `true` when a valid `ec.complete` was delivered to the
+  integration during that presentation, otherwise `false`
+
+Swift counts each checkout view once. Without `ec.complete`, a preloaded view
+on the confirmation page stays cached and can be presented again; presenting it
+again does not record another measurement.
+
+A presentation that never ends, such as when the app is terminated, is not
+recorded. `completion_received=false` does not prove the order completed, and it
+is an upper bound on missing completion messages: it also counts buyers who
+left the confirmation page before `ec.complete` was sent.
+
 ### `checkout_kit_navigation_retry`
 
 Monotonic delta counter for retry decisions.
@@ -79,6 +106,26 @@ Attributes:
 
 - `result`: `success` or `failure`
 - `preloaded`: `true` or `false`
+
+### `checkout_kit_ready_duration_ms`
+
+Delta histogram measuring the time from the first navigation start until
+checkout sends its first `ec.ready` message. The start is kept across the
+automatic retry and, on Swift, a cancelled navigation that starts again.
+
+On native, navigation duration ends when the page finishes loading, so a load
+that finishes but never becomes ready is only visible here. On web, navigation
+duration ends at `ec.start`, which follows `ec.ready`, and a close records
+nothing; this metric records that close as `not_ready`. On web, only
+`<shopify-checkout>` records it.
+
+Attributes:
+
+- `result`: `ready` or `not_ready`. `not_ready` is recorded once, with the
+  time elapsed at that point, wherever navigation duration records
+  `result=failure`, and when a presented checkout is closed before `ec.ready`.
+  Evicting or expiring a preload that was never presented records nothing.
+- `preloaded`: `true` or `false`. Web always reports `false`.
 
 ## Error mappings
 

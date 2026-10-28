@@ -19,6 +19,14 @@ export default {
       to: {path: '^(src|components)/'},
     },
     {
+      name: 'use-core-exports',
+      comment:
+        'Imports from outside core must use its declared package exports.',
+      severity: 'error',
+      from: {pathNot: '^internal/core/'},
+      to: {path: '^internal/core/', dependencyTypes: ['local']},
+    },
+    {
       name: 'checkout-is-independent-of-accelerated',
       severity: 'error',
       from: {path: '^components/shopify-checkout/'},

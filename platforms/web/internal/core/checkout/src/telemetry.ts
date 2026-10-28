@@ -7,7 +7,7 @@ import {
 
 import { CK_VERSION } from "./version";
 
-export type { CheckoutKitTelemetry } from "@shopify/checkout-kit-telemetry";
+export type { CheckoutKitTelemetry, RecordingMeasurement } from "@shopify/checkout-kit-telemetry";
 
 function createConsoleTelemetry(
   protocolMethods: readonly string[],

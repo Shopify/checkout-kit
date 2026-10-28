@@ -8,10 +8,8 @@
     "paths": {
       "@shopify/checkout-kit": ["../src/index.ts"],
       "@shopify/checkout-kit/shopify-checkout": ["../src/shopify-checkout.ts"],
-      "@shopify/checkout-kit-component-checkout": ["../components/shopify-checkout/src/index.ts"],
-      "@shopify/checkout-kit-component-checkout/register": [
-        "../components/shopify-checkout/src/register.ts"
-      ]
+      "@shopify/checkout-kit/shopify-universal-checkout": ["../src/shopify-universal-checkout.ts"],
+      "@shopify/checkout-kit/shop-pay": ["../src/shop-pay.ts"]
     }
   },
   "include": ["./**/*.ts", "./**/*.d.ts"]

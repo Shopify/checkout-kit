@@ -3,6 +3,7 @@ import type { ErrorResponse } from "@shopify/checkout-kit-protocol";
 /** Stable checkout error reasons applications can use to choose recovery. */
 export type CheckoutErrorCode =
   | "unsupported_browser"
+  | "sdk_error"
   | "storefront_password_required"
   | "customer_account_required"
   | "cart_expired"
@@ -18,17 +19,16 @@ export interface CheckoutError {
 }
 
 /**
- * The error codes of the multi-checkout elements: every checkout code, plus
- * `sdk_error` for a failure inside Checkout Kit. Unrecognized codes become `unknown`.
+ * The error codes shared by the checkout elements. `sdk_error` reports a local
+ * Checkout Kit failure; unrecognized protocol codes become `unknown`.
  */
-export type CheckoutFailureCode = CheckoutErrorCode | "sdk_error";
+export type CheckoutFailureCode = CheckoutErrorCode;
 
 /** A failure a multi-checkout element reports, with a stable code and diagnostic text. */
 export interface CheckoutFailure {
   readonly code: CheckoutFailureCode;
   /** Diagnostic text; use `code` for application behavior. */
   readonly message: string;
-  readonly httpStatusCode?: number;
 }
 
 /** Why the browser kept a checkout window from opening. */
@@ -39,8 +39,8 @@ export interface CheckoutBlockedDetail {
   readonly code: CheckoutBlockedCode;
 }
 
-// Browser capability errors originate locally, never from a checkout message.
-type ProtocolCheckoutErrorCode = Exclude<CheckoutErrorCode, "unsupported_browser">;
+// Browser capability and SDK errors originate locally, never from a checkout message.
+type ProtocolCheckoutErrorCode = Exclude<CheckoutErrorCode, "unsupported_browser" | "sdk_error">;
 
 interface ErrorMessage {
   type: "error";

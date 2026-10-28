@@ -1,10 +1,12 @@
 // Inlined at build time. Not imported from ./version so the loader stays a
 // single request with no shared chunk of its own.
 declare const CHECKOUT_KIT_PACKAGE_VERSION: string;
-// Injected by the CDN build (see vite.cdn.config.ts) with the hashed URL of the
-// shopify-checkout chunk, relative to this module. Undefined when running
-// from source (tests), in which case retries re-import the static specifier.
+// Injected by the CDN build (see vite.cdn.config.ts) with the hashed URL of
+// this component's chunk, relative to this module. Undefined when running from
+// source (tests), in which case retries re-import the static specifier.
 declare const CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK: string | undefined;
+declare const CHECKOUT_KIT_SHOPIFY_UNIVERSAL_CHECKOUT_CHUNK: string | undefined;
+declare const CHECKOUT_KIT_SHOP_PAY_CHUNK: string | undefined;
 
 /**
  * The Checkout Kit version this loader was built from.
@@ -14,10 +16,6 @@ declare const CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK: string | undefined;
  */
 export const version: string = CHECKOUT_KIT_PACKAGE_VERSION;
 
-export const supportedComponents = ["shopify-checkout"] as const;
-
-export type CheckoutKitComponent = (typeof supportedComponents)[number];
-
 interface ComponentSource {
   /** Static import the bundler can see and chunk. */
   load: () => Promise<unknown>;
@@ -25,13 +23,35 @@ interface ComponentSource {
   url: string | undefined;
 }
 
+export const supportedComponents = [
+  "shopify-checkout",
+  "shopify-universal-checkout",
+  "shop-pay",
+] as const;
+
+export type CheckoutKitComponent = (typeof supportedComponents)[number];
+
+// This is the CDN component manifest. Each promoted component adds a supported
+// name and one static registration import here. Keeping imports static lets
+// Vite emit a separate, content-hashed chunk for every component.
 const componentSources: Record<CheckoutKitComponent, ComponentSource> = {
   "shopify-checkout": {
-    load: () => import("@shopify/checkout-kit-component-checkout/register"),
+    load: () => import("@shopify/checkout-kit-checkout/register"),
     url:
       typeof CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK === "string"
         ? CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK
         : undefined,
+  },
+  "shopify-universal-checkout": {
+    load: () => import("@shopify/checkout-kit-universal-checkout/register"),
+    url:
+      typeof CHECKOUT_KIT_SHOPIFY_UNIVERSAL_CHECKOUT_CHUNK === "string"
+        ? CHECKOUT_KIT_SHOPIFY_UNIVERSAL_CHECKOUT_CHUNK
+        : undefined,
+  },
+  "shop-pay": {
+    load: () => import("@shopify/checkout-kit-shop-pay/register"),
+    url: typeof CHECKOUT_KIT_SHOP_PAY_CHUNK === "string" ? CHECKOUT_KIT_SHOP_PAY_CHUNK : undefined,
   },
 };
 
@@ -47,6 +67,12 @@ const pending = new Map<CheckoutKitComponent, Promise<void>>();
 // during an outage would leave every retry URL poisoned for later calls.
 let retrySequence = 0;
 
+// Each component tries its static import once, on its first attempt, so the
+// browser can share that request with any preload. Every later attempt needs a
+// URL the browser has never seen fail. This is tracked per component because
+// component bundles are self-contained: loading one never touches another's URL.
+const staticImportTried = new Set<CheckoutKitComponent>();
+
 /**
  * Loads Checkout Kit components and registers their custom elements.
  *
@@ -59,8 +85,8 @@ let retrySequence = 0;
  *
  * A failed dynamic import is remembered by the browser for that URL, so a
  * transient network error would otherwise make the component unloadable for
- * the rest of the page. Retries therefore use a cache-busting query string on
- * the chunk URL, which the browser treats as a fresh module.
+ * the rest of the page. CDN component bundles are self-contained: retrying
+ * their URL with a cache-busting query retries the entire dependency graph.
  */
 export async function loadComponents(components: readonly string[]): Promise<void> {
   // An empty list is almost certainly a mistake, and silently resolving would
@@ -95,21 +121,20 @@ async function loadOne(name: CheckoutKitComponent): Promise<void> {
 }
 
 async function loadAndRemember(name: CheckoutKitComponent): Promise<void> {
-  await loadWithRetries(componentSources[name]);
+  await loadWithRetries(name);
   loaded.add(name);
 }
 
-async function loadWithRetries(source: ComponentSource): Promise<void> {
+async function loadWithRetries(name: CheckoutKitComponent): Promise<void> {
+  const source: ComponentSource = componentSources[name];
   let lastError: unknown;
   retrySequence += 1;
   const sequence = `${Date.now().toString(36)}-${retrySequence}`;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
-      // The first attempt of the first sequence uses the static import so the
-      // browser can share it with any preload; every later attempt needs a URL
-      // it has never seen fail.
-      if (source.url === undefined || (attempt === 0 && retrySequence === 1)) {
+      if (source.url === undefined || (attempt === 0 && !staticImportTried.has(name))) {
+        staticImportTried.add(name);
         await source.load();
       } else {
         const retryUrl = new URL(`${source.url}?retry=${sequence}.${attempt}`, import.meta.url)

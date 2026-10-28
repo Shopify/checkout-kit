@@ -536,13 +536,17 @@ final class PreloadTelemetryRecorder: CheckoutTelemetryRecording, @unchecked Sen
     }
 
     func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordConfirmationReached(_: TelemetryConfirmationReachedMetric) {}
     func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
     func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+    func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
 }
 
 struct NoOpTestTelemetryRecorder: CheckoutTelemetryRecording {
     func recordError(_: TelemetryErrorMetric) {}
     func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordConfirmationReached(_: TelemetryConfirmationReachedMetric) {}
     func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
     func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+    func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
 }

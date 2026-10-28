@@ -663,7 +663,7 @@ class CheckoutWebViewTests: XCTestCase {
         XCTAssertTrue(combinedLogs.contains("checkout%5Bemail%5D=redacted"))
     }
 
-    func testCheckoutURLLogsRedactKnownSensitiveQueryItemsAndKeepBenignItems() throws {
+    func testCheckoutURLLogsRedactOAuthQueryItemsAndKeepBenignItems() throws {
         let originalLogger = OSLogger.shared
         let logger = TestableOSLogger(prefix: "ShopifyCheckoutKit", logLevel: .debug)
         OSLogger.shared = logger.logger
@@ -671,21 +671,17 @@ class CheckoutWebViewTests: XCTestCase {
 
         let sensitiveURL = try XCTUnwrap(
             URL(
-                string: "https://shopify1.shopify.com/checkouts/cn/123?token=checkout-token&key=checkout-key&multipass=customer-token&ec_auth=session-jwt&locale=en"
+                string: "https://example.test/callback?code=authorization-code&state=opaque-state&locale=en"
             )
         )
 
         view.load(checkout: sensitiveURL)
 
         let combinedLogs = logger.capturedMessages.map(\.message).joined(separator: "\n")
-        XCTAssertFalse(combinedLogs.contains("checkout-token"))
-        XCTAssertFalse(combinedLogs.contains("checkout-key"))
-        XCTAssertFalse(combinedLogs.contains("customer-token"))
-        XCTAssertFalse(combinedLogs.contains("session-jwt"))
-        XCTAssertTrue(combinedLogs.contains("token=redacted"))
-        XCTAssertTrue(combinedLogs.contains("key=redacted"))
-        XCTAssertTrue(combinedLogs.contains("multipass=redacted"))
-        XCTAssertTrue(combinedLogs.contains("ec_auth=redacted"))
+        XCTAssertFalse(combinedLogs.contains("authorization-code"))
+        XCTAssertFalse(combinedLogs.contains("opaque-state"))
+        XCTAssertTrue(combinedLogs.contains("code=redacted"))
+        XCTAssertTrue(combinedLogs.contains("state=redacted"))
         XCTAssertTrue(combinedLogs.contains("locale=en"))
     }
 
@@ -1624,6 +1620,56 @@ class CheckoutWebViewTests: XCTestCase {
 
         XCTAssertEqual(telemetryRecorder.navigationDurations.count, 1)
     }
+
+    // MARK: - Ready duration
+
+    private func startCheckoutNavigation(isPreload: Bool = false) throws {
+        // The shared fixture view comes from the preload cache, so it is already a preload request.
+        view = CheckoutWebView()
+        view.viewDelegate = mockDelegate
+        view.checkoutBridge = MockCheckoutBridge.self
+        view.messageIsMainFrame = { _ in true }
+        view.messageRequestURL = { _ in nil }
+        view.messageOrigin = { _ in MessageOrigin(scheme: "https", host: "shopify1.shopify.com", port: nil) }
+        view.load(checkout: url, isPreload: isPreload)
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        view.webView(view, didStartProvisionalNavigation: navigation)
+    }
+
+    func testReadyDurationRecordsReadyOnceOnEcReady() throws {
+        try startCheckoutNavigation()
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+        view.recordReadyDurationForDismissal()
+
+        XCTAssertEqual(telemetryRecorder.readyDurations.map(\.result), [.ready])
+        XCTAssertEqual(telemetryRecorder.readyDurations.first?.preloaded, false)
+    }
+
+    func testReadyDurationRecordsNotReadyOnDismissalBeforeReady() throws {
+        try startCheckoutNavigation()
+        view.isPresented = true
+
+        view.recordReadyDurationForDismissal()
+        view.recordReadyDurationForDismissal()
+
+        XCTAssertEqual(telemetryRecorder.readyDurations.map(\.result), [.notReady])
+    }
+
+    func testReadyDurationRecordsBackgroundPreloadFailureLikeNavigationDuration() throws {
+        defer { CheckoutWebView.preloadCache.invalidate() }
+        try startCheckoutNavigation(isPreload: true)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        let navigation = try XCTUnwrap(view.checkoutNavigation)
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
+
+        view.webView(view, didFail: navigation, withError: error)
+
+        XCTAssertEqual(telemetryRecorder.navigationDurations.map(\.result), [.failure])
+        XCTAssertEqual(telemetryRecorder.readyDurations.map(\.result), [.notReady])
+        XCTAssertEqual(telemetryRecorder.readyDurations.first?.preloaded, true)
+    }
 }
 
 private final class MockCheckoutTelemetryRecorder: CheckoutTelemetryRecording, @unchecked Sendable {
@@ -1631,6 +1677,7 @@ private final class MockCheckoutTelemetryRecorder: CheckoutTelemetryRecording, @
     private(set) var decodeErrors: [TelemetryProtocolDecodeErrorMetric] = []
     private(set) var navigationRetries: [TelemetryNavigationRetryMetric] = []
     private(set) var navigationDurations: [TelemetryNavigationDurationMetric] = []
+    private(set) var readyDurations: [TelemetryReadyDurationMetric] = []
 
     func recordError(_ metric: TelemetryErrorMetric) {
         errors.append(metric)
@@ -1640,12 +1687,18 @@ private final class MockCheckoutTelemetryRecorder: CheckoutTelemetryRecording, @
         decodeErrors.append(metric)
     }
 
+    func recordConfirmationReached(_: TelemetryConfirmationReachedMetric) {}
+
     func recordNavigationRetry(_ metric: TelemetryNavigationRetryMetric) {
         navigationRetries.append(metric)
     }
 
     func recordNavigationDuration(_ metric: TelemetryNavigationDurationMetric) {
         navigationDurations.append(metric)
+    }
+
+    func recordReadyDuration(_ metric: TelemetryReadyDurationMetric) {
+        readyDurations.append(metric)
     }
 }
 

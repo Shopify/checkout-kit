@@ -16,7 +16,15 @@ import com.shopify.checkoutkit.internal.web.redactedUrlForLogging
  */
 internal object CheckoutService {
 
-    internal val configuration = Configuration()
+    private val configurationLock = Any()
+
+    /**
+     * The applied configuration. [configure] replaces it with a new instance and never passes it to
+     * callers, so readers on any thread see a complete configuration.
+     */
+    @Volatile
+    internal var configuration = Configuration()
+        private set
 
     internal val log = LogWrapper()
 
@@ -39,14 +47,26 @@ internal object CheckoutService {
         return configuration.snapshot()
     }
 
-    /** Applies configuration side effects, then discards reusable preload work. */
+    /**
+     * Runs [setter] on a copy and applies the result only if it returns, then applies configuration
+     * side effects and discards reusable preload work. If [setter] throws, nothing changes.
+     */
     internal fun configure(setter: ConfigurationUpdater) {
-        val wasTelemetryEnabled = configuration.telemetry.enabled
-        setter.configure(configuration)
-        if (wasTelemetryEnabled && !configuration.telemetry.enabled) {
-            CheckoutTelemetry.disable()
+        synchronized(configurationLock) {
+            val previous = configuration
+            val draft = previous.snapshot()
+            setter.configure(draft)
+            // Store a fresh copy, so a reference that the setter keeps cannot change the applied configuration.
+            val updated = draft.snapshot()
+            configuration = updated
+
+            // Keep side effects ordered with their configuration update. In particular, an earlier
+            // telemetry opt-out must not shut down a recorder after a later update enables telemetry.
+            if (previous.telemetry.enabled && !updated.telemetry.enabled) {
+                CheckoutTelemetry.disable()
+            }
+            CheckoutWebView.clearCache()
         }
-        CheckoutWebView.clearCache()
     }
 
     /** Delegates eviction to [CheckoutWebView], which preserves any active buyer session. */

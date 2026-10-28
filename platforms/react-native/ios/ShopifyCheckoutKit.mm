@@ -12,10 +12,12 @@
 // each method via its `@objc` selector directly (see ShopifyCheckoutKit.swift).
 // `setConfig` is declared so ObjCTurboModule sees the Swift selector's
 // NSDictionary argument and does not apply codegen's C++ struct conversion before
-// invoking Swift.
+// invoking Swift. Its Promise resolves after the configuration is applied.
 @interface RCT_EXTERN_MODULE (RCTShopifyCheckoutKit, NativeShopifyCheckoutKitSpecBase)
 
-RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration)
+RCT_EXTERN_METHOD(setConfig:(NSDictionary *)configuration
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
                   linkAction:(NSString *)linkAction
@@ -24,7 +26,7 @@ RCT_EXTERN_METHOD(present:(NSString *)checkoutURL
 RCT_EXTERN_METHOD(preload:(NSString *)checkoutURL
                   requestId:(NSString *)requestId)
 
-RCT_EXTERN_METHOD(invalidateCache)
+RCT_EXTERN_METHOD(clearPreload)
 
 @end
 
