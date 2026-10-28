@@ -4,12 +4,6 @@
 
 <img width="3200" height="800" alt="gradients" src="https://github.com/user-attachments/assets/156492b7-5a64-43d2-b574-2e8f29ed8780" />
 
-> [!WARNING]
-> **Alpha — early preview.** This software is an early preview and is **not**
-> production-ready. Stability is not guaranteed, and breaking changes may
-> occur in any release. Published under the `next` dist-tag — see
-> [Installation](#1-installation).
-
 **Shopify Checkout Kit** is a Native Module that enables React Native apps
 to provide the world’s highest converting, customizable, one-page checkout
 within the app. The presented experience is a fully-featured checkout that
@@ -94,16 +88,16 @@ application:
 
 ### 1. Installation
 
-Install the Shopify Checkout Kit package dependency:
+Install Shopify Checkout Kit `4.0.0`:
 
 ```sh
-pnpm add @shopify/checkout-kit-react-native
+pnpm add @shopify/checkout-kit-react-native@4.0.0
 
 # or using yarn
-yarn add @shopify/checkout-kit-react-native
+yarn add @shopify/checkout-kit-react-native@4.0.0
 
 # or using npm
-npm install @shopify/checkout-kit-react-native
+npm install @shopify/checkout-kit-react-native@4.0.0
 ```
 
 ### 2. Minimum Android requirements
