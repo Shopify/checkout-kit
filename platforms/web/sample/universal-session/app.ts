@@ -56,7 +56,9 @@ export function startSessionSample(page: SamplePage): void {
   // The page provides an empty <main id="layout">; the shared layout fills it.
   $("#layout").innerHTML = renderLayout(page);
   const refs = queryRefs();
-  refs.checkoutKitProvenance.textContent = `Local source · ${CHECKOUT_KIT_PACKAGE_VERSION}`;
+  refs.checkoutKitProvenance.textContent =
+    document.documentElement.dataset.checkoutKitProvenance ??
+    `Local source · ${CHECKOUT_KIT_PACKAGE_VERSION}`;
 
   // The element sits where a storefront puts its express checkout buttons. With the
   // `button` attribute it renders its button; its overlay covers the page.
