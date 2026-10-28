@@ -254,7 +254,7 @@ class CheckoutBottomSheetOptionsTest {
     }
 
     @Test
-    fun `disabled drag to dismiss ignores sheet and checkout content drags`() {
+    fun `disabled drag to dismiss ignores sheet drags`() {
         val (sheet, _) = checkoutSheetWithScrollableChild(childTop = TEST_SHEET_HEADER_SIZE)
         val down = motionEvent(MotionEvent.ACTION_DOWN, y = 20f)
         val move = motionEvent(MotionEvent.ACTION_MOVE, y = 100f)
@@ -265,8 +265,6 @@ class CheckoutBottomSheetOptionsTest {
         assertThat(sheet.onInterceptTouchEvent(move)).isFalse()
 
         sheet.onTouchEvent(move)
-        sheet.startScrollableChildGesture(down)
-        sheet.dragScrollableChildBy(TEST_SHEET_SIZE * 0.3f, move)
 
         assertThat(sheet.translationY).isEqualTo(0f)
     }

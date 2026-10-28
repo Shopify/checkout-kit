@@ -39,6 +39,36 @@ consume published native SDKs by default; see its
 [local SDK development guide](../platforms/react-native/CONTRIBUTING.md#local-sdk-development---local)
 for the narrow unreleased-API workflow.
 
+## Dependency checks
+
+Web components and shared modules use declared package exports when importing
+across ownership boundaries. Relative imports stay inside the owning component
+or module. React Native also requires package exports when accessing shared core;
+checkout may not depend on accelerated checkout, and other callers use the
+declared feature entrypoints. These source checks include type-only imports.
+
+Shared telemetry may depend on protocol models, but must not depend on checkout
+core or components. Checkout owns the integration and depends on telemetry.
+
+Run the checks from the repository root:
+
+```sh
+pnpm --dir platforms/web lint:dependencies
+pnpm --dir platforms/react-native lint:dependencies
+```
+
+Both commands run dependency-cruiser on the source and then test the real rules
+against isolated packages containing allowed and forbidden imports. The normal
+platform lint commands, including CI, run these checks.
+Web checks runtime reachability separately so a type-only reference cannot make
+an otherwise unshipped implementation appear reachable.
+
+Native platforms use compiler boundaries. Kotlin `internal` is scoped to a
+Gradle module. Swift `internal` is scoped to an SPM target, while `package` allows
+intentional sharing such as accelerated checkout's presentation entrypoint.
+CocoaPods subspecs combine these sources into one module, so they do not provide
+the same implementation isolation as separate SPM targets.
+
 ## Adding a component
 
 There is no component generator yet. Use the checklists below; a future `dev`

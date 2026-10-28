@@ -58,8 +58,8 @@ Once approved, the workflow:
    SLSA provenance (`--ignore-scripts`, so `prepack` does not rebuild)
 6. Deploys the matching major-version CDN loader and its private implementation
    chunks from `dist-cdn/`: stable versions on `latest` that are not marked as
-   GitHub prereleases go to `v<major>/web-components.js`; all other releases go
-   to the testing-only `v<major>/unstable/web-components.js`
+   GitHub prereleases go to `v<major>/checkout-kit.js`; all other releases go
+   to the testing-only `v<major>/unstable/checkout-kit.js`
 
 See [CDN publishing](./CDN-PUBLISHING.md) for the CDN URL contract and loader behavior.
 
@@ -82,8 +82,8 @@ the deployed loader, and confirm the build with its `version` export:
 
 ```js
 // In a browser console (the loader is minified, so grep is not reliable):
-(await import("https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js")).version;
-(await import("https://cdn.shopify.com/checkout-kit/v4/web-components.js")).version;
+(await import("https://cdn.shopify.com/checkout-kit/v4/unstable/checkout-kit.js")).version;
+(await import("https://cdn.shopify.com/checkout-kit/v4/checkout-kit.js")).version;
 ```
 
 ### Bad deploy
@@ -94,7 +94,7 @@ in browsers) unless purged. To roll back:
 1. Trigger the CDN deploy again with the tag of the release you want to
    restore. It rebuilds from that tag and redeploys it to the channel it
    originally shipped to.
-2. Purge the loader URL (`/checkout-kit/v<major>/web-components.js`) from the CDN
+2. Purge the loader URL (`/checkout-kit/v<major>/checkout-kit.js`) from the CDN
    edge using the internal CDN purge process. Only the loader needs purging;
    chunks are content-hashed. Browser caches cannot be purged and expire within
    10 minutes.

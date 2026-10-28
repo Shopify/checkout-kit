@@ -2436,11 +2436,11 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
         Object.getOwnPropertyNames(props).forEach(key => {
             const prop = props[key];
             const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
-            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+            Object.defineProperty(result, prop.key, {value: transform(v, prop.typ, getProps, key, ref), enumerable: true, configurable: true, writable: true});
         });
         Object.getOwnPropertyNames(val).forEach(key => {
             if (!Object.prototype.hasOwnProperty.call(props, key)) {
-                result[key] = transform(val[key], additional, getProps, key, ref);
+                Object.defineProperty(result, key, {value: transform(val[key], additional, getProps, key, ref), enumerable: true, configurable: true, writable: true});
             }
         });
         return result;

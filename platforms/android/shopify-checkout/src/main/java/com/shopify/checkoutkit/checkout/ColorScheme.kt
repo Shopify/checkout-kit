@@ -19,13 +19,13 @@ public sealed class ColorScheme(public val id: String) {
      * Always show checkout in an idiomatic light color scheme.
      */
     @Serializable
-    public data class Light(public var colors: Colors = defaultLightColors) : ColorScheme("light")
+    public data class Light(public val colors: Colors = defaultLightColors) : ColorScheme("light")
 
     /**
      * Always show checkout in an idiomatic dark color scheme.
      */
     @Serializable
-    public data class Dark(public var colors: Colors = defaultDarkColors) : ColorScheme("dark")
+    public data class Dark(public val colors: Colors = defaultDarkColors) : ColorScheme("dark")
 
     /**
      * Automatically toggle between idiomatic light and dark color schemes based on device preference.
@@ -34,8 +34,8 @@ public sealed class ColorScheme(public val id: String) {
      */
     @Serializable
     public data class Automatic(
-        public var lightColors: Colors = defaultLightColors,
-        public var darkColors: Colors = defaultDarkColors
+        public val lightColors: Colors = defaultLightColors,
+        public val darkColors: Colors = defaultDarkColors
     ) : ColorScheme("automatic")
 
     internal fun headerBackgroundColor(isDark: Boolean) = when (this) {

@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // module lets us drive the attempt sequence.
 describe("Checkout Kit CDN loader retries", () => {
   afterEach(() => {
-    vi.doUnmock("@shopify/checkout-kit-component-checkout/register");
+    vi.doUnmock("@shopify/checkout-kit-checkout/register");
     vi.resetModules();
     vi.useRealTimers();
   });
 
   async function loaderWithFailures(failures: number) {
     let attempts = 0;
-    vi.doMock("@shopify/checkout-kit-component-checkout/register", () => {
+    vi.doMock("@shopify/checkout-kit-checkout/register", () => {
       attempts += 1;
       if (attempts <= failures) {
         throw new TypeError("Failed to fetch dynamically imported module");
@@ -94,5 +94,72 @@ describe("Checkout Kit CDN loader retries", () => {
 
     await expect(Promise.all([first, second])).resolves.toEqual([undefined, undefined]);
     expect(attempts()).toBe(2);
+  });
+});
+
+// A CDN build injects each component's chunk URL, which turns on cache-busting
+// retries. Each component's first attempt still goes through its static import,
+// so the browser can share the request with a preload. The chunk URLs below are
+// modules that always throw, so any retry through them fails recognizably. The
+// trailing comment absorbs the retry query string.
+function failingModule(name: string): string {
+  return `data:text/javascript,${encodeURIComponent(`throw new Error("${name} retry URL failed");//`)}`;
+}
+
+describe("Checkout Kit CDN loader static imports", () => {
+  const registers = {
+    "shopify-checkout": "@shopify/checkout-kit-checkout/register",
+    "shop-pay": "@shopify/checkout-kit-shop-pay/register",
+  } as const;
+  type Name = keyof typeof registers;
+
+  afterEach(() => {
+    for (const id of Object.values(registers)) vi.doUnmock(id);
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  async function builtLoader(failing: readonly Name[] = []) {
+    vi.stubGlobal("CHECKOUT_KIT_SHOPIFY_CHECKOUT_CHUNK", failingModule("shopify-checkout"));
+    vi.stubGlobal("CHECKOUT_KIT_SHOP_PAY_CHUNK", failingModule("shop-pay"));
+    const staticImports: Record<Name, number> = { "shopify-checkout": 0, "shop-pay": 0 };
+    for (const name of Object.keys(registers) as Name[]) {
+      vi.doMock(registers[name], () => {
+        staticImports[name] += 1;
+        if (failing.includes(name)) {
+          throw new TypeError("Failed to fetch dynamically imported module");
+        }
+        return {};
+      });
+    }
+    const loader = await import("./cdn-loader");
+    return { loader, staticImports };
+  }
+
+  it("loads every component in one call through its static import", async () => {
+    const { loader, staticImports } = await builtLoader();
+
+    await loader.loadComponents(["shopify-checkout", "shop-pay"]);
+
+    expect(staticImports).toEqual({ "shopify-checkout": 1, "shop-pay": 1 });
+  });
+
+  it("loads a later component through its static import after another one loaded", async () => {
+    const { loader, staticImports } = await builtLoader();
+
+    await loader.loadComponents(["shopify-checkout"]);
+    await loader.loadComponents(["shop-pay"]);
+
+    expect(staticImports).toEqual({ "shopify-checkout": 1, "shop-pay": 1 });
+  });
+
+  it("never repeats a component's static import once it has been tried", async () => {
+    const { loader, staticImports } = await builtLoader(["shop-pay"]);
+
+    await expect(loader.loadComponents(["shop-pay"])).rejects.toThrow("shop-pay retry URL failed");
+    await expect(loader.loadComponents(["shop-pay"])).rejects.toThrow("shop-pay retry URL failed");
+    await loader.loadComponents(["shopify-checkout"]);
+
+    expect(staticImports).toEqual({ "shopify-checkout": 1, "shop-pay": 1 });
   });
 });

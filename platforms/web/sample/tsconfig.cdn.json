@@ -4,7 +4,11 @@
     "isolatedDeclarations": false,
     "declaration": false,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "paths": {
+      "@shopify/checkout-kit": ["../dist/index.d.ts"],
+      "@shopify/checkout-kit/*": ["../dist/*.d.ts"]
+    }
   },
   "include": ["./**/*.ts", "./**/*.d.ts"]
 }

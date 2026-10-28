@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
 
 class ConfigurationTest {
 
@@ -24,7 +25,83 @@ class ConfigurationTest {
             it.telemetry = initialConfiguration.telemetry
             it.platform = initialConfiguration.platform
             it.logLevel = initialConfiguration.logLevel
+            it.title = initialConfiguration.title
+            it.allowedMessageOrigins = initialConfiguration.allowedMessageOrigins
         }
+    }
+
+    @Test
+    fun `configure applies the configuration only when the setter returns`() {
+        val before = ShopifyCheckout.getConfiguration()
+
+        assertThatThrownBy {
+            ShopifyCheckout.configure {
+                it.title = "Partial"
+                it.preloading = Preloading(false)
+                it.appearance = CheckoutAppearance.App(ColorScheme.Dark())
+                error("setter failed")
+            }
+        }.hasMessage("setter failed")
+
+        assertThat(ShopifyCheckout.getConfiguration()).isEqualTo(before)
+    }
+
+    @Test
+    fun `a configuration kept from configure cannot change the applied configuration`() {
+        var kept: Configuration? = null
+        ShopifyCheckout.configure {
+            it.title = "Applied"
+            kept = it
+        }
+
+        kept!!.title = "Changed later"
+        kept!!.logLevel = LogLevel.DEBUG
+
+        assertThat(ShopifyCheckout.getConfiguration().title).isEqualTo("Applied")
+        assertThat(ShopifyCheckout.getConfiguration().logLevel).isEqualTo(initialConfiguration.logLevel)
+    }
+
+    @Test
+    fun `a mutable set passed to configure cannot change the applied origins`() {
+        val origins = mutableSetOf("https://example.com")
+        ShopifyCheckout.configure { it.allowedMessageOrigins = origins }
+
+        origins.add("https://changed.example")
+
+        assertThat(ShopifyCheckout.getConfiguration().allowedMessageOrigins).containsExactly("https://example.com")
+    }
+
+    @Test
+    fun `concurrent configure calls keep every update`() {
+        ShopifyCheckout.configure { it.title = "" }
+        val start = CountDownLatch(1)
+        val prefixes = listOf("first-", "second-")
+        val threads = prefixes.map { prefix ->
+            Thread {
+                start.await()
+                repeat(CONCURRENT_UPDATES) { index ->
+                    ShopifyCheckout.configure {
+                        it.title = "${it.title}$prefix$index,"
+                    }
+                }
+            }
+        }
+
+        threads.forEach(Thread::start)
+        start.countDown()
+        threads.forEach(Thread::join)
+
+        val changes = requireNotNull(ShopifyCheckout.getConfiguration().title)
+            .split(",")
+            .filter(String::isNotEmpty)
+        val expectedChanges = prefixes.flatMap { prefix ->
+            (0 until CONCURRENT_UPDATES).map { index -> "$prefix$index" }
+        }
+        assertThat(changes).containsExactlyInAnyOrderElementsOf(expectedChanges)
+    }
+
+    private companion object {
+        const val CONCURRENT_UPDATES = 200
     }
 
     @Test

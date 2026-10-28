@@ -5,15 +5,24 @@ import {
   type ProductVariantOption,
 } from "./cart";
 import { STORAGE_KEYS, writeStorage } from "./storage";
-import type { Store } from "./state";
+import type { AppState } from "./state";
 
 const PRODUCT_LOAD_DEBOUNCE_MS = 500;
 
 type ProductFetcher = (domain: string) => Promise<ProductVariantOption[]>;
 
+/** The part of a playground's store the loader reads and writes. */
+type ProductLoaderStore = {
+  setState(
+    partial: Partial<Pick<AppState, "variants" | "cartLines" | "loadState" | "cartStatus">>,
+  ): void;
+};
+
 type ProductLoaderDeps = {
-  store: Store;
+  store: ProductLoaderStore;
   setDomainInputValue: (domain: string) => void;
+  /** Where the storefront domain is saved. Defaults to the Checkout playground's key. */
+  storageKey?: string;
   fetchVariants?: ProductFetcher;
   debounceMs?: number;
 };
@@ -27,6 +36,7 @@ export function createProductLoader(deps: ProductLoaderDeps): ProductLoader {
   const { store, setDomainInputValue } = deps;
   const fetchVariants = deps.fetchVariants ?? ((domain) => fetchProductVariants(domain));
   const debounceMs = deps.debounceMs ?? PRODUCT_LOAD_DEBOUNCE_MS;
+  const storageKey = deps.storageKey ?? STORAGE_KEYS.storefrontDomain;
 
   let timer: number | undefined;
   let requestId = 0;
@@ -72,7 +82,7 @@ export function createProductLoader(deps: ProductLoaderDeps): ProductLoader {
     store.setState({ variants: [], cartLines: [] });
 
     const domain = normalizeStorefrontDomain(rawDomain);
-    writeStorage(STORAGE_KEYS.storefrontDomain, domain);
+    writeStorage(storageKey, domain);
 
     if (!isLikelyStorefrontDomain(domain)) {
       return;

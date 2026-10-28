@@ -1,5 +1,5 @@
 {
-  "name": "@shopify/checkout-kit-component-checkout",
+  "name": "@shopify/checkout-kit-checkout",
   "version": "0.0.0",
   "private": true,
   "type": "module",

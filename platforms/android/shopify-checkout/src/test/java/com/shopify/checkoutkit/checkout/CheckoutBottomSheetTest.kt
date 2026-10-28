@@ -24,7 +24,6 @@ import com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheet
 import com.shopify.checkoutkit.internal.presentation.CheckoutBottomSheetLayout
 import com.shopify.checkoutkit.internal.presentation.CheckoutSheetHeaderBackgroundDrawable
 import com.shopify.checkoutkit.internal.presentation.dpToPx
-import com.shopify.checkoutkit.internal.presentation.installBottomSheetScrollHandoff
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
 import org.assertj.core.api.Assertions.assertThat
@@ -260,97 +259,10 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `checkoutView installs scroll handoff listener when presented`() {
+    fun `checkoutView does not install a body scroll handoff listener when presented`() {
         val sheet = presentBottomSheet()
 
-        val webView = sheet.currentCheckoutWebView()
-
-        assertThat(shadowOf(webView).getOnTouchListener()).isNotNull
-    }
-
-    @Test
-    fun `checkoutView handoff keeps downward drags in WebView while checkout can scroll up`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = true, scrollY = TEST_SCROLL_OFFSET)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff keeps gesture in WebView after checkout reaches scroll top`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = true, scrollY = TEST_SCROLL_OFFSET)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
-        webView.canScrollUp = false
-        webView.scrollTo(0, 0)
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 180f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff moves sheet when checkout cannot scroll up`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = false)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
-
-        assertThat(sheetOffsetY(sheet)).isGreaterThan(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff does not move sheet when drag to dismiss is disabled`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = false)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-        sheet.dragToDismissEnabled = false
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff keeps small-scroll downward drags in WebView while checkout can scroll up`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = true, scrollY = 10)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 100f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff ignores upward page drags`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = false)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 100f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 20f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-    }
-
-    @Test
-    fun `checkoutView handoff keeps sheet-owned gesture out of WebView after sheet expands`() {
-        val (sheet, webView) = scrollHandoffWebView(canScrollUp = false)
-        val onTouchListener = shadowOf(webView).getOnTouchListener()
-
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 160f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = 20f))
-        onTouchListener.onTouch(webView, motionEvent(MotionEvent.ACTION_MOVE, y = -80f))
-
-        assertThat(sheetOffsetY(sheet)).isEqualTo(0f)
-        assertThat(webView.touchActions).contains(MotionEvent.ACTION_CANCEL)
-        assertThat(webView.touchActions).doesNotContain(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE)
+        assertThat(shadowOf(sheet.currentCheckoutWebView()).getOnTouchListener()).isNull()
     }
 
     @Test
@@ -486,19 +398,6 @@ class CheckoutBottomSheetTest {
         sheet.onTouchEvent(move)
 
         assertThat(sheetOffsetY(sheet)).isGreaterThan(0f)
-    }
-
-    @Test
-    fun `checkout content handoff does not dismiss below distance threshold`() {
-        val (sheet, _) = checkoutSheetWithScrollableChild()
-        var dismissed = false
-        sheet.onDismissRequested = { dismissed = true }
-
-        sheet.startScrollableChildGesture(motionEvent(MotionEvent.ACTION_DOWN, y = 20f))
-        sheet.dragScrollableChildBy(TEST_SHEET_SIZE * 0.2f, motionEvent(MotionEvent.ACTION_MOVE, y = 220f))
-        sheet.finishScrollableChildGesture()
-
-        assertThat(dismissed).isFalse()
     }
 
     @Test
@@ -1321,30 +1220,6 @@ class CheckoutBottomSheetTest {
         return sheet to scrollableView
     }
 
-    private fun scrollHandoffWebView(
-        canScrollUp: Boolean,
-        scrollY: Int = 0,
-    ): Pair<CheckoutBottomSheetLayout, ScrollableWebView> {
-        val sheet = CheckoutBottomSheetLayout(activity)
-        val webView = ScrollableWebView(activity).apply {
-            this.canScrollUp = canScrollUp
-            scrollTo(0, scrollY)
-        }
-        sheet.addView(
-            webView,
-            RelativeLayout.LayoutParams(TEST_SHEET_SIZE, TEST_SHEET_SIZE),
-        )
-        sheet.bindScrollableChild(webView)
-        sheet.measure(
-            View.MeasureSpec.makeMeasureSpec(TEST_SHEET_SIZE, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(TEST_SHEET_SIZE, View.MeasureSpec.EXACTLY),
-        )
-        sheet.layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
-        webView.layout(0, 0, TEST_SHEET_SIZE, TEST_SHEET_SIZE)
-        webView.installBottomSheetScrollHandoff(sheet)
-        return sheet to webView
-    }
-
     private fun motionEvent(action: Int, y: Float): MotionEvent =
         MotionEvent.obtain(0, 0, action, 100f, y, 0)
 
@@ -1370,28 +1245,9 @@ class CheckoutBottomSheetTest {
         }
     }
 
-    private class ScrollableWebView(context: Context) : WebView(context) {
-        var canScrollUp = false
-        val touchActions = mutableListOf<Int>()
-
-        override fun onTouchEvent(event: MotionEvent): Boolean {
-            touchActions += event.actionMasked
-            return true
-        }
-
-        override fun canScrollVertically(direction: Int): Boolean {
-            return if (direction < 0) {
-                canScrollUp
-            } else {
-                super.canScrollVertically(direction)
-            }
-        }
-    }
-
     private companion object {
         private const val TEST_SHEET_SIZE = 1000
         private const val TEST_SHEET_HEADER_SIZE = 120
-        private const val TEST_SCROLL_OFFSET = 100
         private const val CHECKOUT_JSON =
             """{"id":"chk1","currency":"USD","status":"incomplete","line_items":[],"totals":[],"links":[],"ucp":""" +
                 """{"payment_handlers":{},"version":"1.0"}}"""

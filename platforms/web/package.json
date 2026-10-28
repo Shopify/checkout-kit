@@ -1,6 +1,6 @@
 {
   "name": "@shopify/checkout-kit",
-  "version": "4.0.0-alpha.5",
+  "version": "4.0.0",
   "description": "A web component for embedding Shopify's Checkout Kit in any website.",
   "license": "MIT",
   "author": "Shopify",
@@ -33,17 +33,34 @@
       "import": "./dist/shopify-checkout.js",
       "default": "./dist/shopify-checkout.js"
     },
+    "./shopify-universal-checkout": {
+      "types": "./dist/shopify-universal-checkout.d.ts",
+      "import": "./dist/shopify-universal-checkout.js",
+      "default": "./dist/shopify-universal-checkout.js"
+    },
+    "./shop-pay": {
+      "types": "./dist/shop-pay.d.ts",
+      "import": "./dist/shop-pay.js",
+      "default": "./dist/shop-pay.js"
+    },
     "./custom-elements.json": "./dist/custom-elements.json",
     "./package.json": "./package.json"
   },
   "sideEffects": [
     "./src/shopify-checkout.ts",
     "./components/shopify-checkout/src/register.ts",
-    "./dist/shopify-checkout.js"
+    "./dist/shopify-checkout.js",
+    "./src/shopify-universal-checkout.ts",
+    "./components/shopify-universal-checkout/src/register.ts",
+    "./dist/shopify-universal-checkout.js",
+    "./src/shop-pay.ts",
+    "./components/shop-pay/src/register.ts",
+    "./dist/shop-pay.js"
   ],
   "files": [
     "LICENSE",
     "README.md",
+    "documentation",
     "package.json",
     "dist"
   ],
@@ -64,11 +81,11 @@
     "test:watch": "vitest",
     "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run scripts:typecheck && pnpm run telemetry:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
     "lint:compat": "eslint --config eslint.compat.config.mjs src components internal",
-    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal",
+    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal && depcruise --config dependency-cruiser.runtime.config.mjs src components internal && node --test scripts/dependency-boundaries.test.mjs",
     "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src components internal sample scripts && pnpm --dir test/e2e lint",
     "lint:js:fix": "oxlint --fix src components internal sample scripts && pnpm --dir test/e2e lint:fix",
-    "format": "oxfmt src components internal sample scripts dependency-cruiser.config.mjs '!sample/dist/**' '!sample/dist-cdn/**' '!internal/telemetry/**' && pnpm --dir test/e2e format",
-    "format:check": "oxfmt --check src components internal sample scripts dependency-cruiser.config.mjs '!sample/dist/**' '!sample/dist-cdn/**' '!internal/telemetry/**' && pnpm --dir test/e2e format:check",
+    "format": "oxfmt src components internal sample scripts dependency-cruiser*.config.mjs '!sample/dist/**' '!sample/dist-cdn/**' '!internal/telemetry/**' && pnpm --dir test/e2e format",
+    "format:check": "oxfmt --check src components internal sample scripts dependency-cruiser*.config.mjs '!sample/dist/**' '!sample/dist-cdn/**' '!internal/telemetry/**' && pnpm --dir test/e2e format:check",
     "typecheck": "tsc --noEmit",
     "sample": "vite --config sample/vite.config.ts",
     "sample:build": "vite build --config sample/vite.config.ts",
@@ -85,11 +102,13 @@
     "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
     "telemetry:typecheck": "tsc --noEmit -p internal/telemetry/tsconfig.json",
     "build:npm": "vite build && pnpm run build:manifest",
-    "build:cdn": "vite build --config vite.cdn.config.ts"
+    "build:cdn": "vite build --config vite.cdn.config.ts --mode shopify-checkout && vite build --config vite.cdn.config.ts --mode shopify-universal-checkout && vite build --config vite.cdn.config.ts --mode shop-pay && vite build --config vite.cdn.config.ts"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
-    "@shopify/checkout-kit-component-checkout": "workspace:*",
+    "@shopify/checkout-kit-checkout": "workspace:*",
+    "@shopify/checkout-kit-universal-checkout": "workspace:*",
+    "@shopify/checkout-kit-shop-pay": "workspace:*",
     "@shopify/checkout-kit-protocol": "workspace:*",
     "@types/node": "^22.10.0",
     "@types/semver": "^7.8.0",

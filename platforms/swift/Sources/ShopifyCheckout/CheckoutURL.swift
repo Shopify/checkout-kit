@@ -22,4 +22,10 @@ public struct CheckoutURL {
 
         return !["http", "https"].contains(scheme)
     }
+
+    func isConfirmationPage() -> Bool {
+        url.pathComponents.contains { component in
+            component.range(of: "^thank[-_]+you$", options: [.regularExpression, .caseInsensitive]) != nil
+        }
+    }
 }

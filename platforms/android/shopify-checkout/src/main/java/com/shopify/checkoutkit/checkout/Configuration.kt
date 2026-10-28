@@ -32,7 +32,8 @@ public class Configuration internal constructor() {
         it.logLevel = logLevel
         it.preloading = preloading
         it.title = title
-        it.allowedMessageOrigins = allowedMessageOrigins
+        // Copy the set, which a caller may have passed as a MutableSet.
+        it.allowedMessageOrigins = allowedMessageOrigins.toSet()
         it.telemetry = telemetry
     }
 

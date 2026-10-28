@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
@@ -27,7 +28,9 @@ import org.json.JSONObject;
 
 public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
-  public static Configuration checkoutConfig = new Configuration();
+  // A snapshot of the SDK configuration, never the SDK's live object. Written on the native
+  // modules thread, read by getConfig() on the JS thread.
+  public static volatile Configuration checkoutConfig = ShopifyCheckout.getConfiguration();
 
   private volatile boolean invalidated;
 
@@ -42,10 +45,8 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   public ShopifyCheckoutKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
 
-    ShopifyCheckoutKit.configure(configuration -> {
-      configuration.setPlatform(new Platform.ReactNative());
-      checkoutConfig = configuration;
-    });
+    ShopifyCheckout.configure(configuration -> configuration.setPlatform(new Platform.ReactNative()));
+    checkoutConfig = ShopifyCheckout.getConfiguration();
   }
 
   @Override
@@ -93,7 +94,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
         CustomCheckoutListener listener = new CustomCheckoutListener(this::emitDispatchEvent);
         checkoutListener = listener;
         listener.configure(linkAction, this::finishCheckoutPresentation);
-        CheckoutHandle sheet = ShopifyCheckoutKit.present(checkoutURL, (ComponentActivity) currentActivity, listener);
+        CheckoutHandle sheet = ShopifyCheckout.present(checkoutURL, (ComponentActivity) currentActivity, listener);
         // Initialization can fail synchronously and already emit a terminal event.
         if (checkoutListener != listener) {
           onResult.invoke(true);
@@ -146,7 +147,7 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
     Activity currentActivity = getReactApplicationContext().getCurrentActivity();
     if (currentActivity instanceof ComponentActivity) {
-      checkoutPreload = ShopifyCheckoutKit.preload(
+      checkoutPreload = ShopifyCheckout.preload(
           checkoutURL,
           (ComponentActivity) currentActivity,
           state -> emitPreloadStateChange(requestId, state));
@@ -160,9 +161,9 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
   }
 
   @ReactMethod
-  public void invalidateCache() {
+  public void clearPreload() {
     releaseCheckoutPreload();
-    ShopifyCheckoutKit.invalidate();
+    ShopifyCheckout.clearPreload();
   }
 
   private void emitPreloadStateChange(String requestId, PreloadState state) {
@@ -225,50 +226,75 @@ public class ShopifyCheckoutKitModule extends NativeShopifyCheckoutKitSpec {
 
   @ReactMethod(isBlockingSynchronousMethod = true)
   public WritableMap getConfig() {
+    // Read the field once, so every value comes from the same snapshot.
+    Configuration snapshot = checkoutConfig;
     WritableMap resultConfig = Arguments.createMap();
 
-    resultConfig.putString("title", checkoutConfig.getTitle());
-    resultConfig.putMap("appearance", CheckoutAppearanceConfiguration.appearanceResultFor(checkoutConfig.getAppearance()));
-    resultConfig.putString("logLevel", logLevelStringFor(checkoutConfig.getLogLevel()));
-    resultConfig.putBoolean("preloading", checkoutConfig.getPreloading().getEnabled());
-    resultConfig.putBoolean("telemetry", checkoutConfig.getTelemetry().getEnabled());
+    resultConfig.putString("title", snapshot.getTitle());
+    resultConfig.putMap("appearance", CheckoutAppearanceConfiguration.appearanceResultFor(snapshot.getAppearance()));
+    resultConfig.putString("logLevel", logLevelStringFor(snapshot.getLogLevel()));
+    resultConfig.putBoolean("preloading", snapshot.getPreloading().getEnabled());
+    resultConfig.putBoolean("telemetry", snapshot.getTelemetry().getEnabled());
     resultConfig.putArray("allowedMessageOrigins",
-        Arguments.fromList(new ArrayList<>(checkoutConfig.getAllowedMessageOrigins())));
+        Arguments.fromList(new ArrayList<>(snapshot.getAllowedMessageOrigins())));
 
     return resultConfig;
   }
 
+  /**
+   * Resolves with the applied configuration, in the getConfig shape, after
+   * ShopifyCheckout.configure has run and checkoutConfig is updated.
+   * React Native runs these calls on one thread, so they apply and resolve in call order.
+   * Rejects, and applies nothing, when an input cannot be read.
+   */
   @ReactMethod
-  public void setConfig(ReadableMap config) {
-    ShopifyCheckoutKit.configure(configuration -> {
-      if (config.hasKey("title")) {
-        configuration.setTitle(config.getString("title"));
+  public void setConfig(ReadableMap config, Promise promise) {
+    try {
+      applyConfig(config);
+    } catch (RuntimeException exception) {
+      promise.reject("set_config_failed", exception.getMessage(), exception);
+      return;
+    }
+    promise.resolve(getConfig());
+  }
+
+  private void applyConfig(ReadableMap config) {
+    // Read every input before configure. A bad input then throws before the SDK changes anything.
+    boolean hasTitle = config.hasKey("title");
+    String title = hasTitle ? config.getString("title") : null;
+    Preloading preloading = config.hasKey("preloading")
+        ? new Preloading(config.getBoolean("preloading"))
+        : null;
+    Set<String> allowedMessageOrigins = config.hasKey("allowedMessageOrigins")
+        ? toStringSet(config.getArray("allowedMessageOrigins"))
+        : null;
+    Telemetry telemetry = config.hasKey("telemetry")
+        ? new Telemetry(config.getBoolean("telemetry"))
+        : null;
+    LogLevel logLevel = config.hasKey("logLevel") ? logLevelFor(config.getString("logLevel")) : null;
+    CheckoutAppearance appearance =
+        CheckoutAppearanceConfiguration.update(ShopifyCheckout.getConfiguration().getAppearance(), config);
+
+    ShopifyCheckout.configure(configuration -> {
+      if (hasTitle) {
+        configuration.setTitle(title);
       }
-
-      if (config.hasKey("preloading")) {
-        configuration.setPreloading(new Preloading(config.getBoolean("preloading")));
+      if (preloading != null) {
+        configuration.setPreloading(preloading);
       }
-
-      if (config.hasKey("allowedMessageOrigins")) {
-        configuration.setAllowedMessageOrigins(toStringSet(config.getArray("allowedMessageOrigins")));
+      if (allowedMessageOrigins != null) {
+        configuration.setAllowedMessageOrigins(allowedMessageOrigins);
       }
-
-      if (config.hasKey("telemetry")) {
-        configuration.setTelemetry(new Telemetry(config.getBoolean("telemetry")));
+      if (telemetry != null) {
+        configuration.setTelemetry(telemetry);
       }
-
-      if (config.hasKey("logLevel")) {
-        LogLevel logLevel = logLevelFor(config.getString("logLevel"));
-
-        if (logLevel != null) {
-          configuration.setLogLevel(logLevel);
-        }
+      if (logLevel != null) {
+        configuration.setLogLevel(logLevel);
       }
-
-      configuration.setAppearance(CheckoutAppearanceConfiguration.update(configuration.getAppearance(), config));
-
-      checkoutConfig = configuration;
+      configuration.setAppearance(appearance);
     });
+
+    checkoutConfig = ShopifyCheckout.getConfiguration();
   }
 
   private static Set<String> toStringSet(ReadableArray array) {

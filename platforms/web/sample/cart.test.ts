@@ -148,6 +148,21 @@ describe("upsertCartLine", () => {
     ]);
     expect(upsertCartLine([{ variantId: "1", quantity: 2 }], "1", 0)).toEqual([]);
   });
+
+  it("keeps a line's selling plan only when one is given", () => {
+    const plan = "gid://shopify/SellingPlan/1";
+
+    expect(upsertCartLine([], "1", 1, plan)).toEqual([
+      { variantId: "1", quantity: 1, sellingPlanId: plan },
+    ]);
+    expect(upsertCartLine([{ variantId: "1", quantity: 1, sellingPlanId: plan }], "1", 2)).toEqual([
+      { variantId: "1", quantity: 2 },
+    ]);
+    expect(upsertCartLine([{ variantId: "2", quantity: 1, sellingPlanId: plan }], "1", 1)).toEqual([
+      { variantId: "2", quantity: 1, sellingPlanId: plan },
+      { variantId: "1", quantity: 1 },
+    ]);
+  });
 });
 
 describe("cartLineTotalQuantity", () => {

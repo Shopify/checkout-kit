@@ -64,6 +64,11 @@ package enum TelemetryNavigationDurationResult: String {
     case failure
 }
 
+package enum TelemetryReadyDurationResult: String {
+    case ready
+    case notReady = "not_ready"
+}
+
 package enum TelemetryProduct: String {
     case checkoutKit = "checkout_kit"
     case acceleratedCheckouts = "accelerated_checkouts"
@@ -116,6 +121,16 @@ package struct TelemetryProtocolDecodeErrorMetric {
     }
 }
 
+package struct TelemetryConfirmationReachedMetric {
+    package let completionReceived: Bool
+    package let product: TelemetryProduct?
+
+    package init(completionReceived: Bool, product: TelemetryProduct? = nil) {
+        self.completionReceived = completionReceived
+        self.product = product
+    }
+}
+
 package struct TelemetryNavigationRetryMetric {
     package let reason: TelemetryNavigationRetryReason
     package let result: TelemetryNavigationRetryResult
@@ -141,6 +156,25 @@ package struct TelemetryNavigationDurationMetric {
     package init(
         milliseconds: Double,
         result: TelemetryNavigationDurationResult,
+        preloaded: Bool,
+        product: TelemetryProduct? = nil
+    ) {
+        self.milliseconds = milliseconds
+        self.result = result
+        self.preloaded = preloaded
+        self.product = product
+    }
+}
+
+package struct TelemetryReadyDurationMetric {
+    package let milliseconds: Double
+    package let result: TelemetryReadyDurationResult
+    package let preloaded: Bool
+    package let product: TelemetryProduct?
+
+    package init(
+        milliseconds: Double,
+        result: TelemetryReadyDurationResult,
         preloaded: Bool,
         product: TelemetryProduct? = nil
     ) {
@@ -271,6 +305,15 @@ package final class CheckoutKitTelemetry: @unchecked Sendable {
         )
     }
 
+    package func recordConfirmationReached(_ metric: TelemetryConfirmationReachedMetric) {
+        recordCounter(
+            name: "checkout_kit_confirmation_reached",
+            attributes: attributes([
+                "completion_received": .bool(metric.completionReceived)
+            ], product: metric.product)
+        )
+    }
+
     package func recordNavigationRetry(_ metric: TelemetryNavigationRetryMetric) {
         recordCounter(
             name: "checkout_kit_navigation_retry",
@@ -287,6 +330,23 @@ package final class CheckoutKitTelemetry: @unchecked Sendable {
             Measurement(
                 type: .histogram,
                 name: "checkout_kit_navigation_duration_ms",
+                value: metric.milliseconds,
+                unit: "ms",
+                attributes: attributes([
+                    "result": .string(metric.result.rawValue),
+                    "preloaded": .bool(metric.preloaded)
+                ], product: metric.product),
+                timeUnixNano: clock()
+            )
+        )
+    }
+
+    package func recordReadyDuration(_ metric: TelemetryReadyDurationMetric) {
+        guard metric.milliseconds.isFinite, metric.milliseconds >= 0 else { return }
+        record(
+            Measurement(
+                type: .histogram,
+                name: "checkout_kit_ready_duration_ms",
                 value: metric.milliseconds,
                 unit: "ms",
                 attributes: attributes([

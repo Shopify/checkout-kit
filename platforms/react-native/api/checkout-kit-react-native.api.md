@@ -407,14 +407,14 @@ export class ShopifyCheckout implements ShopifyCheckoutKit {
     constructor(configuration?: Configuration, features?: Partial<Features>);
     // (undocumented)
     get acceleratedCheckoutsReady(): boolean;
+    clearPreload(): void;
     configureAcceleratedCheckouts(config: AcceleratedCheckoutConfiguration): boolean;
     dismiss(): void;
     getConfig(): Configuration;
-    invalidate(): void;
     isAcceleratedCheckoutAvailable(): boolean;
     preload(checkoutUrl: string, options?: PreloadOptions): CheckoutPreloadSubscription;
     present(checkoutUrl: string, callbacks?: PresentCallbacks): void;
-    setConfig(configuration: Configuration): void;
+    setConfig(configuration: Configuration): Promise<Configuration>;
     teardown(): void;
     // (undocumented)
     get version(): string;

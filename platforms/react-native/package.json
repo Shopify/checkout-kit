@@ -70,7 +70,7 @@
     "typecheck": "tsc --noEmit",
     "api:check": "pnpm build && api-extractor run --verbose",
     "api:dump": "pnpm build && api-extractor run --local --verbose",
-    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal",
+    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal && node --test scripts/dependency-boundaries.test.mjs",
     "verify": "node scripts/verify-package.mjs && tsc -p test/package-consumer/tsconfig.json && node --test scripts/verify-packed-package.mjs"
   },
   "devDependencies": {
@@ -81,11 +81,11 @@
     "@react-native-community/cli": "20.2.0",
     "@react-native-community/cli-platform-android": "20.2.0",
     "@react-native-community/cli-platform-ios": "20.2.0",
-    "@react-native/babel-preset": "0.87.1",
-    "@react-native/eslint-config": "0.87.1",
-    "@react-native/jest-preset": "0.87.1",
-    "@react-native/metro-config": "0.87.1",
-    "@react-native/typescript-config": "0.87.1",
+    "@react-native/babel-preset": "0.88.0",
+    "@react-native/eslint-config": "0.88.0",
+    "@react-native/jest-preset": "0.88.0",
+    "@react-native/metro-config": "0.88.0",
+    "@react-native/typescript-config": "0.88.0",
     "@shopify/checkout-kit-protocol": "workspace:*",
     "@testing-library/react-native": "^13.3.1",
     "@tsconfig/react-native": "^3.0.6",
@@ -97,11 +97,11 @@
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "^30.0.5",
     "prettier": "^3.2.5",
-    "react": "19.2.3",
-    "react-native": "0.87.1",
+    "react": "19.3.0",
+    "react-native": "0.88.0",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "2.33.0",
-    "react-test-renderer": "19.2.3",
+    "react-test-renderer": "19.3.0",
     "typescript": "^5.9.2",
     "@shopify/checkout-kit-react-native-core": "workspace:*",
     "@shopify/checkout-kit-react-native-checkout": "workspace:*",
@@ -110,8 +110,8 @@
     "vite": "^8.3.4",
     "vite-plugin-dts": "^4.5.4",
     "@types/node": "^22.12.0",
-    "metro": "^0.87.0",
-    "@react-native/codegen": "0.87.1",
+    "metro": "^0.87.1",
+    "@react-native/codegen": "0.88.0",
     "@rolldown/plugin-babel": "^0.2.4",
     "@types/babel__core": "^7.20.5",
     "rolldown": "~1.2.13"
@@ -142,8 +142,8 @@
   },
   "checkoutKit": {
     "nativeSdkVersions": {
-      "ios": "4.0.0-alpha.10",
-      "android": "4.0.0-alpha.10"
+      "ios": "4.0.0-alpha.11",
+      "android": "4.0.0-alpha.11"
     }
   },
   "files": [

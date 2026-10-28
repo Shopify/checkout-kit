@@ -64,6 +64,11 @@ internal enum class TelemetryNavigationDurationResult(internal val wireValue: St
     Failure("failure"),
 }
 
+internal enum class TelemetryReadyDurationResult(internal val wireValue: String) {
+    Ready("ready"),
+    NotReady("not_ready"),
+}
+
 internal enum class TelemetryProduct(internal val wireValue: String) {
     CheckoutKit("checkout_kit"),
     AcceleratedCheckouts("accelerated_checkouts"),
@@ -88,6 +93,10 @@ internal data class TelemetryProtocolDecodeErrorMetric(
     val failureType: TelemetryDecodeFailureType,
 )
 
+internal data class TelemetryConfirmationReachedMetric(
+    val completionReceived: Boolean,
+)
+
 internal data class TelemetryNavigationRetryMetric(
     val reason: TelemetryNavigationRetryReason,
     val result: TelemetryNavigationRetryResult,
@@ -96,6 +105,12 @@ internal data class TelemetryNavigationRetryMetric(
 internal data class TelemetryNavigationDurationMetric(
     val milliseconds: Double,
     val result: TelemetryNavigationDurationResult,
+    val preloaded: Boolean,
+)
+
+internal data class TelemetryReadyDurationMetric(
+    val milliseconds: Double,
+    val result: TelemetryReadyDurationResult,
     val preloaded: Boolean,
 )
 
@@ -128,11 +143,17 @@ internal class CheckoutKitTelemetry(
     fun recordProtocolDecodeError(metric: TelemetryProtocolDecodeErrorMetric): Unit =
         exporter.recordProtocolDecodeError(metric)
 
+    fun recordConfirmationReached(metric: TelemetryConfirmationReachedMetric): Unit =
+        exporter.recordConfirmationReached(metric)
+
     fun recordNavigationRetry(metric: TelemetryNavigationRetryMetric): Unit =
         exporter.recordNavigationRetry(metric)
 
     fun recordNavigationDuration(metric: TelemetryNavigationDurationMetric): Unit =
         exporter.recordNavigationDuration(metric)
+
+    fun recordReadyDuration(metric: TelemetryReadyDurationMetric): Unit =
+        exporter.recordReadyDuration(metric)
 
     fun flush(completion: (Boolean) -> Unit = {}): Unit = exporter.flush(completion)
 

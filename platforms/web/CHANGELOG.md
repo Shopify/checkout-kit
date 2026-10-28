@@ -1,5 +1,9 @@
 # Checkout Kit for Web changelog
 
+## 4.0.0
+
+Initial stable release.
+
 ## Earlier releases
 
-Notes for 4.0.0-alpha.5 and earlier are on [GitHub Releases](https://github.com/Shopify/checkout-kit/releases).
+Earlier release notes are on [GitHub Releases](https://github.com/Shopify/checkout-kit/releases).

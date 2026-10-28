@@ -111,6 +111,20 @@ describe("createProductLoader", () => {
     expect(localStorage.getItem("checkout-kit:web-demo:storefront-domain")).toBe(DOMAIN);
   });
 
+  it("saves the domain under a page's own storage key", () => {
+    const loader = createProductLoader({
+      store,
+      setDomainInputValue: () => {},
+      fetchVariants: vi.fn(),
+      storageKey: "example:storefront-domain",
+    });
+
+    loader.schedule(`https://${DOMAIN}`);
+
+    expect(localStorage.getItem("example:storefront-domain")).toBe(DOMAIN);
+    expect(localStorage.getItem("checkout-kit:web-demo:storefront-domain")).toBeNull();
+  });
+
   it("only runs the latest scheduled load when rescheduled during the debounce", async () => {
     const fetchVariants = vi.fn().mockResolvedValue([variant("1")]);
     const loader = createProductLoader({ store, setDomainInputValue: () => {}, fetchVariants });

@@ -38,7 +38,7 @@ organization change, provided the public API baseline is unchanged.
 
 | Proposed area | Current source files |
 | --- | --- |
-| `internal.presentation` | `CheckoutBottomSheet.kt`, `CheckoutBottomSheetAccessibility.kt`, `CheckoutBottomSheetDragHandle.kt`, `CheckoutBottomSheetLayout.kt`, `CheckoutBottomSheetScrollHandoff.kt`, `CheckoutSheetHeaderBackgroundDrawable.kt`, `CheckoutSheetSnapPointResolver.kt` |
+| `internal.presentation` | `CheckoutBottomSheet.kt`, `CheckoutBottomSheetAccessibility.kt`, `CheckoutBottomSheetDragHandle.kt`, `CheckoutBottomSheetLayout.kt`, `CheckoutSheetHeaderBackgroundDrawable.kt`, `CheckoutSheetSnapPointResolver.kt` |
 | `internal.web` | `CheckoutWebView.kt`, `CheckoutWebViewListener.kt`, `WebMessageTransport.kt`, `WebViewScrollDirection.kt`, `CheckoutUrlDecorator.kt`, `OriginAllowlist.kt`, `ExternalUriLauncher.kt`, `UriExtensions.kt` |
 | `internal.protocol` | `CheckoutProtocol.kt`, `EmbeddedCheckoutProtocolBridge.kt`, `ComposedCheckoutProtocolClient.kt`, `CheckoutEventAdapter.kt`, `CheckoutMessageIngressPolicy.kt`, `CheckoutMessageRejection.kt`, `CheckoutSerializer.kt` |
 | `internal.preload` | `PreloadCache.kt` |

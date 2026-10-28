@@ -80,6 +80,9 @@ packageSwift:
   - 'Package.resolved'
 e2e:
   - 'e2e/**'
+  # Bitrise runs this helper after injecting the EJSON private key, so changes
+  # must select E2E rather than skip the protected pipeline.
+  - 'scripts/generate_env_files'
   - *exclude-markdown
   - *exclude-docs-directory
 ciFilters:

@@ -204,7 +204,14 @@ export function openCheckoutPresentation({
     if (!isElementHidden && !isOverlayHidden) {
       if (blocked) dialog.dataset.state = "blocked";
       else delete dialog.dataset.state;
-      dialog.showModal();
+      try {
+        dialog.showModal();
+      } catch (error) {
+        // A failed overlay must not leave a window the element cannot close.
+        checkoutWindow?.close();
+        delete dialog.dataset.state;
+        throw error;
+      }
 
       dialogCloseButton?.addEventListener("click", () => dialog.close(), {
         signal: abortController.signal,

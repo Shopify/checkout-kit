@@ -90,14 +90,14 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
   const [addLineItems] = mutations.cartLinesAdd;
   const [removeLineItems] = mutations.cartLinesRemove;
   const [fetchCart] = queries.cart;
-  const {invalidate} = useShopifyCheckout();
+  const {clearPreload} = useShopifyCheckout();
 
   const clearCart = useCallback(() => {
-    invalidate();
+    clearPreload();
     setCartId(defaultCartId);
     setCheckoutURL(undefined);
     setTotalQuantity(0);
-  }, [invalidate, setCartId, setCheckoutURL, setTotalQuantity]);
+  }, [clearPreload, setCartId, setCheckoutURL, setTotalQuantity]);
 
   useEffect(() => {
     clearCart();
@@ -160,7 +160,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
           return;
         }
 
-        invalidate();
+        clearPreload();
 
         if (!id) {
           let customerAccessToken: string | undefined;
@@ -203,7 +203,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       cartId,
       createCart,
       addLineItems,
-      invalidate,
+      clearPreload,
       setCartId,
       setCheckoutURL,
       setTotalQuantity,
@@ -235,7 +235,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
       }
 
       dispatch({type: 'add', variantId});
-      invalidate();
+      clearPreload();
 
       const {data} = await removeLineItems({
         variables: {
@@ -260,7 +260,7 @@ export const CartProvider: React.FC<PropsWithChildren> = ({children}) => {
     [
       cartId,
       removeLineItems,
-      invalidate,
+      clearPreload,
       setCheckoutURL,
       setTotalQuantity,
       fetchCart,

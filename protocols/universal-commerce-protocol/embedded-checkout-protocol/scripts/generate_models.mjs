@@ -1086,6 +1086,25 @@ function injectTypescriptLegacyDescriptionCompatibility(source) {
   return source.replace(marker, replacement);
 }
 
+function preserveTypescriptObjectKeys(source) {
+  // quicktype's assignments invoke the legacy __proto__ setter. Define own data
+  // properties so arbitrary wire keys survive while keeping ordinary objects.
+  for (const [key, value] of [
+    ["prop.key", "v, prop.typ"],
+    ["key", "val[key], additional"],
+  ]) {
+    const marker = `result[${key}] = transform(${value}, getProps, key, ref);`;
+    if (source.split(marker).length !== 2) {
+      throw new Error("TypeScript own-property normalization failed; quicktype output may have changed");
+    }
+    source = source.replace(
+      marker,
+      `Object.defineProperty(result, ${key}, {value: transform(${value}, getProps, key, ref), enumerable: true, configurable: true, writable: true});`,
+    );
+  }
+  return source;
+}
+
 async function generateTypescript(specDir, output, {mapModelNames}) {
   await fs.mkdir(path.dirname(output), {recursive: true});
   await runQuicktype([
@@ -1104,7 +1123,7 @@ async function generateTypescript(specDir, output, {mapModelNames}) {
   ]);
 
   await normalizeGeneratedFile(output, (source) => {
-    const withCompatibility = injectTypescriptLegacyDescriptionCompatibility(source);
+    const withCompatibility = injectTypescriptLegacyDescriptionCompatibility(preserveTypescriptObjectKeys(source));
     return applyTypescriptEvolvableShapes(
       useTypescriptMapsForModels(withCompatibility.replace(/^type /gm, "export type "), mapModelNames),
     );

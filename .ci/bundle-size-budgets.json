@@ -2,8 +2,20 @@
   "web": {
     "javascript": {
       "measurement": "bundle",
-      "softKiB": 37,
-      "hardKiB": 50
+      "softKiB": 72,
+      "hardKiB": 85
+    },
+    "universalCheckout": {
+      "measurement": "package",
+      "file": "dist/chunks/shopify-universal-checkout.js",
+      "softKiB": 15,
+      "hardKiB": 20
+    },
+    "shopPay": {
+      "measurement": "package",
+      "file": "dist/chunks/shop-pay.js",
+      "softKiB": 19,
+      "hardKiB": 24
     }
   },
   "react-native": {

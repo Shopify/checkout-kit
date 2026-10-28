@@ -224,7 +224,15 @@ describe('ShopifyCheckoutKit', () => {
     for (const [dispatch] of NativeModule.onDispatch.mock.calls)
       dispatch(JSON.stringify({type: 'dismiss'}));
     __resetPreloadForTests();
-    NativeModule.setConfig.mockReset();
+    NativeModule.setConfig.mockReset().mockImplementation(() =>
+      Promise.resolve({
+        appearance: {type: 'app', colorScheme: 'automatic'},
+        logLevel: 'error',
+        preloading: true,
+        telemetry: true,
+        allowedMessageOrigins: [],
+      }),
+    );
     jest.clearAllMocks();
   });
 
@@ -238,6 +246,20 @@ describe('ShopifyCheckoutKit', () => {
       new ShopifyCheckout();
       expect(NativeModule.setConfig).not.toHaveBeenCalled();
     });
+
+    it('logs a rejected initial configuration without an unhandled rejection', async () => {
+      const error = new Error('native failure');
+      NativeModule.setConfig.mockRejectedValueOnce(error);
+
+      new ShopifyCheckout(config);
+      // Jest fails the test if a rejection is still unhandled here.
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(console.error).toHaveBeenCalledWith(
+        '[ShopifyCheckoutKit] Failed to apply the initial configuration with',
+        error,
+      );
+    });
   });
 
   describe('setConfig', () => {
@@ -246,6 +268,63 @@ describe('ShopifyCheckoutKit', () => {
       instance.setConfig(config);
       expect(NativeModule.setConfig).toHaveBeenCalledTimes(1);
       expect(NativeModule.setConfig).toHaveBeenCalledWith(config);
+    });
+
+    it('resolves with the configuration native reports for this call', async () => {
+      // Native ignored the requested log level and kept its current value.
+      NativeModule.setConfig.mockResolvedValueOnce({
+        appearance: {type: 'storefront'},
+        logLevel: 'warn',
+        preloading: true,
+        title: 'Checkout',
+      });
+      const instance = new ShopifyCheckout();
+
+      await expect(
+        instance.setConfig({title: 'Checkout', logLevel: 'verbose' as LogLevel}),
+      ).resolves.toStrictEqual({
+        appearance: {type: CheckoutAppearanceType.storefront},
+        logLevel: LogLevel.warn,
+        preloading: true,
+        title: 'Checkout',
+      });
+    });
+
+    it('resolves overlapping calls with their own configuration after native applies both', async () => {
+      const first = Promise.withResolvers<object>();
+      const second = Promise.withResolvers<object>();
+      NativeModule.setConfig
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise);
+      const instance = new ShopifyCheckout();
+
+      const firstResult = instance.setConfig({title: 'First'});
+      const secondResult = instance.setConfig({title: 'Second'});
+      first.resolve({
+        appearance: {type: 'storefront'},
+        logLevel: 'error',
+        preloading: true,
+        title: 'First',
+      });
+      second.resolve({
+        appearance: {type: 'storefront'},
+        logLevel: 'error',
+        preloading: true,
+        title: 'Second',
+      });
+
+      await expect(firstResult).resolves.toMatchObject({title: 'First'});
+      await expect(secondResult).resolves.toMatchObject({title: 'Second'});
+      expect(NativeModule.getConfig).not.toHaveBeenCalled();
+    });
+
+    it('passes a native rejection to the caller', async () => {
+      const error = new Error('native failure');
+      NativeModule.setConfig.mockRejectedValueOnce(error);
+      const instance = new ShopifyCheckout();
+
+      await expect(instance.setConfig(config)).rejects.toBe(error);
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it('calls `setConfig` with logLevel configuration', () => {
@@ -469,12 +548,12 @@ describe('ShopifyCheckoutKit', () => {
     });
   });
 
-  describe('invalidate', () => {
-    it('calls `invalidateCache` on the Native Module', () => {
+  describe('clearPreload', () => {
+    it('calls `clearPreload` on the Native Module', () => {
       const instance = new ShopifyCheckout();
-      instance.invalidate();
+      instance.clearPreload();
 
-      expect(NativeModule.invalidateCache).toHaveBeenCalledTimes(1);
+      expect(NativeModule.clearPreload).toHaveBeenCalledTimes(1);
     });
   });
 

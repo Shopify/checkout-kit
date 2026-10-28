@@ -28,15 +28,7 @@
     "noEmit": true,
     "types": [
       "vitest/globals"
-    ],
-    "paths": {
-      "@shopify/checkout-kit-component-checkout": [
-        "./components/shopify-checkout/src/index.ts"
-      ],
-      "@shopify/checkout-kit-component-checkout/register": [
-        "./components/shopify-checkout/src/register.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "src/**/*",

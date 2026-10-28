@@ -87,17 +87,24 @@ const EMBED_DELEGATIONS = [EmbeddedCheckoutProtocol.Delegations.windowOpen] as c
  * @attribute appearance - Checkout appearance preference (app:light, app:dark, app:automatic, storefront).
  * @attribute log-level - Console logging verbosity (debug, warn, error, or none).
  * @attribute allowed-origins - Extra trusted message origins, separated by spaces or commas.
+ * @attribute telemetry - Set to false to disable anonymous diagnostic metrics.
  *
  * @event {ShopifyCheckoutStartEvent} start - Checkout has started.
  * @event {ShopifyCheckoutUpdateEvent} update - The checkout snapshot changed.
  * @event {ShopifyCheckoutCompleteEvent} complete - Checkout completed successfully.
- * @event {ShopifyCheckoutErrorEvent} error - Checkout could not open or reported a terminal error; an open session closes after this event.
- * @event {ShopifyCheckoutCloseEvent} close - The checkout session closed, including after a blocked window.
+ * @event {ShopifyCheckoutErrorEvent} error - Checkout could not open or reported a terminal error. Opening failures close a previous presentation first; protocol errors close it after this event.
+ * @event {ShopifyCheckoutCloseEvent} close - The session ended through `close()`, overlay dismissal, or the buyer closing the window; detail is null.
  * @event {ShopifyCheckoutBlockedEvent} blocked - The browser blocked the checkout window.
+ *
+ * @slot overlay - Replaces the overlay contents shown while checkout is open.
+ * @slot overlay-blocked - Replaces the overlay contents shown when the window was blocked.
+ * @csspart overlay - The overlay scrim shown over the page while checkout is open.
+ * @cssprop --shopify-checkout-dialog-width - Popup width in pixels. Defaults to 600.
+ * @cssprop --shopify-checkout-dialog-height - Popup height in pixels. Defaults to 600.
  *
  * @example
  * ```js
- * // Popup target (default)
+ * // Opens in a new tab by default; set `target` to "popup" for a popup window.
  * const cart = await fetchCart();
  * const checkout = document.createElement("shopify-checkout");
  * checkout.setAttribute("src", cart.checkoutUrl);
@@ -153,6 +160,8 @@ export class ShopifyCheckout
   #client!: EmbeddedCheckoutProtocol.Client;
   #telemetryClient?: CheckoutKitTelemetry;
   #navigationStartedAt?: number;
+  // Separate from `#navigationStartedAt` so each metric records once on its own lifecycle.
+  #readyStartedAt?: number;
 
   /* ------------------------------------------------------------
    * Read/write properties (reflected with attributes)
@@ -188,7 +197,7 @@ export class ShopifyCheckout
 
   /**
    * Console logging verbosity. Ordered as a threshold — `debug` is the most
-   * verbose and `none` silences everything. Defaults to `'warn'`.
+   * verbose and `none` silences everything. Defaults to `'error'`.
    */
   get logLevel(): LogLevel {
     return coerceLogLevel(this.getAttribute("log-level"));
@@ -318,12 +327,10 @@ export class ShopifyCheckout
 
     const unsupportedCapabilities = getUnsupportedBrowserCapabilities();
     if (unsupportedCapabilities.length > 0) {
-      this.#checkout = undefined;
-      this.#error = {
+      this.#emitLocalFailure({
         code: "unsupported_browser",
         message: `This browser does not support: ${unsupportedCapabilities.join(", ")}.`,
-      };
-      this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error: this.#error }));
+      });
       return;
     }
 
@@ -339,6 +346,7 @@ export class ShopifyCheckout
         retryable: false,
         isRetry: false,
       });
+      this.#emitLocalFailure({ code: "sdk_error", message: "Checkout URL is invalid." });
       return;
     }
 
@@ -350,27 +358,43 @@ export class ShopifyCheckout
     this.#error = undefined;
     this.#checkoutComparisonKey = undefined;
     const navigationStartedAt = performance.now();
-    const presentation = openCheckoutPresentation({
-      element: this,
-      src,
-      target,
-      onRetry: () => this.open(),
-      onUnsafeTarget: (unsafeTarget) => {
-        this.#logger.warn(
-          `target="${unsafeTarget}" would navigate the current page; falling back to "auto"`,
-        );
-      },
-      onClose: () => {
-        this.#navigationStartedAt = undefined;
-        this.#presentation = undefined;
-        /** @ignore - Events are documented by the class @event tags. */
-        this.dispatchEvent(new ShopifyCheckoutCloseEvent());
-      },
-    });
+    let presentation: CheckoutPresentation;
+    try {
+      presentation = openCheckoutPresentation({
+        element: this,
+        src,
+        target,
+        onRetry: () => this.open(),
+        onUnsafeTarget: (unsafeTarget) => {
+          this.#logger.warn(
+            `target="${unsafeTarget}" would navigate the current page; falling back to "auto"`,
+          );
+        },
+        onClose: () => {
+          if (this.#presentation !== presentation) return;
+          this.#navigationStartedAt = undefined;
+          this.#recordReadyDuration("not_ready");
+          this.#presentation = undefined;
+          /** @ignore - Events are documented by the class @event tags. */
+          this.dispatchEvent(new ShopifyCheckoutCloseEvent());
+        },
+      });
+    } catch {
+      this.#recorder?.recordError({
+        category: "navigation",
+        stage: "presentation",
+        code: "blocked",
+        retryable: false,
+        isRetry: false,
+      });
+      this.#emitLocalFailure({ code: "sdk_error", message: "Checkout could not open." });
+      return;
+    }
     this.#presentation = presentation;
 
     const { checkoutWindow } = presentation;
     this.#navigationStartedAt = checkoutWindow && this.telemetry ? navigationStartedAt : undefined;
+    this.#readyStartedAt = this.#navigationStartedAt;
 
     if (!checkoutWindow) {
       this.#logger.warn("checkout window could not be opened; the browser may have blocked it");
@@ -404,6 +428,17 @@ export class ShopifyCheckout
     if (startedAt === undefined) return;
     this.#navigationStartedAt = undefined;
     this.#recorder?.recordNavigationDuration({
+      milliseconds: performance.now() - startedAt,
+      result,
+      preloaded: false,
+    });
+  }
+
+  #recordReadyDuration(result: "ready" | "not_ready"): void {
+    const startedAt = this.#readyStartedAt;
+    if (startedAt === undefined) return;
+    this.#readyStartedAt = undefined;
+    this.#recorder?.recordReadyDuration({
       milliseconds: performance.now() - startedAt,
       result,
       preloaded: false,
@@ -504,12 +539,15 @@ export class ShopifyCheckout
           failureType: "params",
         });
       })
-      .on(Event.ready, () => ({
-        ucp: {
-          status: "success",
-          version: EmbeddedCheckoutProtocol.specVersion,
-        },
-      }))
+      .on(Event.ready, () => {
+        this.#recordReadyDuration("ready");
+        return {
+          ucp: {
+            status: "success",
+            version: EmbeddedCheckoutProtocol.specVersion,
+          },
+        };
+      })
       .on(Event.start, ({ params: { checkout } }) => {
         // Web cannot reliably observe cross-origin popup page-finish, so the
         // success duration ends at `ec.start`: checkout is loaded and interactive.
@@ -537,6 +575,7 @@ export class ShopifyCheckout
         // `ec.error` is terminal for the embedded session. Message severity is
         // payload detail for the checkout error, not a host-side recovery signal.
         this.#recordNavigationFailure();
+        this.#recordReadyDuration("not_ready");
         this.close();
       })
       .on(Event.fulfillmentChange, ({ params: { checkout } }) => {
@@ -554,6 +593,14 @@ export class ShopifyCheckout
       .on(Event.windowOpen, ({ params }) =>
         handleWindowOpenRequest(params, EmbeddedCheckoutProtocol.specVersion, this.#logger),
       );
+  }
+
+  #emitLocalFailure(error: CheckoutError): void {
+    this.#checkout = undefined;
+    this.#error = error;
+    this.#checkoutComparisonKey = undefined;
+    this.close();
+    this.dispatchEvent(new ShopifyCheckoutErrorEvent({ error }));
   }
 
   #recordCheckout(checkout: ProtocolCheckout): Checkout {
@@ -655,6 +702,7 @@ export class ShopifyCheckout
           if (this.isConnected) this.#recorder?.start();
         } else {
           this.#navigationStartedAt = undefined;
+          this.#readyStartedAt = undefined;
           const telemetryClient = this.#telemetryClient;
           this.#telemetryClient = undefined;
           if (telemetryClient) void telemetryClient.shutdown({ discardPending: true });

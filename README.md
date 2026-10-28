@@ -14,11 +14,6 @@
 
 Checkout Kit preserves your checkout customizations, including Checkout UI extensions, Shopify Functions, branding, Shop Pay, and supported payment methods.
 
-> [!WARNING]
-> **Alpha — early preview.** This software is **not production-ready**. Stability
-> is not guaranteed, and breaking changes may occur in any release.
-> See [Packages](#packages) for versions and installation channels.
-
 <a id="integration-guides"></a>
 
 ## Get started
@@ -68,15 +63,15 @@ The [Shopify.dev overview](https://shopify.dev/docs/storefronts/mobile/checkout-
 
 ## Packages
 
-Package names link to their integration guides. These are the versions tracked by this repository; prereleases use the installation channels listed below.
+Package names link to their integration guides. These are the versions tracked by this repository.
 
 | Package | Version | Installation |
 | --- | --- | --- |
-| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0-alpha.11` | Swift Package Manager, CocoaPods |
-| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0-alpha.11` | Swift Package Manager, CocoaPods subspec |
-| [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0-alpha.11` | Maven Central |
+| [`ShopifyCheckoutKit`](platforms/swift/README.md) | `4.0.0` | Swift Package Manager, CocoaPods |
+| [`ShopifyAcceleratedCheckouts`](platforms/swift/README.md#accelerated-checkouts) | `4.0.0` | Swift Package Manager, CocoaPods subspec |
+| [`com.shopify:checkout-kit`](platforms/android/README.md) | `4.0.0` | Maven Central |
 | [`@shopify/checkout-kit-react-native`](platforms/react-native/README.md) | `4.0.0-alpha.5` | npm `next` |
-| [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0-alpha.5` | npm `next` |
+| [`@shopify/checkout-kit`](platforms/web/README.md) | `4.0.0` | npm `latest` |
 
 <details>
 <summary>Supporting packages: Embedded Checkout Protocol</summary>
@@ -92,8 +87,7 @@ These internal/supporting clients handle Embedded Checkout Protocol messages.
 
 Checkout Kit is the current home for the SDKs previously published as Checkout Sheet Kit.
 
-- Platform releases are versioned independently using the `4.0.0-alpha.X` format during the alpha period. Each platform records its changes in its own `CHANGELOG.md`, managed with Changesets (see [contributing](.github/CONTRIBUTING.md#versions-and-release-notes)).
-- Stable releases will continue on the same `4.x` package line after the alpha period.
+- Platform releases are versioned independently and follow semantic versioning. Each platform records its changes in its own `CHANGELOG.md`, managed with Changesets (see [contributing](.github/CONTRIBUTING.md#versions-and-release-notes)).
 
 <details>
 <summary>Migrating from Checkout Sheet Kit</summary>

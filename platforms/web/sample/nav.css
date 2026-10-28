@@ -1,0 +1,25 @@
+/* Links between the sample pages, shown in each page's top bar. */
+.sample-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sample-nav a {
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.sample-nav a:hover {
+  color: var(--text);
+  background: var(--surface-subdued);
+}
+
+.sample-nav a[aria-current="page"] {
+  color: var(--accent);
+  background: var(--surface-subdued);
+}

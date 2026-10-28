@@ -14,13 +14,13 @@ type Maybe<T> = T | undefined;
 interface Context {
   acceleratedCheckoutsAvailable: boolean;
   getConfig: () => Configuration | undefined;
-  setConfig: (config: Configuration) => void;
+  setConfig: (config: Configuration) => Promise<Configuration>;
   present: (checkoutUrl: string, callbacks?: PresentCallbacks) => void;
   preload: (
     checkoutUrl: string,
     options?: PreloadOptions,
   ) => CheckoutPreloadSubscription | undefined;
-  invalidate: () => void;
+  clearPreload: () => void;
   dismiss: () => void;
   version: Maybe<string>;
 }
@@ -56,7 +56,13 @@ export function ShopifyCheckoutProvider({
     }
 
     if (configuration !== lastAppliedConfiguration.current) {
-      checkout.setConfig(configuration);
+      checkout.setConfig(configuration).catch(error => {
+        // eslint-disable-next-line no-console
+        console.error(
+          '[ShopifyCheckoutKit] Failed to apply the configuration prop with',
+          error,
+        );
+      });
       lastAppliedConfiguration.current = configuration;
     }
 
@@ -83,8 +89,8 @@ export function ShopifyCheckoutProvider({
     [checkout],
   );
 
-  const invalidate = useCallback(() => {
-    checkout.invalidate();
+  const clearPreload = useCallback(() => {
+    checkout.clearPreload();
   }, [checkout]);
 
   const dismiss = useCallback(() => {
@@ -92,9 +98,7 @@ export function ShopifyCheckoutProvider({
   }, [checkout]);
 
   const setConfig = useCallback(
-    (config: Configuration) => {
-      checkout.setConfig(config);
-    },
+    (config: Configuration) => checkout.setConfig(config),
     [checkout],
   );
 
@@ -106,7 +110,7 @@ export function ShopifyCheckoutProvider({
     return {
       acceleratedCheckoutsAvailable,
       dismiss,
-      invalidate,
+      clearPreload,
       setConfig,
       getConfig,
       present,
@@ -118,7 +122,7 @@ export function ShopifyCheckoutProvider({
     checkout,
     dismiss,
     getConfig,
-    invalidate,
+    clearPreload,
     setConfig,
     present,
     preload,

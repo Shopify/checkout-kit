@@ -1,4 +1,4 @@
-import type { LogLevel } from "@shopify/checkout-kit";
+import type { ShopifyCheckoutLogLevel } from "@shopify/checkout-kit";
 
 import { buildCartPermalink, type CartLine, type ProductVariantOption } from "./cart";
 import type { SourceMode } from "./storage";
@@ -27,7 +27,7 @@ export type SettingsSlice = {
   storefrontDomain: string;
   target: string;
   appearance: string;
-  logLevel: LogLevel;
+  logLevel: ShopifyCheckoutLogLevel;
   manualSrc: string;
   settingsCollapsed: boolean;
   eventsCollapsed: boolean;

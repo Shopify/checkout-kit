@@ -1,6 +1,6 @@
 # Web Component Playground
 
-A development harness for the `<shopify-checkout>` web component. It imports the same entry as published consumers (`@shopify/checkout-kit/shopify-checkout`, aliased to `../src/components/shopify-checkout/register.ts` in dev), registers the custom element, and logs Checkout Kit lifecycle events.
+A development harness for Checkout Kit's Web components. The standard checkout page imports `@shopify/checkout-kit/shopify-checkout`, registers the custom element, and logs Checkout Kit lifecycle events. The [Universal Checkout sample](universal-checkout/README.md) is available at `/universal-checkout/` and the [Shop Pay sample](shop-pay/README.md) at `/shop-pay/` on the same server. Links in each page's top bar switch between the three samples.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ pnpm sample:cdn
 
 This follows the CDN-only merchant integration path: it typechecks the playground against the
 built `@shopify/checkout-kit` package declarations, then loads
-`https://cdn.shopify.com/checkout-kit/v4/unstable/web-components.js` at runtime and calls
+`https://cdn.shopify.com/checkout-kit/v4/unstable/checkout-kit.js` at runtime and calls
 `loadComponents(["shopify-checkout"])`. There is no local runtime fallback. A CDN entry-module,
 component-chunk, or registration failure prevents the playground from starting.
 

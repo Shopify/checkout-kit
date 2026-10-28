@@ -22,6 +22,26 @@ describe("checkout telemetry factory", () => {
     vi.restoreAllMocks();
   });
 
+  it("records package metrics through the client it creates", async () => {
+    const { createTelemetry } = await import("./telemetry");
+    const client = createTelemetry();
+    clients.push(client);
+    client.record({
+      type: "counter",
+      name: "checkout_kit_widget_shown",
+      attributes: {},
+      product: "accelerated_checkouts",
+    });
+
+    await expect(client.flush()).resolves.toBe(true);
+
+    const [, body] = log.mock.calls[0]!;
+    const metrics = body.resourceMetrics[0].scopeMetrics[0].metrics;
+    expect(metrics.map((metric: { name: string }) => metric.name)).toEqual([
+      "checkout_kit_widget_shown",
+    ]);
+  });
+
   it.each([undefined, "console"])("keeps dev telemetry local with mode %s", async (mode) => {
     vi.stubEnv("VITE_CK_TELEMETRY", mode);
     const { createTelemetry } = await import("./telemetry");

@@ -28,7 +28,7 @@ import com.shopify.checkoutkit.checkout.LogLevel;
 import com.shopify.checkoutkit.checkout.PreloadState;
 import com.shopify.checkoutkit.checkout.PreloadStateListener;
 import com.shopify.checkoutkit.checkout.Preloading;
-import com.shopify.checkoutkit.checkout.ShopifyCheckoutKit;
+import com.shopify.checkoutkit.checkout.ShopifyCheckout;
 import com.shopify.checkoutkit.checkout.Telemetry;
 import com.shopify.reactnative.checkoutkit.ShopifyCheckoutKitModule;
 import com.shopify.reactnative.checkoutkit.CustomCheckoutListener;
@@ -135,13 +135,13 @@ public class ShopifyCheckoutKitModuleTest {
     }
 
     // Reset configuration to initial state after each test
-    ShopifyCheckoutKit.configure(configuration -> {
+    ShopifyCheckout.configure(configuration -> {
       configuration.setAppearance(initialAppearance);
       configuration.setLogLevel(initialLogLevel);
       configuration.setPreloading(initialPreloading);
       configuration.setTelemetry(initialTelemetry);
-      ShopifyCheckoutKitModule.checkoutConfig = configuration;
     });
+    ShopifyCheckoutKitModule.checkoutConfig = ShopifyCheckout.getConfiguration();
   }
 
   /**
@@ -150,10 +150,10 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanPresentCheckout() {
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       String checkoutUrl = "https://shopify.com";
-      mockedShopifyCheckoutKit.when(() -> ShopifyCheckoutKit.present(
+      mockedShopifyCheckoutKit.when(() -> ShopifyCheckout.present(
           eq(checkoutUrl), any(), any())).thenReturn(mock(CheckoutHandle.class));
       shopifyCheckoutKitModule.present(checkoutUrl, "default", presentationResult);
 
@@ -161,7 +161,7 @@ public class ShopifyCheckoutKitModuleTest {
       runnableCaptor.getValue().run();
 
       mockedShopifyCheckoutKit.verify(() ->
-          ShopifyCheckoutKit.present(eq(checkoutUrl), eq(mockComponentActivity), any()));
+          ShopifyCheckout.present(eq(checkoutUrl), eq(mockComponentActivity), any()));
     }
   }
 
@@ -171,13 +171,13 @@ public class ShopifyCheckoutKitModuleTest {
       ((Runnable) invocation.getArgument(0)).run();
       return null;
     }).when(mockComponentActivity).runOnUiThread(any());
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       CheckoutHandle sheet = mock(CheckoutHandle.class);
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+      nativeKit.when(() -> ShopifyCheckout.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(sheet);
       shopifyCheckoutKitModule.present("https://example.test/first", "handled", presentationResult);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(eq("https://example.test/first"), eq(mockComponentActivity), listeners.capture()));
+      nativeKit.verify(() -> ShopifyCheckout.present(eq("https://example.test/first"), eq(mockComponentActivity), listeners.capture()));
       shopifyCheckoutKitModule.present("https://example.test/second", "cancel", presentationResult);
       nativeKit.verifyNoMoreInteractions();
       verify(presentationResult).invoke(true);
@@ -207,16 +207,16 @@ public class ShopifyCheckoutKitModuleTest {
       return null;
     }).when(mockComponentActivity).runOnUiThread(any());
 
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       // Published native handles dismiss silently; the bridge must finish its own lifecycle.
       CheckoutHandle firstSheet = mock(CheckoutHandle.class);
       CheckoutHandle secondSheet = mock(CheckoutHandle.class);
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+      nativeKit.when(() -> ShopifyCheckout.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, secondSheet);
 
       shopifyCheckoutKitModule.present("https://example.com/first", "default", presentationResult);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       CustomCheckoutListener firstListener = listeners.getValue();
       if (detachActivity) when(mockReactContext.getCurrentActivity()).thenReturn(null);
@@ -234,7 +234,7 @@ public class ShopifyCheckoutKitModuleTest {
       shadowOf(Looper.getMainLooper()).idle();
       when(mockReactContext.getCurrentActivity()).thenReturn(mockComponentActivity);
       shopifyCheckoutKitModule.present("https://example.com/second", "default", presentationResult);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/second"), eq(mockComponentActivity), listeners.capture()));
       assertThat(listeners.getValue().isReleased()).isFalse();
 
@@ -257,14 +257,14 @@ public class ShopifyCheckoutKitModuleTest {
       return null;
     }).when(mockComponentActivity).runOnUiThread(any());
 
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       CheckoutHandle sheet = mock(CheckoutHandle.class);
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
       Callback ignoredResult = mock(Callback.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+      nativeKit.when(() -> ShopifyCheckout.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(sheet);
       shopifyCheckoutKitModule.present("https://example.com/first", "open", presentationResult);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       CustomCheckoutListener listener = listeners.getValue();
       shopifyCheckoutKitModule.onDispatch = event -> {
@@ -275,7 +275,7 @@ public class ShopifyCheckoutKitModuleTest {
       listener.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
 
       verify(ignoredResult).invoke(false);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/ignored"), any(), any()), never());
       assertThat(listener.isReleased()).isFalse();
 
@@ -300,16 +300,16 @@ public class ShopifyCheckoutKitModuleTest {
       return null;
     }).when(mockComponentActivity).runOnUiThread(any());
 
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       CheckoutHandle firstSheet = mock(CheckoutHandle.class);
       CheckoutHandle secondSheet = mock(CheckoutHandle.class);
       ArgumentCaptor<CustomCheckoutListener> listeners = ArgumentCaptor.forClass(CustomCheckoutListener.class);
       Callback ignoredResult = mock(Callback.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+      nativeKit.when(() -> ShopifyCheckout.present(anyString(), eq(mockComponentActivity), any()))
           .thenReturn(firstSheet, firstSheet, firstSheet, secondSheet);
       shopifyCheckoutKitModule.present("https://example.com/first", "default", presentationResult);
       verify(presentationResult).invoke(true);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/first"), eq(mockComponentActivity), listeners.capture()));
       shopifyCheckoutKitModule.onDispatch = event -> {
         shopifyCheckoutKitModule.onDispatch = null;
@@ -319,7 +319,7 @@ public class ShopifyCheckoutKitModuleTest {
       if (terminal.equals("buyer")) listeners.getValue().onCheckoutDismissed();
       else shopifyCheckoutKitModule.dismiss();
       shadowOf(Looper.getMainLooper()).idle();
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/ignored"), eq(mockComponentActivity), listeners.capture()));
       assertThat(listeners.getValue().isReleased()).isTrue();
       verify(ignoredResult).invoke(false);
@@ -334,7 +334,7 @@ public class ShopifyCheckoutKitModuleTest {
 
       shopifyCheckoutKitModule.present("https://example.com/after-close", "default", presentationResult);
       verify(presentationResult, times(2)).invoke(true);
-      nativeKit.verify(() -> ShopifyCheckoutKit.present(
+      nativeKit.verify(() -> ShopifyCheckout.present(
           eq("https://example.com/after-close"), eq(mockComponentActivity), listeners.capture()));
       assertThat(listeners.getValue().isReleased()).isFalse();
       listeners.getValue().onCheckoutDismissed();
@@ -349,8 +349,8 @@ public class ShopifyCheckoutKitModuleTest {
       ((Runnable) invocation.getArgument(0)).run();
       return null;
     }).when(mockComponentActivity).runOnUiThread(any());
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
-      nativeKit.when(() -> ShopifyCheckoutKit.present(anyString(), eq(mockComponentActivity), any()))
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
+      nativeKit.when(() -> ShopifyCheckout.present(anyString(), eq(mockComponentActivity), any()))
           .thenAnswer(invocation -> {
             CustomCheckoutListener listener = invocation.getArgument(2);
             listener.onCheckoutFailed(new CheckoutFailureEvent(cartExpired()));
@@ -366,7 +366,7 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testInvalidationCancelsQueuedPresentation() {
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       shopifyCheckoutKitModule.present("https://example.com/checkout", "default", presentationResult);
       verify(mockComponentActivity).runOnUiThread(runnableCaptor.capture());
       shopifyCheckoutKitModule.invalidate();
@@ -381,12 +381,12 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanPreloadCheckout() {
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       String checkoutUrl = "https://shopify.com";
       CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
       mockedShopifyCheckoutKit
-          .when(() -> ShopifyCheckoutKit.preload(
+          .when(() -> ShopifyCheckout.preload(
               eq(checkoutUrl),
               eq(mockComponentActivity),
               any(PreloadStateListener.class)))
@@ -394,7 +394,7 @@ public class ShopifyCheckoutKitModuleTest {
 
       shopifyCheckoutKitModule.preload(checkoutUrl, "preload-request");
 
-      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckout.preload(
           eq(checkoutUrl),
           eq(mockComponentActivity),
           any(PreloadStateListener.class)));
@@ -403,14 +403,14 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testPreloadSerializesWebContentUnavailable() {
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       String checkoutUrl = "https://shopify.com";
       CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
       ArgumentCaptor<PreloadStateListener> listenerCaptor =
           ArgumentCaptor.forClass(PreloadStateListener.class);
       mockedShopifyCheckoutKit
-          .when(() -> ShopifyCheckoutKit.preload(
+          .when(() -> ShopifyCheckout.preload(
               eq(checkoutUrl),
               eq(mockComponentActivity),
               any(PreloadStateListener.class)))
@@ -418,7 +418,7 @@ public class ShopifyCheckoutKitModuleTest {
 
       shopifyCheckoutKitModule.preload(checkoutUrl, "preload-request");
 
-      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckoutKit.preload(
+      mockedShopifyCheckoutKit.verify(() -> ShopifyCheckout.preload(
           eq(checkoutUrl),
           eq(mockComponentActivity),
           listenerCaptor.capture()));
@@ -437,8 +437,8 @@ public class ShopifyCheckoutKitModuleTest {
   public void testPreloadEmitsIdleWithoutComponentActivity() {
     when(mockReactContext.getCurrentActivity()).thenReturn(null);
 
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
 
       mockedShopifyCheckoutKit.verifyNoInteractions();
@@ -450,14 +450,14 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testPreloadPreservesJavaScriptStateEventsAndIdleReasons() throws Exception {
-    try (MockedStatic<ShopifyCheckoutKit> nativeKit = Mockito.mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> nativeKit = Mockito.mockStatic(ShopifyCheckout.class)) {
       ArgumentCaptor<PreloadStateListener> listenerCaptor =
           ArgumentCaptor.forClass(PreloadStateListener.class);
-      nativeKit.when(() -> ShopifyCheckoutKit.preload(
+      nativeKit.when(() -> ShopifyCheckout.preload(
           eq("https://example.com/checkout"), eq(mockComponentActivity), any(PreloadStateListener.class)))
           .thenReturn(mock(CheckoutPreload.class));
       shopifyCheckoutKitModule.preload("https://example.com/checkout", "preload-request");
-      nativeKit.verify(() -> ShopifyCheckoutKit.preload(
+      nativeKit.verify(() -> ShopifyCheckout.preload(
           eq("https://example.com/checkout"), eq(mockComponentActivity), listenerCaptor.capture()));
 
       PreloadState[] states = {
@@ -486,31 +486,31 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testCanInvalidatePreloadCache() {
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
       mockedShopifyCheckoutKit
-          .when(() -> ShopifyCheckoutKit.preload(
+          .when(() -> ShopifyCheckout.preload(
               anyString(),
               eq(mockComponentActivity),
               any(PreloadStateListener.class)))
           .thenReturn(checkoutPreload);
 
       shopifyCheckoutKitModule.preload("https://shopify.com", "preload-request");
-      shopifyCheckoutKitModule.invalidateCache();
+      shopifyCheckoutKitModule.clearPreload();
 
       verify(checkoutPreload).setListener(null);
-      mockedShopifyCheckoutKit.verify(ShopifyCheckoutKit::invalidate);
+      mockedShopifyCheckoutKit.verify(ShopifyCheckout::clearPreload);
     }
   }
 
   @Test
   public void testModuleInvalidationDetachesPreloadListener() {
-    try (MockedStatic<ShopifyCheckoutKit> mockedShopifyCheckoutKit = Mockito
-        .mockStatic(ShopifyCheckoutKit.class)) {
+    try (MockedStatic<ShopifyCheckout> mockedShopifyCheckoutKit = Mockito
+        .mockStatic(ShopifyCheckout.class)) {
       CheckoutPreload checkoutPreload = mock(CheckoutPreload.class);
       mockedShopifyCheckoutKit
-          .when(() -> ShopifyCheckoutKit.preload(
+          .when(() -> ShopifyCheckout.preload(
               anyString(),
               eq(mockComponentActivity),
               any(PreloadStateListener.class)))
@@ -643,7 +643,7 @@ public class ShopifyCheckoutKitModuleTest {
   public void testCanSetDarkAppAppearance() {
     JavaOnlyMap config = appAppearanceConfig("dark");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("dark");
@@ -651,11 +651,11 @@ public class ShopifyCheckoutKitModuleTest {
 
   @Test
   public void testUnknownColorSchemeKeepsTheCurrentAppearance() {
-    shopifyCheckoutKitModule.setConfig(appAppearanceConfig("dark"));
+    applyConfig(appAppearanceConfig("dark"));
 
     JavaOnlyMap config = appAppearanceConfig("sepia");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("dark");
@@ -665,7 +665,7 @@ public class ShopifyCheckoutKitModuleTest {
   public void testUnknownColorSchemeKeepsTheNativeDefaultAppearance() {
     JavaOnlyMap config = appAppearanceConfig("sepia");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
         .isEqualTo("storefront");
@@ -679,7 +679,7 @@ public class ShopifyCheckoutKitModuleTest {
     allowedMessageOrigins.pushString("https://*.example.com");
     config.putArray("allowedMessageOrigins", allowedMessageOrigins);
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAllowedMessageOrigins())
         .containsExactlyInAnyOrder("https://example.com", "https://*.example.com");
@@ -692,9 +692,9 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap appearance = JavaOnlyMap.of("type", "app", "colorScheme", "dark");
     appearance.putMap("colors", JavaOnlyMap.of(
         "android", JavaOnlyMap.of("progressIndicatorColor", "#112233")));
-    shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("appearance", appearance));
+    applyConfig(JavaOnlyMap.of("appearance", appearance));
 
-    shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("logLevel", "debug", "preloading", false));
+    applyConfig(JavaOnlyMap.of("logLevel", "debug", "preloading", false));
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()).isEqualTo(new CheckoutAppearance.App(
         new ColorScheme.Dark().customize(colors -> {
@@ -702,7 +702,7 @@ public class ShopifyCheckoutKitModuleTest {
           return kotlin.Unit.INSTANCE;
         })));
 
-    shopifyCheckoutKitModule.setConfig(appAppearanceConfig("dark"));
+    applyConfig(appAppearanceConfig("dark"));
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getAppearance())
         .isEqualTo(new CheckoutAppearance.App(new ColorScheme.Dark()));
@@ -717,7 +717,7 @@ public class ShopifyCheckoutKitModuleTest {
       appearance.putMap("colors", JavaOnlyMap.of(
           "android", JavaOnlyMap.of("progressIndicatorColor", "#112233")));
 
-      shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("appearance", appearance));
+      applyConfig(JavaOnlyMap.of("appearance", appearance));
 
       ReadableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -741,7 +741,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "debug");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.DEBUG);
@@ -752,7 +752,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "error");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.ERROR);
@@ -763,7 +763,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "none");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.NONE);
@@ -774,7 +774,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "warn");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.WARN);
@@ -786,7 +786,7 @@ public class ShopifyCheckoutKitModuleTest {
       JavaOnlyMap config = new JavaOnlyMap();
       config.putString("logLevel", logLevel.name().toLowerCase(Locale.ROOT));
 
-      shopifyCheckoutKitModule.setConfig(config);
+      applyConfig(config);
 
       assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
           .isEqualTo(logLevel);
@@ -797,12 +797,12 @@ public class ShopifyCheckoutKitModuleTest {
   public void testInvalidLogLevelKeepsTheCurrentLevel() {
     JavaOnlyMap debugConfig = new JavaOnlyMap();
     debugConfig.putString("logLevel", "debug");
-    shopifyCheckoutKitModule.setConfig(debugConfig);
+    applyConfig(debugConfig);
 
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "invalid");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.DEBUG);
@@ -813,7 +813,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "DEBUG");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.DEBUG);
@@ -824,7 +824,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "Debug");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.DEBUG);
@@ -835,7 +835,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "ERROR");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.ERROR);
@@ -845,11 +845,11 @@ public class ShopifyCheckoutKitModuleTest {
   public void testSetConfigWithoutLogLevelKeepsTheNativeLevel() {
     JavaOnlyMap debugConfig = new JavaOnlyMap();
     debugConfig.putString("logLevel", "debug");
-    shopifyCheckoutKitModule.setConfig(debugConfig);
+    applyConfig(debugConfig);
 
     JavaOnlyMap config = new JavaOnlyMap();
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel())
         .isEqualTo(LogLevel.DEBUG);
@@ -860,7 +860,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putBoolean("preloading", false);
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getPreloading().getEnabled())
         .isFalse();
@@ -871,7 +871,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putBoolean("preloading", false);
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -884,7 +884,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putBoolean("telemetry", false);
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     assertThat(ShopifyCheckoutKitModule.checkoutConfig.getTelemetry().getEnabled())
         .isFalse();
@@ -894,7 +894,7 @@ public class ShopifyCheckoutKitModuleTest {
   public void testGetConfigIncludesTelemetry() {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putBoolean("telemetry", false);
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -906,7 +906,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "debug");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -919,7 +919,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "error");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -932,7 +932,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "none");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -947,7 +947,7 @@ public class ShopifyCheckoutKitModuleTest {
       JavaOnlyMap config = new JavaOnlyMap();
       config.putString("logLevel", name);
 
-      shopifyCheckoutKitModule.setConfig(config);
+      applyConfig(config);
 
       assertThat(shopifyCheckoutKitModule.getConfig().getString("logLevel"))
           .isEqualTo(name);
@@ -959,7 +959,7 @@ public class ShopifyCheckoutKitModuleTest {
     JavaOnlyMap config = new JavaOnlyMap();
     config.putString("logLevel", "invalid");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     WritableMap result = shopifyCheckoutKitModule.getConfig();
 
@@ -973,6 +973,59 @@ public class ShopifyCheckoutKitModuleTest {
 
     assertThat(result).isNotNull();
     assertThat(result.getString("logLevel")).isEqualTo("warn");
+  }
+
+  @Test
+  public void testSetConfigResolvesAfterTheConfigurationIsCommitted() {
+    List<String> observedAtResolve = new ArrayList<>();
+    PromiseMock promise = new PromiseMock() {
+      @Override
+      public void resolve(Object value) {
+        observedAtResolve.add(logLevelStringOf(ShopifyCheckoutKitModule.checkoutConfig.getLogLevel()));
+        observedAtResolve.add(shopifyCheckoutKitModule.getConfig().getString("logLevel"));
+        super.resolve(value);
+      }
+    };
+
+    shopifyCheckoutKitModule.setConfig(JavaOnlyMap.of("logLevel", "debug"), promise);
+
+    assertThat(promise.resolved).isTrue();
+    assertThat(observedAtResolve).containsExactly("debug", "debug");
+    assertThat(((ReadableMap) promise.resolvedValue).getString("logLevel")).isEqualTo("debug");
+  }
+
+  @Test
+  public void testConsecutiveSetConfigCallsResolveWithTheirOwnConfigurationInCallOrder() {
+    List<String> resolvedLogLevels = new ArrayList<>();
+    Consumer<String> setLogLevel = logLevel -> shopifyCheckoutKitModule.setConfig(
+        JavaOnlyMap.of("logLevel", logLevel),
+        new PromiseMock() {
+          @Override
+          public void resolve(Object value) {
+            resolvedLogLevels.add(logLevel + ":" + ((ReadableMap) value).getString("logLevel"));
+          }
+        });
+
+    setLogLevel.accept("debug");
+    setLogLevel.accept("error");
+
+    assertThat(resolvedLogLevels).containsExactly("debug:debug", "error:error");
+    assertThat(shopifyCheckoutKitModule.getConfig().getString("logLevel")).isEqualTo("error");
+  }
+
+  @Test
+  public void testSetConfigRejectsAndAppliesNothingWhenAnInputCannotBeRead() {
+    PromiseMock promise = new PromiseMock();
+
+    // preloading is valid and comes first. An origin that is not a string makes ReadableArray.getString throw.
+    JavaOnlyMap config = JavaOnlyMap.of("preloading", false, "allowedMessageOrigins", JavaOnlyArray.of(1));
+    shopifyCheckoutKitModule.setConfig(config, promise);
+
+    assertThat(promise.resolved).isFalse();
+    assertThat(promise.rejectedCode).isEqualTo("set_config_failed");
+    assertThat(promise.rejectedThrowable).isNotNull();
+    assertThat(ShopifyCheckout.getConfiguration().getPreloading().getEnabled()).isTrue();
+    assertThat(shopifyCheckoutKitModule.getConfig().getBoolean("preloading")).isTrue();
   }
 
   /**
@@ -1053,7 +1106,7 @@ public class ShopifyCheckoutKitModuleTest {
     // Set up configuration
     JavaOnlyMap config = appAppearanceConfig("dark");
 
-    shopifyCheckoutKitModule.setConfig(config);
+    applyConfig(config);
 
     // Verify configuration was applied
     assertThat(colorSchemeIdOf(ShopifyCheckoutKitModule.checkoutConfig.getAppearance()))
@@ -1079,7 +1132,20 @@ public class ShopifyCheckoutKitModuleTest {
     return JavaOnlyMap.of("appearance", JavaOnlyMap.of("type", "app", "colorScheme", colorScheme));
   }
 
+  private static String logLevelStringOf(LogLevel logLevel) {
+    return logLevel.name().toLowerCase(Locale.ROOT);
+  }
+
+  /** Calls setConfig and checks that its Promise resolved. */
+  private PromiseMock applyConfig(ReadableMap config) {
+    PromiseMock promise = new PromiseMock();
+    shopifyCheckoutKitModule.setConfig(config, promise);
+    assertThat(promise.resolved).as("setConfig resolved").isTrue();
+    return promise;
+  }
+
   private static class PromiseMock implements Promise {
+    public boolean resolved;
     public Object resolvedValue;
     public String rejectedCode;
     public String rejectedMessage;
@@ -1087,6 +1153,7 @@ public class ShopifyCheckoutKitModuleTest {
 
     @Override
     public void resolve(Object value) {
+      resolved = true;
       resolvedValue = value;
     }
 

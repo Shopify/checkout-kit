@@ -402,6 +402,27 @@ function AppWithContext() {
 const shopifyCheckout = new ShopifyCheckout(config);
 ```
 
+`setConfig` returns a Promise that resolves after the native SDK applies the
+configuration. The Promise resolves with the configuration that the native SDK
+reports right after it applies this call, so overlapping calls each get their
+own result. If you call `getConfig()` before the Promise resolves, it can return
+the earlier values. Calls apply and resolve in the order you make them.
+
+```tsx
+const applied = await shopifyCheckout.setConfig({logLevel: LogLevel.debug});
+
+applied.logLevel; // 'debug'
+```
+
+The Promise rejects only when the native module cannot read the configuration,
+for example when a value has the wrong type. A rejected call changes nothing.
+Input that the SDK ignores, such as an unknown `logLevel`, still resolves, and
+the resolved configuration keeps the current value.
+`useShopifyCheckout().setConfig` returns the same result. The
+`ShopifyCheckout` constructor and the `ShopifyCheckoutProvider`
+`configuration` prop apply the configuration for you and log a rejection with
+`console.error`.
+
 ### Appearance
 
 `appearance` mirrors the native `CheckoutAppearance` on iOS and Android. It
@@ -491,12 +512,12 @@ const config: Configuration = {
 With `colorScheme: CheckoutColorScheme.automatic` (or no `colorScheme`), both
 platforms accept shared colors and separate `light` and `dark` colors. On iOS,
 checkout switches between them when the system appearance changes. On Android,
-checkout picks the colors for the system appearance when it opens, and does not
-update them while it is open. Shared colors apply in both modes. Colors in
-`light` or `dark` override them in that mode. You can omit `light`, `dark` or
-both. In `light` or `dark`, set `closeIconTintColor`, `headerBorderColor` or
-Android's `dragHandleColor` to `null` to remove a shared color and use the
-native default in that mode.
+it does the same when the host activity declares `uiMode` in
+`android:configChanges`, as the React Native template does.
+Shared colors apply in both modes. Colors in `light` or `dark` override them in
+that mode. You can omit `light`, `dark` or both. In `light` or `dark`, set
+`closeIconTintColor`, `headerBorderColor` or Android's `dragHandleColor` to
+`null` to remove a shared color and use the native default in that mode.
 
 ```tsx
 import {CheckoutAppearanceType} from '@shopify/checkout-kit-react-native';
@@ -610,7 +631,7 @@ The `title` configuration attribute sets the checkout sheet title at runtime on
 **both iOS and Android**:
 
 ```tsx
-shopify.setConfig({title: 'Checkout'});
+await shopify.setConfig({title: 'Checkout'});
 ```
 
 Use `setConfig({title: dynamicTitle})` when you derive or retrieve the value at
@@ -808,7 +829,7 @@ let preloadSubscription: CheckoutPreloadSubscription | undefined;
 
 function preloadCart(cart: Cart) {
   if (!cart.checkoutUrl || cart.totalQuantity === 0) {
-    shopifyCheckout.invalidate();
+    shopifyCheckout.clearPreload();
     return;
   }
 
@@ -839,13 +860,13 @@ function onCartScreenDisposed() {
 ```
 
 Each explicit `preload(...)` call refreshes the cached checkout, even when the
-`checkoutUrl` is unchanged. No separate `invalidate()` call is needed after a
+`checkoutUrl` is unchanged. No separate `clearPreload()` call is needed after a
 successful cart mutation.
 
 Removing the subscription only stops observation. It intentionally leaves the
 preloaded checkout available so navigation from the cart to checkout can reuse
-it. Use `invalidate()` when the cart becomes empty or the cached checkout is no
-longer applicable.
+it. Use `clearPreload()` when the cart becomes empty or the cached checkout is
+no longer applicable.
 
 ### Important considerations
 
@@ -877,12 +898,12 @@ Instead, a better approach is to call `preload()` when you have a strong enough 
 
 ### Cache invalidation
 
-To manually clear the preload cache, call `invalidate()` on your `ShopifyCheckout`
-instance or the value returned by `useShopifyCheckout()`.
+To manually clear the preload cache, call `clearPreload()` on your
+`ShopifyCheckout` instance or the value returned by `useShopifyCheckout()`.
 
 Updating configuration through `shopifyCheckout.setConfig(...)` or the
 `configuration` prop on `ShopifyCheckoutProvider` triggers
-`shopifyCheckout.invalidate()`. Discarding cached preloads avoids presenting a
+`shopifyCheckout.clearPreload()`. Discarding cached preloads avoids presenting a
 stale checkout. If a preload may already have run when configuration changes,
 call `preload` again. Keep a provider's configuration object stable across renders to
 avoid unintentionally invalidating preloads.

@@ -75,6 +75,8 @@ private final class RecordingCheckoutTelemetryRecorder: CheckoutTelemetryRecordi
     }
 
     func recordProtocolDecodeError(_: TelemetryProtocolDecodeErrorMetric) {}
+    func recordConfirmationReached(_: TelemetryConfirmationReachedMetric) {}
     func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
     func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
+    func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
 }

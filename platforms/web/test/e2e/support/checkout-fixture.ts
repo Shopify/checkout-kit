@@ -1,4 +1,4 @@
-import type { Checkout } from "@shopify/checkout-kit";
+import type { ShopifyCheckoutSnapshot as Checkout } from "@shopify/checkout-kit";
 
 export const checkoutOrigin = "https://checkout.example.test";
 export const checkoutId = "checkout_test_1";

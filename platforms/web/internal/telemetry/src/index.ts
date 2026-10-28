@@ -2,6 +2,7 @@ export {
   createCheckoutKitTelemetry,
   createCheckoutKitTelemetryForTesting,
 } from './client';
+export type {RecordingMeasurement} from './recording';
 export type {
   CheckoutKitTelemetry,
   TelemetryPlatform,

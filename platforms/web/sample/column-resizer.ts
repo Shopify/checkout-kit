@@ -17,7 +17,7 @@ const CSS_VAR: Record<ColumnSide, string> = {
   right: "--col-right",
 };
 
-const STORAGE_KEY: Record<ColumnSide, string> = {
+const DEFAULT_STORAGE_KEYS: Record<ColumnSide, string> = {
   left: STORAGE_KEYS.columnLeft,
   right: STORAGE_KEYS.columnRight,
 };
@@ -28,6 +28,8 @@ type ColumnResizerDeps = {
   rightPanel: HTMLElement;
   leftHandle: HTMLElement;
   rightHandle: HTMLElement;
+  /** Where each column width is saved. Defaults to the Checkout playground's keys. */
+  storageKeys?: Record<ColumnSide, string>;
   readWidth?: (side: ColumnSide) => number;
   readPersisted?: (side: ColumnSide) => number | null;
   persist?: (side: ColumnSide, px: number | null) => void;
@@ -43,11 +45,12 @@ export function createColumnResizer(deps: ColumnResizerDeps): ColumnResizer {
   const panel: Record<ColumnSide, HTMLElement> = { left: leftPanel, right: rightPanel };
   const handle: Record<ColumnSide, HTMLElement> = { left: leftHandle, right: rightHandle };
 
+  const storageKeys = deps.storageKeys ?? DEFAULT_STORAGE_KEYS;
   const readWidth = deps.readWidth ?? ((side) => panel[side].getBoundingClientRect().width);
   const readPersisted =
-    deps.readPersisted ?? ((side) => parseColumnWidth(readStorage(STORAGE_KEY[side])));
+    deps.readPersisted ?? ((side) => parseColumnWidth(readStorage(storageKeys[side])));
   const persist =
-    deps.persist ?? ((side, px) => writeStorage(STORAGE_KEY[side], px === null ? "" : String(px)));
+    deps.persist ?? ((side, px) => writeStorage(storageKeys[side], px === null ? "" : String(px)));
 
   function currentWidth(side: ColumnSide): number {
     const fromVar = parseColumnWidth(layout.style.getPropertyValue(CSS_VAR[side]));

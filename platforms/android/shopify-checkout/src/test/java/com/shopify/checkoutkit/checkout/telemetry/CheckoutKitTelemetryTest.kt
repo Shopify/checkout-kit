@@ -3,6 +3,7 @@ package com.shopify.checkoutkit.checkout.telemetry
 import com.shopify.checkoutkit.internal.telemetry.CheckoutKitTelemetry
 import com.shopify.checkoutkit.internal.telemetry.CheckoutKitTelemetryConfiguration
 import com.shopify.checkoutkit.internal.telemetry.OtlpExporter
+import com.shopify.checkoutkit.internal.telemetry.TelemetryConfirmationReachedMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryDecodeFailureType
 import com.shopify.checkoutkit.internal.telemetry.TelemetryErrorCategory
 import com.shopify.checkoutkit.internal.telemetry.TelemetryErrorCode
@@ -17,6 +18,8 @@ import com.shopify.checkoutkit.internal.telemetry.TelemetryPlatform
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProduct
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolDecodeErrorMetric
 import com.shopify.checkoutkit.internal.telemetry.TelemetryProtocolMethod
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationMetric
+import com.shopify.checkoutkit.internal.telemetry.TelemetryReadyDurationResult
 import com.shopify.checkoutkit.internal.telemetry.TelemetryTransport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -147,6 +150,33 @@ class CheckoutKitTelemetryTest {
     }
 
     @Test
+    fun `records finite non-negative ready durations only`() {
+        val request = RecordedRequest()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val telemetry = OtlpExporter(
+            configuration = CheckoutKitTelemetryConfiguration(sdkVersion = "1.2.3"),
+            clock = { 1 },
+            transport = TelemetryTransport { _, body ->
+                request.body = body
+                true
+            },
+            executor = executor,
+        )
+
+        telemetry.recordReadyDuration(TelemetryReadyDurationMetric(-1.0, TelemetryReadyDurationResult.Ready, false))
+        telemetry.recordReadyDuration(TelemetryReadyDurationMetric(450.0, TelemetryReadyDurationResult.NotReady, true))
+
+        assertThat(flush(telemetry)).isTrue()
+        assertThat(request.body).contains(
+            "checkout_kit_ready_duration_ms",
+            "\"stringValue\":\"not_ready\"",
+            "\"count\":\"1\"",
+            "\"sum\":450.0",
+        )
+        executor.shutdownNow()
+    }
+
+    @Test
     fun `shutdown bypasses export backoff`() {
         val executor = Executors.newSingleThreadScheduledExecutor()
         val exportAttempts = AtomicInteger()
@@ -205,6 +235,29 @@ class CheckoutKitTelemetryTest {
 
         assertThat(flush(telemetry)).isTrue()
         assertThat(request.body).contains("ec.buyer.change")
+        executor.shutdownNow()
+    }
+
+    @Test
+    fun `records confirmation pages reached with whether completion was received`() {
+        val request = RecordedRequest()
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val telemetry = OtlpExporter(
+            configuration = CheckoutKitTelemetryConfiguration(sdkVersion = "1.2.3"),
+            transport = TelemetryTransport { _, body ->
+                request.body = body
+                true
+            },
+            executor = executor,
+        )
+
+        telemetry.recordConfirmationReached(TelemetryConfirmationReachedMetric(completionReceived = false))
+
+        assertThat(flush(telemetry)).isTrue()
+        assertThat(request.body).contains(
+            "\"checkout_kit_confirmation_reached\"",
+            "\"key\":\"completion_received\",\"value\":{\"boolValue\":false}",
+        )
         executor.shutdownNow()
     }
 

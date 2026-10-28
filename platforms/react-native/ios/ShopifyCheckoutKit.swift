@@ -42,7 +42,7 @@ class RCTShopifyCheckoutKit: NSObject {
     override init() {
         // The new architecture can create modules off the main thread.
         Self.performOnMainActor {
-            ShopifyCheckoutKit.configure {
+            ShopifyCheckout.configure {
                 $0.platform = Platform.reactNative
             }
         }
@@ -120,9 +120,9 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func invalidateCache() {
+    @objc func clearPreload() {
         DispatchQueue.main.async {
-            ShopifyCheckoutKit.invalidate()
+            ShopifyCheckout.clearPreload()
             self.checkoutPreload = nil
         }
     }
@@ -163,7 +163,7 @@ class RCTShopifyCheckoutKit: NSObject {
 
     @MainActor
     func presentCheckout(_ url: URL, from viewController: UIViewController, delegate: CheckoutEventBridge) -> UIViewController {
-        ShopifyCheckoutKit.present(checkout: url, from: viewController, delegate: delegate)
+        ShopifyCheckout.present(checkout: url, from: viewController, delegate: delegate)
     }
 
     func emitDispatchEvent(_ json: String) {
@@ -180,7 +180,7 @@ class RCTShopifyCheckoutKit: NSObject {
                 return
             }
 
-            guard let checkoutPreload = ShopifyCheckoutKit.preload(checkout: url) else {
+            guard let checkoutPreload = ShopifyCheckout.preload(checkout: url) else {
                 self.emitPreloadStateChange(requestId: requestId, state: .idle())
                 return
             }
@@ -192,9 +192,16 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    @objc func setConfig(_ configuration: [AnyHashable: Any]) {
+    /// Resolves with the applied configuration, in the `getConfig` shape, after `CheckoutKitConfigurationUpdated` is
+    /// posted on the main queue. Calls from one thread apply and resolve in call order.
+    /// `ShopifyCheckout.configure` cannot throw, so this never rejects.
+    @objc func setConfig(
+        _ configuration: [AnyHashable: Any],
+        resolve: @escaping RCTPromiseResolveBlock,
+        reject _: @escaping RCTPromiseRejectBlock
+    ) {
         Self.performOnMainActor {
-            ShopifyCheckoutKit.configure { config in
+            ShopifyCheckout.configure { config in
                 if let title = configuration["title"] as? String {
                     config.title = title
                 }
@@ -221,11 +228,12 @@ class RCTShopifyCheckoutKit: NSObject {
             }
 
             NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
+            resolve(self.getConfig())
         }
     }
 
     @objc func getConfig() -> NSDictionary {
-        let configuration = ShopifyCheckoutKit.configuration
+        let configuration = ShopifyCheckout.configuration
         return [
             "title": configuration.title,
             "appearance": CheckoutAppearanceConfiguration.appearanceResultFor(configuration.appearance),

@@ -1,0 +1,17 @@
+{
+  "name": "@shopify/checkout-kit-universal-checkout",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./src/register.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./register": "./src/register.ts"
+  },
+  "dependencies": {
+    "@shopify/checkout-kit-core": "workspace:*",
+    "@shopify/checkout-kit-protocol": "workspace:*"
+  }
+}

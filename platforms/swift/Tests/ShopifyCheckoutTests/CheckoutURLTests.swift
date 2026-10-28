@@ -29,4 +29,24 @@ class CheckoutURLTests: XCTestCase {
         XCTAssertTrue(CheckoutURL(from: deeplink2).isDeepLink())
         XCTAssertTrue(CheckoutURL(from: deeplink3).isDeepLink())
     }
+
+    func testIsConfirmationPage() throws {
+        let confirmationURLs = [
+            "https://shop.com/checkouts/cn/123/thank-you",
+            "https://shop.com/checkouts/cn/123/thank_you?order_id=42",
+            "https://shop.com/checkouts/cn/123/THANK-YOU"
+        ]
+        let otherURLs = [
+            "https://shop.com/checkouts/cn/123",
+            "https://shop.com/checkouts/cn/123/processing",
+            "https://shop.com/pages/thank-you-notes"
+        ]
+
+        for string in confirmationURLs {
+            XCTAssertTrue(try CheckoutURL(from: XCTUnwrap(URL(string: string))).isConfirmationPage(), string)
+        }
+        for string in otherURLs {
+            XCTAssertFalse(try CheckoutURL(from: XCTUnwrap(URL(string: string))).isConfirmationPage(), string)
+        }
+    }
 }

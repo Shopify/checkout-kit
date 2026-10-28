@@ -5,8 +5,8 @@ React Native, and Web SDKs — React Native reports through the embedded native
 SDKs. It exports anonymous operational metrics using OTLP/HTTP JSON.
 
 The implementations intentionally do not install a global OpenTelemetry
-provider. They aggregate a small, closed set of Checkout Kit metrics and send
-them directly to the configured collector with bounded in-memory buffering and
+provider. They aggregate a small, closed set of Checkout Kit metrics, plus
+metrics a Web component records through the shared client, and send them directly to the configured collector with bounded in-memory buffering and
 bounded exponential backoff after export failures.
 
 ## Implementations

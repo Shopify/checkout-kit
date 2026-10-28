@@ -38,7 +38,6 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     private var scrollableChild: View? = null
     private var velocityTracker: VelocityTracker? = null
     private var openPreDrawListener: ViewTreeObserver.OnPreDrawListener? = null
-    private var scrollableChildDragDistance = 0f
     private var downX = 0f
     private var downY = 0f
     private var startDragOffsetY = 0f
@@ -70,89 +69,6 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
      */
     fun bindScrollableChild(child: View) {
         scrollableChild = child
-    }
-
-    /**
-     * Starts tracking a gesture that began inside the scrollable child.
-     */
-    fun startScrollableChildGesture(event: MotionEvent) {
-        if (!canHandleDragToDismiss) return
-
-        animate().cancel()
-        val currentOffsetY = (renderedDragOffsetY + translationY).coerceAtLeast(0f)
-        translationY = 0f
-        renderedDragOffsetY = offsetTopAndBottomTo(renderedDragOffsetY, currentOffsetY.roundToInt())
-        dragging = false
-        scrollableChildDragDistance = 0f
-        downX = event.rawX
-        downY = event.rawY
-        startDragOffsetY = currentOffsetY
-        dragOffsetY = currentOffsetY
-        gestureStartedOutsideScrollableChild = false
-        velocityTracker?.recycle()
-        velocityTracker = VelocityTracker.obtain().also { it.addMovement(event) }
-    }
-
-    /**
-     * Moves the sheet by drag distance the scrollable child hands off.
-     */
-    fun dragScrollableChildBy(dragDistance: Float, event: MotionEvent): Boolean {
-        val canDrag = canHandleDragToDismiss && dragDistance != 0f
-        var sheetDragDistance = 0f
-        if (canDrag && dragging) {
-            sheetDragDistance = dragDistance
-        } else if (canDrag && dragDistance > 0f) {
-            scrollableChildDragDistance += dragDistance
-            if (scrollableChildDragDistance > touchSlop) {
-                dragging = true
-                velocityTracker?.clear()
-                sheetDragDistance = scrollableChildDragDistance - touchSlop
-            }
-        }
-
-        var consumedBySheet = false
-        if (sheetDragDistance != 0f) {
-            val previousOffsetY = renderedDragOffsetY
-            val previousDragOffsetY = dragOffsetY
-            val targetDragOffsetY = previousDragOffsetY + sheetDragDistance
-            val unconsumedDragDistance = targetDragOffsetY.coerceAtMost(0f)
-            dragOffsetY = targetDragOffsetY.coerceAtLeast(0f)
-            val nextOffsetY = dragOffsetY.roundToInt()
-            val movedSheet = nextOffsetY != previousOffsetY
-            if (movedSheet) {
-                renderedDragOffsetY = offsetTopAndBottomTo(renderedDragOffsetY, nextOffsetY)
-            }
-            val reachedExpanded = sheetDragDistance < 0f && nextOffsetY == 0
-            if (reachedExpanded) {
-                dragOffsetY = 0f
-                dragging = false
-                scrollableChildDragDistance = 0f
-            }
-            consumedBySheet = movedSheet || sheetDragDistance != unconsumedDragDistance
-            if (consumedBySheet) {
-                velocityTracker?.addMovement(event)
-            }
-        }
-
-        return consumedBySheet
-    }
-
-    /**
-     * Settles or dismisses the sheet after a gesture that began inside the scrollable child.
-     */
-    fun finishScrollableChildGesture(cancelled: Boolean = false) {
-        if (dragging) {
-            if (cancelled) {
-                settleExpanded()
-            } else {
-                settleAfterDrag(
-                    distanceThreshold = DISMISS_DISTANCE_THRESHOLD,
-                    allowVelocityDismiss = true,
-                )
-            }
-        }
-        scrollableChildDragDistance = 0f
-        finishGesture()
     }
 
     /**
@@ -344,15 +260,12 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
     /**
      * Chooses whether a completed drag should dismiss the sheet or settle it back open.
      */
-    private fun settleAfterDrag(
-        distanceThreshold: Float = DISMISS_DISTANCE_THRESHOLD,
-        allowVelocityDismiss: Boolean = true,
-    ) {
+    private fun settleAfterDrag() {
         velocityTracker?.computeCurrentVelocity(MILLIS_PER_SECOND)
         val velocityY = velocityTracker?.yVelocity ?: 0f
         val sheetOffsetY = (renderedDragOffsetY + translationY).coerceAtLeast(0f)
-        val shouldDismiss = sheetOffsetY > height * distanceThreshold ||
-            (allowVelocityDismiss && velocityY > minimumFlingVelocity * FLING_VELOCITY_MULTIPLIER)
+        val shouldDismiss = sheetOffsetY > height * DISMISS_DISTANCE_THRESHOLD ||
+            velocityY > minimumFlingVelocity * FLING_VELOCITY_MULTIPLIER
 
         if (shouldDismiss) {
             animateDismiss { onDismissRequested?.invoke() }

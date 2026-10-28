@@ -72,8 +72,8 @@ export interface Spec extends TurboModule {
   ): void;
   preload(checkoutUrl: string, requestId: string): void;
   dismiss(): void;
-  invalidateCache(): void;
-  setConfig(configuration: ConfigurationSpec): void;
+  clearPreload(): void;
+  setConfig(configuration: ConfigurationSpec): Promise<ConfigurationResultSpec>;
   getConfig(): ConfigurationResultSpec;
   configureAcceleratedCheckouts(
     storefrontDomain: string,

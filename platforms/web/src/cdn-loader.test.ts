@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { loadComponents, supportedComponents, version } from "./cdn-loader";
+import { loadComponents, version } from "./cdn-loader";
 import packageJson from "../package.json";
 
 describe("Checkout Kit CDN loader", () => {
@@ -10,8 +10,6 @@ describe("Checkout Kit CDN loader", () => {
   });
 
   it("lists and loads the embedded checkout component", async () => {
-    expect(supportedComponents).toEqual(["shopify-checkout"]);
-
     await loadComponents(["shopify-checkout"]);
     await loadComponents(["shopify-checkout"]);
 
