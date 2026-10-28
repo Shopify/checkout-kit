@@ -1,7 +1,7 @@
 {
   "name": "@shopify/checkout-kit-react-native",
   "description": "A React Native library for Shopify's Checkout Kit.",
-  "version": "4.0.0-alpha.5",
+  "version": "4.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/Shopify/checkout-kit.git",
@@ -142,8 +142,8 @@
   },
   "checkoutKit": {
     "nativeSdkVersions": {
-      "ios": "4.0.0-alpha.11",
-      "android": "4.0.0-alpha.11"
+      "ios": "4.0.0",
+      "android": "4.0.0"
     }
   },
   "files": [
