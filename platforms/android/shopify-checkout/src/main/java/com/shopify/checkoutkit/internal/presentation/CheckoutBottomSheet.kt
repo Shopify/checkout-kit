@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.ComponentDialog
 import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.Insets
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -148,7 +149,7 @@ internal class CheckoutBottomSheet(
             }
             maxWidthPx = maxWidthDp.dpToPx(activity).roundToInt()
             dragToDismissEnabled = sheet.dismissal.dragToDismissEnabled
-            applySystemBarTopMargin(sheet.snapPoints.single())
+            applySystemBarMargins(sheet.snapPoints.single())
             onDismissRequested = {
                 if (!dismissing) {
                     log.d(LOG_TAG, "Dismissed by gesture.")
@@ -302,33 +303,37 @@ private fun ComponentActivity.isDarkTheme() =
     resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
 
 /**
- * Keeps the requested window top margin while preventing the sheet from overlapping the status bar.
+ * Keeps the requested window top margin while preventing the sheet from overlapping the status bar, and keeps
+ * the sheet clear of side system bars and display cutouts, such as a landscape navigation bar.
+ *
+ * Both side margins use the larger side inset, so a sheet narrower than the safe area stays centered in the window.
  */
-private fun View.applySystemBarTopMargin(snapPoint: CheckoutSheetSnapPoint) {
+private fun View.applySystemBarMargins(snapPoint: CheckoutSheetSnapPoint) {
     val initialLayoutParams = layoutParams as? ViewGroup.MarginLayoutParams ?: return
     val initialBottomMargin = initialLayoutParams.bottomMargin
-    updateVerticalMargins(topMargin = snapPoint.resolveTopMarginPx(this), bottomMargin = initialBottomMargin)
+    updateMargins(Insets.of(0, snapPoint.resolveTopMarginPx(this), 0, initialBottomMargin))
     ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
         val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-        view.updateVerticalMargins(
-            topMargin = snapPoint.resolveTopMarginPx(view, systemBars.top),
-            bottomMargin = initialBottomMargin,
+        val sideInsets = insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
         )
+        val sideMargin = maxOf(sideInsets.left, sideInsets.right)
+        val topMargin = snapPoint.resolveTopMarginPx(view, systemBars.top)
+        view.updateMargins(Insets.of(sideMargin, topMargin, sideMargin, initialBottomMargin))
         insets
     }
     ViewCompat.requestApplyInsets(this)
 }
 
 /**
- * Updates vertical margins only when they change, preserving configured sheet margins around inset updates.
+ * Updates margins only when they change, preserving configured sheet margins around inset updates.
  */
-private fun View.updateVerticalMargins(topMargin: Int, bottomMargin: Int) {
-    val marginLayoutParams = layoutParams as? ViewGroup.MarginLayoutParams ?: return
-    if (marginLayoutParams.topMargin == topMargin && marginLayoutParams.bottomMargin == bottomMargin) return
+private fun View.updateMargins(margins: Insets) {
+    val params = layoutParams as? ViewGroup.MarginLayoutParams ?: return
+    if (Insets.of(params.leftMargin, params.topMargin, params.rightMargin, params.bottomMargin) == margins) return
 
-    marginLayoutParams.topMargin = topMargin
-    marginLayoutParams.bottomMargin = bottomMargin
-    layoutParams = marginLayoutParams
+    params.setMargins(margins.left, margins.top, margins.right, margins.bottom)
+    layoutParams = params
 }
 
 /**

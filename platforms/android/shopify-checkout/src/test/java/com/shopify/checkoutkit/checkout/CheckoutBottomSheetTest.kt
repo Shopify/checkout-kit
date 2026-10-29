@@ -125,6 +125,52 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    fun `bottom sheet keeps clear of side navigation bar and display cutout`() {
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)!!
+        val navigationBarInset = 48f.dpToPx(activity).roundToInt()
+        val cutoutInset = 24f.dpToPx(activity).roundToInt()
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, navigationBarInset, 0))
+                .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.of(cutoutInset, 0, 0, 0))
+                .build(),
+        )
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.leftMargin).isEqualTo(navigationBarInset)
+        assertThat(layoutParams.rightMargin).isEqualTo(navigationBarInset)
+    }
+
+    @Test
+    fun `bottom sheet clears side margins when side insets go away`() {
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)!!
+        val navigationBarInset = 48f.dpToPx(activity).roundToInt()
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(navigationBarInset, 0, 0, 0))
+                .build(),
+        )
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
+                .build(),
+        )
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.leftMargin).isZero()
+        assertThat(layoutParams.rightMargin).isZero()
+    }
+
+    @Test
     fun `material expanded snap point uses wide window top margin above width threshold`() {
         ShopifyCheckout.configure {
             it.sheet = CheckoutSheetOptions(
