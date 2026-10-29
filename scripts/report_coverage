@@ -32,4 +32,5 @@ publisher = CoverageResultPublisher.new(
   token: token,
   source: source
 )
-puts publisher.publish(platform: platform, state: state, report: report, report_url: ENV["COVERAGE_REPORT_URL"])
+puts publisher.publish(platform: platform, state: state, report: report, report_url: ENV["COVERAGE_REPORT_URL"],
+  revision: ENV.fetch("COVERAGE_REVISION", "head"), base_sha: ENV["COVERAGE_BASE_SHA"])

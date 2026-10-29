@@ -53,9 +53,12 @@ function readResult(check, platform, expected, pr, repo, run) {
   const result = JSON.parse(check.output.text);
   if (result.version !== 1 || result.platform !== platform.id || result.pr !== pr.number ||
       result.headSha !== pr.head.sha || result.source?.provider !== expected.provider ||
+      (result.revision ?? "head") !== (expected.revision ?? "head") ||
       result.source.runId !== expected.runId || (result.source.runAttempt ?? 1) !== expected.runAttempt ||
       !["success", "failed", "skipped", "unavailable"].includes(result.state) || !Array.isArray(result.rows))
     throw new Error("Coverage result does not match this run");
+  if (expected.revision === "base" && result.baseSha !== pr.base.sha)
+    throw new Error("Coverage baseline does not match the PR base");
   if (["skipped", "unavailable"].includes(result.state) && result.rows.length)
     throw new Error("Unexpected measurements for an unmeasured platform");
   if (result.rows.length || result.state === "success") {
@@ -69,23 +72,26 @@ function readResult(check, platform, expected, pr, repo, run) {
   return {...result, reportUrl: reportURL(result.reportUrl, repo, run)};
 }
 
-function platformResult(platform, snapshot, jobs, pr, repo, core) {
+function platformResult(platform, snapshot, jobs, pr, repo, core, revision = "head") {
   const {run, checks} = snapshot;
   let state = "pending";
   if (!run) return {state};
   // A failed-jobs rerun reuses successful jobs from an earlier attempt. Match
   // each result to the attempt that actually ran that platform's test job.
-  const job = latest(jobs.filter((item) => item.name === platform.job)) ||
-    latest(jobs.filter((item) => item.name === (platform.skippedJob || platform.title)));
-  const expected = {provider: "github-actions", runId: run.id, runAttempt: job?.run_attempt ?? run.run_attempt};
+  const baseline = revision === "base";
+  const jobName = baseline ? `Coverage baseline (${platform.id}) / Test` : platform.job;
+  const skippedJob = baseline ? `Coverage baseline (${platform.id})` : platform.skippedJob || platform.title;
+  const job = latest(jobs.filter((item) => item.name === jobName)) ||
+    latest(jobs.filter((item) => item.name === skippedJob));
+  const expected = {provider: "github-actions", runId: run.id, runAttempt: job?.run_attempt ?? run.run_attempt, revision};
   const plan = latest(jobs.filter((item) => item.name === "Detect Changed Areas"));
   if (plan?.status === "completed" && plan.conclusion !== "success") return {state: "unavailable"};
   if (job?.conclusion === "skipped") return {state: "skipped"};
   if (job?.status === "completed") state = job.conclusion === "success" ? "unavailable" : "failed";
   else if (!job && run.status === "completed") state = "unavailable";
-  const externalId = `coverage:${platform.id}:${expected.runId}:${expected.runAttempt}`;
+  const externalId = `coverage${baseline ? "-base" : ""}:${platform.id}:${expected.runId}:${expected.runAttempt}`;
   const check = latest(checks.filter((item) => item.app?.slug === expected.provider &&
-    item.external_id === externalId && item.name === `Coverage — ${platform.title}`));
+    item.external_id === externalId && item.name === `Coverage${baseline ? " base" : ""} — ${platform.title}`));
   if (!check) return {state};
   try {
     return readResult(check, platform, expected, pr, repo, run);
@@ -95,15 +101,17 @@ function platformResult(platform, snapshot, jobs, pr, repo, core) {
   }
 }
 
-function metric(row) {
+function metric(row, baseline) {
   if (!row) return "—";
   const [, covered, total] = row;
   if (!total) return "N/A";
   const percentage = Number((100 * covered / total).toFixed(2));
-  return `${percentage}%`;
+  if (!baseline?.[2]) return `${percentage}%`;
+  const delta = Number((100 * covered / total - 100 * baseline[1] / baseline[2]).toFixed(2));
+  return `${percentage}% **(${delta > 0 ? "+" : ""}${delta})**`;
 }
 
-function render(results) {
+function render(results, baselines = {}) {
   const lines = [marker, "# Coverage Report", "",
     "| Status | Platform / target | Lines | Branches | Functions | Report |",
     "| :---: | --- | ---: | ---: | ---: | --- |"];
@@ -118,8 +126,13 @@ function render(results) {
     const [emoji, status] = statuses[result.state];
     const report = result.reportUrl ? `[Full report](${result.reportUrl})` : status;
     const find = (name) => rows.find((row) => row[0] === name);
-    lines.push(`| ${emoji} | ${platform.displayTitle || platform.title} | ${metric(find("Lines"))} | ${metric(find("Branches"))} | ${metric(find("Functions"))} | ${report} |`);
+    const baseline = baselines[platform.id];
+    const comparable = result.state === "success" && baseline?.state === "success" &&
+      result.baseSha && result.baseSha === baseline.baseSha;
+    const value = (name) => metric(find(name), comparable ? baseline.rows.find((row) => row[0] === name) : undefined);
+    lines.push(`| ${emoji} | ${platform.displayTitle || platform.title} | ${value("Lines")} | ${value("Branches")} | ${value("Functions")} | ${report} |`);
   }
+  lines.push("", "Changes in parentheses are **percentage points versus the PR’s base commit**. No delta appears when matching base coverage is unavailable.");
   return lines.join("\n") + "\n";
 }
 
@@ -136,7 +149,9 @@ async function publish({github, context, core, prNumber}) {
   }) : [];
   const results = Object.fromEntries(platforms.map((platform) =>
     [platform.id, platformResult(platform, snapshot, jobs, pr, repo, core)]));
-  const body = render(results);
+  const baselines = Object.fromEntries(platforms.map((platform) =>
+    [platform.id, platformResult(platform, snapshot, jobs, pr, repo, core, "base")]));
+  const body = render(results, baselines);
   const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: pr.number, per_page: 100});
   const existing = comments.find(isComment);
   // Wait for change detection before opening a comment for an affected platform.

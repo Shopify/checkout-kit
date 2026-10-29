@@ -86,18 +86,23 @@ class CoverageResultPublisher
     end
   end
 
-  def publish(platform:, state:, report: nil, report_url: nil, preserve_existing: false)
+  def publish(platform:, state:, report: nil, report_url: nil, preserve_existing: false, revision: "head", base_sha: nil)
+    raise ArgumentError, "Unknown coverage revision" unless %w[head base].include?(revision)
+    raise ArgumentError, "Base coverage requires a base commit" if revision == "base" && base_sha.to_s.empty?
+
     pr = @client.get("/repos/#{@repository}/pulls/#{@pr_number}")
     return "Skipped coverage result: pull request is closed or this build is superseded." unless pr["state"] == "open" && pr.dig("head", "sha") == @sha
     return "Skipped coverage result: fork pull request." unless pr.dig("head", "repo", "full_name") == @repository
+    return "Skipped coverage result: pull request base changed." if revision == "base" && pr.dig("base", "sha") != base_sha
 
     checks = check_runs
-    external_id = "coverage:#{platform}:#{@source.fetch('runId')}:#{@source.fetch('runAttempt', 1)}"
+    prefix = revision == "base" ? "coverage-base" : "coverage"
+    external_id = "#{prefix}:#{platform}:#{@source.fetch('runId')}:#{@source.fetch('runAttempt', 1)}"
     existing = checks.find { |check| check["external_id"] == external_id && check.dig("app", "slug") == @source.fetch("provider") }
     unless existing && preserve_existing
-      result = {version: 1, platform: platform, pr: @pr_number.to_i, headSha: @sha, source: @source, state: state, rows: report&.rows || [], reportUrl: report_url}
+      result = {version: 1, platform: platform, pr: @pr_number.to_i, headSha: @sha, baseSha: base_sha, revision: revision, source: @source, state: state, rows: report&.rows || [], reportUrl: report_url}
       payload = {
-        name: "Coverage — #{CoverageReport::TITLES.fetch(platform)}",
+        name: "Coverage#{revision == 'base' ? ' base' : ''} — #{CoverageReport::TITLES.fetch(platform)}",
         external_id: external_id,
         status: "completed",
         conclusion: state == "skipped" ? "skipped" : "neutral",
