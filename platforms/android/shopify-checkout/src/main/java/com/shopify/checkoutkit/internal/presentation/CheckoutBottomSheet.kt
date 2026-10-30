@@ -13,11 +13,16 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.ComponentDialog
 import androidx.annotation.ColorInt
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.util.Consumer
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter
+import androidx.window.layout.WindowInfoTracker
+import androidx.window.layout.WindowLayoutInfo
 import com.shopify.checkoutkit.checkout.CheckoutException
 import com.shopify.checkoutkit.checkout.CheckoutFailureEvent
 import com.shopify.checkoutkit.checkout.CheckoutHostConfiguration
@@ -48,6 +53,13 @@ internal class CheckoutBottomSheet(
     private var dismissing = false
     private var dismissFinalized = false
     private var notifyDismissalOnFinalize = false
+    private val windowInfoTracker by lazy {
+        WindowInfoTrackerCallbackAdapter(WindowInfoTracker.getOrCreate(activity))
+    }
+    private val windowLayoutInfoListener = Consumer<WindowLayoutInfo> { windowLayoutInfo ->
+        findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)
+            ?.placeBeside(windowLayoutInfo.separatingVerticalFold(), activity)
+    }
 
     /**
      * Invoked once when this sheet reaches its terminal dismissal state, before the dialog window
@@ -149,6 +161,7 @@ internal class CheckoutBottomSheet(
             maxWidthPx = maxWidthDp.dpToPx(activity).roundToInt()
             dragToDismissEnabled = sheet.dismissal.dragToDismissEnabled
             applySystemBarTopMargin(sheet.snapPoints.single())
+            placeBeside(windowInfoTracker.currentSeparatingVerticalFold(activity), activity)
             onDismissRequested = {
                 if (!dismissing) {
                     log.d(LOG_TAG, "Dismissed by gesture.")
@@ -163,6 +176,20 @@ internal class CheckoutBottomSheet(
             color = colorScheme.dragHandleColor(isDarkTheme).getValue(activity),
             sheet = sheet,
         )
+    }
+
+    override fun onStart() {
+        super.onStart()
+        windowInfoTracker.addWindowLayoutInfoListener(
+            activity,
+            ContextCompat.getMainExecutor(activity),
+            windowLayoutInfoListener,
+        )
+    }
+
+    override fun onStop() {
+        windowInfoTracker.removeWindowLayoutInfoListener(windowLayoutInfoListener)
+        super.onStop()
     }
 
     override fun cancel() {

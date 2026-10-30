@@ -42,6 +42,7 @@ androidxPaging = "3.5.1"
 androidxRoom = "2.8.5"
 androidxTest = "1.7.0"
 androidxWebkit = "1.15.0"
+androidxWindow = "1.5.1"
 junit = "4.13.2"
 
 [libraries]
@@ -65,6 +66,9 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTest" }
 androidx-test-ext-junit-ktx = { module = "androidx.test.ext:junit-ktx", version.ref = "androidxJunitExt" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidxWebkit" }
+androidx-window = { module = "androidx.window:window", version.ref = "androidxWindow" }
+androidx-window-java = { module = "androidx.window:window-java", version.ref = "androidxWindow" }
+androidx-window-testing = { module = "androidx.window:window-testing", version.ref = "androidxWindow" }
 apollo-cache-normalized = { module = "com.apollographql.cache:normalized-cache", version.ref = "apolloCache" }
 apollo-runtime = { module = "com.apollographql.apollo:apollo-runtime", version.ref = "apollo" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
