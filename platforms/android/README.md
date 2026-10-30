@@ -463,6 +463,10 @@ or unrepresentable `maxWidthDp` falls back to the 640dp default. Avoid
 very narrow widths: they can make checkout unusable. The SDK handles system bar insets internally so the sheet does not
 overlap the status bar.
 
+On a foldable half opened in book posture, with the fold running vertically, the sheet moves to the start side of the
+fold so checkout isn't split across it, and returns to the center when the device opens flat. It still respects
+`maxWidthDp`. In tabletop posture, with the fold running horizontally, the sheet stays centered.
+
 Use `closeIcon = DrawableResource(R.drawable.ic_checkout_close)` to provide a custom close drawable. If both
 `closeIcon` and `closeIconTintColor` are set, the custom drawable takes precedence.
 

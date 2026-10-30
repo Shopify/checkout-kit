@@ -2,12 +2,15 @@ package com.shopify.checkoutkit.internal.presentation
 import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewTreeObserver
 import android.view.animation.PathInterpolator
+import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import com.shopify.checkoutkit.checkout.DEFAULT_SHEET_MAX_WIDTH_DP
 import kotlin.math.abs
@@ -62,6 +65,22 @@ internal class CheckoutBottomSheetLayout @JvmOverloads constructor(
             )
 
         super.onMeasure(constrainedWidthMeasureSpec, heightMeasureSpec)
+    }
+
+    /**
+     * Positions the sheet at [placement] within its parent, or centers it across the full width when `null`.
+     */
+    fun applyHorizontalPlacement(placement: SheetHorizontalPlacement?) {
+        val params = layoutParams as? FrameLayout.LayoutParams ?: return
+        val width = placement?.width ?: MATCH_PARENT
+        val gravity = Gravity.BOTTOM or if (placement == null) Gravity.CENTER_HORIZONTAL else Gravity.LEFT
+        val leftMargin = placement?.left ?: 0
+        if (params.width == width && params.gravity == gravity && params.leftMargin == leftMargin) return
+
+        params.width = width
+        params.gravity = gravity
+        params.leftMargin = leftMargin
+        layoutParams = params
     }
 
     /**
