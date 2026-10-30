@@ -9,25 +9,30 @@ internal struct ShopPayButton: View {
     let cartSource: CartSource
     let eventHandlers: EventHandlers
     let cornerRadius: CGFloat?
+    let buttonHeight: CGFloat
 
     init(
         identifier: CheckoutIdentifier,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         cartSource = .cart(identifier.parse())
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
     }
 
     init(
         cartSource: CartSource,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         self.cartSource = cartSource
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
     }
 
     var body: some View {
@@ -36,7 +41,8 @@ internal struct ShopPayButton: View {
                 cartSource: cartSource,
                 configuration: resolvedConfiguration,
                 eventHandlers: eventHandlers,
-                cornerRadius: cornerRadius
+                cornerRadius: cornerRadius,
+                buttonHeight: buttonHeight
             )
         }
     }
@@ -59,29 +65,34 @@ internal struct Internal_ShopPayButton: View {
     private let configuration: ShopifyAcceleratedCheckouts.Configuration
     private let eventHandlers: EventHandlers
     private let cornerRadius: CGFloat?
+    private let buttonHeight: CGFloat
 
     init(
         identifier: CheckoutIdentifier,
         configuration: ShopifyAcceleratedCheckouts.Configuration,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         cartSource = .cart(identifier)
         self.configuration = configuration
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
     }
 
     init(
         cartSource: CartSource,
         configuration: ShopifyAcceleratedCheckouts.Configuration,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         self.cartSource = cartSource
         self.configuration = configuration
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
     }
 
     var body: some View {
@@ -110,12 +121,12 @@ internal struct Internal_ShopPayButton: View {
                         .frame(maxWidth: .infinity)
                         .accessibilityLabel("Shop Pay")
                 }
-                .frame(height: 48)
+                .frame(height: buttonHeight)
                 // This ensures that the blue background is clickable
                 .background(Color.shopPayBlue)
             }
         )
-        .walletButtonStyle(bg: Color.shopPayBlue, cornerRadius: cornerRadius)
+        .walletButtonStyle(bg: Color.shopPayBlue, cornerRadius: cornerRadius, height: buttonHeight)
         .buttonStyle(ContentFadeButtonStyle())
     }
 }

@@ -2902,6 +2902,35 @@
           },
           {
             "kind": "Function",
+            "name": "buttonHeight",
+            "printedName": "buttonHeight(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "ShopifyAcceleratedCheckoutButtons",
+                "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons",
+                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CGFloat",
+                "printedName": "CoreGraphics.CGFloat",
+                "usr": "s:14CoreFoundation7CGFloatV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV12buttonHeightyAC14CoreFoundation7CGFloatVF",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV12buttonHeightyAC12CoreGraphics7CGFloatVF",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "isFromExtension": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "cornerRadius",
             "printedName": "cornerRadius(_:)",
             "children": [
@@ -3374,6 +3403,47 @@
                 "declKind": "Accessor",
                 "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV4bodyQrvg",
                 "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV4bodyQrvg",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "resolvedButtonHeight",
+            "printedName": "resolvedButtonHeight",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "CGFloat",
+                "printedName": "CoreGraphics.CGFloat",
+                "usr": "s:14CoreFoundation7CGFloatV"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV20resolvedButtonHeight14CoreFoundation7CGFloatVvp",
+            "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV20resolvedButtonHeight12CoreGraphics7CGFloatVvp",
+            "moduleName": "ShopifyAcceleratedCheckouts",
+            "declAttributes": [
+              "Preconcurrency",
+              "Custom"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "CGFloat",
+                    "printedName": "CoreGraphics.CGFloat",
+                    "usr": "s:14CoreFoundation7CGFloatV"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV20resolvedButtonHeight14CoreFoundation7CGFloatVvg",
+                "mangledName": "$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV20resolvedButtonHeight12CoreGraphics7CGFloatVvg",
                 "moduleName": "ShopifyAcceleratedCheckouts",
                 "accessorKind": "get"
               }

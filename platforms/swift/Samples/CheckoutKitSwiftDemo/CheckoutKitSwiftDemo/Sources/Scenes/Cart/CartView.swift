@@ -56,6 +56,7 @@ struct CartView: View {
                         if #available(iOS 16, *) {
                             ShopifyAcceleratedCheckoutButtons(cartID: cartID)
                                 .applePayButtonStyle(applePayStyle.style)
+                                .buttonHeight(56)
                                 .onStart { event in
                                     print("[AcceleratedCheckout] Started: \(event.checkout.id)")
                                 }
