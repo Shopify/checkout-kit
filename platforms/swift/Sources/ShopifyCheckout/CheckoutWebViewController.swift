@@ -60,6 +60,8 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
     }
 
     var progressObserver: NSKeyValueObservation?
+    private var fullWidthConstraints: [NSLayoutConstraint] = []
+    private var safeAreaWidthConstraints: [NSLayoutConstraint] = []
     private var hasNotifiedDismissal = false
     private var didComplete = false
 
@@ -100,6 +102,9 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
             registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: CheckoutWebViewController, _) in
                 controller.navigationItem.rightBarButtonItem = controller.closeBarButtonItem
             }
+            registerForTraitChanges([UITraitVerticalSizeClass.self]) { (controller: CheckoutWebViewController, _) in
+                controller.updateCheckoutViewHorizontalConstraints()
+            }
         }
     }
 
@@ -117,6 +122,10 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         if #unavailable(iOS 17.0), previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
             navigationItem.rightBarButtonItem = closeBarButtonItem
         }
+
+        if #unavailable(iOS 17.0), previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass {
+            updateCheckoutViewHorizontalConstraints()
+        }
     }
 
     override public func viewDidLoad() {
@@ -125,12 +134,19 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
         guard let checkoutView else { return }
 
         view.addSubview(checkoutView)
+        fullWidthConstraints = [
+            checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ]
+        safeAreaWidthConstraints = [
+            checkoutView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            checkoutView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        ]
         NSLayoutConstraint.activate([
             checkoutView.topAnchor.constraint(equalTo: view.topAnchor),
-            checkoutView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            checkoutView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             checkoutView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        updateCheckoutViewHorizontalConstraints()
 
         view.addSubview(progressBar)
         NSLayoutConstraint.activate([
@@ -143,6 +159,15 @@ class CheckoutWebViewController: UIViewController, UIAdaptivePresentationControl
 
         observeProgressChanges(checkoutView)
         loadCheckout()
+    }
+
+    /// Keeps checkout clear of side safe areas, such as the system column on iPhone Duo's outer display.
+    /// In compact height (a phone in landscape) checkout stays full width so page overlays still reach the
+    /// screen edges.
+    private func updateCheckoutViewHorizontalConstraints() {
+        let followsSafeArea = traitCollection.verticalSizeClass == .regular
+        NSLayoutConstraint.deactivate(followsSafeArea ? fullWidthConstraints : safeAreaWidthConstraints)
+        NSLayoutConstraint.activate(followsSafeArea ? safeAreaWidthConstraints : fullWidthConstraints)
     }
 
     override public func viewWillDisappear(_ animated: Bool) {

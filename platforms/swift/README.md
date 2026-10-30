@@ -707,6 +707,8 @@ ShopifyAcceleratedCheckoutButtons(cartID: cartID)
 
 `AcceleratedCheckoutButtons` remains available as a deprecated typealias. Use `ShopifyAcceleratedCheckoutButtons` in new code.
 
+Each button fills the width its container gives it; Checkout Kit doesn't cap the width. On wide layouts, such as iPad or the inner display of iPhone Duo, size the buttons together with your other primary actions instead of letting them span the window, for example with `.frame(maxWidth:)` on the stack that holds them. Apple asks that the Apple Pay button be no smaller than other payment buttons, so give it the same width as the buttons around it.
+
 Checkout always starts from a Storefront cart that your app owns. For a product page, provide the cart when the buyer taps a wallet button; Checkout Kit calls the closure once per accepted tap and never while rendering:
 
 ```swift

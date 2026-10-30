@@ -76,6 +76,46 @@ class CheckoutWebViewControllerTests: XCTestCase {
         XCTAssertEqual(topConstraint.secondAttribute, .top)
     }
 
+    func test_regularHeight_keepsCheckoutViewWithinHorizontalSafeArea() throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("traitOverrides requires iOS 17") }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+
+        viewController.traitOverrides.verticalSizeClass = .regular
+        viewController.updateTraitsIfNeeded()
+
+        try assertCheckoutViewHorizontalEdges(of: viewController, pinnedTo: viewController.view.safeAreaLayoutGuide)
+    }
+
+    func test_compactHeight_keepsCheckoutViewFullWidth() throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("traitOverrides requires iOS 17") }
+        let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
+        viewController.traitOverrides.verticalSizeClass = .regular
+        viewController.updateTraitsIfNeeded()
+
+        viewController.traitOverrides.verticalSizeClass = .compact
+        viewController.updateTraitsIfNeeded()
+
+        try assertCheckoutViewHorizontalEdges(of: viewController, pinnedTo: viewController.view)
+    }
+
+    private func assertCheckoutViewHorizontalEdges(
+        of viewController: CheckoutWebViewController,
+        pinnedTo expectedItem: AnyObject,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        let checkoutView = try XCTUnwrap(viewController.checkoutView, file: file, line: line)
+        for attribute in [NSLayoutConstraint.Attribute.leading, .trailing] {
+            let constraints = viewController.view.constraints.filter {
+                $0.isActive && $0.firstItem === checkoutView && $0.firstAttribute == attribute
+            }
+
+            XCTAssertEqual(constraints.count, 1, "active \(attribute.rawValue) constraints", file: file, line: line)
+            XCTAssertTrue(constraints.first?.secondItem === expectedItem, file: file, line: line)
+            XCTAssertEqual(constraints.first?.secondAttribute, attribute, file: file, line: line)
+        }
+    }
+
     func test_viewDidLoad_keepsProgressBarBelowNavigationBar() throws {
         let viewController = CheckoutWebViewController(checkoutURL: url, entryPoint: nil)
         viewController.loadViewIfNeeded()
