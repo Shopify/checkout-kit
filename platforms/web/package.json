@@ -81,7 +81,7 @@
     "test:watch": "vitest",
     "lint": "pnpm run typecheck && pnpm run sample:typecheck && pnpm run scripts:typecheck && pnpm run telemetry:typecheck && pnpm run lint:compat && pnpm run lint:dependencies && pnpm run lint:js && pnpm run format:check",
     "lint:compat": "eslint --config eslint.compat.config.mjs src components internal",
-    "lint:dependencies": "depcruise --config dependency-cruiser.config.mjs src components internal && depcruise --config dependency-cruiser.runtime.config.mjs src components internal && node --test scripts/dependency-boundaries.test.mjs",
+    "lint:dependencies": "node scripts/check-runtime-dependencies.mjs && depcruise --config dependency-cruiser.config.mjs src components internal && depcruise --config dependency-cruiser.runtime.config.mjs src components internal && node --test scripts/dependency-boundaries.test.mjs",
     "lint:js": "oxlint --report-unused-disable-directives --max-warnings 0 src components internal sample scripts && pnpm --dir test/e2e lint",
     "lint:js:fix": "oxlint --fix src components internal sample scripts && pnpm --dir test/e2e lint:fix",
     "format": "oxfmt src components internal sample scripts dependency-cruiser*.config.mjs '!sample/dist/**' '!sample/dist-cdn/**' '!internal/telemetry/**' && pnpm --dir test/e2e format",
@@ -101,8 +101,9 @@
     "prepack": "pnpm run build:npm",
     "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
     "telemetry:typecheck": "tsc --noEmit -p internal/telemetry/tsconfig.json",
-    "build:npm": "vite build && pnpm run build:manifest",
-    "build:cdn": "vite build --config vite.cdn.config.ts --mode shopify-checkout && vite build --config vite.cdn.config.ts --mode shopify-universal-checkout && vite build --config vite.cdn.config.ts --mode shop-pay && vite build --config vite.cdn.config.ts"
+    "build:npm": "pnpm run check:runtime-dependencies && vite build && pnpm run build:manifest",
+    "build:cdn": "vite build --config vite.cdn.config.ts --mode shopify-checkout && vite build --config vite.cdn.config.ts --mode shopify-universal-checkout && vite build --config vite.cdn.config.ts --mode shop-pay && vite build --config vite.cdn.config.ts",
+    "check:runtime-dependencies": "node scripts/check-runtime-dependencies.mjs"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.10.4",
