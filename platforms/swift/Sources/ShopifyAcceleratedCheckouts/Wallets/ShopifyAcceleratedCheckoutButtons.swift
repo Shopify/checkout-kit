@@ -161,7 +161,7 @@ extension ShopifyAcceleratedCheckoutButtons {
     }
 
     /// Modifies the wallet options supported
-    /// Defaults: [.applePay]
+    /// Defaults: [.shopPay, .applePay]
     public func wallets(_ wallets: [Wallet]) -> ShopifyAcceleratedCheckoutButtons {
         var newView = self
         newView.wallets = wallets
@@ -265,11 +265,11 @@ extension ShopifyAcceleratedCheckoutButtons {
     ///     .onRenderStateChange { state in
     ///         switch state {
     ///         case .loading:
-    ///             // Show skeleton loading state
+    ///             print("Loading checkout buttons")
     ///         case .rendered:
-    ///             // Show rendered buttons
-    ///         case .fallback:
-    ///             // Show error fallback state
+    ///             print("Checkout buttons rendered")
+    ///         case .error(let reason):
+    ///             print("Checkout buttons failed: \(reason)")
     ///         }
     ///     }
     /// ```
