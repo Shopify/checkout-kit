@@ -640,7 +640,7 @@ unset when relying on the resource files for localization.
 Use a `Localizable.xcstrings` file in your app by doing the following:
 
 1. Create a `Localizable.xcstrings` file under "ios/{YourApplicationName}"
-2. Add an entry for the key `"shopify_checkout_sheet_title"`
+2. Add an entry for the key `"shopify_checkout_kit_title"`
 
 ##### Android - Localization
 
