@@ -48,12 +48,28 @@ extension ShopifyAcceleratedCheckouts {
         /// The customer access token to attribute an order to on `buyerIdentity`
         public let customerAccessToken: String?
 
+        public init(customerAccessToken: String) {
+            email = nil
+            phoneNumber = nil
+            self.customerAccessToken = customerAccessToken
+        }
+
+        public init(email: String? = nil, phoneNumber: String? = nil) {
+            self.email = email
+            self.phoneNumber = phoneNumber
+            customerAccessToken = nil
+        }
+
         /// Creates customer identity data to attach to checkout buyer identity.
         ///
         /// - Parameters:
         ///   - email: The customer's email address.
         ///   - phoneNumber: The customer's phone number.
         ///   - customerAccessToken: The access token from Shopify customer authentication.
+        @available(
+            *, deprecated,
+            message: "Use init(customerAccessToken:) for customer accounts or init(email:phoneNumber:) for other users."
+        )
         public init(email: String? = nil, phoneNumber: String? = nil, customerAccessToken: String? = nil) {
             self.email = email
             self.phoneNumber = phoneNumber

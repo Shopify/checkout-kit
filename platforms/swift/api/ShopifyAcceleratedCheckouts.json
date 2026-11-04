@@ -4350,6 +4350,78 @@
               {
                 "kind": "Constructor",
                 "name": "init",
+                "printedName": "init(customerAccessToken:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Customer",
+                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenADSS_tcfc",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV19customerAccessTokenADSS_tcfc",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
+                "printedName": "init(email:phoneNumber:)",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Customer",
+                    "printedName": "ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer",
+                    "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "hasDefaultArg": true,
+                    "usr": "s:Sq"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "hasDefaultArg": true,
+                    "usr": "s:Sq"
+                  }
+                ],
+                "declKind": "Constructor",
+                "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumberADSSSg_AGtcfc",
+                "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumberADSSSg_AGtcfc",
+                "moduleName": "ShopifyAcceleratedCheckouts",
+                "init_kind": "Designated"
+              },
+              {
+                "kind": "Constructor",
+                "name": "init",
                 "printedName": "init(email:phoneNumber:customerAccessToken:)",
                 "children": [
                   {
@@ -4408,6 +4480,10 @@
                 "usr": "s:27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
                 "mangledName": "$s27ShopifyAcceleratedCheckoutsAAO8CustomerV5email11phoneNumber19customerAccessTokenADSSSg_A2Htcfc",
                 "moduleName": "ShopifyAcceleratedCheckouts",
+                "deprecated": true,
+                "declAttributes": [
+                  "Available"
+                ],
                 "init_kind": "Designated"
               },
               {

@@ -657,18 +657,18 @@ struct YourApp: App {
 }
 ```
 
-Use one customer mode at a time:
+Use `init(customerAccessToken:)` for authenticated buyers and `init(email:phoneNumber:)` for guests. Pass an authenticated buyer's token without separate email or phone overrides, which can conflict with the account's contact information and cause cart completion to fail.
 
 ```swift
-// Authenticated buyer.
-ShopifyAcceleratedCheckouts.Customer(customerAccessToken: customerAccessToken)
+let authenticatedCustomer = ShopifyAcceleratedCheckouts.Customer(customerAccessToken: customerAccessToken)
 
-// Guest or explicit contact override.
-ShopifyAcceleratedCheckouts.Customer(
+let guestCustomer = ShopifyAcceleratedCheckouts.Customer(
   email: "buyer@example.com",
   phoneNumber: "15555555555"
 )
 ```
+
+`init(email:phoneNumber:customerAccessToken:)` is deprecated and remains available for source compatibility. Migrate to the initializer for the buyer's identity mode. If the access token is optional, unwrap it before calling `init(customerAccessToken:)`.
 
 `contactFields` is required by the current Swift API. Include `.email` when the shop requires customer accounts and `.phone` when the shop requires phone numbers for shipping.
 
