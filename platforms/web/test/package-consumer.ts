@@ -52,9 +52,6 @@ checkout.addEventListener("complete", (event) => {
   // Standard checkout snapshots keep their existing mutable contract.
   snapshot.status = "completed";
   snapshot.lineItems.push(...snapshot.lineItems);
-  const actionLabel: unknown = snapshot.actions?.update?.[0]?.label;
-  const policyUrl: string | undefined = snapshot.policies?.[0]?.url;
-  void [actionLabel, policyUrl];
 });
 checkout.addEventListener("error", (event) => {
   const error: ShopifyCheckoutError = event.detail.error;
