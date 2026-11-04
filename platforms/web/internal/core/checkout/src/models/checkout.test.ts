@@ -6,6 +6,7 @@ import {
   type Checkout as ProtocolCheckout,
   type CheckoutStatus,
   type LineItem,
+  type Policy,
 } from "@shopify/checkout-kit-protocol";
 
 import { checkoutComparisonKey, toCheckout, type Checkout } from "./checkout";
@@ -27,6 +28,7 @@ describe("toCheckout", () => {
   it("removes only top-level protocol metadata without modifying the protocol checkout", () => {
     const original = protocolCheckout({
       attribution: { campaign: "sample-campaign" },
+      actions: { update: [{ label: "Update checkout" }] },
       buyer: { firstName: "Sample", email: "buyer@example.com" },
       context: { addressCountry: "US" },
       continueUrl: "https://example.com/checkout",
@@ -37,6 +39,13 @@ describe("toCheckout", () => {
       messages: [{ type: "info", content: "Sample message" }],
       order: { id: "order-123", permalinkUrl: "https://example.com/orders/sample" },
       payment: { instruments: [] },
+      policies: [
+        {
+          type: "privacy_policy",
+          description: { plain: "Privacy policy" },
+          url: "https://example.com/privacy",
+        },
+      ],
       signals: { "com.example.device": { nested_key: "value" } },
       totals: [{ type: "total", amount: 2500 }],
       "com.example.extension": { ucp: { preserved: true }, nested_key: null },
@@ -115,6 +124,10 @@ describe("toCheckout", () => {
     expectTypeOf<Checkout["id"]>().toEqualTypeOf<string>();
     expectTypeOf<Checkout["lineItems"]>().toEqualTypeOf<LineItem[]>();
     expectTypeOf<Checkout["buyer"]>().toEqualTypeOf<Buyer | undefined>();
+    expectTypeOf<Checkout["actions"]>().toEqualTypeOf<
+      Record<string, Record<string, unknown>[]> | undefined
+    >();
+    expectTypeOf<Checkout["policies"]>().toEqualTypeOf<Policy[] | undefined>();
     expectTypeOf<Checkout["status"]>().toEqualTypeOf<CheckoutStatus>();
     expectTypeOf<Checkout["expiresAt"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<Checkout["custom_extension"]>().toBeUnknown();
