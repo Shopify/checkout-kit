@@ -28,7 +28,11 @@ describe("toCheckout", () => {
   it("removes only top-level protocol metadata without modifying the protocol checkout", () => {
     const original = protocolCheckout({
       attribution: { campaign: "sample-campaign" },
-      actions: { update: [{ label: "Update checkout" }] },
+      actions: {
+        "com.example.identity.student_verification": [
+          { id: "verification-1", config: { verification_url: "https://example.com/verify" } },
+        ],
+      },
       buyer: { firstName: "Sample", email: "buyer@example.com" },
       context: { addressCountry: "US" },
       continueUrl: "https://example.com/checkout",
@@ -41,9 +45,9 @@ describe("toCheckout", () => {
       payment: { instruments: [] },
       policies: [
         {
-          type: "privacy_policy",
-          description: { plain: "Privacy policy" },
-          url: "https://example.com/privacy",
+          type: "dev.ucp.shopping.policy.return",
+          description: { plain: "Returns accepted within 30 days." },
+          url: "https://example.com/returns",
         },
       ],
       signals: { "com.example.device": { nested_key: "value" } },
