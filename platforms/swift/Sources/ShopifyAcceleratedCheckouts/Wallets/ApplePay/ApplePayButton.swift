@@ -32,16 +32,20 @@ struct ApplePayButton: View {
     /// The corner radius for the button
     private let cornerRadius: CGFloat?
 
+    private let buttonHeight: CGFloat
+
     init(
         identifier: CheckoutIdentifier,
         eventHandlers: EventHandlers = EventHandlers(),
         cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight,
         buttonType: PKPaymentButtonType = .plain,
         buttonStyle: PKPaymentButtonStyle = .automatic
     ) {
         cartSource = .cart(identifier.parse())
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
     }
@@ -50,12 +54,14 @@ struct ApplePayButton: View {
         cartSource: CartSource,
         eventHandlers: EventHandlers = EventHandlers(),
         cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight,
         buttonType: PKPaymentButtonType = .plain,
         buttonStyle: PKPaymentButtonStyle = .automatic
     ) {
         self.cartSource = cartSource
         self.eventHandlers = eventHandlers
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
     }
@@ -72,7 +78,8 @@ struct ApplePayButton: View {
                     shopSettings: shopSettings
                 ),
                 eventHandlers: eventHandlers,
-                cornerRadius: cornerRadius
+                cornerRadius: cornerRadius,
+                buttonHeight: buttonHeight
             )
         }
     }
@@ -105,6 +112,7 @@ struct Internal_ApplePayButton: View {
     private let eventHandlers: EventHandlers
     private let configuration: ApplePayConfigurationWrapper
     private let cornerRadius: CGFloat?
+    private let buttonHeight: CGFloat
     @Environment(\.colorScheme) private var colorScheme
 
     func buttonIdentity(colorScheme: ColorScheme) -> String {
@@ -117,11 +125,13 @@ struct Internal_ApplePayButton: View {
         buttonStyle: PKPaymentButtonStyle,
         configuration: ApplePayConfigurationWrapper,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
         self.configuration = configuration
         cartSource = .cart(identifier)
         self.eventHandlers = eventHandlers
@@ -133,11 +143,13 @@ struct Internal_ApplePayButton: View {
         buttonStyle: PKPaymentButtonStyle,
         configuration: ApplePayConfigurationWrapper,
         eventHandlers: EventHandlers = EventHandlers(),
-        cornerRadius: CGFloat?
+        cornerRadius: CGFloat?,
+        buttonHeight: CGFloat = WalletButtonHeight.defaultHeight
     ) {
         self.buttonType = buttonType
         self.buttonStyle = buttonStyle
         self.cornerRadius = cornerRadius
+        self.buttonHeight = buttonHeight
         self.configuration = configuration
         self.cartSource = cartSource
         self.eventHandlers = eventHandlers
@@ -166,7 +178,7 @@ struct Internal_ApplePayButton: View {
                 }
             )
             .id(buttonIdentity(colorScheme: colorScheme))
-            .frame(height: 48)
+            .frame(height: buttonHeight)
         } else {
             Text("errors.applePay.unsupported".localizedString)
         }

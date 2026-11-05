@@ -46,6 +46,7 @@ preloads remain shared across checkout entry points, not scoped to individual vi
   - [Prerequisites](#prerequisites)
   - [Configure accelerated checkouts](#configure-accelerated-checkouts)
   - [Render buttons](#render-buttons)
+    - [Customize button height](#customize-button-height)
 - [Troubleshooting](#troubleshooting)
 - [Samples](#samples)
 - [Contributing](#contributing)
@@ -60,7 +61,7 @@ preloads remain shared across checkout entry points, not scoped to individual vi
 
 ## Install
 
-Install Checkout Kit for Swift `4.0.0`:
+Install Checkout Kit for Swift `4.1.0`:
 
 ### Swift Package Manager
 
@@ -74,7 +75,7 @@ Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.1.0")
 ]
 ```
 
@@ -95,10 +96,10 @@ Then add the products you need to your app target:
 The CocoaPods spec exists so that [Checkout Kit for React Native](../react-native) can consume the native SDK. Native apps should use Swift Package Manager.
 
 ```ruby
-pod "ShopifyCheckoutKit", "4.0.0"
+pod "ShopifyCheckoutKit", "4.1.0"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
-pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0"
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.1.0"
 ```
 
 ### Compatibility
@@ -725,6 +726,15 @@ If the cart should use an authenticated buyer's identity, create or update it wi
 Return `.failed` when the app has already handled a cart-creation failure; no wallet opens and `onFail` is not called. If the closure throws, including a thrown `CancellationError`, `.onFail` receives the error and no wallet opens.
 
 Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
+
+#### Customize button height
+
+Use `.buttonHeight(_:)` to size each Shop Pay and Apple Pay button to match your app's other actions. Buttons default to 48pt and accept heights from 30pt to 64pt. Values outside that range are clamped; zero, negative, or non-finite values use the default. Each button sets its own height, so use `.buttonHeight(_:)` rather than `.frame(height:)` to resize them.
+
+```swift
+ShopifyAcceleratedCheckoutButtons(cartID: cartID)
+  .buttonHeight(56)
+```
 
 ## Troubleshooting
 
