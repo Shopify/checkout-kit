@@ -1,0 +1,79 @@
+name: Coverage baseline
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    env:
+      COVERAGE_PLATFORM: ${{ inputs.platform }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select coverage package
+        id: package
+        shell: bash
+        run: |
+          case "$COVERAGE_PLATFORM" in
+            web) directory=platforms/web ;;
+            react-native) directory=platforms/react-native ;;
+            protocol) directory=protocol ;;
+            *) exit 1 ;;
+          esac
+          echo "directory=$directory" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the PR base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .coverage-base
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version-file: .coverage-base/${{ steps.package.outputs.directory }}/package.json
+          cache-dependency-path: .coverage-base/${{ steps.package.outputs.directory }}/pnpm-lock.yaml
+          package-json-file: .coverage-base/${{ steps.package.outputs.directory }}/package.json
+          working-directory: .coverage-base/${{ steps.package.outputs.directory }}
+
+      - name: Measure base coverage
+        id: tests
+        working-directory: .coverage-base/${{ steps.package.outputs.directory }}
+        shell: bash
+        run: |
+          case "$COVERAGE_PLATFORM" in
+            web) pnpm test ;;
+            react-native) pnpm test --coverage --testPathPatterns="modules/@shopify/checkout-kit-react-native/tests" --coverageReporters=json-summary ;;
+            protocol) pnpm test --coverage ;;
+          esac
+
+      - name: Record base coverage
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        env:
+          COVERAGE_PATH: .coverage-base/${{ steps.package.outputs.directory }}/coverage/coverage-summary.json
+          COVERAGE_REVISION: base
+          COVERAGE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          COVERAGE_TEST_OUTCOME: ${{ steps.tests.outcome }}
+          COVERAGE_REPOSITORY: ${{ github.repository }}
+          COVERAGE_SHA: ${{ github.event.pull_request.head.sha }}
+          COVERAGE_PR: ${{ github.event.pull_request.number }}
+          COVERAGE_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.token || '' }}
+        run: ruby scripts/report_coverage "$COVERAGE_PLATFORM" "$COVERAGE_PATH"

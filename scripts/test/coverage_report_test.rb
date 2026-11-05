@@ -84,7 +84,7 @@ class CoverageResultPublisherTest < Minitest::Test
     @report = CoverageReport.new("web", JSON.generate("total" => CoverageReport::JAVASCRIPT_METRICS.keys.to_h do |key|
       [key, {"covered" => 1, "total" => 2}]
     end))
-    @pr = {"state" => "open", "head" => {"sha" => "abc123", "repo" => {"full_name" => "example/sdk"}}}
+    @pr = {"state" => "open", "head" => {"sha" => "abc123", "repo" => {"full_name" => "example/sdk"}}, "base" => {"sha" => "base123"}}
     @source = {"provider" => "github-actions", "runId" => 100, "runAttempt" => 2}
   end
 
@@ -112,6 +112,33 @@ class CoverageResultPublisherTest < Minitest::Test
   def test_updates_the_matching_check_without_creating_duplicates
     publish([{"id" => 42, "external_id" => "coverage:web:100:2", "app" => {"slug" => "github-actions"}}])
     assert_equal [:patch, "/repos/example/sdk/check-runs/42"], @client.writes.first.take(2)
+  end
+
+  def test_base_results_are_stored_separately_on_the_pr_head
+    publish(revision: "base", base_sha: "base123")
+    payload = @client.writes.first.last
+    assert_equal "abc123", payload[:head_sha]
+    assert_equal "coverage-base:web:100:2", payload[:external_id]
+    assert_equal "Coverage base — Web", payload[:name]
+    result = JSON.parse(payload[:output][:text])
+    assert_equal "base", result.fetch("revision")
+    assert_equal "base123", result.fetch("baseSha")
+    assert_equal @report.rows, result.fetch("rows")
+  end
+
+  def test_head_results_record_the_tested_base_without_overwriting_base_results
+    publish([{"id" => 42, "external_id" => "coverage-base:web:100:2", "app" => {"slug" => "github-actions"}}], base_sha: "base123")
+    assert_equal :post, @client.writes.first.first
+    result = JSON.parse(@client.writes.first.last[:output][:text])
+    assert_equal "head", result.fetch("revision")
+    assert_equal "base123", result.fetch("baseSha")
+  end
+
+  def test_base_results_require_the_current_base_commit
+    assert_raises(ArgumentError) { publish(revision: "base") }
+    assert_raises(ArgumentError) { publish(revision: "invalid") }
+    assert_includes publish(revision: "base", base_sha: "old-base"), "Skipped coverage result"
+    assert_empty @client.writes
   end
 
   def test_superseded_closed_and_fork_prs_are_not_published
