@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.checkout
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
@@ -41,6 +42,7 @@ import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
@@ -125,11 +127,12 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun `bottom sheet keeps clear of side navigation bar and display cutout`() {
         val sheet = presentBottomSheet()
         val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)!!
-        val navigationBarInset = 48f.dpToPx(activity).roundToInt()
-        val cutoutInset = 24f.dpToPx(activity).roundToInt()
+        val navigationBarInset = 24f.dpToPx(activity).roundToInt()
+        val cutoutInset = 48f.dpToPx(activity).roundToInt()
 
         ViewCompat.dispatchApplyWindowInsets(
             bottomSheet,
@@ -141,8 +144,8 @@ class CheckoutBottomSheetTest {
 
         val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
 
-        assertThat(layoutParams.leftMargin).isEqualTo(navigationBarInset)
-        assertThat(layoutParams.rightMargin).isEqualTo(navigationBarInset)
+        assertThat(layoutParams.leftMargin).isEqualTo(cutoutInset)
+        assertThat(layoutParams.rightMargin).isEqualTo(cutoutInset)
     }
 
     @Test

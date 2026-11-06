@@ -326,7 +326,10 @@ private fun View.applySystemBarMargins(snapPoint: CheckoutSheetSnapPoint) {
 }
 
 /**
- * Updates margins only when they change, preserving configured sheet margins around inset updates.
+ * Updates margins only when they change, avoiding redundant layout passes on repeated inset dispatches.
+ *
+ * Callers pass every margin explicitly; only the sheet's initial bottom margin is carried over from the original
+ * layout parameters.
  */
 private fun View.updateMargins(margins: Insets) {
     val params = layoutParams as? ViewGroup.MarginLayoutParams ?: return
