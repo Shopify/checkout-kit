@@ -221,7 +221,7 @@ if preload == nil {
 
 A successful background preload normally transitions from `.loading` to `.ready`. `.idle()` is the initial state. An idle state with an `.invalidated` or `.expired` reason means a cached preload became unavailable through that expected lifecycle transition. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
 
-`.invalidated` covers explicit invalidation, configuration changes (including disabling preloading), a checkout URL or entry point mismatch, checkout completion, and clearing unusable content after presentation. `.expired` means the cached preload reached its time-to-live. Calling `invalidate()` when no checkout is cached preserves the last state, including any expiry or failure reason, and does not notify observers.
+`.invalidated` covers explicit invalidation, configuration changes (including disabling preloading), a checkout URL or entry point mismatch, checkout completion, and clearing unusable content after presentation. `.expired` means the cached preload reached its time-to-live. Calling `ShopifyCheckout.clearPreload()` when no checkout is cached preserves the last state, including any expiry or failure reason, and does not notify observers.
 
 `IdleReason` is an extensible string-backed value, with `.invalidated` and `.expired` constants. New reasons can be added without adding state cases. Compare the constants or include a `default` branch when switching over reasons; treat unfamiliar reasons as an unavailable preload. `rawValue` preserves the reason's stable identifier, including unknown values.
 
@@ -695,7 +695,7 @@ ShopifyAcceleratedCheckoutButtons(cartID: cartID)
     // Mark checkout as completed; reset the cart after dismissal.
   }
   .onLinkClick { link in
-    .open
+    .default
   }
   .onFail { error in
     // Handle checkout failure.
@@ -724,7 +724,7 @@ If the cart should use an authenticated buyer's identity, create or update it wi
 
 Return `.failed` when the app has already handled a cart-creation failure; no wallet opens and `onFail` is not called. If the closure throws, including a thrown `CancellationError`, `.onFail` receives the error and no wallet opens.
 
-Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
+Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. Record success in `.onComplete`, then clear or refresh the cart in `.onDismiss`. Defer navigation or state changes that remove the accelerated checkout buttons until dismissal so the confirmation page remains visible.
 
 ## Troubleshooting
 

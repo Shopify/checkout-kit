@@ -63,7 +63,7 @@ experiences.
 
 - **React Native** - Minimum version `0.77` (v4+) / `0.70` (v3 and earlier)
 - **iOS** - Minimum version iOS 15
-- **Android** - Minimum Java 11, Android SDK version `24`, and Kotlin `2.0+`
+- **Android** - Minimum JDK 17, Android SDK version `24`, and Kotlin `2.0+`
 
 ## Version Compatibility
 
@@ -103,7 +103,7 @@ npm install @shopify/checkout-kit-react-native@4.0.0
 ### 2. Minimum Android requirements
 
 Check the `minSdkVersion` property in your `android/build.gradle` file is at
-least `24`.
+least `24`, and run Gradle with JDK 17 or later.
 
 The Android package also requires Kotlin `2.0+`. React Native `0.77+` templates
 use compatible Kotlin defaults (`2.0.21` for React Native `0.77`–`0.79`, and
@@ -218,12 +218,14 @@ You can use any GraphQL client to accomplish this - but as an example, our
 Here's an example of how to get started with Apollo:
 
 ```tsx
-import {ApolloClient, gql, ApolloProvider} from '@apollo/client';
+import {ApolloClient, gql, ApolloProvider, InMemoryCache} from '@apollo/client';
+import {ShopifyCheckoutProvider} from '@shopify/checkout-kit-react-native';
 import {API_VERSION, STOREFRONT_DOMAIN, STOREFRONT_ACCESS_TOKEN} from '@env';
 
 // Create a new instance of the ApolloClient
 const client = new ApolloClient({
   uri: `https://${STOREFRONT_DOMAIN}/api/${API_VERSION}/graphql.json`,
+  cache: new InMemoryCache(),
   headers: {
     'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
   },
@@ -256,25 +258,11 @@ const addToCartMutation = gql`
 function YourReactNativeApp() {
   return (
     <ApolloProvider client={client}>
-      <App />
+      <ShopifyCheckoutProvider>
+        <App />
+      </ShopifyCheckoutProvider>
     </ApolloProvider>
   );
-}
-```
-
-The `checkoutUrl` object is a standard web checkout URL that can be opened in
-any browser. To present a native checkout sheet in your application, provide the
-`checkoutUrl` alongside optional runtime configuration settings to the
-`present(checkoutUrl)` function provided by the SDK:
-
-```tsx
-function App() {
-  const [createCart] = useMutation(createCartMutation)
-  const [addToCart] = useMutation(addToCartMutation)
-
-  return (
-    // React native app code
-  )
 }
 ```
 
@@ -283,51 +271,57 @@ browser. To present a native checkout sheet in your application, provide the
 `checkoutUrl` to the `present(checkoutUrl)` function provided by the SDK:
 
 ```tsx
+import {useCallback, useRef} from 'react';
+import {Button} from 'react-native';
+import {useMutation} from '@apollo/client';
+import {useShopifyCheckout} from '@shopify/checkout-kit-react-native';
+
 function App() {
-  const shopifyCheckout = useShopifyCheckout()
-  const checkoutUrl = useRef<string>(null)
-  const [createCart] = useMutation(createCartMutation)
-  const [addToCart] = useMutation(addToCartMutation)
+  const shopifyCheckout = useShopifyCheckout();
+  const checkoutUrl = useRef<string | null>(null);
+  const [createCart] = useMutation(createCartMutation);
+  const [addToCart] = useMutation(addToCartMutation);
 
-  const handleAddToCart = useCallback((merchandiseId) => {
-    // Create a cart
-    const {data: cartCreateResponse} = await createCart()
-    // Add an item to the cart
-    const {data: addToCartResponse} = await addToCart({
-      variables: {
-        cartId: cartCreateResponse.cartCreate.cart.id,
-        lines: [{quantity: 1, merchandiseId}]
-      }
-    })
-    // Retrieve checkoutUrl from the Storefront response
-    checkoutUrl.current = addToCartResponse.cartLinesAdd.cart.checkoutUrl
-
-    // Preload the checkout in the background for faster presentation
-    shopifyCheckout.preload(checkoutUrl.current)
-  }, []);
+  const handleAddToCart = useCallback(
+    async (merchandiseId: string) => {
+      // Create a cart
+      const {data: cartCreateResponse} = await createCart();
+      // Add an item to the cart
+      const {data: addToCartResponse} = await addToCart({
+        variables: {
+          cartId: cartCreateResponse.cartCreate.cart.id,
+          lines: [{quantity: 1, merchandiseId}],
+        },
+      });
+      // Retrieve checkoutUrl from the Storefront response
+      checkoutUrl.current = addToCartResponse.cartLinesAdd.cart.checkoutUrl;
+    },
+    [createCart, addToCart],
+  );
 
   const handleCheckout = useCallback(() => {
-    if (checkoutURL.current) {
+    if (checkoutUrl.current) {
       // Present the checkout to the buyer
-      shopifyCheckout.present(checkoutURL.current)
+      shopifyCheckout.present(checkoutUrl.current);
     }
-  }, [])
+  }, [shopifyCheckout]);
 
   return (
     <Catalog>
       <Product onAddToCart={handleAddToCart} />
-      <Button onPress={handleCheckout}>
-        <Text>Checkout</Text>
-      </Button>
-    <Catalog>
-  )
+      <Button title="Checkout" onPress={handleCheckout} />
+    </Catalog>
+  );
 }
 ```
+
+`Catalog` and `Product` represent your app's components. Handle cart mutation
+errors in your app and only offer checkout after the cart has a valid URL.
 
 > [!TIP]
 > To help optimize and deliver the best experience the SDK also provides
 > a [preloading API](#preloading) that can be used to initialize the checkout
-> session in the background and ahead of time.
+> session when the buyer is likely to check out, such as when they open the cart.
 
 ## Configuration
 
