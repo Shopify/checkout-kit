@@ -9,4 +9,7 @@ enum ColorPalette {
 enum DesignSystem {
     static let cornerRadius: CGFloat = 10
     static let buttonSpacing: CGFloat = 8
+    /// Matches checkout's own content column (58rem, 580px), so primary actions don't stretch
+    /// edge to edge on wide windows such as iPad or iPhone Duo's inner display.
+    static let maxActionWidth: CGFloat = 580
 }
