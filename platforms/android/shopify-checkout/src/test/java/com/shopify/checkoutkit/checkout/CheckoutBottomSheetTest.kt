@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.checkout
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
@@ -41,6 +42,7 @@ import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
@@ -122,6 +124,53 @@ class CheckoutBottomSheetTest {
         val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
 
         assertThat(layoutParams.topMargin).isEqualTo(statusBarTopInset)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.R])
+    fun `bottom sheet keeps clear of side navigation bar and display cutout`() {
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)!!
+        val navigationBarInset = 24f.dpToPx(activity).roundToInt()
+        val cutoutInset = 48f.dpToPx(activity).roundToInt()
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 0, navigationBarInset, 0))
+                .setInsets(WindowInsetsCompat.Type.displayCutout(), Insets.of(cutoutInset, 0, 0, 0))
+                .build(),
+        )
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.leftMargin).isEqualTo(cutoutInset)
+        assertThat(layoutParams.rightMargin).isEqualTo(cutoutInset)
+    }
+
+    @Test
+    fun `bottom sheet clears side margins when side insets go away`() {
+        val sheet = presentBottomSheet()
+        val bottomSheet = sheet.findViewById<CheckoutBottomSheetLayout>(R.id.checkout_sheet)!!
+        val navigationBarInset = 48f.dpToPx(activity).roundToInt()
+
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(navigationBarInset, 0, 0, 0))
+                .build(),
+        )
+        ViewCompat.dispatchApplyWindowInsets(
+            bottomSheet,
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.NONE)
+                .build(),
+        )
+
+        val layoutParams = bottomSheet.layoutParams as FrameLayout.LayoutParams
+
+        assertThat(layoutParams.leftMargin).isZero()
+        assertThat(layoutParams.rightMargin).isZero()
     }
 
     @Test

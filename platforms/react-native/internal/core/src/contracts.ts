@@ -169,7 +169,7 @@ interface CommonConfiguration {
    *
    * To implement localization support for iOS:
    *  1. Create a "Localizable.xcstrings" file under "ios/{YourApplication}"
-   *  2. Set a translated value for a "shopify_checkout_sheet_title" key
+   *  2. Set a translated value for a "shopify_checkout_kit_title" key
    *
    * To implement localization support for Android:
    *  1. Open the "android/app/src/main/res/values/strings.xml" file
