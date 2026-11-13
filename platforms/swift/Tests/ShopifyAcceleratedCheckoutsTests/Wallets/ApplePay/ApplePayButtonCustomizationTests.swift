@@ -20,6 +20,13 @@ final class ApplePayButtonCustomizationTests: XCTestCase {
         XCTAssertEqual(storedApplePayButtonStyle(in: view)?.rawValue, PKPaymentButtonStyle.black.rawValue)
     }
 
+    func test_buttonHeight_withButtonHeightModifier_shouldSetResolvedButtonHeight() {
+        let view = ShopifyAcceleratedCheckoutButtons(cartID: "gid://Shopify/Cart/test-cart-id")
+
+        XCTAssertEqual(view.resolvedButtonHeight, 48)
+        XCTAssertEqual(view.buttonHeight(56).resolvedButtonHeight, 56)
+    }
+
     func test_applePayButton_withPassKitValues_shouldPassValuesToInternalButton() {
         let button = ApplePayButton(
             identifier: .cart(cartID: "gid://Shopify/Cart/test-cart-id"),
@@ -43,6 +50,16 @@ final class ApplePayButtonCustomizationTests: XCTestCase {
 
         XCTAssertEqual(storedButtonType(in: button)?.rawValue, PKPaymentButtonType.buy.rawValue)
         XCTAssertEqual(storedButtonStyle(in: button)?.rawValue, PKPaymentButtonStyle.whiteOutline.rawValue)
+    }
+
+    func test_applePayButton_withButtonHeight_shouldStoreButtonHeight() {
+        let button = ApplePayButton(
+            identifier: .cart(cartID: "gid://Shopify/Cart/test-cart-id"),
+            cornerRadius: nil,
+            buttonHeight: 56
+        )
+
+        XCTAssertEqual(storedButtonHeight(in: button), 56)
     }
 
     func test_applePayButtonRepresentable_withPassKitValues_shouldStoreValuesDirectly() {
@@ -93,6 +110,10 @@ final class ApplePayButtonCustomizationTests: XCTestCase {
 
     private func storedButtonStyle(in value: some Any) -> PKPaymentButtonStyle? {
         return childValue(named: "buttonStyle", in: value)
+    }
+
+    private func storedButtonHeight(in value: some Any) -> CGFloat? {
+        return childValue(named: "buttonHeight", in: value)
     }
 
     private func storedRepresentableButtonType(in value: some Any) -> PKPaymentButtonType? {
