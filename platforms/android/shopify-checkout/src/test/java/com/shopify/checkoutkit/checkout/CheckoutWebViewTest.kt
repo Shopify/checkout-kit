@@ -81,6 +81,8 @@ class CheckoutWebViewTest {
         assertThat(view.visibility).isEqualTo(VISIBLE)
         assertThat(view.settings.javaScriptEnabled).isTrue
         assertThat(view.settings.domStorageEnabled).isTrue
+        assertThat(view.settings.useWideViewPort).isTrue
+        assertThat(view.settings.loadWithOverviewMode).isTrue
         assertThat(view.id).isNotNull
         assertThat(shadowOf(view).webViewClient.javaClass).isEqualTo(CheckoutWebView.CheckoutWebViewClient::class.java)
         assertThat(shadowOf(view).backgroundColor).isEqualTo(Color.TRANSPARENT)

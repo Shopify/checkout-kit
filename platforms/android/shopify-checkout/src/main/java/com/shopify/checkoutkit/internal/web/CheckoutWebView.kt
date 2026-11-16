@@ -760,6 +760,10 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
         javaScriptEnabled = true
         domStorageEnabled = true
         allowContentAccess = true
+        // Honor the page's viewport meta tag, as Chrome does. Without these, offsite payment
+        // pages that declare a fixed width or scale by devicePixelRatio render too large.
+        useWideViewPort = true
+        loadWithOverviewMode = true
     }
     if (WebViewFeature.isFeatureSupported(WebViewFeature.PAYMENT_REQUEST)) {
         WebSettingsCompat.setPaymentRequestEnabled(settings, true)
