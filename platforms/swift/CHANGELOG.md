@@ -1,5 +1,11 @@
 # Checkout Kit for Swift changelog
 
+## 4.1.0
+
+### Minor Changes
+
+- Add an opt-in `.buttonHeight(_:)` modifier for Shop Pay and Apple Pay accelerated checkout buttons. Buttons default to 48pt and accept heights from 30pt to 64pt. Values outside that range are clamped; zero, negative, or non-finite values use the default. Read the applied height from `resolvedButtonHeight`.
+
 ## 4.0.0
 
 ### Major Changes
