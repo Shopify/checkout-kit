@@ -100,6 +100,7 @@ struct CartView: View {
                     .foregroundColor(.white)
                     .accessibilityIdentifier(AccessibilityIdentifiers.Cart.checkoutButton)
                 }
+                .frame(maxWidth: DesignSystem.maxActionWidth)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }

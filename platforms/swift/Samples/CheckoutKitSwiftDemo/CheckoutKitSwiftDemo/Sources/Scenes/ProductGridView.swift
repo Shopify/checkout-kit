@@ -7,8 +7,7 @@ struct ProductGridView: View {
     @State private var showProductSheet = false
 
     let columns = [
-        GridItem(.fixed(UIScreen.main.bounds.width / 2 - 10)),
-        GridItem(.fixed(UIScreen.main.bounds.width / 2 - 10))
+        GridItem(.adaptive(minimum: 170))
     ]
 
     var body: some View {
@@ -31,7 +30,7 @@ struct ProductGridView: View {
                         .padding()
                 }
             }
-            .padding(.horizontal, 5)
+            .padding(.horizontal, 6)
             .padding(.top, 10)
 
             if productCache.isFetching, productCache.collection != nil {
@@ -86,7 +85,6 @@ struct ProductSheetView: View {
 
 struct ProductGridItem: View {
     let product: Product
-    let maxWidth = UIScreen.main.bounds.width / 2 - 20
 
     var body: some View {
         VStack {
@@ -129,11 +127,12 @@ struct ProductGridItem: View {
                         )
                 }
             }
-            .frame(maxWidth: maxWidth)
+            .frame(minWidth: 0, maxWidth: .infinity)
             .frame(height: 180)
             .background(Color.gray.opacity(0.05))
             .cornerRadius(12)
             .clipped()
+            .padding(.horizontal, 5)
 
             VStack(spacing: 4) {
                 Text(product.title)
