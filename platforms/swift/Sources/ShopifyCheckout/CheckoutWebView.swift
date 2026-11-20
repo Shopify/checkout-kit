@@ -40,7 +40,8 @@ final class PreloadCache {
 
     private static let keepAliveInterval: TimeInterval = 0.5
 
-    private let now: () -> Date
+    /// The clock for new entries. Tests replace it on the shared cache to move time without waiting.
+    var now: () -> Date
     private var entry: Entry?
     private var keepAliveTimer: Timer?
     private var expiryTimer: Timer?
@@ -52,16 +53,28 @@ final class PreloadCache {
     /// receives state updates; earlier handles stop observing.
     private weak var observer: CheckoutPreload?
 
+    /// A terminal state for a view that was removed while presented. A presented checkout is in
+    /// use, so its handle reports the state when the view is dismissed rather than mid-session.
+    private struct HeldState {
+        weak var view: CheckoutWebView?
+        let state: PreloadState
+    }
+
+    private var heldState: HeldState?
+
     init(now: @escaping () -> Date = Date.init) {
         self.now = now
     }
 
     func setObserver(_ observer: CheckoutPreload) {
+        // A held state describes the previous handle's checkout, not this one.
+        heldState = nil
         self.observer = observer
     }
 
     func store(_ view: CheckoutWebView, for key: PreloadKey, createdAt: Date? = nil) -> Bool {
         invalidate()
+        heldState = nil
 
         let entry = Entry(key: key, view: view, createdAt: createdAt ?? now(), now: now)
         guard !entry.isStale else {
@@ -88,10 +101,19 @@ final class PreloadCache {
     /// callback is not wiped by this invalidation.
     /// An empty cache preserves its last state without notifying observers.
     func evict(with state: PreloadState) {
-        guard entry != nil else { return }
+        guard let cached = entry else { return }
 
         invalidate()
-        transition(to: state)
+        if cached.view.isPresented, state.isTerminal {
+            OSLogger.shared.debug(CheckoutWebView.preloadStateHeldLogMessage)
+            let configuration = ShopifyCheckout.configuration
+            if configuration.logLevel == .debug {
+                configuration.logger.log(CheckoutWebView.preloadStateHeldLogMessage)
+            }
+            heldState = HeldState(view: cached.view, state: state)
+        } else {
+            transition(to: state)
+        }
     }
 
     func view(for key: PreloadKey) -> CheckoutWebView? {
@@ -111,11 +133,17 @@ final class PreloadCache {
     }
 
     /// Retains a dismissed cached view for the remainder of its original preload TTL.
+    /// Reports any state held for the view while it was presented.
     ///
     /// The expiry timer is paused while a cached view is presented so it cannot evict a live
     /// checkout session. Re-arm it after dismissal without resetting `createdAt`.
     @discardableResult
     func retainAfterPresentation(_ view: CheckoutWebView) -> Bool {
+        if let held = heldState, held.view === view {
+            heldState = nil
+            transition(to: held.state)
+            return false
+        }
         guard let cached = entry, cached.view === view else {
             return false
         }
@@ -140,7 +168,7 @@ final class PreloadCache {
     }
 
     func hasEntry() -> Bool {
-        if entry?.isStale == true {
+        if let entry, isExpired(entry) {
             expire()
             return false
         }
@@ -153,7 +181,7 @@ final class PreloadCache {
             return false
         }
 
-        if entry.isStale {
+        if isExpired(entry) {
             expire()
             return false
         }
@@ -162,11 +190,17 @@ final class PreloadCache {
     }
 
     func contains(_ view: CheckoutWebView) -> Bool {
-        guard let entry, !entry.isStale else {
+        guard let entry, entry.view === view else {
             return false
         }
 
-        return entry.view === view
+        return !isExpired(entry)
+    }
+
+    /// The TTL is paused while the view is presented, so a live checkout is never expired.
+    /// Dismissal expires a kept view that has outlived it.
+    private func isExpired(_ entry: Entry) -> Bool {
+        entry.isStale && !entry.view.isPresented
     }
 
     func hasActiveKeepAlive() -> Bool {
@@ -246,6 +280,17 @@ final class PreloadCache {
     }
 }
 
+extension PreloadState {
+    fileprivate var isTerminal: Bool {
+        switch self {
+        case .idle, .failed:
+            return true
+        case .loading, .ready:
+            return false
+        }
+    }
+}
+
 private enum LogSafeURL {
     private static let redactedQueryItemNames = Set([
         "checkout[email]",
@@ -310,6 +355,7 @@ struct UIApplicationExternalURLHandler: ExternalURLHandling {
 class CheckoutWebView: WKWebView {
     static let preloadCache = PreloadCache()
     static let preloadCacheHitLogMessage = "Presenting preloaded checkout from cache"
+    static let preloadStateHeldLogMessage = "Holding preload state until checkout is dismissed"
     private static let purposeHeader = "Shopify-Purpose"
     private static let prefetchPurpose = "prefetch"
 
@@ -490,8 +536,8 @@ class CheckoutWebView: WKWebView {
     var isPreloadRequest = false
 
     /// Latches true once the cached view is handed off for presentation. A
-    /// presented view is a live session, so its navigation events must no
-    /// longer drive preload state, even after dismissal or reuse.
+    /// presented view is a live session, so its failures report the preload as
+    /// invalidated rather than failed, even after dismissal or reuse.
     var hasBeenPresented = false
 
     /// Tracks whether this view is currently backing a presented checkout.
@@ -661,8 +707,13 @@ class CheckoutWebView: WKWebView {
         }
     }
 
-    private func markPreloadReadyIfActive() {
-        guard isPreloadBackgrounded else { return }
+    /// A preload is ready when checkout sends `ec.ready`, whether or not it has been presented.
+    /// A page that is not checkout, such as a bot challenge, never sends `ec.ready`, so a finished
+    /// navigation alone does not count. The cache ignores a repeated `.ready`.
+    private func markPreloadReady(method: String?) {
+        guard method == CheckoutProtocol.ready.method,
+              CheckoutWebView.preloadCache.contains(self)
+        else { return }
 
         CheckoutWebView.preloadCache.transition(to: .ready)
     }
@@ -752,6 +803,7 @@ extension CheckoutWebView: WKScriptMessageHandler {
 
         let supportedMethod = CheckoutProtocol.supportedProtocolMethod(body)
         recordReadyDurationIfReady(method: supportedMethod)
+        markPreloadReady(method: supportedMethod)
 
         guard let method = supportedMethod else {
             if isTerminalProtocolError(body) {
@@ -1077,8 +1129,6 @@ extension CheckoutWebView: WKNavigationDelegate {
     }
 
     func webView(_: WKWebView, didFinish navigation: WKNavigation!) {
-        markPreloadReadyIfActive()
-
         viewDelegate?.checkoutViewDidFinishNavigation()
 
         if let startTime = navigationStartedAt {

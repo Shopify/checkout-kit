@@ -19,7 +19,7 @@
     "./checkout/testing": "./checkout/src/telemetry.test-helpers.ts"
   },
   "dependencies": {
-    "@shopify/checkout-kit-protocol": "workspace:*",
-    "@shopify/checkout-kit-telemetry": "workspace:*"
+    "@shopify/checkout-kit-telemetry": "workspace:*",
+    "@shopify/embedded-checkout-protocol": "workspace:*"
   }
 }

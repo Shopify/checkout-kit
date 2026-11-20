@@ -17,6 +17,10 @@ export {
   type DecodedMessage,
 } from './codec';
 export {
+  Delegations,
+  SPEC_VERSION,
+  notificationDescriptors,
+  requestDescriptors,
   checkoutProtocolCatalog,
   checkoutProtocolCatalogPayloadDecoders,
   checkoutProtocolRequestCatalog,
@@ -35,6 +39,7 @@ export {
 } from './generated/ProtocolNotifications';
 export {Client, type DecodeErrorContext} from './client';
 export {windowOpenSuccess, windowOpenRejected} from './window_open';
+export {url, type ProtocolURLOptions} from './url';
 export {EmbeddedCheckoutProtocol} from './embedded_checkout_protocol';
 export {
   ProtocolValidationError,

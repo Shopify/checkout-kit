@@ -20,8 +20,8 @@ function fixture(run) {
 }
 
 test('allows private source packages and independently published protocols', () => fixture(({root, write, component}) => {
-  write('platforms/web/components/shopify-checkout', {...component, dependencies: {'@shopify/checkout-kit-protocol': 'workspace:*'}});
-  write('protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript', {name: '@shopify/checkout-kit-protocol', version: '2026.10.9', private: false});
+  write('platforms/web/components/shopify-checkout', {...component, dependencies: {'@shopify/embedded-checkout-protocol': 'workspace:*'}});
+  write('protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript', {name: '@shopify/embedded-checkout-protocol', version: '2026.10.9', private: false});
   assert.deepEqual(inspectSdkPackages(root).errors, []);
 }));
 
@@ -46,28 +46,80 @@ for (const [platform, name] of [['web', '@shopify/checkout-kit'], ['react-native
   for (const field of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
     test(`rejects the undiscovered private protocol workspace in ${platform} ${field}`, () => fixture(({root, write}) => {
       write('protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript', {
-        name: '@shopify/checkout-kit-protocol', version: '0.0.0', private: true,
+        name: '@shopify/embedded-checkout-protocol', version: '0.0.0', private: true,
       });
-      write(`platforms/${platform}`, {name, version: '4.0.0', [field]: {'@shopify/checkout-kit-protocol': 'workspace:*'}});
+      write(`platforms/${platform}`, {name, version: '4.0.0', [field]: {'@shopify/embedded-checkout-protocol': 'workspace:*'}});
       const errors = inspectSdkPackages(root).errors;
       assert.equal(errors.length, 1);
-      assert.match(errors[0], new RegExp(`platforms/${platform}: ${field} references unrecognized workspace package @shopify/checkout-kit-protocol`));
+      assert.match(errors[0], new RegExp(`platforms/${platform}: ${field} references unrecognized workspace package @shopify/embedded-checkout-protocol`));
     }));
   }
 }
 
-test('allows private workspaces as build-time dependencies and registry runtime dependencies', () => fixture(({root, write}) => {
+test('allows private workspaces and third-party tooling as development dependencies', () => fixture(({root, write, component}) => {
   write('protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/typescript', {
-    name: '@shopify/checkout-kit-protocol', version: '0.0.0', private: true,
+    name: '@shopify/embedded-checkout-protocol', version: '0.0.0', private: true,
   });
   write('platforms/web', {
     name: '@shopify/checkout-kit', version: '4.0.0',
-    devDependencies: {'@shopify/checkout-kit-protocol': 'workspace:*'},
-    dependencies: {'some-published-package': '^1.0.0'},
-    optionalDependencies: {'some-optional-package': '^1.0.0'},
-    peerDependencies: {'some-peer-package': '^1.0.0'},
+    devDependencies: {'@shopify/embedded-checkout-protocol': 'workspace:*', 'happy-dom': '^21.0.4'},
   });
+  write('platforms/web/components/shopify-checkout', {...component, devDependencies: {vitest: '^4.1.0'}});
   assert.deepEqual(inspectSdkPackages(root).errors, []);
+}));
+
+for (const [path, name] of [
+  ['platforms/web', '@shopify/checkout-kit'],
+  ['platforms/web/components/shopify-checkout', '@shopify/internal-checkout'],
+]) {
+  for (const field of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
+    test(`rejects third-party Web runtime dependencies in ${path} ${field}`, () => fixture(({root, write, component}) => {
+      const base = path === 'platforms/web' ? {name, version: '4.0.0'} : component;
+      write(path, {...base, [field]: {'some-runtime-library': '^1.0.0'}});
+      const errors = inspectSdkPackages(root).errors;
+      assert.equal(errors.length, 1);
+      assert.match(errors[0], new RegExp(`${path}: ${field}\\.some-runtime-library is a third-party runtime dependency, which web does not allow; see \\.github/ARCHITECTURE\\.md#runtime-dependencies`));
+    }));
+  }
+}
+
+test('allows React Native host peers', () => fixture(({root, write, component}) => {
+  const peers = {react: '*', 'react-native': '*'};
+  write('platforms/react-native', {
+    name: '@shopify/checkout-kit-react-native', version: '4.0.0',
+    checkoutKit: {nativeSdkVersions: {ios: '3.2.0', android: '3.2.1'}}, peerDependencies: peers,
+  });
+  write('platforms/react-native/components/shopify-checkout', {...component, name: '@shopify/rn-checkout', peerDependencies: peers});
+  assert.deepEqual(inspectSdkPackages(root).errors, []);
+}));
+
+test('rejects React Native host libraries outside peer dependencies', () => fixture(({root, write}) => {
+  write('platforms/react-native', {name: '@shopify/checkout-kit-react-native', version: '4.0.0', dependencies: {react: '19.3.0'}});
+  const errors = inspectSdkPackages(root).errors;
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /platforms\/react-native: dependencies\.react must be declared in peerDependencies/);
+}));
+
+test('requires React Native host peers to use one range across the platform', () => fixture(({root, write, component}) => {
+  write('platforms/react-native', {name: '@shopify/checkout-kit-react-native', version: '4.0.0', peerDependencies: {react: '*'}});
+  write('platforms/react-native/components/shopify-checkout', {...component, name: '@shopify/rn-checkout', peerDependencies: {react: '>=19'}});
+  const errors = inspectSdkPackages(root).errors;
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /^react-native: peerDependencies\.react must use the same range in every package: \* \(platforms\/react-native\); >=19 \(platforms\/react-native\/components\/shopify-checkout\)$/);
+}));
+
+test('requires approved bundled dependencies to take their version from the pnpm catalog', () => fixture(({root, write, component}) => {
+  const allowed = {web: {'approved-library': ['dependencies']}, 'react-native': {}};
+  write('platforms/web/components/shopify-checkout', {...component, dependencies: {'approved-library': 'catalog:'}});
+  write('platforms/web/internal/core', {...component, name: '@shopify/internal-core', dependencies: {'approved-library': '^1.2.0'}});
+  const errors = inspectSdkPackages(root, allowed).errors;
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /^platforms\/web\/internal\/core: dependencies\.approved-library must use "catalog:"/);
+}));
+
+test('rejects other third-party React Native runtime dependencies', () => fixture(({root, write}) => {
+  write('platforms/react-native', {name: '@shopify/checkout-kit-react-native', version: '4.0.0', peerDependencies: {'react-native-gesture-handler': '*'}});
+  assert.match(inspectSdkPackages(root).errors.join('\n'), /peerDependencies\.react-native-gesture-handler is a third-party runtime dependency, which react-native does not allow/);
 }));
 
 test('rejects dependencies from private components back to their umbrella', () => fixture(({root, write, component}) => {
@@ -98,4 +150,11 @@ test('allows public releases without modifying private versions or native pins',
 test('rejects duplicate workspace package names', () => fixture(({root, write, component}) => {
   write('platforms/web/components/another-checkout', component);
   assert.match(inspectSdkPackages(root).errors.join('\n'), /duplicate package name/);
+}));
+
+test('checks one platform without requiring the others', () => fixture(({root}) => {
+  rmSync(join(root, 'platforms/react-native'), {recursive: true});
+  assert.match(inspectSdkPackages(root).errors.join('\n'), /platforms\/react-native: missing package manifest/);
+  assert.deepEqual(inspectSdkPackages(root, undefined, ['web']).errors, []);
+  assert.throws(() => inspectSdkPackages(root, undefined, ['webb']), /Unknown SDK platform: webb/);
 }));

@@ -155,6 +155,7 @@ commands:
     run: |
       set -e
       node scripts/check-sdk-packages.mjs
+      node scripts/check-swift-dependencies.mjs
       node scripts/release/sync-versions.mjs --check
       /opt/dev/bin/dev android lint
       /opt/dev/bin/dev swift lint
@@ -355,6 +356,9 @@ commands:
           platforms/android/gradlew -p platforms/android clean test --console=plain
           platforms/android/samples/CheckoutKitAndroidDemo/gradlew -p platforms/android/samples/CheckoutKitAndroidDemo :app:testDebugUnitTest --console=plain
         subcommands:
+          mutation:
+            desc: Run opt-in PIT mutation testing for Kotlin checkout message admission (plain JUnit only)
+            run: platforms/android/gradlew -p platforms/android :shopify-checkout:mutationTest -PmutationTest=true --console=plain
           samples:
             desc: Run JVM tests for the Checkout Kit Android sample app
             syntax:
@@ -567,13 +571,13 @@ commands:
             syntax: "[test_class_name]"
             run: cd platforms/swift && ./Scripts/test_samples "${1:-}"
       api:
-        desc: Validate or update the public Swift API baseline (platforms/swift/api/*.json)
+        desc: Validate or update the public Swift API baseline (platforms/swift/api/*.swiftinterface)
         run: |
           echo "Usage: dev swift api {check|dump|diagnose [<ref>]}"
           echo ""
           echo "  check     Verify public Swift API matches the committed baselines"
           echo "  dump      Regenerate the Swift API baselines after intentional public API changes"
-          echo "  diagnose  Summarize baseline changes since <ref> (default origin/main)"
+          echo "  diagnose  Show declaration diffs since <ref> without building (default origin/main)"
           exit 1
         subcommands:
           check:
@@ -583,7 +587,7 @@ commands:
             desc: Regenerate the Swift API baselines after intentional public API changes
             run: cd platforms/swift && ./Scripts/api dump
           diagnose:
-            desc: "Summarize Swift API baseline changes since a ref. Usage: dev swift api diagnose [<ref>]"
+            desc: "Show Swift API declaration diffs since a ref. Usage: dev swift api diagnose [<ref>]"
             run: cd platforms/swift && ./Scripts/api diagnose "$@"
 
       lint:
@@ -930,6 +934,14 @@ commands:
   web:
     desc: "Web Checkout Kit commands"
     subcommands:
+      api:
+        desc: Check the approved Web declarations without updating the baseline
+        run: cd platforms/web && pnpm api:check
+        subcommands:
+          check:
+            desc: Build and compare the public API with platforms/web/api/
+            run: cd platforms/web && pnpm api:check
+
       build:
         desc: Build the @shopify/checkout-kit npm package and CDN assets
         run: cd platforms/web && pnpm build

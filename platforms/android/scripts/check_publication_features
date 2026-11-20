@@ -62,4 +62,32 @@ if ! grep -q ':publication-fixture:apiCheck FAILED' "$PUBLICATION_FIXTURE_DIR/ap
     echo "API check failed for a reason other than the sibling feature's API drift." >&2
     exit 1
 fi
-echo "Sibling feature publication and platform API validation verified."
+# A sibling feature cannot add an unapproved runtime module.
+expect_runtime_dependency_rejection() {
+  local dependency="$1" expected="$2"
+  cp "$PUBLICATION_FIXTURE_DIR/build.gradle" "$PUBLICATION_FIXTURE_DIR/build.gradle.orig"
+  echo "dependencies { implementation '$dependency' }" >> "$PUBLICATION_FIXTURE_DIR/build.gradle"
+  if ./gradlew -I "$init_script" :shopify-checkout-kit:verifyRuntimeDependencies --console=plain \
+    > "$PUBLICATION_FIXTURE_DIR/runtime-dependencies.log" 2>&1; then
+    echo "Expected the runtime dependency check to reject $dependency." >&2
+    exit 1
+  fi
+  if ! grep -q "$expected" "$PUBLICATION_FIXTURE_DIR/runtime-dependencies.log"; then
+    echo "Runtime dependency check failed for a reason other than $dependency." >&2
+    cat "$PUBLICATION_FIXTURE_DIR/runtime-dependencies.log" >&2
+    exit 1
+  fi
+  mv "$PUBLICATION_FIXTURE_DIR/build.gradle.orig" "$PUBLICATION_FIXTURE_DIR/build.gradle"
+}
+expect_runtime_dependency_rejection 'com.squareup.okio:okio:3.9.0' \
+  'com.squareup.okio:okio is not an approved third-party runtime dependency'
+expect_runtime_dependency_rejection 'com.shopify:unapproved-module:1.0.0' \
+  'com.shopify:unapproved-module is not an approved third-party runtime dependency'
+# Version policy is separate: the module check does not reject an approved
+# module merely because it declares a different version.
+cp "$PUBLICATION_FIXTURE_DIR/build.gradle" "$PUBLICATION_FIXTURE_DIR/build.gradle.orig"
+echo "dependencies { implementation 'androidx.webkit:webkit:1.0.0' }" >> "$PUBLICATION_FIXTURE_DIR/build.gradle"
+./gradlew -I "$init_script" :shopify-checkout-kit:verifyRuntimeDependencies --console=plain
+mv "$PUBLICATION_FIXTURE_DIR/build.gradle.orig" "$PUBLICATION_FIXTURE_DIR/build.gradle"
+
+echo "Sibling feature publication, platform API, and runtime dependency validation verified."

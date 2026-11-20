@@ -61,13 +61,13 @@ Use the following steps to get started with adding it to your web application:
 
 ### Installation
 
-Install Checkout Kit for Web `4.0.0`:
+Install Checkout Kit for Web `4.0.1`:
 
 ```sh
-pnpm add @shopify/checkout-kit@4.0.0
+pnpm add @shopify/checkout-kit@4.0.1
 
 # or using npm
-npm install @shopify/checkout-kit@4.0.0
+npm install @shopify/checkout-kit@4.0.1
 ```
 
 Stable releases are published under the `latest` dist-tag. Omit the version
@@ -760,6 +760,36 @@ field to try `open()` / `close()` / `focus()` and see the live event stream.
 
 We welcome code contributions, feature requests, and reporting of issues.
 Please see [guidelines and instructions](../../.github/CONTRIBUTING.md).
+
+The approved public interface lives in [`api/`](./api): the bundled TypeScript
+declarations and the package export map. From the repository root, run
+`dev web api check` to build and compare it, or run `pnpm api:check` from this
+directory. Package verification also checks the declarations after a build.
+Any addition, removal, or change fails, including new type-only exports and
+new import paths. Documentation is preserved; only line endings and generated
+bundler markers are normalized.
+
+The check prints a diff and writes a proposal to `build/api/`; it never modifies
+`api/`. A contract mismatch exits with a failure after writing that proposal.
+For an intentional change, first run `pnpm api:check` from the SDK package
+directory and fix any build errors. After explicit approval of the proposed API
+changes, replace the baseline, including removed declaration files:
+
+```sh
+rsync -a --delete build/api/ api/
+pnpm api:check
+git add api/
+git diff --cached -- api/
+```
+
+Review and commit the baseline alongside the implementation. There is no
+automatic update flag. These baselines describe the emitted types; runtime
+behavior remains covered by tests.
+
+On a pull request, CI posts the API diff when the contract check fails and
+updates the same comment when the mismatch is resolved. Large diffs link to the
+full report artifact. The comment publisher must be present on the default
+branch before it can report on workflow runs.
 
 ## Releasing
 

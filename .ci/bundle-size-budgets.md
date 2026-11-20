@@ -1,18 +1,57 @@
 # Bundle size budgets
 
 `.ci/bundle-size-budgets.json` defines named budgets for each platform. Each budget
-explicitly selects a `measurement` and may select a `file` within a package.
+explicitly selects a `measurement` and may select a `file` within a package or CDN
+build. An optional `name` supplies a readable display name in the budget table
+and the corresponding measurement or file breakdown row.
 The platform adapter defines what its `bundle` contains; for web, that is all
 shipped JavaScript under `dist`.
 Limits are KiB (1,024 bytes), including fractions. Comparisons use exact
 bytes, not the rounded numbers displayed in PR reports.
 
-Web has a 37 KiB soft limit and 50 KiB hard limit on all shipped JavaScript,
+Web has a 72 KiB soft limit and 85 KiB hard limit on all shipped JavaScript,
 using `"measurement": "bundle"`. This measures all entry points and shared chunks
-in `dist`. The shared-checkout extraction measures 36.1 KiB, compared with
-35.8 KiB before extraction. Declarations,
-source maps, and other package contents are excluded from this measurement.
-Web's deterministic gzip bundle size and npm package size remain informational.
+in `dist`. Declarations, source maps, and other package contents are excluded from
+this measurement. `shopify-universal-checkout` and `shop-pay` also have individual file budgets;
+their report names omit the `dist/chunks/` path prefix.
+The separate CDN build has a 132 KiB soft limit and 150 KiB hard limit using
+`"measurement": "cdn"`. It measures all runtime JavaScript in `dist-cdn`, including
+the loader and hashed component chunks (currently about 130.3 KiB). CDN files are
+built with `pnpm build:cdn` for both the PR base and head; they are not included in
+the npm tarball. A failed or empty head CDN build fails measurement.
+CDN collection is enabled by default. Callers measuring an npm-only package can
+set `MEASURE_WEB_CDN=false` to skip the CDN build and measurements.
+Deterministic gzip sizes for both builds and the npm package size remain informational.
+
+One summary table combines bundle and package totals, npm components, configured
+file budgets, and the CDN loader and components. It shows current raw and
+compressed sizes with explicit KiB units and nonzero changes from the PR base
+beside each value. Limits share the same row, and an overall status replaces
+repeated success messages. Breaches remain visible on the affected rows;
+acceptance instructions appear only when needed. File inventories,
+accepted-increase reasons, and measurement explanations live inside one
+**Measurement details** disclosure.
+
+Entry names show ⚠️ when the current size is above a soft limit and 🛑 when it is
+above a hard limit. Comparisons use exact bytes, with the hard-limit indicator
+taking precedence if multiple budgets share a row. Accepted or unchanged sizes
+above a limit retain the indicator; the budget status explains whether action is
+required. Rows without budgets or current measurements have no threshold indicator.
+
+npm components are discovered from implementation chunks with matching package
+entry points, even without a configured budget. Each component row measures its
+implementation chunk. **Shared runtime** groups the remaining internal JavaScript,
+and **Entry points** groups the top-level JavaScript files. Individually budgeted
+files appear separately and are excluded from these groups. Together, the rows
+account for the npm JavaScript total without counting any file twice. Gzip sizes
+for individual npm rows are not collected. Missing measurements are shown as
+unavailable.
+
+CDN component sizes include their bundled dependencies. Files under
+`assets/<component>/` are grouped by component name, so changing a content hash
+preserves the comparison. Other runtime files remain visible by path. Added or
+removed CDN components compare against zero when measurements exist on both
+revisions; missing measurements are shown as unavailable.
 
 Android and React Native use `"measurement": "package"` to budget the complete
 compressed artifact:
@@ -74,6 +113,8 @@ for the updated report. Expired measurement artifacts also require a rerun.
 | --- | --- | --- |
 | `web` | `bundle` | Sum of raw shipped `.js`, `.mjs`, and `.cjs` files in `dist` |
 | `web` | `bundleGzip` | Sum of those files compressed individually with `gzip -n -9` |
+| `web` | `cdn` | Sum of raw `.js`, `.mjs`, and `.cjs` files in the separate `dist-cdn` build |
+| `web` | `cdnGzip` | Sum of those CDN files compressed individually with `gzip -n -9` |
 | `web` | `package` | Whole compressed npm tarball |
 | `react-native` | `package` | Whole compressed wrapper npm tarball |
 | `android` | `package` | Whole compressed release AAR |
@@ -81,24 +122,42 @@ for the updated report. Expired measurement artifacts also require a rerun.
 With `measurement: "package"`, an optional `file` selects that exact file's
 **uncompressed** size inside the package. Paths are relative to the published
 package root (or AAR root); globs are not supported. A missing file fails the check.
-For example, this budgets only the entry file, rather than every JavaScript chunk:
+With `measurement: "cdn"`, `file` selects a runtime JavaScript file relative to
+`dist-cdn`, such as `checkout-kit.js`. Paths must be exact, including any filename
+hash; use the aggregate `cdn` budget to track hashed chunks across builds. Source
+maps and declarations are excluded from CDN measurements.
+
+For example, these entries give the npm runtime chunk and CDN loader readable names:
 
 ```json
 {
   "web": {
-    "entryPoint": {
+    "checkout": {
+      "name": "Checkout runtime",
       "measurement": "package",
-      "file": "dist/index.js",
-      "softKiB": 35,
+      "file": "dist/chunks/shopify-checkout.js",
+      "softKiB": 37,
       "hardKiB": 50
+    },
+    "cdnLoader": {
+      "name": "CDN loader",
+      "measurement": "cdn",
+      "file": "checkout-kit.js",
+      "softKiB": 1.5,
+      "hardKiB": 2
     }
   }
 }
 ```
 
 Omit `file` from a `package` budget to measure the complete compressed artifact.
-Budget names such as `entryPoint` are labels; the selector fields determine what
-is measured, and the PR report displays that scope explicitly.
+Keys such as `checkout` are stable budget identifiers; the selector fields determine
+what is measured. The optional `name` replaces the default scope or path label,
+while the report still shows the platform and compression. Names must contain
+1–100 characters on one line and are escaped for Markdown. Omit `name` to keep the
+existing labels. Renaming a display name does not invalidate an acceptance; changing
+its measurement or file does. If multiple budgets name the same measurement or
+file, the first name is used in the informational breakdown.
 
 Unknown platforms, measurements, units, and invalid limits fail configuration
 validation. Adding a new measurement (for example a Swift framework) requires a

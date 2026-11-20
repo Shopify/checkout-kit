@@ -1741,7 +1741,7 @@ PODS:
     - React-utils (= 0.88.0)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.88.0)
-  - RNShopifyCheckoutKit (4.0.0):
+  - RNShopifyCheckoutKit (4.0.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2132,7 +2132,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 636fec0073ab19cab784016f747946e2b9430023
   ReactCommon: 145a14b942b19fc2fe38927f261955ada56978aa
   ReactNativeDependencies: d3b7423ba1e52525e42085c8470109abde583d2e
-  RNShopifyCheckoutKit: 177fa1191707c1a709b4a6399e69ddc3ba0cdc38
+  RNShopifyCheckoutKit: b726fbcbd4c932f3bba2c341a927f4320d4192b5
   ShopifyCheckoutKit: c905d92213ab6b00a6cf538e94b6f28c6fea3873
   SocketRocket: 37aec555668fb852ec12e3c0de59a86ca58f0871
   Yoga: d1c536142c5ff8ec8cd856ab2a7c227a1d875c8e

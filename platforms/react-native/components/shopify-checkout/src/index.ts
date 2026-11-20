@@ -14,6 +14,7 @@ import {
 import {
   coerceConfigurationResult,
   toNativeConfiguration,
+  validateConfiguration,
 } from '@shopify/checkout-kit-react-native-core/configuration';
 import {
   createPresentDispatcher,
@@ -209,17 +210,25 @@ class ShopifyCheckout implements ShopifyCheckoutKit {
    * @param configuration New configuration settings to apply
    * @returns A Promise that resolves after the native SDK applies the
    * configuration, with the configuration that native reports right after it
-   * applies this call.
+   * applies this call. It rejects with a `TypeError` that has
+   * `code: 'set_config_failed'`, and changes nothing, when a setting has the
+   * wrong type or is `null`.
    */
   public async setConfig(configuration: Configuration): Promise<Configuration> {
-    if (configuration.acceleratedCheckouts) {
-      this._acceleratedCheckoutsReady = this.configureAcceleratedCheckouts(
-        configuration.acceleratedCheckouts,
-      );
-    }
-    return coerceConfigurationResult(
-      await RNShopifyCheckoutKit.setConfig(toNativeConfiguration(configuration)),
+    validateConfiguration(configuration);
+    const {acceleratedCheckouts} = configuration;
+    const applied = await RNShopifyCheckoutKit.setConfig(
+      toNativeConfiguration(configuration),
     );
+    // Configure accelerated checkouts only after native accepts the call. The
+    // native call can still reject for a value that the checks above do not
+    // cover, such as a Symbol in `appearance`, which the iOS bridge cannot
+    // convert. A rejected call then leaves accelerated checkouts unchanged too.
+    if (acceleratedCheckouts) {
+      this._acceleratedCheckoutsReady =
+        this.configureAcceleratedCheckouts(acceleratedCheckouts);
+    }
+    return coerceConfigurationResult(applied);
   }
 
   /**

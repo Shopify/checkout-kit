@@ -38,6 +38,9 @@ fi
 if ! "$REPO_ROOT/scripts/check_xcodebuild_package_resolution"; then
 	exit 1
 fi
+if ! node "$REPO_ROOT/scripts/check-swift-dependencies.mjs"; then
+	exit 1
+fi
 
 print_install_instructions() {
 	echo "🔧 FIX:"

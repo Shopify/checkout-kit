@@ -627,6 +627,19 @@ workflows:
                 E2E_RUN_KOTLIN_ANDROID
                 E2E_RUN_REACT_NATIVE_ANDROID
                 E2E_RUN_REACT_NATIVE_IOS
+      # Posts the sticky comment with install links while the targets run. The
+      # final e2e-report replaces it, so a failed post never blocks the pipeline.
+      - script@1:
+          title: Post the in-progress E2E comment
+          timeout: 300
+          no_output_timeout: 150
+          inputs:
+            - content: |-
+                set -euo pipefail
+                source e2e/scripts/bitrise_ci_helpers
+                if ! (e2e_export_github_token && ruby e2e/scripts/report_bitrise_e2e_results --in-progress); then
+                  e2e_log "Could not post the in-progress E2E comment; e2e-report posts the final one."
+                fi
 
   # Plans the optional BrowserStack real-device pipeline.
   e2e-produce-browserstack-run-plan:
@@ -778,21 +791,36 @@ workflows:
         machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
+      - certificate-and-profile-installer@1: {}
       - bundle::create-ios-simulator: {}
       - bundle::bootstrap-mint:
           inputs:
             - mintfile_dir: platforms/swift
       - bundle::install-maestro: {}
       - script@1:
-          title: Build and run the Swift Maestro suite on the simulator
+          title: Build the Swift iOS IPA and simulator app
           timeout: 5400
           no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
-                source ./e2e/scripts/bitrise_ci_helpers
-                e2e_configure_storefront
-                ./e2e/scripts/run_local_e2e swift-ios
+                ./e2e/scripts/build_swift_ios
+      # Tophat installs these from the branch's latest E2E run.
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_SWIFT_IOS_APP_PATH:E2E_SWIFT_IOS_APP_PATH
+                $E2E_SWIFT_IOS_SIMULATOR_APP_PATH:E2E_SWIFT_IOS_SIMULATOR_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
+      - script@1:
+          title: Run the Swift Maestro suite on the simulator
+          timeout: 3600
+          no_output_timeout: 1800
+          inputs:
+            - content: |-
+                set -euo pipefail
+                ./e2e/scripts/run_bitrise_maestro swift-ios "$E2E_SWIFT_IOS_SIMULATOR_APP_BUNDLE"
       - bundle::export-maestro-results:
           inputs:
             - result_variable: E2E_MAESTRO_SWIFT_IOS_RESULT
@@ -825,6 +853,12 @@ workflows:
             - paths: |-
                 ~/.gradle/caches
                 ~/.gradle/wrapper
+      # Tophat installs this from the branch's latest E2E run.
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: $E2E_KOTLIN_ANDROID_APP_PATH:E2E_KOTLIN_ANDROID_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
       - script@1:
           title: Run the Kotlin Maestro suite on the emulator
           timeout: 3600
@@ -853,20 +887,26 @@ workflows:
           inputs:
             - key: *rn_gradle_cache_key
       - script@1:
-          title: Build the React Native E2E app for x86_64
+          title: Build the React Native E2E app for devices and the x86_64 emulator
           timeout: 3600
           no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
                 ./platforms/react-native/scripts/check_no_local_sdk_default
-                E2E_REACT_NATIVE_ANDROID_ARCHITECTURES=x86_64 ./e2e/scripts/build_react_native_android
+                E2E_REACT_NATIVE_ANDROID_ARCHITECTURES=arm64-v8a,x86_64 ./e2e/scripts/build_react_native_android
       - save-cache@1:
           inputs:
             - key: *rn_gradle_cache_key
             - paths: |-
                 ~/.gradle/caches
                 ~/.gradle/wrapper
+      # Tophat installs this from the branch's latest E2E run.
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: $E2E_REACT_NATIVE_ANDROID_APP_PATH:E2E_REACT_NATIVE_ANDROID_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
       - script@1:
           title: Run the React Native Android Maestro suite
           timeout: 3600
@@ -888,6 +928,7 @@ workflows:
         machine_type_id: g2.mac.4large
     steps:
       - git-clone@8: {}
+      - certificate-and-profile-installer@1: {}
       - bundle::create-ios-simulator: {}
       - bundle::install-maestro: {}
       - bundle::install-node-modules: {}
@@ -901,13 +942,21 @@ workflows:
       - bundle::install-ruby-gems: {}
       - bundle::install-cocoapods: {}
       - script@1:
-          title: Build the React Native Release simulator app
+          title: Build the React Native iOS IPA and Release simulator app
           timeout: 5400
           no_output_timeout: 1800
           inputs:
             - content: |-
                 set -euo pipefail
-                E2E_IOS_SIMULATOR_ONLY=1 ./e2e/scripts/build_react_native_ios
+                ./e2e/scripts/build_react_native_ios
+      # Tophat installs these from the branch's latest E2E run.
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - pipeline_intermediate_files: |-
+                $E2E_REACT_NATIVE_IOS_APP_PATH:E2E_REACT_NATIVE_IOS_APP_PATH
+                $E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH:E2E_REACT_NATIVE_IOS_SIMULATOR_APP_PATH
+            - is_enable_public_page: "false"
+            - notify_user_groups: none
       - script@1:
           title: Run the React Native iOS Maestro suite
           timeout: 3600

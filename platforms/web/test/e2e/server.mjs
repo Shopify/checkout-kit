@@ -2,14 +2,16 @@ import { createServer } from "node:http";
 import { access, readFile, readdir } from "node:fs/promises";
 
 const dist = new URL("../../dist/", import.meta.url);
-const bundle = new URL("shopify-checkout.js", dist);
-await access(bundle).catch(() => {
-  throw new Error("Built web component not found. Run `dev web build` first.");
-});
+for (const bundle of ["shopify-checkout.js", "shopify-universal-checkout.js"]) {
+  await access(new URL(bundle, dist)).catch(() => {
+    throw new Error(`Built web component ${bundle} not found. Run \`dev web build\` first.`);
+  });
+}
 
 const files = new Map([
   ["/", [new URL("./fixtures/host.html", import.meta.url), "text/html"]],
   ["/cdn", [new URL("./fixtures/cdn-host.html", import.meta.url), "text/html"]],
+  ["/universal", [new URL("./fixtures/universal-host.html", import.meta.url), "text/html"]],
 ]);
 // Serve only built JavaScript files from each distribution.
 for (const [prefix, directory] of [

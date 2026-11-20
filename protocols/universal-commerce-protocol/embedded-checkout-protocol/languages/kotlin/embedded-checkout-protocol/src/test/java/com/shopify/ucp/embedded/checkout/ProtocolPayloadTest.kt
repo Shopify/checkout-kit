@@ -61,6 +61,8 @@ class ProtocolPayloadTest {
         val wire = fixture("error")["params"]!!.jsonObject["error"]!!
         val error = json.decodeFromJsonElement(ErrorResponse.serializer(), wire)
         assertThat(error.ucp.version).isEqualTo(EmbeddedCheckoutProtocol.SPEC_VERSION)
+        assertThat(error.messages.first().type).isEqualTo(MessageType.Error)
+        assertThat(error.messages.first().code).isEqualTo("checkout_unavailable")
         assertThat(error.messages.first().content).isEqualTo("Try again.")
         assertThat(error.messages.first().severity).isEqualTo(Severity.Unrecoverable)
     }

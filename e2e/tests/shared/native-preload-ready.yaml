@@ -12,3 +12,13 @@ env:
 ---
 - runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
 - runFlow: ../../flows/checkout/assert-native-preload-ready.yaml
+
+# Dismissing checkout keeps the preloaded checkout until it expires, so presenting again reuses
+# it. A second hit proves the reuse; a checkout loaded again would leave the count at one.
+- runFlow: ../../flows/checkout/assert-dismissed.yaml
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/close.yaml
+- extendedWaitUntil:
+    visible:
+      id: preload-cache-hit-2
+    timeout: 30000

@@ -1,6 +1,10 @@
 package com.shopify.checkoutkit.checkout
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Looper
 import android.view.Gravity
@@ -9,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ProgressBar
@@ -39,6 +44,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -493,7 +499,7 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `lifecycle failure destroys preloaded checkoutView after sheet dismissal`() {
+    fun `lifecycle failure retains preloaded checkoutView after sheet dismissal`() {
         val listener = mock<DefaultCheckoutListener>()
         CheckoutWebView.preload("https://shopify.com/cart/123", activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().idle()
@@ -504,8 +510,8 @@ class CheckoutBottomSheetTest {
         webView.listener.onCheckoutViewFailedWithError(checkoutException())
         runDismissAnimation()
 
-        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
     }
 
     @Test
@@ -547,7 +553,7 @@ class CheckoutBottomSheetTest {
     }
 
     @Test
-    fun `dismiss() destroys preloaded checkoutView before another presentation`() {
+    fun `dismiss() retains preloaded checkoutView for another presentation`() {
         val checkoutUrl = "https://shopify.com/cart/123"
         CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().idle()
@@ -559,13 +565,154 @@ class CheckoutBottomSheetTest {
         runDismissAnimation()
 
         assertThat(sheet.containsChildOfType(CheckoutWebView::class.java)).isFalse()
-        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isTrue()
-        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+        assertThat(cachedWebView.isPresented).isFalse()
 
         val nextSheet = presentBottomSheet(checkoutUrl)
         ShadowLooper.shadowMainLooper().idle()
 
-        assertThat(nextSheet.currentCheckoutWebView()).isNotSameAs(cachedWebView)
+        assertThat(nextSheet.currentCheckoutWebView()).isSameAs(cachedWebView)
+        assertThat(cachedWebView.isPresented).isTrue()
+
+        nextSheet.dismiss()
+        runDismissAnimation()
+
+        assertThat(cachedWebView.isPresented).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+    }
+
+    @Test
+    fun `app-hosted checkout reuses a preload kept by the sheet and keeps it again`() {
+        val checkoutUrl = "https://shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val sheet = presentBottomSheet(checkoutUrl)
+        ShadowLooper.shadowMainLooper().idle()
+
+        sheet.dismiss()
+        runDismissAnimation()
+        val embeddedCheckout = ShopifyCheckout.create(checkoutUrl, activity, webMessageTransport) {}
+        val embeddedWebView = embeddedCheckout.findViewById<RelativeLayout>(R.id.checkout_container)!!
+            .children.first { it is CheckoutWebView } as CheckoutWebView
+
+        assertThat(embeddedWebView).isSameAs(cachedWebView)
+
+        embeddedCheckout.destroy()
+
+        assertThat(shadowOf(cachedWebView).wasDestroyCalled()).isFalse()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(cachedWebView)
+
+        val nextSheet = presentBottomSheet(checkoutUrl)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(nextSheet.currentCheckoutWebView()).isSameAs(cachedWebView)
+    }
+
+    @Test
+    fun `reused preload delivers checkout messages only to the presentation showing it`() {
+        val checkoutUrl = "https://shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val cachedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        var firstUpdates = 0
+        var secondUpdates = 0
+
+        val first = CheckoutService.present(checkoutUrl, activity, webMessageTransport) {
+            onUpdate { firstUpdates += 1 }
+        }
+        ShadowLooper.shadowMainLooper().idle()
+        first?.dismiss()
+        runDismissAnimation()
+
+        // The page can still post while its view waits in the cache.
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
+
+        CheckoutService.present(checkoutUrl, activity, webMessageTransport) {
+            onUpdate { secondUpdates += 1 }
+        }
+        ShadowLooper.shadowMainLooper().idle()
+        assertThat((ShadowDialog.getLatestDialog() as CheckoutBottomSheet).currentCheckoutWebView())
+            .isSameAs(cachedWebView)
+
+        webMessageTransport.dispatchMessage(ecMessagesChangeMessage())
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(secondUpdates).isEqualTo(1)
+        }
+        assertThat(firstUpdates).isZero()
+        assertThat(webMessageTransport.attachCount).isEqualTo(1)
+        assertThat(webMessageTransport.detachCount).isZero()
+    }
+
+    @Test
+    fun `kept preload does not open links after the sheet is dismissed`() {
+        val checkoutUrl = "https://shopify.com/cart/123"
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        var linkRequests = 0
+        val presentation = CheckoutService.present(checkoutUrl, activity, webMessageTransport) {
+            onLinkClick {
+                linkRequests += 1
+                CheckoutLinkAction.Cancel
+            }
+        }
+        ShadowLooper.shadowMainLooper().idle()
+        presentation?.dismiss()
+        runDismissAnimation()
+
+        webMessageTransport.dispatchMessage(
+            """{"jsonrpc":"2.0","method":"ec.window.open_request","id":"1","params":{"url":"https://example.com"}}"""
+        )
+
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(webMessageTransport.sentMessages.lastOrNull()?.message)
+                .contains("checkout is not presented")
+        }
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+        assertThat(linkRequests).isZero()
+    }
+
+    @Test
+    fun `kept preload does not open a deep link navigated to after the sheet is dismissed`() {
+        val checkoutUrl = "https://shopify.com/cart/123"
+        val deepLink = Uri.parse("examplepay://authorize")
+        val handler = ComponentName("com.example.pay", "AuthorizeActivity")
+        shadowOf(activity.packageManager).addActivityIfNotPresent(handler)
+        shadowOf(activity.packageManager).addIntentFilterForActivity(
+            handler,
+            IntentFilter(Intent.ACTION_VIEW).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addDataScheme(deepLink.scheme)
+            },
+        )
+        CheckoutWebView.preload(checkoutUrl, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val keptWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        var linkRequests = 0
+        val presentation = CheckoutService.present(checkoutUrl, activity, webMessageTransport) {
+            onLinkClick {
+                linkRequests += 1
+                CheckoutLinkAction.Cancel
+            }
+        }
+        ShadowLooper.shadowMainLooper().idle()
+        presentation?.dismiss()
+        runDismissAnimation()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(keptWebView)
+
+        // A navigation the page started before dismissal, such as a payment app handoff.
+        val request = mock<WebResourceRequest>()
+        whenever(request.url).thenReturn(deepLink)
+        whenever(request.isForMainFrame).thenReturn(true)
+        val overridden = keptWebView.CheckoutWebViewClient().shouldOverrideUrlLoading(keptWebView, request)
+
+        assertThat(overridden).isTrue()
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+        assertThat(linkRequests).isZero()
     }
 
     @Test

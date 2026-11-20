@@ -109,7 +109,7 @@ function toComponentName(component: string): CheckoutKitComponent {
   return component as CheckoutKitComponent;
 }
 
-async function loadOne(name: CheckoutKitComponent): Promise<void> {
+async function loadOne(name: CheckoutKitComponent) {
   if (loaded.has(name)) return;
 
   let inflight = pending.get(name);
@@ -120,12 +120,12 @@ async function loadOne(name: CheckoutKitComponent): Promise<void> {
   await inflight;
 }
 
-async function loadAndRemember(name: CheckoutKitComponent): Promise<void> {
+async function loadAndRemember(name: CheckoutKitComponent) {
   await loadWithRetries(name);
   loaded.add(name);
 }
 
-async function loadWithRetries(name: CheckoutKitComponent): Promise<void> {
+async function loadWithRetries(name: CheckoutKitComponent) {
   const source: ComponentSource = componentSources[name];
   let lastError: unknown;
   retrySequence += 1;

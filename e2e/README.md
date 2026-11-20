@@ -18,6 +18,9 @@ before delegating the Maestro invocation to `scripts/run_maestro`. Bitrise uses
 these runners too, with two retries of failed flows, JUnit results in the **Tests**
 tab, and per-attempt diagnostics. See [Bitrise setup](BITRISE.md).
 
+For a failed run, follow the [failure triage runbook](RUNBOOK.md#failure-triage)
+to inspect device and driver logs alongside the failed assertion.
+
 ## Encrypted environments
 
 `dev up` generates `.env` and `e2e/.env` from `config/secrets`.
@@ -34,6 +37,10 @@ already generated for the sample app.
 Run `dev up` first to provision the local toolchain, including the pinned Maestro
 version. The runners resolve that version through `scripts/maestro_bin`, so a
 separate Maestro installation is not needed.
+
+Local and Bitrise runs read `.maestro-version`. The optional BrowserStack
+pipeline reads `.browserstack-maestro-version`, so its supported versions do
+not limit simulator and emulator runs. Update the two pins independently.
 
 ### One command per target
 

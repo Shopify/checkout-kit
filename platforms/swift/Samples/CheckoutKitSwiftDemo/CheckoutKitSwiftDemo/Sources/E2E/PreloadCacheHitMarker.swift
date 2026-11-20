@@ -1,18 +1,17 @@
 import Foundation
 import ShopifyCheckoutKit
 
-/// Maps whether the SDK reported a ready preload cache hit to an identifier.
+/// Maps how many ready preload cache hits the SDK reported to an identifier.
+///
+/// A count, rather than a flag, lets a flow tell the first presentation's hit apart from a later
+/// presentation that reuses the same preloaded checkout.
 enum PreloadCacheHitMarker {
-    static func testId(observed: Bool) -> String {
-        "\(AccessibilityIdentifiers.preloadCacheHitPrefix)\(text(observed: observed))"
-    }
-
-    static func text(observed: Bool) -> String {
-        observed ? "observed" : "none"
+    static func testId(hits: Int) -> String {
+        "\(AccessibilityIdentifiers.preloadCacheHitPrefix)\(hits)"
     }
 }
 
-/// Watches SDK logs and publishes whether a ready preload was reused.
+/// Watches SDK logs and publishes how many times a ready preload was reused.
 ///
 /// `@unchecked Sendable` is safe because every published write runs on the main thread.
 final class PreloadCacheHitLog: ObservableObject, @unchecked Sendable {
@@ -21,24 +20,24 @@ final class PreloadCacheHitLog: ObservableObject, @unchecked Sendable {
 
     static let shared = PreloadCacheHitLog()
 
-    @Published private(set) var observed = false
+    @Published private(set) var hits = 0
 
     func record(_ message: String) {
         guard message.contains(Self.diagnostic) else { return }
 
-        // The SDK logs off the main thread, and `observed` drives a SwiftUI identifier.
+        // The SDK logs off the main thread, and `hits` drives a SwiftUI identifier.
         if Thread.isMainThread {
-            observed = true
+            hits += 1
         } else {
-            DispatchQueue.main.async { self.observed = true }
+            DispatchQueue.main.async { self.hits += 1 }
         }
     }
 
     func reset() {
         if Thread.isMainThread {
-            observed = false
+            hits = 0
         } else {
-            DispatchQueue.main.async { self.observed = false }
+            DispatchQueue.main.async { self.hits = 0 }
         }
     }
 }
@@ -55,6 +54,7 @@ final class ObservingLogger: Logger {
 
     func log(_ message: String) {
         observer.record(message)
+        PreloadHeldStateLog.shared.observe(message)
         wrapped.log(message)
     }
 

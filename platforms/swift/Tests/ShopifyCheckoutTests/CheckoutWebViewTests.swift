@@ -517,6 +517,45 @@ class CheckoutWebViewTests: XCTestCase {
         }
     }
 
+    func testEvictingAPresentedPreloadLogsTheHeldStateThroughTheConfiguredLogger() {
+        withRecordingLogger(logLevel: .debug) { logger in
+            // Keep this literal independent from preloadStateHeldLogMessage: the sample parses
+            // this exact diagnostic across the SDK boundary.
+            let expectedMessage = "Holding preload state until checkout is dismissed"
+            ShopifyCheckout.preload(checkout: url)
+            let view = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+            view.isPresented = true
+            defer { view.isPresented = false }
+
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+
+            XCTAssertTrue(logger.messages.contains(expectedMessage))
+        }
+    }
+
+    func testEvictingAPresentedPreloadDoesNotLogTheHeldStateThroughTheConfiguredLoggerAboveDebugLevel() {
+        withRecordingLogger(logLevel: .warn) { logger in
+            ShopifyCheckout.preload(checkout: url)
+            let view = CheckoutWebView.for(checkout: CheckoutURLDecorator.decorate(url))
+            view.isPresented = true
+            defer { view.isPresented = false }
+
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadStateHeldLogMessage))
+        }
+    }
+
+    func testEvictingABackgroundPreloadDoesNotLogTheHeldState() {
+        withRecordingLogger(logLevel: .debug) { logger in
+            ShopifyCheckout.preload(checkout: url)
+
+            CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+
+            XCTAssertFalse(logger.messages.contains(CheckoutWebView.preloadStateHeldLogMessage))
+        }
+    }
+
     private func withRecordingLogger(
         logLevel: LogLevel,
         perform: (RecordingLogger) throws -> Void

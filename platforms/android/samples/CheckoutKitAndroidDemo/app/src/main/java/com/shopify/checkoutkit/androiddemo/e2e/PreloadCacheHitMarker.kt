@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.BufferedReader
@@ -17,12 +18,14 @@ import java.io.InputStreamReader
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Maps whether the SDK reported a ready preload cache hit to an identifier. */
+/**
+ * Maps how many ready preload cache hits the SDK reported to an identifier.
+ *
+ * A count, rather than a flag, lets a flow tell the first presentation's hit apart from a later
+ * presentation that reuses the same preloaded checkout.
+ */
 object PreloadCacheHitMarker {
-    fun testId(observed: Boolean): String =
-        "${AccessibilityIdentifiers.PRELOAD_CACHE_HIT_PREFIX}${text(observed)}"
-
-    fun text(observed: Boolean): String = if (observed) "observed" else "none"
+    fun testId(hits: Int): String = "${AccessibilityIdentifiers.PRELOAD_CACHE_HIT_PREFIX}$hits"
 }
 
 /** A Logcat stream plus the resources that must be closed to stop reading it. */
@@ -38,7 +41,7 @@ class LogStream(
 }
 
 /**
- * Watches this app's PID-scoped Logcat for a ready SDK cache hit.
+ * Counts the ready SDK cache hits in this app's PID-scoped Logcat.
  *
  * The SDK log sink is internal, so the sample reads its own logs instead of installing a logger.
  * A unique boundary keeps buffered lines from an earlier app process outside this observation.
@@ -48,6 +51,7 @@ class PreloadCacheHitLog(
     private val openLines: () -> LogStream = ::followOwnLogcat,
     private val writeBoundary: (String) -> Unit = { Timber.tag(OBSERVATION_TAG).d(it) },
     private val isPreloadReady: () -> Boolean = { false },
+    private val onStateHeld: () -> Unit = {},
     private val reportError: (Throwable) -> Unit = {
         Timber.e(it, "Failed to observe the preload cache-hit diagnostic")
     },
@@ -55,6 +59,9 @@ class PreloadCacheHitLog(
     companion object {
         /** Must stay in step with PreloadCache.kt, which logs this on a cache hit. */
         const val DIAGNOSTIC = "Returning cached preloaded WebView."
+
+        /** Must stay in step with PreloadCache.kt, which logs this when it holds a presented state. */
+        const val HELD_STATE_DIAGNOSTIC = "Holding preload state until checkout is dismissed."
 
         private const val OBSERVATION_TAG = "PreloadObservability"
         private const val OBSERVATION_BOUNDARY_PREFIX = "Observation started: "
@@ -79,8 +86,8 @@ class PreloadCacheHitLog(
         }
     }
 
-    private val _observed = MutableStateFlow(false)
-    val observed: StateFlow<Boolean> = _observed.asStateFlow()
+    private val _hits = MutableStateFlow(0)
+    val hits: StateFlow<Int> = _hits.asStateFlow()
 
     private val resourceLock = Any()
     private var stream: LogStream? = null
@@ -138,8 +145,9 @@ class PreloadCacheHitLog(
         }
 
         if (line.contains(DIAGNOSTIC) && isPreloadReady()) {
-            _observed.value = true
+            _hits.update { it + 1 }
         }
+        if (line.contains(HELD_STATE_DIAGNOSTIC)) onStateHeld()
     }
 
     private fun closeStream() {

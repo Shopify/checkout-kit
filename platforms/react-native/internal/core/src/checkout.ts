@@ -1,4 +1,4 @@
-import {decodeCheckoutSnapshot} from '@shopify/checkout-kit-protocol';
+import {decodeCheckoutSnapshot} from '@shopify/embedded-checkout-protocol';
 import type {
   Buyer,
   CheckoutDiscounts,
@@ -12,7 +12,7 @@ import type {
   OrderConfirmation,
   Payment,
   Policy,
-} from '@shopify/checkout-kit-protocol';
+} from '@shopify/embedded-checkout-protocol';
 import type {CheckoutException} from './errors';
 
 /** A checkout snapshot containing domain data without protocol metadata. */

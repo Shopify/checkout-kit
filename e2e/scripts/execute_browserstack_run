@@ -21,12 +21,7 @@ class BrowserStackRunExecutor
     "network_log" => "Network log"
   }.freeze
 
-  # BrowserStack builds the suite with its own Maestro. Without this parameter it picks a
-  # default that is years old, and every iOS test that opens the control link fails on a
-  # real device. e2e/scripts/maestro_bin reads the same file, so the version a laptop runs
-  # and the version BrowserStack runs cannot drift apart.
-  # https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/configure-tests/set-maestro-version
-  MAESTRO_VERSION_FILE = File.expand_path("../.maestro-version", __dir__)
+  MAESTRO_VERSION_FILE = File.expand_path("../.browserstack-maestro-version", __dir__)
 
   def self.failure_result(context, error)
     context.merge(

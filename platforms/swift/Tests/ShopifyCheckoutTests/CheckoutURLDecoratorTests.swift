@@ -30,10 +30,45 @@ struct CheckoutURLDecoratorTests {
         let twice = CheckoutURLDecorator.decorate(once, configuration: configuration)
         let items = queryItems(twice)
 
+        #expect(twice == once)
         #expect(items.filter { $0.name == "ec_version" }.map(\.value) == [EmbeddedCheckoutProtocol.specVersion])
         #expect(items.filter { $0.name == "ec_delegate" }.map(\.value) == ["window.open"])
         #expect(items.filter { $0.name == "ec_color_scheme" }.map(\.value) == ["light"])
         #expect(items.filter { $0.name == "ck_branding" }.map(\.value) == ["app"])
+    }
+
+    @Test(arguments: [
+        "https://shop.example/cart/c/abc#payment",
+        "https://shop.example:8443/cart/c/a%2Fb?key=a%2Bb&repeat=one&repeat=two#shipping%20address",
+        "https://shop.example/cart/c/abc?flag&empty=&name=%F0%9F%9B%92&ec_version=stale&ck_branding=shop#",
+        "https://shop.example/cart/c/abc?ec_color_scheme=dark&ec_delegate=custom&ck_branding=shop&ck_branding=app#review"
+    ])
+    func preservesUnrelatedURLComponentsAndUsesLatestAppearance(input: String) throws {
+        let url = try #require(URL(string: input))
+        let original = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let controlled = Set(["ec_version", "ec_delegate", "ec_color_scheme", "ck_branding"])
+        let unrelated = (original.queryItems ?? []).filter { !controlled.contains($0.name) }
+        var firstConfiguration = Configuration()
+        firstConfiguration.appearance = .app(.dark())
+        let first = CheckoutURLDecorator.decorate(url, configuration: firstConfiguration)
+
+        let appearances: [CheckoutAppearance] = [.app(.light()), .app(.automatic()), .storefront()]
+        for appearance in appearances {
+            var latestConfiguration = Configuration()
+            latestConfiguration.appearance = appearance
+            let latest = CheckoutURLDecorator.decorate(first, configuration: latestConfiguration)
+            let direct = CheckoutURLDecorator.decorate(url, configuration: latestConfiguration)
+            let components = try #require(URLComponents(url: latest, resolvingAgainstBaseURL: false))
+
+            #expect(latest == direct)
+            #expect(CheckoutURLDecorator.decorate(latest, configuration: latestConfiguration) == latest)
+            #expect(components.scheme == original.scheme)
+            #expect(components.host == original.host)
+            #expect(components.port == original.port)
+            #expect(components.percentEncodedPath == original.percentEncodedPath)
+            #expect(components.percentEncodedFragment == original.percentEncodedFragment)
+            #expect((components.queryItems ?? []).filter { !controlled.contains($0.name) } == unrelated)
+        }
     }
 
     @Test func derivesCheckoutParamsForEachAppearance() throws {

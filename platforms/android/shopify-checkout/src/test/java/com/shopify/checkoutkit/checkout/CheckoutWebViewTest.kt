@@ -81,6 +81,8 @@ class CheckoutWebViewTest {
         assertThat(view.visibility).isEqualTo(VISIBLE)
         assertThat(view.settings.javaScriptEnabled).isTrue
         assertThat(view.settings.domStorageEnabled).isTrue
+        assertThat(view.settings.useWideViewPort).isTrue
+        assertThat(view.settings.loadWithOverviewMode).isTrue
         assertThat(view.id).isNotNull
         assertThat(shadowOf(view).webViewClient.javaClass).isEqualTo(CheckoutWebView.CheckoutWebViewClient::class.java)
         assertThat(shadowOf(view).backgroundColor).isEqualTo(Color.TRANSPARENT)
@@ -144,15 +146,25 @@ class CheckoutWebViewTest {
     }
 
     @Test
-    fun `detaches and reattaches WebMessage transport with view lifecycle`() {
+    fun `keeps WebMessage transport registered while the view moves between windows`() {
         val view = checkoutWebView(activity)
         val shadow = shadowOf(view)
 
         shadow.callOnDetachedFromWindow()
         shadow.callOnAttachedToWindow()
+        shadow.callOnDetachedFromWindow()
+
+        assertThat(webMessageTransport.attachCount).isEqualTo(1)
+        assertThat(webMessageTransport.detachCount).isZero()
+    }
+
+    @Test
+    fun `destroy removes WebMessage transport`() {
+        val view = checkoutWebView(activity)
+
+        view.destroy()
 
         assertThat(webMessageTransport.detachCount).isEqualTo(1)
-        assertThat(webMessageTransport.attachCount).isEqualTo(2)
         assertThat(webMessageTransport.lastDetachment?.webView).isSameAs(view)
         assertThat(webMessageTransport.lastDetachment?.jsObjectName)
             .isEqualTo(EmbeddedCheckoutProtocolBridge.INTERFACE_NAME)

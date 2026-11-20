@@ -1,0 +1,17 @@
+[
+  {
+    "name": "shopify-checkout",
+    "module": "@shopify/checkout-kit-checkout/register",
+    "channels": ["stable", "unstable"]
+  },
+  {
+    "name": "shopify-universal-checkout",
+    "module": "@shopify/checkout-kit-universal-checkout/register",
+    "channels": ["stable", "unstable"]
+  },
+  {
+    "name": "shop-pay",
+    "module": "@shopify/checkout-kit-shop-pay/register",
+    "channels": ["stable", "unstable"]
+  }
+]

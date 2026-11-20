@@ -24,6 +24,7 @@ final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
         using option: CheckoutPresentationOption,
         from presenter: UIViewController?
     ) {
+        PreloadHeldStateLog.shared.recordPresentation()
         switch option {
         case .swiftUI:
             showCheckoutSheet = true
@@ -89,6 +90,7 @@ final class CartCheckoutPresentation: ObservableObject, CheckoutDelegate {
 
     func checkoutDidDismiss() {
         print("[CheckoutKitSwiftDemo] Dismissed")
+        PreloadHeldStateLog.shared.recordDismissal()
         showCheckoutSheet = false
         resetCompletedCart()
     }

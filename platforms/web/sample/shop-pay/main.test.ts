@@ -50,13 +50,13 @@ const $ = <T extends Element = HTMLElement>(selector: string) => {
 const shopPay = () => $<ShopPay>("shop-pay");
 const status = () => $("#session-status").textContent;
 
-async function start(): Promise<void> {
+async function start() {
   await import("./main");
   // Load the configured storefront, then its products after the debounce.
   await vi.advanceTimersByTimeAsync(600);
 }
 
-async function addProductAndPrepare(): Promise<void> {
+async function addProductAndPrepare() {
   $<HTMLButtonElement>("#product-list [data-cart-action='add']").click();
   $<HTMLButtonElement>("#prepare-session").click();
   await vi.advanceTimersByTimeAsync(0);

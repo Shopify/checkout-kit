@@ -1,4 +1,5 @@
 package com.shopify.checkoutkit.checkout
+import android.net.Uri
 import android.os.Looper
 import com.shopify.checkoutkit.internal.protocol.CheckoutEventAdapter
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
@@ -16,6 +17,7 @@ class CheckoutEventAdapterTest {
     private val started = mutableListOf<CheckoutStartEvent>()
     private val updated = mutableListOf<CheckoutUpdateEvent>()
     private val completed = mutableListOf<CheckoutCompleteEvent>()
+    private val clickedLinks = mutableListOf<CheckoutLink>()
     private val listener = CheckoutWebViewListener(object : DefaultCheckoutListener() {
         override fun onCheckoutFailed(event: CheckoutFailureEvent) = Unit
 
@@ -31,6 +33,11 @@ class CheckoutEventAdapterTest {
 
         override fun onCheckoutCompleted(event: CheckoutCompleteEvent) {
             completed.add(event)
+        }
+
+        override fun onCheckoutLinkClicked(link: CheckoutLink): CheckoutLinkAction {
+            clickedLinks.add(link)
+            return CheckoutLinkAction.Default
         }
     })
 
@@ -176,6 +183,18 @@ class CheckoutEventAdapterTest {
         } finally {
             executor.shutdownNow()
         }
+    }
+
+    @Test
+    fun `invalidating a presentation cancels links without consulting its listener`() {
+        val adapter = CheckoutEventAdapter(listener)
+        val link = CheckoutLink(Uri.parse("https://example.com/privacy"))
+        assertThat(adapter.actionForLink(link)).isEqualTo(CheckoutLinkAction.Default)
+
+        adapter.invalidate()
+
+        assertThat(adapter.actionForLink(link)).isEqualTo(CheckoutLinkAction.Cancel)
+        assertThat(clickedLinks).containsExactly(link)
     }
 
     @Test

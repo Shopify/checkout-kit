@@ -168,11 +168,11 @@ class E2EGitHubReporterTest < Minitest::Test
     assert_includes url, "destination=simulator"
   end
 
-  def test_kotlin_install_url_targets_android_apk
+  def test_browserstack_install_url_names_the_workflow_that_built_the_tested_artifact
     url = reporter.tophat_install_url(target("kotlin"))
 
     assert_includes url, "workflow=e2e-build-kotlin-android"
-    assert_includes url, "app-debug.apk"
+    refute_includes url, "e2e-maestro-"
   end
 
   def blocked_reporter

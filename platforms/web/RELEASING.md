@@ -52,16 +52,13 @@ Once approved, the workflow:
 1. Validates the tag's version matches `package.json`
 2. Runs lint and tests, builds npm and CDN separately, and verifies both outputs
 3. Packs the tarball and prints its contents
-4. Verifies the CDN deploy identity holds the bucket permissions the upload
-   needs (no credentials are left on disk at this point)
-5. Publishes the verified `dist/` to npm with the appropriate dist-tag and
+4. Publishes the verified `dist/` to npm with the appropriate dist-tag and
    SLSA provenance (`--ignore-scripts`, so `prepack` does not rebuild)
-6. Deploys the matching major-version CDN loader and its private implementation
-   chunks from `dist-cdn/`: stable versions on `latest` that are not marked as
-   GitHub prereleases go to `v<major>/checkout-kit.js`; all other releases go
-   to the testing-only `v<major>/unstable/checkout-kit.js`
 
-See [CDN publishing](./CDN-PUBLISHING.md) for the CDN URL contract and loader behavior.
+The npm workflow does not upload CDN assets. After npm publication, push a
+matching `web/X.Y.Z` tag and dispatch the CDN deploy described in
+[CDN publishing](./CDN-PUBLISHING.md). The deploy verifies that npm's publishing
+commit matches the tag before uploading.
 
 After it's green, sanity check:
 

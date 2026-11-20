@@ -10,6 +10,11 @@ android {
     resourcePrefix = 'checkout_'
 }
 
+// Do not load mutation tooling during normal builds, tests, or publication.
+if (providers.gradleProperty('mutationTest').getOrElse('false').toBoolean()) {
+    apply from: 'mutation-testing.gradle'
+}
+
 def useLocalProtocol = providers.gradleProperty('useLocalProtocol').getOrElse('false').toBoolean()
 
 dependencies {

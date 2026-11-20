@@ -74,8 +74,10 @@ public fun interface PreloadStateListener {
  *
  * The cache retains the current instance while its preload is active. A subsequent
  * preload replaces the observer; the earlier handle retains its last observed [state]
- * but stops receiving updates. When presentation reuses a cached preload, that handle also
- * stops receiving updates and retains its last observed state, which may be [PreloadState.Loading].
+ * but stops receiving updates. When presentation reuses a cached preload, that handle keeps
+ * receiving updates for the checkout, including [PreloadState.Ready] when a preload presented
+ * while loading finishes.
+ * A failure after presentation reports [PreloadState.IdleReason.Invalidated].
  */
 public class CheckoutPreload internal constructor(cache: PreloadCache) {
     private var currentState: PreloadState = cache.state

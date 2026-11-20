@@ -42,4 +42,20 @@ describe('SDK lifecycle event dispatch contract', () => {
       'events missing from native: complete, fail, geolocationRequest, linkClick, start, update',
     );
   });
+
+  it('rejects a native module that does not dispatch every JS lifecycle event', () => {
+    const olderNativeTypes = SDK_LIFECYCLE_EVENT_TYPES.filter(
+      type => type !== 'geolocationRequest',
+    );
+
+    expect(() => verifyDispatchEventParity(olderNativeTypes)).toThrow(
+      'events missing from native: geolocationRequest',
+    );
+  });
+
+  it('rejects a native module that dispatches an event JS does not handle', () => {
+    expect(() =>
+      verifyDispatchEventParity([...SDK_LIFECYCLE_EVENT_TYPES, 'nativeOnly']),
+    ).toThrow('events missing from js:     nativeOnly');
+  });
 });

@@ -47,7 +47,7 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
         'react-native-gesture-handler',
       ),
       '@shopify/checkout-kit-react-native': root,
-      '@shopify/checkout-kit-protocol': protocol,
+      '@shopify/embedded-checkout-protocol': protocol,
       '@babel/runtime': resolvePackage('@babel/runtime'),
     },
   },

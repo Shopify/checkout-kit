@@ -315,6 +315,103 @@ class PreloadCacheTests: XCTestCase {
         XCTAssertTrue(CheckoutWebView.preloadCache.contains(entry))
     }
 
+    func test_CompleteOfPresentedViewPastItsTTLReportsInvalidatedAtDismissal() async {
+        var now = Date(timeIntervalSince1970: 1000)
+        let cache = CheckoutWebView.preloadCache
+        cache.now = { now }
+        defer { cache.now = Date.init }
+        let preload = ShopifyCheckout.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+        let view = CheckoutWebView(entryPoint: nil)
+        view.messageIsMainFrame = { _ in true }
+        view.messageRequestURL = { _ in nil }
+        XCTAssertTrue(cache.store(view, for: PreloadKey(url: url, entryPoint: nil)))
+        view.load(checkout: url, isPreload: true)
+        XCTAssertTrue(CheckoutWebView.for(checkout: url) === view)
+        view.isPresented = true
+        defer { view.isPresented = false }
+
+        now.addTimeInterval(10 * 60)
+        _ = await view.defaultsClient.process(ecCompleteBody())
+
+        XCTAssertFalse(cache.hasEntry())
+        XCTAssertEqual(states, [.loading])
+
+        view.isPresented = false
+        XCTAssertFalse(cache.retainAfterPresentation(view))
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading, .idle(reason: .invalidated)])
+        }
+    }
+
+    func test_PresentedViewRemovedFromCacheReportsItsStateAtDismissal() {
+        let preload = ShopifyCheckout.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+        let cache = CheckoutWebView.preloadCache
+        let key = PreloadKey(url: url, entryPoint: nil)
+        let view = CheckoutWebView(entryPoint: nil)
+        XCTAssertTrue(cache.store(view, for: key))
+        XCTAssertTrue(cache.view(for: key) === view)
+        view.isPresented = true
+
+        cache.evict(with: .idle(reason: .invalidated))
+
+        XCTAssertFalse(cache.hasEntry())
+        XCTAssertEqual(states, [.loading])
+        view.isPresented = false
+        XCTAssertFalse(cache.retainAfterPresentation(view))
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading, .idle(reason: .invalidated)])
+        }
+    }
+
+    func test_PreloadingAgainWhilePresentedDropsTheStateHeldForThePreviousCheckout() {
+        let firstPreload = ShopifyCheckout.preload(checkout: url)
+        var firstStates: [PreloadState] = []
+        firstPreload?.onStateChange = { firstStates.append($0) }
+        let cache = CheckoutWebView.preloadCache
+        let key = PreloadKey(url: url, entryPoint: nil)
+        let view = CheckoutWebView(entryPoint: nil)
+        XCTAssertTrue(cache.store(view, for: key))
+        XCTAssertTrue(cache.view(for: key) === view)
+        view.isPresented = true
+        cache.evict(with: .idle(reason: .invalidated))
+
+        let secondPreload = ShopifyCheckout.preload(checkout: url)
+        var secondStates: [PreloadState] = []
+        secondPreload?.onStateChange = { secondStates.append($0) }
+        view.isPresented = false
+        XCTAssertFalse(cache.retainAfterPresentation(view))
+
+        withExtendedLifetime((firstPreload, secondPreload)) {
+            XCTAssertEqual(firstStates, [.loading])
+            XCTAssertEqual(secondStates, [.loading])
+        }
+        XCTAssertTrue(cache.hasEntry())
+    }
+
+    func test_PresentedViewPastItsTTLStillHasAnEntry() {
+        var now = Date(timeIntervalSince1970: 1000)
+        let cache = PreloadCache(now: { now })
+        defer { cache.invalidate() }
+        let key = PreloadKey(url: url, entryPoint: nil)
+        let view = CheckoutWebView(entryPoint: nil)
+        XCTAssertTrue(cache.store(view, for: key))
+        XCTAssertTrue(cache.view(for: key) === view)
+        view.isPresented = true
+        now.addTimeInterval(10 * 60)
+
+        XCTAssertTrue(cache.hasEntry())
+        XCTAssertTrue(cache.hasEntry(for: key))
+        XCTAssertEqual(cache.state, .loading)
+
+        view.isPresented = false
+        XCTAssertFalse(cache.hasEntry(for: key))
+        XCTAssertEqual(cache.state, .idle(reason: .expired))
+    }
+
     // MARK: - Helpers
 
     private func storeCacheEntry() -> CheckoutWebView {

@@ -1,0 +1,24 @@
+{
+  ".": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "default": "./dist/index.js"
+  },
+  "./shopify-checkout": {
+    "types": "./dist/shopify-checkout.d.ts",
+    "import": "./dist/shopify-checkout.js",
+    "default": "./dist/shopify-checkout.js"
+  },
+  "./shopify-universal-checkout": {
+    "types": "./dist/shopify-universal-checkout.d.ts",
+    "import": "./dist/shopify-universal-checkout.js",
+    "default": "./dist/shopify-universal-checkout.js"
+  },
+  "./shop-pay": {
+    "types": "./dist/shop-pay.d.ts",
+    "import": "./dist/shop-pay.js",
+    "default": "./dist/shop-pay.js"
+  },
+  "./custom-elements.json": "./dist/custom-elements.json",
+  "./package.json": "./package.json"
+}

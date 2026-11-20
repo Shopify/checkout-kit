@@ -1,4 +1,5 @@
 package com.shopify.checkoutkit.internal.preload
+import android.app.Activity
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -11,8 +12,10 @@ import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.internal.web.CheckoutUrlDecorator
 import com.shopify.checkoutkit.internal.web.CheckoutWebView
 import com.shopify.checkoutkit.internal.web.removeFromParent
+import java.lang.ref.WeakReference
 
 internal const val PRELOAD_CACHE_HIT_LOG_MESSAGE = "Returning cached preloaded WebView."
+internal const val PRELOAD_STATE_HELD_LOG_MESSAGE = "Holding preload state until checkout is dismissed."
 
 internal data class PreloadKey(val url: String) {
     companion object {
@@ -58,7 +61,22 @@ internal class PreloadCache(
     internal val cachedKey: PreloadKey?
         get() = entry?.key
 
+    /**
+     * A terminal state for a view that was removed while presented. A presented checkout is in use,
+     * so its handle reports the state when the view is dismissed rather than mid-session.
+     */
+    private var heldState: HeldState? = null
+
+    /** Refers to the view weakly, so a view that is never dismissed is not kept alive by its state. */
+    private class HeldState(view: CheckoutWebView, val state: PreloadState) {
+        private val view = WeakReference(view)
+
+        fun isFor(view: CheckoutWebView): Boolean = this.view.get() === view
+    }
+
     fun setObserver(observer: CheckoutPreload) {
+        // A held state describes the previous handle's checkout, not this one.
+        heldState = null
         this.observer = observer
     }
 
@@ -70,7 +88,9 @@ internal class PreloadCache(
     fun contains(view: CheckoutWebView): Boolean {
         val cached = entry
         val isCurrentEntry = cached?.view === view
-        if (isCurrentEntry && cached?.isFresh(clock.elapsedRealtime()) == false) {
+        // The time-to-live is paused while a view is presented, so a live checkout is not expired.
+        // Dismissal reports Expired if the kept view has outlived it.
+        if (isCurrentEntry && !view.isPresented && cached?.isFresh(clock.elapsedRealtime()) == false) {
             ShopifyCheckout.log.d(LOG_TAG, "Discarding expired preloaded WebView.")
             evict(PreloadState.Idle(PreloadState.IdleReason.Expired))
         }
@@ -95,6 +115,7 @@ internal class PreloadCache(
 
     fun store(key: PreloadKey, view: CheckoutWebView, lifecycleOwner: LifecycleOwner) {
         invalidate()
+        heldState = null
         val newEntry = Entry(
             key = key,
             view = view,
@@ -111,16 +132,32 @@ internal class PreloadCache(
         transition(PreloadState.Loading)
     }
 
-    fun take(key: PreloadKey): CheckoutWebView? = entry?.let { cached ->
-        val validEntry = if (cached.isValid(key, clock.elapsedRealtime())) {
-            cached
-        } else {
-            ShopifyCheckout.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
-            val reason = if (cached.key == key) PreloadState.IdleReason.Expired else PreloadState.IdleReason.Invalidated
-            evict(PreloadState.Idle(reason))
+    /**
+     * Returns the cached view for [key] when [presenter] is the activity that preloaded it.
+     *
+     * A preloaded WebView keeps the activity it was created with as its context, and its cache
+     * lifetime follows that activity. Another activity, or a context with no activity, gets a new
+     * WebView instead, and the preload is discarded as invalidated.
+     */
+    fun take(key: PreloadKey, presenter: Activity?): CheckoutWebView? = entry?.let { cached ->
+        val validEntry = when {
+            !cached.isValid(key, clock.elapsedRealtime()) -> {
+                ShopifyCheckout.log.d(LOG_TAG, "Discarding stale or mismatched preloaded WebView.")
+                val reason = if (cached.key == key) PreloadState.IdleReason.Expired else PreloadState.IdleReason.Invalidated
+                evict(PreloadState.Idle(reason))
+                null
+            }
+            // A presented view stays cached for its own presentation; the caller creates a new one.
+            cached.lifecycleOwner !== presenter && !cached.view.isPresented -> {
+                ShopifyCheckout.log.d(LOG_TAG, "Discarding preloaded WebView created by a different activity.")
+                evict(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+                null
+            }
+            else -> cached
+        } ?: run {
             // `evict` notifies synchronously, and its observer may re-enter `preload`.
-            // Reuse only a fresh replacement that matches the requested key.
-            entry?.takeIf { it.isValid(key, clock.elapsedRealtime()) }
+            // Reuse only a fresh replacement that matches the requested key and activity.
+            entry?.takeIf { it.isValid(key, clock.elapsedRealtime()) && it.lifecycleOwner === presenter }
         }
 
         validEntry?.let { cached ->
@@ -130,9 +167,39 @@ internal class PreloadCache(
                 null
             } else {
                 ShopifyCheckout.log.d(LOG_TAG, PRELOAD_CACHE_HIT_LOG_MESSAGE)
-                observer = null
+                // The listener keeps following this view, so it learns when a view kept after
+                // dismissal expires or is evicted.
                 cached.view.markPreloadConsumed()
                 cached.view
+            }
+        }
+    }
+
+    /**
+     * Retains a dismissed view when it is still the cached preload and within its time-to-live.
+     * Reports any state held for the view while it was presented.
+     *
+     * @return `true` when the view remains cached; otherwise `false` so the caller can destroy it.
+     */
+    fun retainAfterPresentation(view: CheckoutWebView): Boolean {
+        view.markDismissed()
+        heldState?.takeIf { it.isFor(view) }?.let { held ->
+            heldState = null
+            transition(held.state)
+            return false
+        }
+        val cached = entry
+        return when {
+            cached?.view !== view -> false
+            !cached.isFresh(clock.elapsedRealtime()) -> {
+                ShopifyCheckout.log.d(LOG_TAG, "Discarding expired preloaded WebView after dismissal.")
+                clearEntry()
+                transition(PreloadState.Idle(PreloadState.IdleReason.Expired))
+                false
+            }
+            else -> {
+                scheduleExpiry(cached)
+                true
             }
         }
     }
@@ -163,8 +230,14 @@ internal class PreloadCache(
         if (view != null && entry?.view !== view) return
         // Idle reasons describe a removed entry. Invalid requests can fail before an entry exists.
         if (entry == null && state is PreloadState.Idle) return
+        val presentedView = entry?.view?.takeIf { it.isPresented }
         invalidate()
-        transition(state)
+        if (presentedView != null && state.isTerminal) {
+            ShopifyCheckout.log.d(LOG_TAG, PRELOAD_STATE_HELD_LOG_MESSAGE)
+            heldState = HeldState(presentedView, state)
+        } else {
+            transition(state)
+        }
     }
 
     /** Clears the cached entry and all resources associated with its cache lifetime. */
@@ -199,7 +272,8 @@ internal class PreloadCache(
 
     override fun onStart(owner: LifecycleOwner) {
         val cached = entry ?: return
-        if (cached.lifecycleOwner !== owner) return
+        // The time-to-live is paused while the view is presented; dismissal reconciles it.
+        if (cached.lifecycleOwner !== owner || cached.view.isPresented) return
 
         // Handler delays do not advance while a device sleeps, so reconcile TTL on foregrounding.
         if (cached.isFresh(clock.elapsedRealtime())) {

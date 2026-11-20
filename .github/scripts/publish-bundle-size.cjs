@@ -53,7 +53,7 @@ async function readArtifact(github, repo, runId) {
     // Read only known text entries. Never extract paths or execute PR-provided code.
     const read = (name) =>
       execFileSync("unzip", ["-p", archive, name], { encoding: "utf8", maxBuffer: 1024 * 1024 });
-    return { report: JSON.parse(read("report.json")), packageComment: read("comment.md") };
+    return { report: JSON.parse(read("report.json")) };
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -203,7 +203,14 @@ async function processCommands({ github, repo, comments, state, report, mayAccep
   return { acceptances, processedComments: [...processed], notes: notes.slice(-10) };
 }
 
-async function publish({ github, context, core, prNumber, loadArtifact = readArtifact }) {
+async function publish({
+  github,
+  context,
+  core,
+  prNumber,
+  loadArtifact = readArtifact,
+  reportPolicy = policy,
+}) {
   const repo = context.repo;
   const { data: pr } = await github.rest.pulls.get({ ...repo, pull_number: prNumber });
   if (pr.state !== "open") return;
@@ -238,8 +245,9 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
       throw new Error(
         "Package Size did not succeed. Fix or rerun the measurement workflow; a comment cannot bypass build failures.",
       );
-    const { report, packageComment } = await loadArtifact(github, repo, run.id);
+    const { report } = await loadArtifact(github, repo, run.id);
     validateReport(report, pr, run);
+    reportPolicy.evaluate(report);
     const comments = await github.paginate(github.rest.issues.listComments, {
       ...repo,
       issue_number: pr.number,
@@ -279,8 +287,8 @@ async function publish({ github, context, core, prNumber, loadArtifact = readArt
       runAttempt: run.run_attempt,
       publishedAt: mayAccept ? state.publishedAt : new Date().toISOString(),
     };
-    const rows = policy.evaluate(report, next.acceptances);
-    const body = policy.render(rows, next, packageComment, processed.notes);
+    const rows = reportPolicy.evaluate(report, next.acceptances);
+    const body = reportPolicy.render(report, next, processed.notes);
     const { data: current } = await github.rest.pulls.get({ ...repo, pull_number: pr.number });
     if (
       current.head.sha !== pr.head.sha ||

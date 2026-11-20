@@ -1,6 +1,5 @@
 import {
-  createCheckoutKitTelemetry,
-  createCheckoutKitTelemetryForTesting,
+  createBuildTelemetry,
   toProtocolMethod,
   type CheckoutKitTelemetry,
 } from "@shopify/checkout-kit-telemetry";
@@ -9,31 +8,10 @@ import { CK_VERSION } from "./version";
 
 export type { CheckoutKitTelemetry, RecordingMeasurement } from "@shopify/checkout-kit-telemetry";
 
-function createConsoleTelemetry(
+const defaultTelemetryFactory = (
   protocolMethods: readonly string[],
   product?: string,
-): CheckoutKitTelemetry {
-  // Use the normal aggregation and label filtering with a local-only transport.
-  return createCheckoutKitTelemetryForTesting({
-    sdkVersion: CK_VERSION,
-    protocolMethods,
-    product,
-    exportIntervalMs: 1000,
-    fetch: (_url, init) => {
-      // oxlint-disable-next-line no-console -- The dev transport intentionally logs instead of sending.
-      console.info("[Checkout Kit telemetry]", JSON.parse(String(init.body)));
-      return Promise.resolve({ ok: true });
-    },
-  });
-}
-
-// Vite builds keep production telemetry. Source served by the dev server stays
-// local unless production reporting is explicitly requested.
-const defaultTelemetryFactory =
-  !import.meta.env.DEV || import.meta.env.VITE_CK_TELEMETRY === "production"
-    ? (protocolMethods: readonly string[], product?: string) =>
-        createCheckoutKitTelemetry(CK_VERSION, { protocolMethods, product })
-    : createConsoleTelemetry;
+): CheckoutKitTelemetry => createBuildTelemetry(CK_VERSION, { protocolMethods, product });
 
 let telemetryFactory = defaultTelemetryFactory;
 

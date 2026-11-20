@@ -128,6 +128,31 @@ class OriginAllowlistTest {
     }
 
     @Test
+    fun `isHttpsUrl accepts HTTPS URLs with paths ports and case differences`() {
+        for (url in listOf(
+            "https://checkout.example.com/cart/123?source=demo#payment",
+            "HTTPS://CHECKOUT.EXAMPLE.COM:8443/cart",
+            "https://[2001:db8::1]:443/cart",
+        )) {
+            assertThat(OriginAllowlist.isHttpsUrl(url)).describedAs(url).isTrue()
+        }
+    }
+
+    @Test
+    fun `isHttpsUrl rejects HTTP malformed unsupported and credential bearing URLs`() {
+        for (url in listOf(
+            "http://checkout.example.com/cart",
+            "not a url",
+            "https://[invalid",
+            "https:///missing-host",
+            "javascript:alert(1)",
+            "https://buyer:secret@checkout.example.com/cart",
+        )) {
+            assertThat(OriginAllowlist.isHttpsUrl(url)).describedAs(url).isFalse()
+        }
+    }
+
+    @Test
     fun `originFromUrl extracts the origin from a full URL`() {
         assertThat(OriginAllowlist.originFromUrl("https://checkout.shopify.com/cart/123?foo=bar"))
             .isEqualTo("https://checkout.shopify.com")

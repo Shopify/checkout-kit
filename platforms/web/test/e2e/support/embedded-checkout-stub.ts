@@ -3,22 +3,22 @@ import type { BrowserContext } from "@playwright/test";
 
 import { checkoutOrigin } from "./checkout-fixture";
 
-export type CheckoutStubMode = "blank" | "handshake";
+export type CheckoutStubMode = "blank" | "handshake" | "universal";
 
-const syntheticCheckout = fileURLToPath(
-  new URL("../fixtures/synthetic-checkout.html", import.meta.url),
-);
+const syntheticCheckouts = {
+  handshake: fileURLToPath(new URL("../fixtures/synthetic-checkout.html", import.meta.url)),
+  universal: fileURLToPath(
+    new URL("../fixtures/synthetic-universal-checkout.html", import.meta.url),
+  ),
+};
 
-export async function stubEmbeddedCheckout(
-  context: BrowserContext,
-  mode: CheckoutStubMode,
-): Promise<void> {
+export async function stubEmbeddedCheckout(context: BrowserContext, mode: CheckoutStubMode) {
   await context.route(`${checkoutOrigin}/**`, (route) =>
     route.fulfill({
       contentType: "text/html; charset=utf-8",
       ...(mode === "blank"
         ? { body: "<!doctype html><title>Checkout popup</title>" }
-        : { path: syntheticCheckout }),
+        : { path: syntheticCheckouts[mode] }),
     }),
   );
 }

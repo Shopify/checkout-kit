@@ -167,15 +167,24 @@ internal class EmbeddedCheckoutProtocolBridge(
         }
     }
 
+    /**
+     * Receives an accepted checkout message on the main thread.
+     *
+     * While checkout is not presented, as a background preload or a dismissed checkout kept for
+     * reuse, the kit takes no action outside the WebView. It still answers the handshake and
+     * evicts the view on completion or terminal errors, but rejects requests whose default
+     * action would reach outside the page, such as opening a link.
+     */
     internal fun receiveMessage(message: String) {
         // Bind queued messages to the presentation that received them. Preload messages are not replayed.
         val adapter = eventAdapter
+        val presented = view.isPresented
         protocolMessageExecutor.execute {
-            processMessage(message, adapter)
+            processMessage(message, adapter, presented)
         }
     }
 
-    private fun processMessage(message: String, adapter: CheckoutEventAdapter?) {
+    private fun processMessage(message: String, adapter: CheckoutEventAdapter?, presented: Boolean) {
         decodeErrorRecordedForMessage = false
         try {
             val request = decodeProtocolRequest(message)
@@ -186,7 +195,9 @@ internal class EmbeddedCheckoutProtocolBridge(
             log.d(LOG_TAG, "Received bridge message: method=${request.method} id=${request.id}")
             when (method) {
                 CheckoutProtocol.ready.method -> requestId?.let { handleClientMessage(method, message) }
-                CheckoutProtocol.windowOpen.method -> requestId?.let { handleWindowOpenRequest(message, adapter) }
+                CheckoutProtocol.windowOpen.method -> requestId?.let {
+                    handleWindowOpenRequest(message, adapter, presented)
+                }
                 CheckoutProtocol.start.method -> handleStart(message, adapter)
                 CheckoutProtocol.complete.method -> handleComplete(message, adapter)
                 CheckoutProtocol.error.method -> handleTerminalError(message, request.params)
@@ -267,12 +278,12 @@ internal class EmbeddedCheckoutProtocolBridge(
      * falls back to the kit-owned [defaultClient], which launches web URLs in a
      * Custom Tab and other URLs via `Intent.ACTION_VIEW` (see [windowOpenClient]).
      */
-    private fun handleWindowOpenRequest(message: String, adapter: CheckoutEventAdapter?) {
+    private fun handleWindowOpenRequest(message: String, adapter: CheckoutEventAdapter?, presented: Boolean) {
         log.d(LOG_TAG, "Handling ${CheckoutProtocol.windowOpen.method}")
         processWithDefault(
             message,
             CheckoutProtocol.windowOpen.method,
-            windowOpenClient(adapter),
+            windowOpenClient(adapter, presented),
             DefaultClientPolicy.RunIfUnhandled
         )
             ?.let { sendRaw(it) }
@@ -383,8 +394,13 @@ internal class EmbeddedCheckoutProtocolBridge(
                 )
             }
 
-    /** Capture the requesting presentation so a queued link cannot invoke a later host's callback. */
-    private fun windowOpenClient(adapter: CheckoutEventAdapter?): CheckoutProtocol.Client =
+    /**
+     * Capture the requesting presentation so a queued link cannot invoke a later host's callback.
+     *
+     * A request received while checkout was not presented is rejected: no host is showing
+     * checkout to consult, and the buyer cannot see what would open.
+     */
+    private fun windowOpenClient(adapter: CheckoutEventAdapter?, presented: Boolean): CheckoutProtocol.Client =
         CheckoutProtocol.Client()
             .on(CheckoutProtocol.windowOpen) { request ->
                 val url = request.url
@@ -394,6 +410,10 @@ internal class EmbeddedCheckoutProtocolBridge(
                 }
                 if (view.hasHandledTerminalFailure) {
                     return@on windowOpenRejected(reason = "checkout session ended")
+                }
+                if (!presented) {
+                    log.d(LOG_TAG, "window.open rejected: checkout is not presented")
+                    return@on windowOpenRejected(reason = "checkout is not presented")
                 }
                 when (adapter?.actionForLink(CheckoutLink(url.toUri())) ?: CheckoutLinkAction.Default) {
                     CheckoutLinkAction.Handled -> return@on windowOpenSuccess()

@@ -4,7 +4,7 @@ import {
   INTERNAL_ERROR_MESSAGE,
   type WindowOpenRequest,
   type WindowOpenResult,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import type { Logger } from "@shopify/checkout-kit-core/checkout/logger";
 import {

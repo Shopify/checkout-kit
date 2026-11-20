@@ -132,8 +132,8 @@ document.querySelector("#continue")!.addEventListener("click", () => {
 
 The functions and `authenticatedContinueUrl` above are application-owned
 placeholders. The URL can grant access to checkout: do not log, persist, or
-place it in event diagnostics. The expected URL has a `/checkouts/uc/` path;
-the SDK warns at the `warn` log level about other paths.
+place it in event diagnostics. Pass the continuation URL exactly as returned;
+the SDK does not require a particular URL path.
 
 ### Session creation and buyer authentication
 

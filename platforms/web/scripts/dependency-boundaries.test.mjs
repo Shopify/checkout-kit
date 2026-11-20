@@ -67,7 +67,7 @@ test("Web dependency boundaries", async (t) => {
     [
       "telemetry uses protocol exports",
       "internal/telemetry/src/protocol.ts",
-      "@shopify/checkout-kit-protocol",
+      "@shopify/embedded-checkout-protocol",
       [],
     ],
     [
@@ -123,7 +123,9 @@ test("Web dependency boundaries", async (t) => {
       "./checkout": "./checkout/src/index.ts",
     });
     workspace("internal/telemetry", "@shopify/checkout-kit-telemetry", { ".": "./src/index.ts" });
-    workspace("protocol", "@shopify/checkout-kit-protocol", { ".": "./src/index.ts" });
+    workspace("protocol", "@shopify/embedded-checkout-protocol", {
+      ".": "./src/index.ts",
+    });
     for (const path of [
       "src/public.ts",
       "components/shopify-checkout/src/index.ts",

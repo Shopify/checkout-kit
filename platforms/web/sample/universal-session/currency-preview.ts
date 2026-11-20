@@ -18,11 +18,7 @@ export function createCurrencyPreviewController({
   let scheduled = false;
   let disposed = false;
 
-  async function load(
-    domain: string,
-    preview: CurrencyPreview,
-    request: AbortController,
-  ): Promise<void> {
+  async function load(domain: string, preview: CurrencyPreview, request: AbortController) {
     // A result applies only while its store, buyer country, and environment are unchanged.
     const isCurrent = () => {
       if (disposed || request.signal.aborted || requests.get(domain) !== request) return false;

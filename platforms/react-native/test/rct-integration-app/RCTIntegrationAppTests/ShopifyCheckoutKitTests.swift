@@ -178,25 +178,14 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
     func testSetConfigFromABackgroundQueueResolvesAfterTheConfigurationIsApplied() {
         let resolved = expectation(description: "setConfig resolved")
-        var updatePosted = false
-        var updatePostedAtResolve: Bool?
         var resolvedConfiguration: [String: Any]?
         var calledOnMainThread: Bool?
-        let observer = NotificationCenter.default.addObserver(
-            forName: Notification.Name("CheckoutKitConfigurationUpdated"),
-            object: nil,
-            queue: nil
-        ) { _ in
-            updatePosted = true
-        }
-        defer { NotificationCenter.default.removeObserver(observer) }
 
         DispatchQueue.global().async { [shopifyCheckoutKit] in
             calledOnMainThread = Thread.isMainThread
             shopifyCheckoutKit?.setConfig(
                 ["title": "Background title", "logLevel": "debug"],
                 resolve: { value in
-                    updatePostedAtResolve = updatePosted
                     resolvedConfiguration = value as? [String: Any]
                     resolved.fulfill()
                 },
@@ -206,7 +195,6 @@ class ShopifyCheckoutKitTests: XCTestCase {
 
         wait(for: [resolved], timeout: 5)
         XCTAssertEqual(calledOnMainThread, false)
-        XCTAssertEqual(updatePostedAtResolve, true)
         XCTAssertEqual(resolvedConfiguration?["title"] as? String, "Background title")
         XCTAssertEqual(resolvedConfiguration?["logLevel"] as? String, "debug")
         let result = shopifyCheckoutKit.getConfig() as? [String: Any]
@@ -292,6 +280,79 @@ class ShopifyCheckoutKitTests: XCTestCase {
         result = shopifyCheckoutKit.getConfig() as? [String: Any]
 
         XCTAssertEqual(result?["preloading"] as? Bool, false)
+    }
+
+    func testSetConfigFromABackgroundQueueResolvesEachCallWithItsOwnConfiguration() {
+        let settled = expectation(description: "both setConfig calls resolved")
+        settled.expectedFulfillmentCount = 2
+        var resolvedTitles: [String?] = []
+        let submitted = DispatchSemaphore(value: 0)
+
+        DispatchQueue.global().async { [shopifyCheckoutKit] in
+            defer { submitted.signal() }
+            for title in ["First title", "Second title"] {
+                shopifyCheckoutKit?.setConfig(
+                    ["title": title],
+                    resolve: { result in
+                        resolvedTitles.append(Self.title(of: result))
+                        settled.fulfill()
+                    },
+                    reject: { _, _, _ in XCTFail("setConfig rejected") }
+                )
+            }
+        }
+
+        // Keep the main queue busy until both calls are made, so the first call still waits when the second call starts.
+        XCTAssertEqual(submitted.wait(timeout: .now() + 5), .success)
+        wait(for: [settled], timeout: 5)
+        XCTAssertEqual(resolvedTitles, ["First title", "Second title"])
+    }
+
+    func testSetConfigFromAConfigurationObserverResolvesAfterTheCallThatPostedIt() {
+        let settled = expectation(description: "the observer's call and the later call resolved")
+        settled.expectedFulfillmentCount = 2
+        var events: [String] = []
+        var observerCalled = false
+        let observer = NotificationCenter.default.addObserver(
+            forName: Notification.Name("CheckoutKitConfigurationUpdated"),
+            object: nil,
+            queue: nil
+        ) { [shopifyCheckoutKit] _ in
+            guard !observerCalled else { return }
+            observerCalled = true
+            shopifyCheckoutKit?.setConfig(
+                ["title": "Observer title"],
+                resolve: { result in
+                    events.append("observer:\(Self.title(of: result) ?? "")")
+                    settled.fulfill()
+                },
+                reject: { _, _, _ in XCTFail("setConfig rejected") }
+            )
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        shopifyCheckoutKit.setConfig(
+            ["title": "Outer title"],
+            resolve: { result in events.append("outer:\(Self.title(of: result) ?? "")") },
+            reject: { _, _, _ in XCTFail("setConfig rejected") }
+        )
+        // Made after the observer's call, so it must resolve after it too.
+        shopifyCheckoutKit.setConfig(
+            ["title": "Later title"],
+            resolve: { result in
+                events.append("later:\(Self.title(of: result) ?? "")")
+                settled.fulfill()
+            },
+            reject: { _, _, _ in XCTFail("setConfig rejected") }
+        )
+
+        wait(for: [settled], timeout: 5)
+        XCTAssertEqual(events, ["outer:Outer title", "observer:Observer title", "later:Later title"])
+        XCTAssertEqual(ShopifyCheckout.configuration.title, "Later title")
+    }
+
+    private static func title(of result: Any?) -> String? {
+        (result as? [String: Any])?["title"] as? String
     }
 
     func testSerializePreloadFailureMapsUnavailableWebContent() {

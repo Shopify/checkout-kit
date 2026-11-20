@@ -25,6 +25,7 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
     public var wallets: [Wallet] = [.shopPay, .applePay]
     var eventHandlers: EventHandlers = .init()
     var cornerRadius: CGFloat?
+    var buttonHeight: CGFloat?
 
     /// The Apple Pay button type
     private var applePayButtonType: PKPaymentButtonType = .plain
@@ -94,6 +95,7 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
                                 cartSource: cartSource,
                                 eventHandlers: eventHandlers,
                                 cornerRadius: cornerRadius,
+                                buttonHeight: resolvedButtonHeight,
                                 buttonType: applePayButtonType,
                                 buttonStyle: applePayButtonStyle
                             )
@@ -101,7 +103,8 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
                             ShopPayButton(
                                 cartSource: cartSource,
                                 eventHandlers: eventHandlers,
-                                cornerRadius: cornerRadius
+                                cornerRadius: cornerRadius,
+                                buttonHeight: resolvedButtonHeight
                             )
                         default:
                             EmptyView()
@@ -114,6 +117,11 @@ public struct ShopifyAcceleratedCheckoutButtons: View {
         .onAppear {
             eventHandlers.renderStateDidChange?(currentRenderState)
         }
+    }
+
+    /// The height each wallet button renders at.
+    public var resolvedButtonHeight: CGFloat {
+        WalletButtonHeight.resolve(buttonHeight)
     }
 
     private var resolvedConfiguration: ShopifyAcceleratedCheckouts.Configuration {
@@ -183,6 +191,21 @@ extension ShopifyAcceleratedCheckoutButtons {
         var newView = self
         newView.cornerRadius = radius
         return newView
+    }
+
+    /// Sets the height of all wallet buttons.
+    ///
+    /// ```swift
+    /// ShopifyAcceleratedCheckoutButtons(cartID: cartId)
+    ///     .buttonHeight(56)
+    /// ```
+    ///
+    /// - Parameter height: The button height (default: 48). Values are clamped to 30–64; zero, negative, or non-finite values use the default.
+    /// - Returns: A view with the custom button height applied
+    public func buttonHeight(_ height: CGFloat) -> ShopifyAcceleratedCheckoutButtons {
+        var view = self
+        view.buttonHeight = height
+        return view
     }
 
     /// Called when a checkout presented by an accelerated button starts.

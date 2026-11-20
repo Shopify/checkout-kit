@@ -1,4 +1,4 @@
-import {embeddedCheckoutMethods} from '@shopify/checkout-kit-protocol';
+import {embeddedCheckoutMethods} from '@shopify/embedded-checkout-protocol';
 
 
 export function toProtocolMethod(method: string, additionalMethods: readonly string[] = []): string {

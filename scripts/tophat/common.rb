@@ -51,26 +51,27 @@ module CheckoutKitTophat
     end
   end
 
-  def artifact_provider_parameters(recipe, app_slug, branch)
+  def artifact_provider_parameters(recipe, workflow, app_slug, branch)
     {
       "app_slug" => app_slug,
       "branch" => branch,
-      "workflow" => recipe.fetch("workflow"),
+      "workflow" => workflow,
       "artifact_name" => recipe.fetch("artifact_name")
     }
   end
 
-  def bitrise_branch_recipe(recipe, app_slug, branch)
+  def bitrise_branch_recipe(recipe, workflow, app_slug, branch)
     {
       "artifactProviderID" => "bitrise-branch",
       "launchArguments" => [],
-      "artifactProviderParameters" => artifact_provider_parameters(recipe, app_slug, branch)
+      "artifactProviderParameters" => artifact_provider_parameters(recipe, workflow, app_slug, branch)
     }
   end
 
+  # Installs a pull request branch build.
   def install_config(recipe, device, app_slug, branch)
     [
-      bitrise_branch_recipe(recipe, app_slug, branch).merge(
+      bitrise_branch_recipe(recipe, recipe.fetch("pull_request_workflow"), app_slug, branch).merge(
         "device" => {
           "name" => device.fetch("name"),
           "platform" => device.fetch("platform"),
@@ -90,8 +91,9 @@ module CheckoutKitTophat
     }
   end
 
+  # Quick Launch always installs the default branch build.
   def quick_launch_recipe(recipe, app_slug, branch)
-    config = bitrise_branch_recipe(recipe, app_slug, branch).merge(
+    config = bitrise_branch_recipe(recipe, recipe.fetch("default_branch_workflow"), app_slug, branch).merge(
       "platformHint" => recipe.fetch("platform")
     )
     destination = recipe.fetch("destination")

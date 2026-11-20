@@ -411,6 +411,85 @@ describe('ShopifyCheckoutKit', () => {
         },
       });
     });
+
+    it.each([
+      [{title: 1}, '`title` must be a string'],
+      [{title: null}, '`title` must be a string'],
+      [{preloading: 'false'}, '`preloading` must be a boolean'],
+      [{telemetry: null}, '`telemetry` must be a boolean'],
+      [{logLevel: 1}, '`logLevel` must be a string'],
+      [
+        {allowedMessageOrigins: 'https://example.com'},
+        '`allowedMessageOrigins` must be an array of strings',
+      ],
+      [
+        {allowedMessageOrigins: ['https://example.com', 1]},
+        '`allowedMessageOrigins` must be an array of strings',
+      ],
+    ])('rejects %j before it reaches native', async (setting, message) => {
+      const instance = new ShopifyCheckout();
+
+      await expect(
+        instance.setConfig({
+          preloading: false,
+          ...setting,
+        } as unknown as Configuration),
+      ).rejects.toMatchObject({
+        name: 'TypeError',
+        code: 'set_config_failed',
+        message,
+      });
+      expect(NativeModule.setConfig).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      null,
+      'dark',
+      {colorScheme: 'dark'},
+      {type: 'app', colorScheme: null},
+      {type: 'app', colors: 'dark'},
+    ])(
+      'sends the unreadable appearance %j to native with the other settings, as native keeps or defaults it',
+      async appearance => {
+        const instance = new ShopifyCheckout();
+
+        await expect(
+          instance.setConfig({
+            title: 'Checkout',
+            appearance,
+          } as unknown as Configuration),
+        ).resolves.toStrictEqual({
+          appearance: {
+            type: CheckoutAppearanceType.app,
+            colorScheme: CheckoutColorScheme.automatic,
+          },
+          logLevel: LogLevel.error,
+          preloading: true,
+          telemetry: true,
+          allowedMessageOrigins: [],
+        });
+        expect(NativeModule.setConfig).toHaveBeenCalledWith({
+          title: 'Checkout',
+          appearance,
+        });
+      },
+    );
+
+    it('sends `undefined` settings, unknown names and `null` colors, and drops `null` message origins', () => {
+      const instance = new ShopifyCheckout();
+      instance.setConfig({
+        title: undefined,
+        logLevel: 'verbose',
+        allowedMessageOrigins: ['https://example.com', null],
+        appearance: {type: 'app', colorScheme: 'sepia', colors: null},
+      } as unknown as Configuration);
+
+      expect(NativeModule.setConfig).toHaveBeenCalledWith({
+        logLevel: 'verbose',
+        allowedMessageOrigins: ['https://example.com'],
+        appearance: {type: 'app', colorScheme: 'sepia', colors: null},
+      });
+    });
   });
 
   describe('preload', () => {
@@ -1301,6 +1380,68 @@ describe('ShopifyCheckoutKit', () => {
       });
       NativeModule.configureAcceleratedCheckouts.mockReset();
       NativeModule.isAcceleratedCheckoutAvailable.mockReset();
+    });
+
+    describe('setConfig with acceleratedCheckouts', () => {
+      it('configures accelerated checkouts after native applies the configuration', async () => {
+        NativeModule.configureAcceleratedCheckouts.mockReturnValue(true);
+        const native = Promise.withResolvers<object>();
+        NativeModule.setConfig.mockReturnValueOnce(native.promise);
+        const instance = new ShopifyCheckout();
+
+        const result = instance.setConfig({
+          acceleratedCheckouts: acceleratedConfig,
+        });
+
+        expect(NativeModule.configureAcceleratedCheckouts).not.toHaveBeenCalled();
+        expect(instance.acceleratedCheckoutsReady).toBe(false);
+        native.resolve({
+          appearance: {type: 'storefront'},
+          logLevel: 'error',
+          preloading: true,
+          telemetry: true,
+          title: 'Checkout',
+          allowedMessageOrigins: [],
+        });
+        await result;
+        expect(NativeModule.configureAcceleratedCheckouts).toHaveBeenCalledTimes(1);
+        expect(instance.acceleratedCheckoutsReady).toBe(true);
+      });
+
+      it('leaves accelerated checkouts unchanged when a setting has the wrong type', async () => {
+        NativeModule.configureAcceleratedCheckouts.mockReturnValue(true);
+        const instance = new ShopifyCheckout();
+
+        await expect(
+          instance.setConfig({
+            acceleratedCheckouts: acceleratedConfig,
+            allowedMessageOrigins: [1 as unknown as string],
+          }),
+        ).rejects.toMatchObject({
+          name: 'TypeError',
+          code: 'set_config_failed',
+          message: '`allowedMessageOrigins` must be an array of strings',
+        });
+
+        expect(NativeModule.configureAcceleratedCheckouts).not.toHaveBeenCalled();
+        expect(instance.acceleratedCheckoutsReady).toBe(false);
+      });
+
+      it('leaves accelerated checkouts unchanged when native rejects the configuration', async () => {
+        const error = Object.assign(new Error('unreadable'), {
+          code: 'set_config_failed',
+        });
+        NativeModule.configureAcceleratedCheckouts.mockReturnValue(true);
+        NativeModule.setConfig.mockRejectedValueOnce(error);
+        const instance = new ShopifyCheckout();
+
+        await expect(
+          instance.setConfig({acceleratedCheckouts: acceleratedConfig}),
+        ).rejects.toBe(error);
+
+        expect(NativeModule.configureAcceleratedCheckouts).not.toHaveBeenCalled();
+        expect(instance.acceleratedCheckoutsReady).toBe(false);
+      });
     });
 
     describe('configureAcceleratedCheckouts', () => {

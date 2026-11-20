@@ -11,18 +11,28 @@ class PreloadCacheHitMarkerTests: XCTestCase {
     }
 
     func testMarkerTextsMatchTheMaestroFlowAssertions() {
-        XCTAssertEqual(PreloadCacheHitMarker.testId(observed: true), "preload-cache-hit-observed")
-        XCTAssertEqual(PreloadCacheHitMarker.testId(observed: false), "preload-cache-hit-none")
+        XCTAssertEqual(PreloadCacheHitMarker.testId(hits: 0), "preload-cache-hit-0")
+        XCTAssertEqual(PreloadCacheHitMarker.testId(hits: 1), "preload-cache-hit-1")
+        XCTAssertEqual(PreloadCacheHitMarker.testId(hits: 2), "preload-cache-hit-2")
     }
 
     func testTheObserverRecordsTheReadyCacheHitDiagnostic() {
         let observer = PreloadCacheHitLog()
 
-        XCTAssertFalse(observer.observed)
+        XCTAssertEqual(observer.hits, 0)
 
         observer.record("14:02:11: Presenting preloaded checkout from cache for https://example.com")
 
-        XCTAssertTrue(observer.observed)
+        XCTAssertEqual(observer.hits, 1)
+    }
+
+    func testTheObserverCountsEachReadyCacheHit() {
+        let observer = PreloadCacheHitLog()
+
+        observer.record(PreloadCacheHitLog.diagnostic)
+        observer.record(PreloadCacheHitLog.diagnostic)
+
+        XCTAssertEqual(observer.hits, 2)
     }
 
     func testTheObserverIgnoresUnrelatedMessages() {
@@ -31,7 +41,7 @@ class PreloadCacheHitMarkerTests: XCTestCase {
         observer.record("Preload state changed to ready")
         observer.record("Presenting cached entry")
 
-        XCTAssertFalse(observer.observed)
+        XCTAssertEqual(observer.hits, 0)
     }
 
     func testResetClearsTheObservation() {
@@ -40,7 +50,7 @@ class PreloadCacheHitMarkerTests: XCTestCase {
 
         observer.reset()
 
-        XCTAssertFalse(observer.observed)
+        XCTAssertEqual(observer.hits, 0)
     }
 
     func testTheLoggerForwardsEveryMessageToTheWrappedLogger() {
@@ -52,7 +62,7 @@ class PreloadCacheHitMarkerTests: XCTestCase {
         logger.log(PreloadCacheHitLog.diagnostic)
 
         XCTAssertEqual(spy.messages, ["first", PreloadCacheHitLog.diagnostic])
-        XCTAssertTrue(observer.observed)
+        XCTAssertEqual(observer.hits, 1)
     }
 
     func testClearingLogsAlsoClearsTheObservation() {
@@ -63,7 +73,7 @@ class PreloadCacheHitMarkerTests: XCTestCase {
 
         logger.clearLogs()
 
-        XCTAssertFalse(observer.observed)
+        XCTAssertEqual(observer.hits, 0)
         XCTAssertTrue(spy.didClear)
     }
 }

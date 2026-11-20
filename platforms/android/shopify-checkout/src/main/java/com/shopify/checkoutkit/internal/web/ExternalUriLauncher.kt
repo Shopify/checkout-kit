@@ -1,13 +1,12 @@
 package com.shopify.checkoutkit.internal.web
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.core.net.toUri
+import com.shopify.checkoutkit.internal.findActivity
 
 /**
  * Single point of entry for launching URLs outside the checkout WebView.
@@ -61,15 +60,6 @@ internal object ExternalUriLauncher {
                 val serviceIntent = Intent(CUSTOM_TABS_SERVICE_ACTION).setPackage(packageName)
                 context.packageManager.resolveService(serviceIntent, 0) != null
             }
-    }
-
-    private fun Context.findActivity(): Activity? {
-        var current: Context? = this
-        while (current is ContextWrapper && current !is Activity) {
-            val baseContext = current.baseContext
-            current = if (baseContext === current) null else baseContext
-        }
-        return current as? Activity
     }
 
     private fun launchIntent(context: Context, intent: Intent, uri: Uri): Result {

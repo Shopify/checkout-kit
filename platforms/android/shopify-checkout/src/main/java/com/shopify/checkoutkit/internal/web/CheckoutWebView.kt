@@ -44,6 +44,7 @@ import com.shopify.checkoutkit.checkout.PreloadStateListener
 import com.shopify.checkoutkit.checkout.ShopifyCheckout
 import com.shopify.checkoutkit.checkout.ShopifyCheckout.Companion.log
 import com.shopify.checkoutkit.internal.concurrent.onMainThread
+import com.shopify.checkoutkit.internal.findActivity
 import com.shopify.checkoutkit.internal.preload.PreloadCache
 import com.shopify.checkoutkit.internal.preload.PreloadKey
 import com.shopify.checkoutkit.internal.protocol.CheckoutProtocol
@@ -136,6 +137,12 @@ internal class CheckoutWebView private constructor(
         embeddedCheckoutProtocol.invalidateEventAdapter()
     }
 
+    /**
+     * Removes the protocol bridge registered in `init`. The bridge stays registered while the view
+     * moves between windows: removing and re-adding a WebMessageListener on a loaded page leaves
+     * the page posting to the removed listener, so a reused checkout stops delivering messages and
+     * WebView can crash natively.
+     */
     override fun destroy() {
         // Evicting or expiring a preload that was never presented is not a buyer leaving.
         if (!isPreloadRequest) recordReadyDuration(TelemetryReadyDurationResult.NotReady)
@@ -157,18 +164,6 @@ internal class CheckoutWebView private constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         touchHandler.handle(this, event)
         return super.onTouchEvent(event)
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        log.d(LOG_TAG, "Attached to window. Adding protocol bridge.")
-        embeddedCheckoutProtocol.attach()
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        log.d(LOG_TAG, "Detached from window. Removing protocol bridge.")
-        embeddedCheckoutProtocol.detach()
     }
 
     fun loadCheckout(url: String, isPreload: Boolean = false) {
@@ -250,7 +245,12 @@ internal class CheckoutWebView private constructor(
     /** Called from the protocol message thread when `ec.ready` arrives. */
     internal fun onEmbeddedCheckoutReady() {
         val receivedAtMillis = SystemClock.elapsedRealtime()
-        onMainThread { recordReadyDuration(TelemetryReadyDurationResult.Ready, receivedAtMillis) }
+        onMainThread {
+            recordReadyDuration(TelemetryReadyDurationResult.Ready, receivedAtMillis)
+            // A preload is ready when checkout itself is, whether or not it has been presented.
+            // A page that is not checkout, such as a bot challenge, never sends ec.ready.
+            preloadCache.transition(this, PreloadState.Ready)
+        }
     }
 
     /** Records once per load, at the same failure sites as navigation duration. */
@@ -283,6 +283,24 @@ internal class CheckoutWebView private constructor(
 
     internal fun markPreloadConsumed() {
         isPreloadRequest = false
+    }
+
+    /**
+     * Evicts this view if it is the cached preload, reporting why to the preload listener.
+     *
+     * A preload that was never presented failed to preload, so it reports [PreloadState.Failed].
+     * Once presentation has used it, the failure belongs to that checkout session, and the
+     * preload only became unavailable, so it reports [PreloadState.IdleReason.Invalidated].
+     */
+    private fun evictCachedViewForFailure(reason: PreloadState.FailureReason, message: String) {
+        preloadCache.evict(
+            if (isPreloadRequest) {
+                PreloadState.Failed(reason, message)
+            } else {
+                PreloadState.Idle(PreloadState.IdleReason.Invalidated)
+            },
+            view = this,
+        )
     }
 
     inner class CheckoutWebViewClient : WebViewClient() {
@@ -339,7 +357,6 @@ internal class CheckoutWebView private constructor(
             super.onPageFinished(view, url)
             log.d(LOG_TAG, "onPageFinished called ${url.redactedUrlForLogging()}.")
             loadComplete = true
-            preloadCache.transition(this@CheckoutWebView, PreloadState.Ready)
             listener.onCheckoutViewLoadComplete()
             recordNavigationDuration(TelemetryNavigationDurationResult.Success)
             resetCheckoutRequestRetryState()
@@ -379,12 +396,9 @@ internal class CheckoutWebView private constructor(
                         ),
                     )
                 }
-                preloadCache.evict(
-                    PreloadState.Failed(
-                        PreloadState.FailureReason.NavigationFailed,
-                        "Navigation failed (error code: ${error?.errorCode ?: 0}).",
-                    ),
-                    view = this@CheckoutWebView,
+                evictCachedViewForFailure(
+                    PreloadState.FailureReason.NavigationFailed,
+                    "Navigation failed (error code: ${error?.errorCode ?: 0}).",
                 )
             }
             super.onReceivedError(view, request, error)
@@ -446,13 +460,7 @@ internal class CheckoutWebView private constructor(
                     )
                     recordNavigationDuration(TelemetryNavigationDurationResult.Failure)
                     recordReadyDuration(TelemetryReadyDurationResult.NotReady)
-                    preloadCache.evict(
-                        PreloadState.Failed(
-                            failureReason,
-                            failureMessage,
-                        ),
-                        view = this@CheckoutWebView,
-                    )
+                    evictCachedViewForFailure(failureReason, failureMessage)
                 }
                 errorResponse?.let {
                     handleHttpError(
@@ -491,36 +499,12 @@ internal class CheckoutWebView private constructor(
         private fun handleNavigation(uri: Uri?, isMainFrame: Boolean): Boolean {
             return when {
                 uri == null -> false
-                uri.isContactLink() || uri.isDeepLink() -> {
-                    log.d(LOG_TAG, "Raw navigation link intercepted: ${uri.redactedForLogging()}")
-                    when (listener.onCheckoutLinkClicked(CheckoutLink(uri))) {
-                        CheckoutLinkAction.Default -> {
-                            log.d(LOG_TAG, "Raw navigation link delegated to SDK default handler")
-                            when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
-                                is ExternalUriLauncher.Result.Launched ->
-                                    log.d(LOG_TAG, "Raw navigation link opened with SDK default handler")
-                                is ExternalUriLauncher.Result.Rejected ->
-                                    log.d(
-                                        LOG_TAG,
-                                        "Raw navigation link rejected by SDK default handler: ${result.reason}"
-                                    )
-                            }
-                        }
-                        CheckoutLinkAction.Handled ->
-                            log.d(LOG_TAG, "Raw navigation link handled by host")
-                        CheckoutLinkAction.Cancel ->
-                            log.d(LOG_TAG, "Raw navigation link canceled by host")
-                    }
-                    true
-                }
+                uri.isContactLink() || uri.isDeepLink() -> handleExternalLink(uri)
                 isMainFrame && uri.scheme != Scheme.HTTPS -> {
                     val error = insecureCheckoutUrlException(uri.toString())
-                    preloadCache.evict(
-                        PreloadState.Failed(
-                            PreloadState.FailureReason.NavigationFailed,
-                            "Checkout URL must use HTTPS.",
-                        ),
-                        view = this@CheckoutWebView,
+                    evictCachedViewForFailure(
+                        PreloadState.FailureReason.NavigationFailed,
+                        "Checkout URL must use HTTPS.",
                     )
                     resetCheckoutRequestRetryState()
                     listener.onCheckoutViewFailedWithError(error)
@@ -528,6 +512,35 @@ internal class CheckoutWebView private constructor(
                 }
                 else -> false
             }
+        }
+
+        private fun handleExternalLink(uri: Uri): Boolean {
+            // A kept or background checkout keeps running JavaScript, so a navigation started
+            // before dismissal can land while hidden. Nothing outside the WebView acts on it.
+            if (!isPresented) {
+                log.d(LOG_TAG, "Raw navigation link blocked: checkout is not presented")
+                return true
+            }
+            log.d(LOG_TAG, "Raw navigation link intercepted: ${uri.redactedForLogging()}")
+            when (listener.onCheckoutLinkClicked(CheckoutLink(uri))) {
+                CheckoutLinkAction.Default -> {
+                    log.d(LOG_TAG, "Raw navigation link delegated to SDK default handler")
+                    when (val result = ExternalUriLauncher.launchExternalApp(context, uri)) {
+                        is ExternalUriLauncher.Result.Launched ->
+                            log.d(LOG_TAG, "Raw navigation link opened with SDK default handler")
+                        is ExternalUriLauncher.Result.Rejected ->
+                            log.d(
+                                LOG_TAG,
+                                "Raw navigation link rejected by SDK default handler: ${result.reason}"
+                            )
+                    }
+                }
+                CheckoutLinkAction.Handled ->
+                    log.d(LOG_TAG, "Raw navigation link handled by host")
+                CheckoutLinkAction.Cancel ->
+                    log.d(LOG_TAG, "Raw navigation link canceled by host")
+            }
+            return true
         }
 
         private fun handleClientError(
@@ -624,6 +637,9 @@ internal class CheckoutWebView private constructor(
                 !OriginAllowlist.isHttpsUrl(url) -> {
                     runOnUiThreadBlocking(activity) {
                         val handle = CheckoutPreload(preloadCache)
+                        // This failure belongs to the new request, so report it now rather than
+                        // holding it for a checkout that is still presented.
+                        preloadCache.invalidate()
                         preloadCache.evict(
                             PreloadState.Failed(
                                 PreloadState.FailureReason.NavigationFailed,
@@ -666,7 +682,7 @@ internal class CheckoutWebView private constructor(
                 throw insecureCheckoutUrlException(url)
             }
             val cachedView = if (ShopifyCheckout.configuration.preloading.enabled) {
-                preloadCache.take(PreloadKey.forUrl(url))
+                preloadCache.take(PreloadKey.forUrl(url), context.findActivity())
             } else {
                 preloadCache.invalidate()
                 null
@@ -702,6 +718,9 @@ internal class CheckoutWebView private constructor(
             if (!preloadCache.hasEntry) return
             invalidate()
         }
+
+        internal fun retainAfterPresentation(view: CheckoutWebView): Boolean =
+            preloadCache.retainAfterPresentation(view)
 
         internal fun discardAfterPresentation(view: CheckoutWebView) {
             preloadCache.discard(view)
@@ -760,6 +779,10 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
         javaScriptEnabled = true
         domStorageEnabled = true
         allowContentAccess = true
+        // Honor the page's viewport meta tag, as Chrome does. Without these, offsite payment
+        // pages that declare a fixed width or scale by devicePixelRatio render too large.
+        useWideViewPort = true
+        loadWithOverviewMode = true
     }
     if (WebViewFeature.isFeatureSupported(WebViewFeature.PAYMENT_REQUEST)) {
         WebSettingsCompat.setPaymentRequestEnabled(settings, true)

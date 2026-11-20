@@ -110,17 +110,9 @@ export function kotlinDeclarations(files) {
 
 // Protocol types referenced anywhere in Checkout Kit's Swift API baselines.
 export function swiftExposedRoots(baselines) {
-  const roots = new Set();
-  const walk = (node) => {
-    if (Array.isArray(node)) return node.forEach(walk);
-    if (!node || typeof node !== "object") return;
-    for (const [, name] of (node.printedName ?? "").matchAll(/EmbeddedCheckoutProtocol\.(?:EmbeddedCheckoutProtocol\.)?([A-Z]\w*)/g)) {
-      roots.add(name);
-    }
-    Object.values(node).forEach(walk);
-  };
-  baselines.forEach(walk);
-  return roots;
+  return new Set(baselines.flatMap((baseline) =>
+    [...swiftInterfaceDeclarations(baseline).matchAll(SWIFT_PROTOCOL_TYPE)].map((match) => match[1]),
+  ));
 }
 
 // Protocol types referenced by Checkout Kit's Kotlin API. The .api file erases generic arguments
@@ -147,35 +139,42 @@ export function kotlinExposedRoots(api, sources, protocolNames) {
 // the inventory include types that only appear in hand-written signatures.
 const SWIFT_PROTOCOL_TYPE = /EmbeddedCheckoutProtocol\.(?:EmbeddedCheckoutProtocol\.)?([A-Z]\w*)/g;
 
+// Interfaces are compiler-formatted declarations. Ignore comments and string literals so
+// documentation, availability messages and default string values cannot introduce type edges.
+function swiftInterfaceDeclarations(interfaceText) {
+  return interfaceText.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+}
+
 export function swiftBaselineGraph(baseline) {
   const graph = new Map();
   const members = new Map();
-  const visitType = (type) => {
-    const references = new Set();
-    const names = [];
-    const collect = (node) => {
-      if (Array.isArray(node)) return node.forEach(collect);
-      if (!node || typeof node !== "object") return;
-      if (node !== type && node.kind === "TypeDecl") return visitType(node);
-      for (const value of [node.printedName, node.genericSig].filter(Boolean)) {
-        for (const [, name] of value.matchAll(SWIFT_PROTOCOL_TYPE)) if (name !== type.name) references.add(name);
-      }
-      Object.values(node).forEach(collect);
-    };
-    for (const child of type.children ?? []) {
-      if (child.kind === "Var" && !child.static) names.push(child.name);
+  const scopes = [];
+  for (const line of swiftInterfaceDeclarations(baseline).split("\n")) {
+    const indent = line.length - line.trimStart().length;
+    // Compiler indentation closes type/extension scopes without treating braces in
+    // default closures, accessors or inline function bodies as new types.
+    while (scopes.length && indent <= scopes.at(-1).indent && line.trim() && !line.trimStart().startsWith("#")) {
+      scopes.pop();
     }
-    collect(type);
-    graph.set(type.name, references);
-    members.set(type.name, names);
-  };
-  const walk = (node) => {
-    if (Array.isArray(node)) return node.forEach(walk);
-    if (!node || typeof node !== "object") return;
-    if (node.kind === "TypeDecl") return visitType(node);
-    Object.values(node).forEach(walk);
-  };
-  walk(baseline);
+    const declaration = line.match(/\b(?:public|open)\s+(?:final\s+)?(?:struct|enum|class|protocol|actor|typealias)\s+(\w+)/);
+    const extension = line.match(/^\s*extension\s+(EmbeddedCheckoutProtocol(?:\.\w+)+)/);
+    let owner = scopes.at(-1)?.name;
+    if (declaration || extension) {
+      owner = declaration ? declaration[1] : extension[1].split(".").at(-1);
+      if (!graph.has(owner)) graph.set(owner, new Set());
+      if (!members.has(owner)) members.set(owner, []);
+      if (line.trimEnd().endsWith("{")) scopes.push({name: owner, indent});
+    }
+    if (!owner) continue;
+    for (const [, name] of line.matchAll(SWIFT_PROTOCOL_TYPE)) {
+      if (name !== owner) graph.get(owner).add(name);
+    }
+    const property = line.match(/\b(?:let|var)\s+(\w+)\s*:/);
+    if (property && !/\b(?:static|class)\b/.test(line) && indent === scopes.at(-1)?.indent + 2) {
+      const names = members.get(owner);
+      if (!names.includes(property[1])) names.push(property[1]);
+    }
+  }
   return {graph, members};
 }
 
@@ -336,7 +335,7 @@ export function loadInventoryInputs(areaRoot) {
   const kotlinNames = new Set([...kotlinTypes.models.keys(), ...kotlinTypes.values.keys(), ...kotlinDeclarations(sourcesOf("languages/kotlin/embedded-checkout-protocol/src/main", ".kt")).keys()]);
 
   const swiftBaselines = ["ShopifyCheckoutKit", "ShopifyAcceleratedCheckouts"].map((module) =>
-    JSON.parse(readFileSync(path.join(areaRoot, `platforms/swift/api/${module}.json`), "utf8")),
+    readFileSync(path.join(areaRoot, `platforms/swift/api/${module}.swiftinterface`), "utf8"),
   );
   const androidApi = readFileSync(path.join(areaRoot, "platforms/android/shopify-checkout/api/shopify-checkout.api"), "utf8");
   const androidSources = walkFiles(path.join(areaRoot, "platforms/android/shopify-checkout/src/main"), ".kt").map((file) =>
@@ -357,7 +356,7 @@ export function loadInventoryInputs(areaRoot) {
     swift: {
       types: swiftTypes,
       ...(({graph, members}) => ({graph, members}))(
-        swiftBaselineGraph(JSON.parse(readFileSync(path.join(areaRoot, "platforms/swift/api/EmbeddedCheckoutProtocol.json"), "utf8"))),
+        swiftBaselineGraph(readFileSync(path.join(areaRoot, "platforms/swift/api/EmbeddedCheckoutProtocol.swiftinterface"), "utf8")),
       ),
       declarations: swiftDeclarations(sourcesOf("languages/swift/Sources", ".swift")),
       roots: swiftExposedRoots(swiftBaselines),

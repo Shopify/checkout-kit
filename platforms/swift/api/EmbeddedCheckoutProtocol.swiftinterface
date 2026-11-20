@@ -1,0 +1,1710 @@
+// swift-interface-format-version: 1.0
+import Foundation
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public protocol EventPayload : Swift.Decodable, Swift.Sendable {
+}
+public protocol ResponsePayload : Swift.Encodable, Swift.Sendable {
+}
+public struct NotificationDescriptor<Payload, Handler> : Swift.Sendable where Payload : EmbeddedCheckoutProtocol.EventPayload {
+  public let method: Swift.String
+  public func map<Mapped>(_ transform: @escaping @Sendable (Handler) -> Mapped) -> EmbeddedCheckoutProtocol.NotificationDescriptor<Payload, Mapped>
+}
+extension EmbeddedCheckoutProtocol.NotificationDescriptor where Handler == EmbeddedCheckoutProtocol.NotificationMessage<Payload> {
+  public init(method: Swift.String, decode: @escaping @Sendable (Foundation.Data) throws -> Payload)
+}
+public struct RequestDescriptor<Payload, Handler, Result> : Swift.Sendable where Payload : EmbeddedCheckoutProtocol.EventPayload, Result : EmbeddedCheckoutProtocol.ResponsePayload {
+  public let method: Swift.String
+  public let delegation: Swift.String?
+  public func map<Mapped>(_ transform: @escaping @Sendable (Handler) -> Mapped) -> EmbeddedCheckoutProtocol.RequestDescriptor<Payload, Mapped, Result>
+}
+extension EmbeddedCheckoutProtocol.RequestDescriptor where Handler == EmbeddedCheckoutProtocol.RequestMessage<Payload> {
+  public init(method: Swift.String, delegation: Swift.String? = nil, decode: @escaping @Sendable (Foundation.Data) throws -> Payload)
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public typealias DecodeErrorHandler = @Sendable (_ method: Swift.String, _ error: any Swift.Error, _ params: Foundation.Data) -> Swift.Void
+  public struct Client : Swift.Sendable {
+    public init()
+    @discardableResult
+    public func onDecodeError(_ handler: @escaping EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.DecodeErrorHandler) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client
+    @discardableResult
+    public func on<P, Handler>(_ descriptor: EmbeddedCheckoutProtocol.NotificationDescriptor<P, Handler>, perform: @escaping @_Concurrency.MainActor @Sendable (Handler) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client where P : EmbeddedCheckoutProtocol.EventPayload
+    @discardableResult
+    public func on<P, Handler, R>(_ descriptor: EmbeddedCheckoutProtocol.RequestDescriptor<P, Handler, R>, perform: @escaping @_Concurrency.MainActor @Sendable (Handler) async -> R) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Client where P : EmbeddedCheckoutProtocol.EventPayload, R : EmbeddedCheckoutProtocol.ResponsePayload
+    public func process(_ message: Swift.String) async -> Swift.String?
+  }
+}
+public enum EmbeddedCheckoutProtocol {
+  public struct Options : Swift.Sendable {
+    public var delegations: [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation]
+    public var colorScheme: Swift.String?
+    public var auth: Swift.String?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Options) -> Swift.Void = { _ in })
+  }
+  public static func url(for url: Foundation.URL, options: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Options = .init()) -> Foundation.URL
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest : EmbeddedCheckoutProtocol.EventPayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout : EmbeddedCheckoutProtocol.EventPayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse : EmbeddedCheckoutProtocol.EventPayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest : EmbeddedCheckoutProtocol.EventPayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest : EmbeddedCheckoutProtocol.EventPayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult : EmbeddedCheckoutProtocol.ResponsePayload {
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public static let specVersion: Swift.String
+  public enum Event {
+    public static let error: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCErrorParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCErrorParams>>
+    public static let start: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let complete: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let messagesChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let lineItemsChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let buyerChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let totalsChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let paymentChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let fulfillmentChange: EmbeddedCheckoutProtocol.NotificationDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.NotificationMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>>
+    public static let ready: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult>
+    public static let auth: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult>
+    public static let paymentInstrumentsChange: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult>
+    public static let paymentCredential: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult>
+    public static let windowOpen: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult>
+    public static let fulfillmentAddressChange: EmbeddedCheckoutProtocol.RequestDescriptor<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams, EmbeddedCheckoutProtocol.RequestMessage<EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.JSONRPCCheckoutParams>, EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult>
+    public static let all: [Swift.String]
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct Delegation : Swift.RawRepresentable, Swift.Hashable, Swift.Sendable, Swift.ExpressibleByStringLiteral {
+    public let rawValue: Swift.String
+    public init(rawValue: Swift.String)
+    public init(stringLiteral value: Swift.String)
+    public static let paymentInstrumentsChange: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation
+    public static let paymentCredential: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation
+    public static let fulfillmentAddressChange: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation
+    public static let windowOpen: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation
+    public static let all: [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Delegation]
+    public typealias ExtendedGraphemeClusterLiteralType = Swift.String
+    public typealias RawValue = Swift.String
+    public typealias StringLiteralType = Swift.String
+    public typealias UnicodeScalarLiteralType = Swift.String
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct Checkout : Swift.Codable, Swift.Sendable {
+    public var actions: [Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]?
+    public var attribution: [Swift.String : Swift.String]?
+    public var buyer: EmbeddedCheckoutProtocol.Buyer?
+    public var context: EmbeddedCheckoutProtocol.Context?
+    public var continueURL: Swift.String?
+    public var currency: Swift.String
+    public var discounts: EmbeddedCheckoutProtocol.CheckoutDiscounts?
+    public var expiresAt: Foundation.Date?
+    public var fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillment?
+    public var id: Swift.String
+    public var lineItems: [EmbeddedCheckoutProtocol.LineItem]
+    public var links: [EmbeddedCheckoutProtocol.Link]
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public var order: EmbeddedCheckoutProtocol.OrderConfirmation?
+    public var payment: EmbeddedCheckoutProtocol.Payment?
+    public var policies: [EmbeddedCheckoutProtocol.Policy]?
+    public var signals: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+    public var status: EmbeddedCheckoutProtocol.CheckoutStatus
+    public var totals: [EmbeddedCheckoutProtocol.CheckoutTotal]
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
+    public init(currency: Swift.String, id: Swift.String, lineItems: [EmbeddedCheckoutProtocol.LineItem], links: [EmbeddedCheckoutProtocol.Link], status: EmbeddedCheckoutProtocol.CheckoutStatus, totals: [EmbeddedCheckoutProtocol.CheckoutTotal], ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout) -> Swift.Void = { _ in })
+    public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+    public init(from decoder: any Swift.Decoder) throws
+    public func encode(to encoder: any Swift.Encoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Buyer : Swift.Codable, Swift.Sendable {
+  public var email: Swift.String?
+  public var firstName: Swift.String?
+  public var lastName: Swift.String?
+  public var phoneNumber: Swift.String?
+  public init(configure: (inout EmbeddedCheckoutProtocol.Buyer) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.Buyer {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Buyer) -> Swift.Void) -> EmbeddedCheckoutProtocol.Buyer
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Context : Swift.Codable, Swift.Sendable {
+  public var addressCountry: Swift.String?
+  public var addressRegion: Swift.String?
+  public var postalCode: Swift.String?
+  public var currency: Swift.String?
+  public var eligibility: [Swift.String]?
+  public var intent: Swift.String?
+  public var language: Swift.String?
+  public var location: Swift.String?
+  public var payment: [EmbeddedCheckoutProtocol.PreferredPaymentHandler]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.Context) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.Context {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Context) -> Swift.Void) -> EmbeddedCheckoutProtocol.Context
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct PreferredPaymentHandler : Swift.Codable, Swift.Sendable {
+  public var handler: Swift.String
+  public var types: [Swift.String]?
+  public init(handler: Swift.String, configure: (inout EmbeddedCheckoutProtocol.PreferredPaymentHandler) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.PreferredPaymentHandler {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.PreferredPaymentHandler) -> Swift.Void) -> EmbeddedCheckoutProtocol.PreferredPaymentHandler
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct CheckoutDiscounts : Swift.Codable, Swift.Sendable {
+  public var applied: [EmbeddedCheckoutProtocol.AppliedDiscount]?
+  public var codes: [Swift.String]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.CheckoutDiscounts) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.CheckoutDiscounts {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.CheckoutDiscounts) -> Swift.Void) -> EmbeddedCheckoutProtocol.CheckoutDiscounts
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct AppliedDiscount : Swift.Codable, Swift.Sendable {
+  public var allocations: [EmbeddedCheckoutProtocol.DiscountAllocation]?
+  public var amount: Swift.Int
+  public var automatic: Swift.Bool?
+  public var code: Swift.String?
+  public var eligibility: Swift.String?
+  public var method: EmbeddedCheckoutProtocol.DiscountMethod?
+  public var priority: Swift.Int?
+  public var provisional: Swift.Bool?
+  public var title: Swift.String
+  public init(amount: Swift.Int, title: Swift.String, configure: (inout EmbeddedCheckoutProtocol.AppliedDiscount) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.AppliedDiscount {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.AppliedDiscount) -> Swift.Void) -> EmbeddedCheckoutProtocol.AppliedDiscount
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct DiscountAllocation : Swift.Codable, Swift.Sendable {
+  public var amount: Swift.Int
+  public var path: Swift.String
+  public init(amount: Swift.Int, path: Swift.String, configure: (inout EmbeddedCheckoutProtocol.DiscountAllocation) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.DiscountAllocation {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.DiscountAllocation) -> Swift.Void) -> EmbeddedCheckoutProtocol.DiscountAllocation
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct DiscountMethod : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let across: EmbeddedCheckoutProtocol.DiscountMethod
+  public static let each: EmbeddedCheckoutProtocol.DiscountMethod
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct CheckoutFulfillment : Swift.Codable, Swift.Sendable {
+  public var availableMethods: [EmbeddedCheckoutProtocol.FulfillmentAvailableMethod]?
+  public var methods: [EmbeddedCheckoutProtocol.FulfillmentMethod]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.CheckoutFulfillment) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.CheckoutFulfillment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.CheckoutFulfillment) -> Swift.Void) -> EmbeddedCheckoutProtocol.CheckoutFulfillment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentAvailableMethod : Swift.Codable, Swift.Sendable {
+  public var description: Swift.String?
+  public var fulfillableOn: Swift.String?
+  public var lineItemIDS: [Swift.String]
+  public var type: Swift.String
+  public init(lineItemIDS: [Swift.String], type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.FulfillmentAvailableMethod) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentAvailableMethod {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentAvailableMethod) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentAvailableMethod
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentMethod : Swift.Codable, Swift.Sendable {
+  public var destinations: [EmbeddedCheckoutProtocol.FulfillmentDestination]?
+  public var groups: [EmbeddedCheckoutProtocol.FulfillmentGroup]?
+  public var id: Swift.String
+  public var lineItemIDS: [Swift.String]
+  public var selectedDestinationID: Swift.String?
+  public var type: Swift.String
+  public init(id: Swift.String, lineItemIDS: [Swift.String], type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.FulfillmentMethod) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentMethod {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentMethod) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentMethod
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentDestination : Swift.Codable, Swift.Sendable {
+  public var address: EmbeddedCheckoutProtocol.PostalAddress?
+  public var addressCountry: Swift.String?
+  public var addressLocality: Swift.String?
+  public var addressRegion: Swift.String?
+  public var extendedAddress: Swift.String?
+  public var firstName: Swift.String?
+  public var id: Swift.String
+  public var lastName: Swift.String?
+  public var name: Swift.String?
+  public var phoneNumber: Swift.String?
+  public var postalCode: Swift.String?
+  public var streetAddress: Swift.String?
+  public var type: Swift.String?
+  public init(id: Swift.String, configure: (inout EmbeddedCheckoutProtocol.FulfillmentDestination) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentDestination {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentDestination) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentDestination
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct PostalAddress : Swift.Codable, Swift.Sendable {
+  public var addressCountry: Swift.String?
+  public var addressLocality: Swift.String?
+  public var addressRegion: Swift.String?
+  public var extendedAddress: Swift.String?
+  public var firstName: Swift.String?
+  public var lastName: Swift.String?
+  public var phoneNumber: Swift.String?
+  public var postalCode: Swift.String?
+  public var streetAddress: Swift.String?
+  public init(configure: (inout EmbeddedCheckoutProtocol.PostalAddress) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.PostalAddress {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.PostalAddress) -> Swift.Void) -> EmbeddedCheckoutProtocol.PostalAddress
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentGroup : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var lineItemIDS: [Swift.String]
+  public var options: [EmbeddedCheckoutProtocol.FulfillmentOption]?
+  public var selectedOptionID: Swift.String?
+  public init(id: Swift.String, lineItemIDS: [Swift.String], configure: (inout EmbeddedCheckoutProtocol.FulfillmentGroup) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentGroup {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentGroup) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentGroup
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentOption : Swift.Codable, Swift.Sendable {
+  public var description: EmbeddedCheckoutProtocol.Description?
+  public var id: Swift.String
+  public var title: Swift.String
+  public var carrier: Swift.String?
+  public var earliestFulfillmentTime: Foundation.Date?
+  public var latestFulfillmentTime: Foundation.Date?
+  public var totals: [EmbeddedCheckoutProtocol.LineItemTotal]
+  public init(id: Swift.String, title: Swift.String, totals: [EmbeddedCheckoutProtocol.LineItemTotal], configure: (inout EmbeddedCheckoutProtocol.FulfillmentOption) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentOption {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentOption) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentOption
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Description : Swift.Codable, Swift.Sendable {
+  public var html: Swift.String?
+  public var markdown: Swift.String?
+  public var plain: Swift.String?
+  public init(configure: (inout EmbeddedCheckoutProtocol.Description) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Description {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Description) -> Swift.Void) -> EmbeddedCheckoutProtocol.Description
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct LineItemTotal : Swift.Codable, Swift.Sendable {
+  public var amount: Swift.Int
+  public var displayText: Swift.String?
+  public var type: Swift.String
+  public init(amount: Swift.Int, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.LineItemTotal) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.LineItemTotal {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.LineItemTotal) -> Swift.Void) -> EmbeddedCheckoutProtocol.LineItemTotal
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct LineItem : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var item: EmbeddedCheckoutProtocol.Item
+  public var parentID: Swift.String?
+  public var quantity: Swift.Int
+  public var totals: [EmbeddedCheckoutProtocol.LineItemTotal]
+  public init(id: Swift.String, item: EmbeddedCheckoutProtocol.Item, quantity: Swift.Int, totals: [EmbeddedCheckoutProtocol.LineItemTotal], configure: (inout EmbeddedCheckoutProtocol.LineItem) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.LineItem {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.LineItem) -> Swift.Void) -> EmbeddedCheckoutProtocol.LineItem
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Item : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var imageURL: Swift.String?
+  public var price: Swift.Int
+  public var quantityUnit: EmbeddedCheckoutProtocol.QuantityUnit?
+  public var title: Swift.String
+  public var unitPrice: EmbeddedCheckoutProtocol.UnitPrice?
+  public init(id: Swift.String, price: Swift.Int, title: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Item) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Item {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Item) -> Swift.Void) -> EmbeddedCheckoutProtocol.Item
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct QuantityUnit : Swift.Codable, Swift.Sendable {
+  public var displayText: Swift.String
+  public var scale: Swift.Int?
+  public var unit: Swift.String
+  public var increment: Swift.Int?
+  public init(displayText: Swift.String, unit: Swift.String, configure: (inout EmbeddedCheckoutProtocol.QuantityUnit) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.QuantityUnit {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.QuantityUnit) -> Swift.Void) -> EmbeddedCheckoutProtocol.QuantityUnit
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct UnitPrice : Swift.Codable, Swift.Sendable {
+  public var amount: Swift.Int
+  public var currency: Swift.String
+  public var measure: EmbeddedCheckoutProtocol.Measure
+  public var reference: EmbeddedCheckoutProtocol.Measure
+  public init(amount: Swift.Int, currency: Swift.String, measure: EmbeddedCheckoutProtocol.Measure, reference: EmbeddedCheckoutProtocol.Measure, configure: (inout EmbeddedCheckoutProtocol.UnitPrice) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.UnitPrice {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.UnitPrice) -> Swift.Void) -> EmbeddedCheckoutProtocol.UnitPrice
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Measure : Swift.Codable, Swift.Sendable {
+  public var displayText: Swift.String
+  public var scale: Swift.Int?
+  public var unit: Swift.String
+  public var value: Swift.Int
+  public init(displayText: Swift.String, unit: Swift.String, value: Swift.Int, configure: (inout EmbeddedCheckoutProtocol.Measure) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Measure {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Measure) -> Swift.Void) -> EmbeddedCheckoutProtocol.Measure
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Link : Swift.Codable, Swift.Sendable {
+  public var title: Swift.String?
+  public var type: Swift.String
+  public var url: Swift.String
+  public init(type: Swift.String, url: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Link) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Link {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Link) -> Swift.Void) -> EmbeddedCheckoutProtocol.Link
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Message : Swift.Codable, Swift.Sendable {
+  public var code: Swift.String?
+  public var content: Swift.String
+  public var contentType: EmbeddedCheckoutProtocol.ContentType?
+  public var path: Swift.String?
+  public var severity: EmbeddedCheckoutProtocol.Severity?
+  public var type: EmbeddedCheckoutProtocol.MessageType
+  public var imageURL: Swift.String?
+  public var presentation: Swift.String?
+  public var url: Swift.String?
+  public init(content: Swift.String, type: EmbeddedCheckoutProtocol.MessageType, configure: (inout EmbeddedCheckoutProtocol.Message) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Message {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Message) -> Swift.Void) -> EmbeddedCheckoutProtocol.Message
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct ContentType : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let markdown: EmbeddedCheckoutProtocol.ContentType
+  public static let plain: EmbeddedCheckoutProtocol.ContentType
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct Severity : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let recoverable: EmbeddedCheckoutProtocol.Severity
+  public static let requiresBuyerInput: EmbeddedCheckoutProtocol.Severity
+  public static let requiresBuyerReview: EmbeddedCheckoutProtocol.Severity
+  public static let unrecoverable: EmbeddedCheckoutProtocol.Severity
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct MessageType : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let error: EmbeddedCheckoutProtocol.MessageType
+  public static let info: EmbeddedCheckoutProtocol.MessageType
+  public static let warning: EmbeddedCheckoutProtocol.MessageType
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct OrderConfirmation : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var label: Swift.String?
+  public var permalinkURL: Swift.String
+  public init(id: Swift.String, permalinkURL: Swift.String, configure: (inout EmbeddedCheckoutProtocol.OrderConfirmation) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.OrderConfirmation {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.OrderConfirmation) -> Swift.Void) -> EmbeddedCheckoutProtocol.OrderConfirmation
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Payment : Swift.Codable, Swift.Sendable {
+  public var instruments: [EmbeddedCheckoutProtocol.SelectedPaymentInstrument]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.Payment) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Payment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Payment) -> Swift.Void) -> EmbeddedCheckoutProtocol.Payment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct SelectedPaymentInstrument : Swift.Codable, Swift.Sendable {
+  public var billingAddress: EmbeddedCheckoutProtocol.PostalAddress?
+  public var credential: EmbeddedCheckoutProtocol.PaymentCredential?
+  public var display: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+  public var handlerID: Swift.String
+  public var id: Swift.String
+  public var type: Swift.String
+  public var selected: Swift.Bool?
+  public init(handlerID: Swift.String, id: Swift.String, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.SelectedPaymentInstrument) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.SelectedPaymentInstrument {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.SelectedPaymentInstrument) -> Swift.Void) -> EmbeddedCheckoutProtocol.SelectedPaymentInstrument
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct PaymentCredential : Swift.Codable, Swift.Sendable {
+  public var type: Swift.String
+  public init(type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.PaymentCredential) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.PaymentCredential {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.PaymentCredential) -> Swift.Void) -> EmbeddedCheckoutProtocol.PaymentCredential
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Policy : Swift.Codable, Swift.Sendable {
+  public var appliesTo: [Swift.String]?
+  public var description: EmbeddedCheckoutProtocol.Description
+  public var type: Swift.String
+  public var url: Swift.String?
+  public init(description: EmbeddedCheckoutProtocol.Description, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Policy) -> Swift.Void = { _ in })
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.Policy {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Policy) -> Swift.Void) -> EmbeddedCheckoutProtocol.Policy
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct CheckoutStatus : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let canceled: EmbeddedCheckoutProtocol.CheckoutStatus
+  public static let completeInProgress: EmbeddedCheckoutProtocol.CheckoutStatus
+  public static let completed: EmbeddedCheckoutProtocol.CheckoutStatus
+  public static let incomplete: EmbeddedCheckoutProtocol.CheckoutStatus
+  public static let readyForComplete: EmbeddedCheckoutProtocol.CheckoutStatus
+  public static let requiresEscalation: EmbeddedCheckoutProtocol.CheckoutStatus
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct CheckoutTotal : Swift.Codable, Swift.Sendable {
+  public var amount: Swift.Int
+  public var displayText: Swift.String?
+  public var type: Swift.String
+  public var lines: [EmbeddedCheckoutProtocol.Line]?
+  public init(amount: Swift.Int, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.CheckoutTotal) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.CheckoutTotal {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.CheckoutTotal) -> Swift.Void) -> EmbeddedCheckoutProtocol.CheckoutTotal
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Line : Swift.Codable, Swift.Sendable {
+  public var amount: Swift.Int
+  public var displayText: Swift.String
+  public init(amount: Swift.Int, displayText: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Line) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Line {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Line) -> Swift.Void) -> EmbeddedCheckoutProtocol.Line
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct UCPCheckoutResponseSchema : Swift.Codable, Swift.Sendable {
+    public var capabilities: [Swift.String : [EmbeddedCheckoutProtocol.CapabilityResponseSchema]]?
+    public var mapOrder: [Swift.String : [Swift.String]]?
+    public var paymentHandlers: [Swift.String : [EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema]]
+    public var services: [Swift.String : [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ServiceResponseSchema]]?
+    public var status: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus?
+    public var version: Swift.String
+    public init(paymentHandlers: [Swift.String : [EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema]], version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.UCPCheckoutResponseSchema
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct CapabilityResponseSchema : Swift.Codable, Swift.Sendable {
+  public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+  public var id: Swift.String?
+  public var schema: Swift.String?
+  public var spec: Swift.String?
+  public var version: Swift.String
+  public var extends: EmbeddedCheckoutProtocol.Extends?
+  public init(version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.CapabilityResponseSchema) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.CapabilityResponseSchema {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.CapabilityResponseSchema) -> Swift.Void) -> EmbeddedCheckoutProtocol.CapabilityResponseSchema
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public enum Extends : Swift.Codable, Swift.Sendable {
+  case string(Swift.String)
+  case stringArray([Swift.String])
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+public struct PaymentHandlerResponseSchema : Swift.Codable, Swift.Sendable {
+  public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+  public var id: Swift.String
+  public var schema: Swift.String?
+  public var spec: Swift.String?
+  public var version: Swift.String
+  public var availableInstruments: [EmbeddedCheckoutProtocol.PaymentHandlerResponseSchemaAvailableInstrument]?
+  public init(id: Swift.String, version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema) -> Swift.Void) -> EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct PaymentHandlerResponseSchemaAvailableInstrument : Swift.Codable, Swift.Sendable {
+  public var constraints: EmbeddedCheckoutProtocol.ConstraintExpression?
+  public var type: Swift.String
+  public init(type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.PaymentHandlerResponseSchemaAvailableInstrument) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.PaymentHandlerResponseSchemaAvailableInstrument {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.PaymentHandlerResponseSchemaAvailableInstrument) -> Swift.Void) -> EmbeddedCheckoutProtocol.PaymentHandlerResponseSchemaAvailableInstrument
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct ConstraintProperty : Swift.Codable, Swift.Sendable {
+  public var anyOf: [EmbeddedCheckoutProtocol.ConstraintExpression]?
+  public var properties: [Swift.String : EmbeddedCheckoutProtocol.ConstraintProperty]?
+  public var constraintPropertyRequired: [Swift.String]?
+  public var const: EmbeddedCheckoutProtocol.JSONAny?
+  public var constraintPropertyEnum: [EmbeddedCheckoutProtocol.JSONAny]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.ConstraintProperty) -> Swift.Void = { _ in })
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension EmbeddedCheckoutProtocol.ConstraintProperty {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.ConstraintProperty) -> Swift.Void) -> EmbeddedCheckoutProtocol.ConstraintProperty
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct ConstraintExpression : Swift.Codable, Swift.Sendable {
+  public var anyOf: [EmbeddedCheckoutProtocol.ConstraintExpression]?
+  public var properties: [Swift.String : EmbeddedCheckoutProtocol.ConstraintProperty]?
+  public var constraintExpressionRequired: [Swift.String]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.ConstraintExpression) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.ConstraintExpression {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.ConstraintExpression) -> Swift.Void) -> EmbeddedCheckoutProtocol.ConstraintExpression
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ServiceResponseSchema : Swift.Codable, Swift.Sendable {
+    public var config: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedTransportConfig?
+    public var id: Swift.String?
+    public var schema: Swift.String?
+    public var spec: Swift.String?
+    public var version: Swift.String
+    public var endpoint: Swift.String?
+    public var transport: EmbeddedCheckoutProtocol.Transport
+    public init(version: Swift.String, transport: EmbeddedCheckoutProtocol.Transport, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ServiceResponseSchema) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ServiceResponseSchema {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ServiceResponseSchema) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ServiceResponseSchema
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct EmbeddedTransportConfig : Swift.Codable, Swift.Sendable {
+    public var colorScheme: [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedColorScheme]?
+    public var delegate: [Swift.String]?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedTransportConfig) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedTransportConfig {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedTransportConfig) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedTransportConfig
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct EmbeddedColorScheme : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+    public let rawValue: Swift.String
+    public init?(rawValue: Swift.String)
+    public static let dark: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedColorScheme
+    public static let light: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedColorScheme
+    public var isKnown: Swift.Bool {
+      get
+    }
+    public init(from decoder: any Swift.Decoder) throws
+    public func encode(to encoder: any Swift.Encoder) throws
+    public typealias RawValue = Swift.String
+  }
+}
+public struct Transport : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let a2A: EmbeddedCheckoutProtocol.Transport
+  public static let embedded: EmbeddedCheckoutProtocol.Transport
+  public static let mcp: EmbeddedCheckoutProtocol.Transport
+  public static let rest: EmbeddedCheckoutProtocol.Transport
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct UCPCheckoutResponseSchemaStatus : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let error: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus
+  public static let success: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct Order : Swift.Codable, Swift.Sendable {
+  public var adjustments: [EmbeddedCheckoutProtocol.Adjustment]?
+  public var attribution: [Swift.String : Swift.String]?
+  public var checkoutID: Swift.String
+  public var currency: Swift.String
+  public var fulfillment: EmbeddedCheckoutProtocol.Fulfillment
+  public var id: Swift.String
+  public var label: Swift.String?
+  public var lineItems: [EmbeddedCheckoutProtocol.OrderLineItem]
+  public var messages: [EmbeddedCheckoutProtocol.Message]?
+  public var permalinkURL: Swift.String
+  public var policies: [EmbeddedCheckoutProtocol.Policy]?
+  public var totals: [EmbeddedCheckoutProtocol.CheckoutTotal]
+  public var ucp: EmbeddedCheckoutProtocol.UCPOrderResponseSchema
+  public init(checkoutID: Swift.String, currency: Swift.String, fulfillment: EmbeddedCheckoutProtocol.Fulfillment, id: Swift.String, lineItems: [EmbeddedCheckoutProtocol.OrderLineItem], permalinkURL: Swift.String, totals: [EmbeddedCheckoutProtocol.CheckoutTotal], ucp: EmbeddedCheckoutProtocol.UCPOrderResponseSchema, configure: (inout EmbeddedCheckoutProtocol.Order) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Order {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Order) -> Swift.Void) -> EmbeddedCheckoutProtocol.Order
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Adjustment : Swift.Codable, Swift.Sendable {
+  public var description: Swift.String?
+  public var id: Swift.String
+  public var lineItems: [EmbeddedCheckoutProtocol.AdjustmentLineItem]?
+  public var occurredAt: Foundation.Date
+  public var status: EmbeddedCheckoutProtocol.AdjustmentStatus
+  public var totals: [EmbeddedCheckoutProtocol.LineItemTotal]?
+  public var type: Swift.String
+  public init(id: Swift.String, occurredAt: Foundation.Date, status: EmbeddedCheckoutProtocol.AdjustmentStatus, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Adjustment) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Adjustment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Adjustment) -> Swift.Void) -> EmbeddedCheckoutProtocol.Adjustment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct AdjustmentLineItem : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var measure: EmbeddedCheckoutProtocol.Measure?
+  public var quantity: Swift.Int
+  public init(id: Swift.String, quantity: Swift.Int, configure: (inout EmbeddedCheckoutProtocol.AdjustmentLineItem) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.AdjustmentLineItem {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.AdjustmentLineItem) -> Swift.Void) -> EmbeddedCheckoutProtocol.AdjustmentLineItem
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct AdjustmentStatus : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let completed: EmbeddedCheckoutProtocol.AdjustmentStatus
+  public static let failed: EmbeddedCheckoutProtocol.AdjustmentStatus
+  public static let pending: EmbeddedCheckoutProtocol.AdjustmentStatus
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct Fulfillment : Swift.Codable, Swift.Sendable {
+  public var events: [EmbeddedCheckoutProtocol.FulfillmentEvent]?
+  public var expectations: [EmbeddedCheckoutProtocol.Expectation]?
+  public init(configure: (inout EmbeddedCheckoutProtocol.Fulfillment) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Fulfillment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Fulfillment) -> Swift.Void) -> EmbeddedCheckoutProtocol.Fulfillment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct FulfillmentEvent : Swift.Codable, Swift.Sendable {
+  public var carrier: Swift.String?
+  public var description: Swift.String?
+  public var id: Swift.String
+  public var lineItems: [EmbeddedCheckoutProtocol.EventLineItem]
+  public var occurredAt: Foundation.Date
+  public var trackingNumber: Swift.String?
+  public var trackingURL: Swift.String?
+  public var type: Swift.String
+  public init(id: Swift.String, lineItems: [EmbeddedCheckoutProtocol.EventLineItem], occurredAt: Foundation.Date, type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.FulfillmentEvent) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.FulfillmentEvent {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.FulfillmentEvent) -> Swift.Void) -> EmbeddedCheckoutProtocol.FulfillmentEvent
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct EventLineItem : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var quantity: Swift.Int
+  public init(id: Swift.String, quantity: Swift.Int, configure: (inout EmbeddedCheckoutProtocol.EventLineItem) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.EventLineItem {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EventLineItem) -> Swift.Void) -> EmbeddedCheckoutProtocol.EventLineItem
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Expectation : Swift.Codable, Swift.Sendable {
+  public var description: Swift.String?
+  public var destination: EmbeddedCheckoutProtocol.PostalAddress
+  public var fulfillableOn: Swift.String?
+  public var id: Swift.String
+  public var lineItems: [EmbeddedCheckoutProtocol.ExpectationLineItem]
+  public var methodType: Swift.String
+  public init(destination: EmbeddedCheckoutProtocol.PostalAddress, id: Swift.String, lineItems: [EmbeddedCheckoutProtocol.ExpectationLineItem], methodType: Swift.String, configure: (inout EmbeddedCheckoutProtocol.Expectation) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Expectation {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Expectation) -> Swift.Void) -> EmbeddedCheckoutProtocol.Expectation
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct ExpectationLineItem : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var quantity: Swift.Int
+  public init(id: Swift.String, quantity: Swift.Int, configure: (inout EmbeddedCheckoutProtocol.ExpectationLineItem) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.ExpectationLineItem {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.ExpectationLineItem) -> Swift.Void) -> EmbeddedCheckoutProtocol.ExpectationLineItem
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct OrderLineItem : Swift.Codable, Swift.Sendable {
+  public var id: Swift.String
+  public var item: EmbeddedCheckoutProtocol.Item
+  public var parentID: Swift.String?
+  public var quantity: EmbeddedCheckoutProtocol.LineItemQuantity
+  public var status: EmbeddedCheckoutProtocol.LineItemStatus
+  public var totals: [EmbeddedCheckoutProtocol.LineItemTotal]
+  public init(id: Swift.String, item: EmbeddedCheckoutProtocol.Item, quantity: EmbeddedCheckoutProtocol.LineItemQuantity, status: EmbeddedCheckoutProtocol.LineItemStatus, totals: [EmbeddedCheckoutProtocol.LineItemTotal], configure: (inout EmbeddedCheckoutProtocol.OrderLineItem) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.OrderLineItem {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.OrderLineItem) -> Swift.Void) -> EmbeddedCheckoutProtocol.OrderLineItem
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct LineItemQuantity : Swift.Codable, Swift.Sendable {
+  public var fulfilled: Swift.Int
+  public var original: Swift.Int?
+  public var total: Swift.Int
+  public init(fulfilled: Swift.Int, total: Swift.Int, configure: (inout EmbeddedCheckoutProtocol.LineItemQuantity) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.LineItemQuantity {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.LineItemQuantity) -> Swift.Void) -> EmbeddedCheckoutProtocol.LineItemQuantity
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct LineItemStatus : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public init?(rawValue: Swift.String)
+  public static let fulfilled: EmbeddedCheckoutProtocol.LineItemStatus
+  public static let partial: EmbeddedCheckoutProtocol.LineItemStatus
+  public static let processing: EmbeddedCheckoutProtocol.LineItemStatus
+  public static let removed: EmbeddedCheckoutProtocol.LineItemStatus
+  public var isKnown: Swift.Bool {
+    get
+  }
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public typealias RawValue = Swift.String
+}
+public struct UCPOrderResponseSchema : Swift.Codable, Swift.Sendable {
+  public var capabilities: [Swift.String : [EmbeddedCheckoutProtocol.CapabilityResponseSchema]]?
+  public var mapOrder: [Swift.String : [Swift.String]]?
+  public var paymentHandlers: [Swift.String : [EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema]]?
+  public var services: [Swift.String : [EmbeddedCheckoutProtocol.Service]]?
+  public var status: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus?
+  public var version: Swift.String
+  public init(version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.UCPOrderResponseSchema) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.UCPOrderResponseSchema {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.UCPOrderResponseSchema) -> Swift.Void) -> EmbeddedCheckoutProtocol.UCPOrderResponseSchema
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+public struct Service : Swift.Codable, Swift.Sendable {
+  public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+  public var id: Swift.String?
+  public var schema: Swift.String?
+  public var spec: Swift.String?
+  public var version: Swift.String
+  public var endpoint: Swift.String?
+  public var transport: EmbeddedCheckoutProtocol.Transport
+  public init(version: Swift.String, transport: EmbeddedCheckoutProtocol.Transport, configure: (inout EmbeddedCheckoutProtocol.Service) -> Swift.Void = { _ in })
+  public func encode(to encoder: any Swift.Encoder) throws
+  public init(from decoder: any Swift.Decoder) throws
+}
+extension EmbeddedCheckoutProtocol.Service {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.Service) -> Swift.Void) -> EmbeddedCheckoutProtocol.Service
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ErrorResponse : Swift.Codable, Swift.Sendable {
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp
+    public init(messages: [EmbeddedCheckoutProtocol.Message], ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ErrorResponseUcp : Swift.Codable, Swift.Sendable {
+    public var capabilities: [Swift.String : [EmbeddedCheckoutProtocol.CapabilityResponseSchema]]?
+    public var mapOrder: [Swift.String : [Swift.String]]?
+    public var paymentHandlers: [Swift.String : [EmbeddedCheckoutProtocol.PaymentHandlerResponseSchema]]?
+    public var services: [Swift.String : [EmbeddedCheckoutProtocol.Service]]?
+    public var status: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorStatus
+    public var version: Swift.String
+    public init(status: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorStatus, version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponseUcp
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ErrorStatus : Swift.RawRepresentable, Swift.Codable, Swift.Hashable, Swift.Sendable {
+    public let rawValue: Swift.String
+    public init?(rawValue: Swift.String)
+    public static let error: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorStatus
+    public var isKnown: Swift.Bool {
+      get
+    }
+    public init(from decoder: any Swift.Decoder) throws
+    public func encode(to encoder: any Swift.Encoder) throws
+    public typealias RawValue = Swift.String
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct InstrumentsChangeResult : Swift.Codable, Swift.Sendable {
+    public var checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeCheckout?
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct InstrumentsChangeCheckout : Swift.Codable, Swift.Sendable {
+    public var payment: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangePayment?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeCheckout) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeCheckout {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeCheckout) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeCheckout
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct InstrumentsChangePayment : Swift.Codable, Swift.Sendable {
+    public var instruments: [EmbeddedCheckoutProtocol.SelectedPaymentInstrument]?
+    public var selectedInstrumentID: Swift.String?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangePayment) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangePayment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangePayment) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangePayment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct InstrumentsChangeResultUcp : Swift.Codable, Swift.Sendable {
+    public var capabilities: [Swift.String : [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CapabilityElement]]?
+    public var mapOrder: [Swift.String : [Swift.String]]?
+    public var paymentHandlers: [Swift.String : [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerElement]]?
+    public var services: [Swift.String : [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedService]]?
+    public var status: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus
+    public var version: Swift.String
+    public init(status: EmbeddedCheckoutProtocol.UCPCheckoutResponseSchemaStatus, version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct CapabilityElement : Swift.Codable, Swift.Sendable {
+    public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+    public var id: Swift.String?
+    public var schema: Swift.String?
+    public var spec: Swift.String?
+    public var version: Swift.String
+    public var extends: EmbeddedCheckoutProtocol.Extends?
+    public init(version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CapabilityElement) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CapabilityElement {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CapabilityElement) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CapabilityElement
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct PaymentHandlerElement : Swift.Codable, Swift.Sendable {
+    public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+    public var id: Swift.String
+    public var schema: Swift.String?
+    public var spec: Swift.String?
+    public var version: Swift.String
+    public var availableInstruments: [EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument]?
+    public init(id: Swift.String, version: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerElement) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerElement {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerElement) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerElement
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct PaymentHandlerAvailableInstrument : Swift.Codable, Swift.Sendable {
+    public var constraints: EmbeddedCheckoutProtocol.ConstraintExpression?
+    public var type: Swift.String
+    public init(type: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.PaymentHandlerAvailableInstrument
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct EmbeddedService : Swift.Codable, Swift.Sendable {
+    public var config: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+    public var id: Swift.String?
+    public var schema: Swift.String?
+    public var spec: Swift.String?
+    public var version: Swift.String
+    public var endpoint: Swift.String?
+    public var transport: EmbeddedCheckoutProtocol.Transport
+    public init(version: Swift.String, transport: EmbeddedCheckoutProtocol.Transport, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedService) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedService {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedService) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.EmbeddedService
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct CredentialResult : Swift.Codable, Swift.Sendable {
+    public var checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialCheckout?
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct CredentialCheckout : Swift.Codable, Swift.Sendable {
+    public var payment: EmbeddedCheckoutProtocol.Payment?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialCheckout) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialCheckout {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialCheckout) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CredentialCheckout
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct AddressChangeResult : Swift.Codable, Swift.Sendable {
+    public var checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeCheckout?
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct AddressChangeCheckout : Swift.Codable, Swift.Sendable {
+    public var fulfillment: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeCheckout) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeCheckout {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeCheckout) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AddressChangeCheckout
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct CheckoutFulfillmentClass : Swift.Codable, Swift.Sendable {
+    public var availableMethods: [EmbeddedCheckoutProtocol.FulfillmentAvailableMethod]?
+    public var methods: [EmbeddedCheckoutProtocol.FulfillmentMethod]?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ReadyRequest : Swift.Codable, Swift.Sendable {
+    public var auth: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Auth?
+    public var delegate: [Swift.String]
+    public init(delegate: [Swift.String], configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyRequest
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct Auth : Swift.Codable, Swift.Sendable {
+    public var type: Swift.String?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Auth) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Auth {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Auth) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Auth
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ReadyResult : Swift.Codable, Swift.Sendable {
+    public var checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyCheckout?
+    public var credential: Swift.String?
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var upgrade: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Upgrade?
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ReadyCheckout : Swift.Codable, Swift.Sendable {
+    public var fulfillment: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.CheckoutFulfillmentClass?
+    public var payment: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyPayment?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyCheckout) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyCheckout {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyCheckout) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyCheckout
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct ReadyPayment : Swift.Codable, Swift.Sendable {
+    public var instruments: [EmbeddedCheckoutProtocol.SelectedPaymentInstrument]?
+    public var selectedInstrumentID: Swift.String?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyPayment) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyPayment {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyPayment) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ReadyPayment
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct Upgrade : Swift.Codable, Swift.Sendable {
+    public var port: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Upgrade) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Upgrade {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Upgrade) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Upgrade
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct AuthRequest : Swift.Codable, Swift.Sendable {
+    public var type: Swift.String?
+    public init(configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthRequest
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct AuthResult : Swift.Codable, Swift.Sendable {
+    public var credential: Swift.String?
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.AuthResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct WindowOpenRequest : Swift.Codable, Swift.Sendable {
+    public var url: Swift.String
+    public init(url: Swift.String, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct WindowOpenResult : Swift.Codable, Swift.Sendable {
+    public var ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+    public var continueURL: Swift.String?
+    public var messages: [EmbeddedCheckoutProtocol.Message]?
+    public init(ucp: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp, configure: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult) -> Swift.Void = { _ in })
+    public func encode(to encoder: any Swift.Encoder) throws
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult {
+  public init(data: Foundation.Data) throws
+  public init(_ json: Swift.String, using encoding: Swift.String.Encoding = .utf8) throws
+  public init(fromURL url: Foundation.URL) throws
+  public func with(_ update: (inout EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult) -> Swift.Void) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult
+  public func jsonData() throws -> Foundation.Data
+  public func jsonString(encoding: Swift.String.Encoding = .utf8) throws -> Swift.String?
+}
+final public class JSONNull : Swift.Codable, Swift.Hashable, Swift.Sendable {
+  public static func == (_: EmbeddedCheckoutProtocol.JSONNull, _: EmbeddedCheckoutProtocol.JSONNull) -> Swift.Bool
+  final public func hash(into hasher: inout Swift.Hasher)
+  public init()
+  required public init(from decoder: any Swift.Decoder) throws
+  final public func encode(to encoder: any Swift.Encoder) throws
+  @objc deinit
+  final public var hashValue: Swift.Int {
+    get
+  }
+}
+final public class JSONAny : Swift.Codable, Swift.Sendable {
+  final public var value: Any {
+    get
+  }
+  required public init(from decoder: any Swift.Decoder) throws
+  final public func encode(to encoder: any Swift.Encoder) throws
+  @objc deinit
+}
+public enum JSONRPCID : Swift.Codable, Swift.Equatable, Swift.Sendable, Swift.ExpressibleByStringLiteral, Swift.ExpressibleByIntegerLiteral {
+  case string(Swift.String)
+  case int(Swift.Int64)
+  case null
+  public init(stringLiteral value: Swift.String)
+  public init(integerLiteral value: Swift.Int64)
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+  public static func == (a: EmbeddedCheckoutProtocol.JSONRPCID, b: EmbeddedCheckoutProtocol.JSONRPCID) -> Swift.Bool
+  public typealias ExtendedGraphemeClusterLiteralType = Swift.String
+  public typealias IntegerLiteralType = Swift.Int64
+  public typealias StringLiteralType = Swift.String
+  public typealias UnicodeScalarLiteralType = Swift.String
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct JSONRPCCheckoutParams : EmbeddedCheckoutProtocol.EventPayload {
+    public let checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout
+    public init(checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout)
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol {
+  public struct JSONRPCErrorParams : EmbeddedCheckoutProtocol.EventPayload {
+    public let error: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse
+    public init(error: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.ErrorResponse)
+    public init(from decoder: any Swift.Decoder) throws
+  }
+}
+public struct NotificationMessage<Payload> : Swift.Sendable where Payload : EmbeddedCheckoutProtocol.EventPayload {
+  public let jsonrpc: Swift.String
+  public let method: Swift.String
+  public let params: Payload
+  public init(jsonrpc: Swift.String = "2.0", method: Swift.String, params: Payload)
+}
+public struct RequestMessage<Payload> : Swift.Sendable where Payload : EmbeddedCheckoutProtocol.EventPayload {
+  public let jsonrpc: Swift.String
+  public let method: Swift.String
+  public let id: EmbeddedCheckoutProtocol.JSONRPCID
+  public let params: Payload
+  public init(jsonrpc: Swift.String = "2.0", method: Swift.String, id: EmbeddedCheckoutProtocol.JSONRPCID, params: Payload)
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp {
+  public static func success(version: Swift.String = EmbeddedCheckoutProtocol.specVersion) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.InstrumentsChangeResultUcp
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenRequest {
+  public var parsedURL: Foundation.URL? {
+    get
+  }
+}
+extension EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult {
+  public static func success(version: Swift.String = EmbeddedCheckoutProtocol.specVersion) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult
+  public static func rejected(reason: Swift.String? = nil, version: Swift.String = EmbeddedCheckoutProtocol.specVersion) -> EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.WindowOpenResult
+}

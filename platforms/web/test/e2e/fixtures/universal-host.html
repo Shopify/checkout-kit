@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout Kit Universal Checkout browser test</title>
+  </head>
+  <body>
+    <shopify-universal-checkout
+      id="checkout"
+      target="popup"
+      telemetry="false"
+    ></shopify-universal-checkout>
+    <button id="buy" type="button">Buy</button>
+    <script type="module">
+      import "/dist/shopify-universal-checkout.js";
+
+      const checkout = document.getElementById("checkout");
+      window.universalCheckoutEvents = [];
+      for (const type of ["start", "update", "complete", "error", "blocked", "close"]) {
+        checkout.addEventListener(type, (event) => {
+          window.universalCheckoutEvents.push({ type, detail: event.detail ?? null });
+        });
+      }
+      document.getElementById("buy").addEventListener("click", () => checkout.open());
+    </script>
+  </body>
+</html>

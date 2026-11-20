@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -26,6 +27,45 @@ def apiPublication = configurations.create('apiPublication') {
 }
 
 def bundledProjects = { configurations.include.dependencies.withType(ProjectDependency).collect { project(it.path) } }
+
+// Third-party runtime dependencies are a product decision, not a feature's.
+// Check what bundled features declare (not the resolved transitive graph, which
+// changes with every upstream release) against the reviewed allowed list.
+// Version selection is separate from this module-approval policy.
+def allowedRuntimeDependenciesFile = rootProject.file('gradle/runtime-dependencies.txt')
+def verifyRuntimeDependencies = tasks.register('verifyRuntimeDependencies') {
+    group = 'verification'
+    description = 'Verify bundled features declare only approved third-party runtime modules.'
+    inputs.file(allowedRuntimeDependenciesFile)
+    doLast {
+        def policy = 'see .github/ARCHITECTURE.md#runtime-dependencies'
+        def allowed = allowedRuntimeDependenciesFile.readLines()
+            .collect { it.replaceFirst(/#.*/, '').trim() }.findAll().toSet()
+        def runtimeConfigurations = ['api', 'implementation', 'runtimeOnly', 'releaseApi', 'releaseImplementation', 'releaseRuntimeOnly']
+        def errors = []
+        def declared = [] as Set
+        bundledProjects().each { feature ->
+            runtimeConfigurations.collect { feature.configurations.findByName(it) }.findAll().each { configuration ->
+                configuration.dependencies.withType(ExternalModuleDependency).each { dependency ->
+                    // The protocol is Checkout Kit's own; its pin is verified separately.
+                    if (dependency.group == 'com.shopify' && dependency.name == 'embedded-checkout-protocol') return
+                    def module = "${dependency.group}:${dependency.name}".toString()
+                    declared << module
+                    def where = "${feature.path} ${configuration.name} $module"
+                    if (!allowed.contains(module)) {
+                        errors << "$where is not an approved third-party runtime dependency; $policy. Test tooling belongs in test configurations."
+                    }
+                }
+            }
+        }
+        (allowed - declared).each { module ->
+            errors << "${allowedRuntimeDependenciesFile.name} lists $module, but no bundled feature declares it; remove it"
+        }
+        if (errors) throw new GradleException(errors.join('\n'))
+        logger.lifecycle("Runtime dependencies verified: ${declared.sort().join(', ')}")
+    }
+}
+tasks.withType(PublishToMavenRepository).configureEach { dependsOn verifyRuntimeDependencies }
 
 def sourcesJar = tasks.register('sourcesJar', Jar) {
     destinationDirectory = layout.buildDirectory.dir('libs')
@@ -114,7 +154,7 @@ rootProject.signing {
 tasks.register('verifyFusedPublication') {
     group = 'verification'
     description = 'Verify the published fused AAR contains all feature APIs and resources.'
-    dependsOn 'publishReleasePublicationToVerificationRepository', 'report'
+    dependsOn 'publishReleasePublicationToVerificationRepository', 'report', verifyRuntimeDependencies
     dependsOn { bundledProjects().collectMany { feature ->
         [feature.tasks.named('assembleRelease'), feature.tasks.named('lintRelease')]
     } }

@@ -1,0 +1,146 @@
+// swift-interface-format-version: 1.0
+import Combine
+import DeveloperToolsSupport
+import Foundation
+import Foundation/*.Bundle*/
+import Foundation/*.ProcessInfo*/
+import Foundation/*.URL*/
+import PassKit
+import ShopifyCheckoutKit
+import Swift
+import SwiftUI
+import UIKit
+import _Concurrency
+import _PassKit_SwiftUI
+import _StringProcessing
+import _SwiftConcurrencyShims
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts {
+  public struct Configuration : Swift.Sendable, Swift.Equatable {
+    public var storefrontDomain: Swift.String
+    public var storefrontAccessToken: Swift.String
+    public var customer: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer?
+    public init(storefrontDomain: Swift.String, storefrontAccessToken: Swift.String, customer: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer? = nil)
+    public static func == (a: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Configuration, b: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Configuration) -> Swift.Bool
+  }
+  public struct Customer : Swift.Sendable, Swift.Equatable {
+    public let email: Swift.String?
+    public let phoneNumber: Swift.String?
+    public let customerAccessToken: Swift.String?
+    public init(customerAccessToken: Swift.String)
+    public init(email: Swift.String? = nil, phoneNumber: Swift.String? = nil)
+    @available(*, deprecated, message: "Use init(customerAccessToken:) for authenticated customers or init(email:phoneNumber:) for unauthenticated customers with known buyer details.")
+    public init(email: Swift.String? = nil, phoneNumber: Swift.String? = nil, customerAccessToken: Swift.String? = nil)
+    public static func == (a: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer, b: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Customer) -> Swift.Bool
+  }
+}
+@available(iOS 16.0, *)
+extension SwiftUICore.EnvironmentValues {
+  public var shopifyAcceleratedCheckoutsConfiguration: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.Configuration? {
+    get
+    set
+  }
+}
+public enum ShopifyAcceleratedCheckouts {
+  public static var logLevel: ShopifyCheckoutKit.LogLevel {
+    get
+    set
+  }
+}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts {
+  public enum RequiredContactFields : Swift.String, Swift.Sendable {
+    case email
+    case phone
+    public init?(rawValue: Swift.String)
+    @available(iOS 16.0, *)
+    public typealias RawValue = Swift.String
+    public var rawValue: Swift.String {
+      get
+    }
+  }
+  public struct ApplePayConfiguration : Swift.Sendable, Swift.Equatable {
+    public let merchantIdentifier: Swift.String
+    public let contactFields: [ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.RequiredContactFields]
+    public let supportedShippingCountries: Swift.Set<Swift.String>?
+    public init(merchantIdentifier: Swift.String, contactFields: [ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.RequiredContactFields], supportedShippingCountries: Swift.Set<Swift.String>? = nil)
+    public static func == (a: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.ApplePayConfiguration, b: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.ApplePayConfiguration) -> Swift.Bool
+  }
+}
+@available(iOS 16.0, *)
+extension SwiftUICore.EnvironmentValues {
+  public var shopifyApplePayConfiguration: ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.ApplePayConfiguration? {
+    get
+    set
+  }
+}
+public struct CartRequest : Swift.Sendable {
+  public let wallet: ShopifyAcceleratedCheckouts.Wallet
+}
+public struct CartResult : Swift.Sendable {
+  public static func cart(_ id: Swift.String) -> ShopifyAcceleratedCheckouts.CartResult
+  public static let failed: ShopifyAcceleratedCheckouts.CartResult
+}
+public enum RenderState : Swift.Equatable {
+  case loading
+  case rendered
+  case error(reason: Swift.String)
+  public static func == (a: ShopifyAcceleratedCheckouts.RenderState, b: ShopifyAcceleratedCheckouts.RenderState) -> Swift.Bool
+}
+@available(iOS 16.0, *)
+@_Concurrency.MainActor @preconcurrency public struct ShopifyAcceleratedCheckoutButtons : SwiftUICore.View {
+  @_Concurrency.MainActor @preconcurrency public var wallets: [ShopifyAcceleratedCheckouts.Wallet]
+  @_Concurrency.MainActor @preconcurrency public init(cartID: Swift.String)
+  @_Concurrency.MainActor @preconcurrency public init(variantID: Swift.String, getCart: @escaping @_Concurrency.MainActor @Sendable (ShopifyAcceleratedCheckouts.CartRequest) async throws -> ShopifyAcceleratedCheckouts.CartResult)
+  @_Concurrency.MainActor @preconcurrency public var body: some SwiftUICore.View {
+    get
+  }
+  @_Concurrency.MainActor @preconcurrency public var resolvedButtonHeight: CoreFoundation.CGFloat {
+    get
+  }
+  @available(iOS 16.0, *)
+  public typealias Body = @_opaqueReturnTypeOf("$s27ShopifyAcceleratedCheckouts0aB15CheckoutButtonsV4bodyQrvp", 0) __
+}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons {
+  @_Concurrency.MainActor @preconcurrency public func applePayButtonType(_ type: PassKit.PKPaymentButtonType) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func applePayButtonStyle(_ style: PassKit.PKPaymentButtonStyle) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func wallets(_ wallets: [ShopifyAcceleratedCheckouts.Wallet]) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func cornerRadius(_ radius: CoreFoundation.CGFloat) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func buttonHeight(_ height: CoreFoundation.CGFloat) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onStart(_ action: @escaping (ShopifyCheckoutKit.CheckoutStartEvent) -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onUpdate(_ action: @escaping (ShopifyCheckoutKit.CheckoutUpdateEvent) -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onComplete(_ action: @escaping (ShopifyCheckoutKit.CheckoutCompleteEvent) -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onLinkClick(_ action: @escaping (ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onFail(_ action: @escaping (ShopifyCheckoutKit.CheckoutError) -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onDismiss(_ action: @escaping () -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+  @_Concurrency.MainActor @preconcurrency public func onRenderStateChange(_ action: @escaping (ShopifyAcceleratedCheckouts.RenderState) -> Swift.Void) -> ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+}
+@available(iOS 16.0, *)
+@available(*, deprecated, renamed: "ShopifyAcceleratedCheckoutButtons")
+public typealias AcceleratedCheckoutButtons = ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons
+public struct Wallet : Swift.RawRepresentable, Swift.Hashable, Swift.Sendable {
+  public let rawValue: Swift.String
+  public static let applePay: ShopifyAcceleratedCheckouts.Wallet
+  public static let shopPay: ShopifyAcceleratedCheckouts.Wallet
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+}
+public struct EventHandlers {
+  public var checkoutDidStart: ((ShopifyCheckoutKit.CheckoutStartEvent) -> Swift.Void)?
+  public var checkoutDidUpdate: ((ShopifyCheckoutKit.CheckoutUpdateEvent) -> Swift.Void)?
+  public var checkoutDidComplete: ((ShopifyCheckoutKit.CheckoutCompleteEvent) -> Swift.Void)?
+  public var checkoutAction: ((ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction)?
+  public var checkoutDidFail: ((ShopifyCheckoutKit.CheckoutError) -> Swift.Void)?
+  public var checkoutDidDismiss: (() -> Swift.Void)?
+  public var renderStateDidChange: ((ShopifyAcceleratedCheckouts.RenderState) -> Swift.Void)?
+  public init(checkoutDidFail: ((ShopifyCheckoutKit.CheckoutError) -> Swift.Void)? = nil, checkoutDidDismiss: (() -> Swift.Void)? = nil, renderStateDidChange: ((ShopifyAcceleratedCheckouts.RenderState) -> Swift.Void)? = nil, checkoutDidStart: ((ShopifyCheckoutKit.CheckoutStartEvent) -> Swift.Void)? = nil, checkoutDidUpdate: ((ShopifyCheckoutKit.CheckoutUpdateEvent) -> Swift.Void)? = nil, checkoutDidComplete: ((ShopifyCheckoutKit.CheckoutCompleteEvent) -> Swift.Void)? = nil, checkoutAction: ((ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction)? = nil)
+}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.RequiredContactFields : Swift.Equatable {}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.RequiredContactFields : Swift.Hashable {}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckouts.RequiredContactFields : Swift.RawRepresentable {}
+@available(iOS 16.0, *)
+extension ShopifyAcceleratedCheckouts.ShopifyAcceleratedCheckoutButtons : Swift.Sendable {}

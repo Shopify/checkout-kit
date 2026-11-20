@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+import { EmbeddedCheckoutProtocol } from "@shopify/embedded-checkout-protocol";
 
 import { version } from "../../../package.json";
 

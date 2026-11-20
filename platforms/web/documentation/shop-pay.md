@@ -41,10 +41,10 @@ focus or close the checkout window. `close()` closes both.
 
 `universalSessionUrl` is an application-owned placeholder. The Universal session
 URL grants access to the buyer's checkout: don't log it, persist it, or include
-it in diagnostics. Its path is `/checkouts/uc/<id>`, and the element warns, at
-`log-level="warn"` or more verbose, when `src` has another path. Create a new
-session for each checkout attempt: a URL that was already opened elsewhere can
-open as a copy of the session that reports no events to your page.
+it in diagnostics. Pass the URL exactly as returned; the element does not
+require a particular URL path. Create a new session for each checkout attempt:
+a URL that was already opened elsewhere can open as a copy of the session that
+reports no events to your page.
 
 ### Manual registration
 

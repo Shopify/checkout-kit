@@ -1,4 +1,16 @@
+import type { Page, Request } from "@playwright/test";
+
 import { checkoutId, checkoutOrigin, expect, orderId, startedCheckout, test } from "../../support";
+
+// Playwright has no frame for a navigation that starts a new window, because
+// the request is issued before the frame exists.
+function issuingPage(request: Request): Page | undefined {
+  try {
+    return request.frame().page();
+  } catch {
+    return undefined;
+  }
+}
 
 test.describe("embedded checkout protocol", () => {
   test.describe("completion flow", () => {
@@ -109,13 +121,60 @@ test.describe("embedded checkout protocol", () => {
 
       // The SDK uses noopener, so the delegated window belongs to the context
       // without being exposed as a popup of the host page.
-      const [delegatedWindow] = await Promise.all([
+      const [delegatedWindow, status] = await Promise.all([
         context.waitForEvent("page"),
         popup.openRequest(requestedUrl),
       ]);
 
+      expect(status).toBe("success");
       await expect(delegatedWindow).toHaveURL(requestedUrl);
       expect(popup.isClosed()).toBe(false);
+    });
+
+    for (const url of ["mailto:help@example.com?subject=Order", "tel:+15555550123"]) {
+      const scheme = new URL(url).protocol;
+
+      test(`hands a ${scheme} URL to the browser from a new window`, async ({ host, context }) => {
+        const popup = await host.startCheckout();
+        await popup.waitForReadyResponse();
+        const hostUrl = host.page.url();
+
+        // The browser passes the URL to the mail or phone app, so no page stays
+        // open. The navigation request shows which window opened it.
+        const navigations: Request[] = [];
+        context.on("request", (request) => {
+          if (request.url() === url && request.isNavigationRequest()) navigations.push(request);
+        });
+
+        expect(await popup.openRequest(url)).toBe("success");
+        await expect.poll(() => navigations.length).toBe(1);
+        const [navigation] = navigations;
+        const opener = issuingPage(navigation);
+        expect(opener, "the host page must not navigate").not.toBe(host.page);
+        expect(opener, "checkout must not navigate").not.toBe(popup.page);
+        expect(host.page.url()).toBe(hostUrl);
+        expect(popup.isClosed()).toBe(false);
+      });
+    }
+
+    test("rejects ec.window.open_request URLs with other schemes", async ({ host, context }) => {
+      const popup = await host.startCheckout({ logLevel: "error" });
+      await popup.waitForReadyResponse();
+      const rejectedUrls = [
+        "http://return.example.test/return",
+        "javascript:alert(1)",
+        "data:text/html,checkout",
+        "sms:+15555550123",
+      ];
+      const requested: string[] = [];
+      context.on("request", (request) => requested.push(request.url()));
+
+      for (const url of rejectedUrls) {
+        expect(await popup.openRequest(url), url).toBe("error");
+      }
+
+      expect(requested.filter((url) => rejectedUrls.includes(url))).toEqual([]);
+      expect(context.pages()).toEqual([host.page, popup.page]);
     });
   });
 

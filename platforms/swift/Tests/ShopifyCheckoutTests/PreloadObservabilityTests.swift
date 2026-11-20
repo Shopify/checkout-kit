@@ -25,6 +25,118 @@ class PreloadObservabilityTests: XCTestCase {
         try await super.tearDown()
     }
 
+    func testCloseButtonReportsTheHeldStateBeforeTheAppHearsDismissal() throws {
+        let (controller, states) = try presentPreloadedCheckout()
+        controller.completesDismissalImmediately = false
+        var dismissals = 0
+        controller.onDismiss = { dismissals += 1 }
+
+        CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+        XCTAssertEqual(states.values, [.loading])
+
+        controller.close()
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(true)
+        XCTAssertEqual(states.values, [.loading, .idle(reason: .invalidated)])
+        XCTAssertEqual(dismissals, 0)
+
+        controller.completeDismissal()
+        XCTAssertEqual(dismissals, 1)
+    }
+
+    func testSwipeDismissalReportsTheHeldState() throws {
+        let (controller, states) = try presentPreloadedCheckout()
+
+        CheckoutWebView.preloadCache.evict(with: .failed(reason: .webContentUnavailable, message: "Web content went away."))
+        XCTAssertEqual(states.values, [.loading])
+
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(true)
+        controller.presentationControllerDidDismiss(
+            UIPresentationController(presentedViewController: controller, presenting: nil)
+        )
+
+        XCTAssertEqual(states.values, [
+            .loading,
+            .failed(reason: .webContentUnavailable, message: "Web content went away.")
+        ])
+    }
+
+    func testDismissingTheAppsSheetReportsTheHeldStateForNestedCheckout() throws {
+        let (controller, states) = try presentPreloadedCheckout()
+        let sheet = DismissingViewController()
+        sheet.addChild(controller)
+        controller.didMove(toParent: sheet)
+
+        CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+        XCTAssertEqual(states.values, [.loading])
+
+        controller.viewDidDisappear(true)
+
+        XCTAssertEqual(states.values, [.loading, .idle(reason: .invalidated)])
+    }
+
+    func testCheckoutCoveredWithoutDismissalKeepsHoldingItsState() throws {
+        let (controller, states) = try presentPreloadedCheckout()
+        defer { controller.cleanUpCheckoutView() }
+
+        CheckoutWebView.preloadCache.evict(with: .idle(reason: .invalidated))
+        controller.viewDidDisappear(true)
+
+        XCTAssertEqual(states.values, [.loading])
+    }
+
+    func testClearingThePreloadWhilePresentedReportsInvalidatedAtDismissal() throws {
+        let (controller, states) = try presentPreloadedCheckout()
+
+        ShopifyCheckout.clearPreload()
+        XCTAssertEqual(states.values, [.loading])
+        XCTAssertFalse(CheckoutWebView.preloadCache.hasEntry())
+
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(true)
+
+        XCTAssertEqual(states.values, [.loading, .idle(reason: .invalidated)])
+    }
+
+    func testInvalidPreloadWhileAnotherIsPresentedReportsItsFailureImmediately() throws {
+        let (controller, firstStates) = try presentPreloadedCheckout()
+        let insecureURL = try XCTUnwrap(URL(string: "http://shopify.com/checkouts/cn/123"))
+
+        let secondStates = StateLog()
+        let second = try XCTUnwrap(ShopifyCheckout.preload(checkout: insecureURL))
+        second.onStateChange = { secondStates.values.append($0) }
+        secondStates.preload = second
+
+        XCTAssertEqual(secondStates.values.count, 1)
+        guard case .failed(reason: .navigationFailed, _) = secondStates.values.first else {
+            return XCTFail("Expected an immediate navigation failure, got \(secondStates.values)")
+        }
+
+        controller.testIsBeingDismissed = true
+        controller.viewDidDisappear(true)
+
+        XCTAssertEqual(secondStates.values.count, 1)
+        XCTAssertEqual(firstStates.values, [.loading])
+    }
+
+    /// Presents a controller that reuses a background preload, and records the preload's states.
+    private func presentPreloadedCheckout() throws -> (TestableCheckoutWebViewController, StateLog) {
+        let states = StateLog()
+        let preload = try XCTUnwrap(ShopifyCheckout.preload(checkout: url))
+        preload.onStateChange = { states.values.append($0) }
+        states.preload = preload
+        let controller = TestableCheckoutWebViewController(
+            checkoutURL: CheckoutURLDecorator.decorate(url),
+            entryPoint: nil
+        )
+        controller.loadViewIfNeeded()
+        let view = try XCTUnwrap(controller.checkoutView)
+        XCTAssertTrue(view.isPresented)
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(view))
+        return (controller, states)
+    }
+
     func testNewCacheStartsIdleWithoutReason() {
         let cache = PreloadCache()
         let preload = CheckoutPreload(cache: cache)
@@ -185,7 +297,20 @@ class PreloadObservabilityTests: XCTestCase {
         }
     }
 
-    func testReadyTransitionOnDidFinish() {
+    func testReadyTransitionOnEcReady() {
+        let preload = ShopifyCheckout.preload(checkout: url)
+        let view = CheckoutWebView(entryPoint: nil)
+        acceptMessagesFromCheckout(view)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(preload?.state, .ready)
+        }
+    }
+
+    func testDidFinishAloneDoesNotReportReady() {
         let preload = ShopifyCheckout.preload(checkout: url)
         let view = CheckoutWebView(entryPoint: nil)
         _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
@@ -193,20 +318,106 @@ class PreloadObservabilityTests: XCTestCase {
         view.webView(view, didFinish: nil)
 
         withExtendedLifetime(preload) {
-            XCTAssertEqual(preload?.state, .ready)
+            XCTAssertEqual(preload?.state, .loading)
         }
     }
 
-    func testRepeatDidFinishDoesNotReNotifyReadyState() {
+    func testEcReadyBeforePresentationIsKeptWhenNavigationFinishesAfterPresentation() {
+        let preload = ShopifyCheckout.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+        let view = CheckoutWebView(entryPoint: nil)
+        acceptMessagesFromCheckout(view)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+        XCTAssertTrue(CheckoutWebView.for(checkout: url) === view)
+        view.webView(view, didFinish: nil)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading, .ready])
+        }
+    }
+
+    func testPreloadPresentedWhileLoadingReportsReadyWhenCheckoutSendsReady() {
+        let preload = ShopifyCheckout.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+        let view = CheckoutWebView(entryPoint: nil)
+        acceptMessagesFromCheckout(view)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+
+        let presented = CheckoutWebView.for(checkout: url)
+        XCTAssertTrue(presented === view)
+        view.webView(view, didFinish: nil)
+        XCTAssertEqual(states, [.loading])
+
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading, .ready])
+        }
+    }
+
+    func testPresentedCloudflareChallengeDoesNotReportReadyWhenItFinishes() throws {
+        let preload = ShopifyCheckout.preload(checkout: url)
+        var states: [PreloadState] = []
+        preload?.onStateChange = { states.append($0) }
+        let view = CheckoutWebView(entryPoint: nil)
+        _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
+        XCTAssertTrue(CheckoutWebView.for(checkout: url) === view)
+        view.isPresented = true
+        defer { view.isPresented = false }
+        let response = try XCTUnwrap(
+            HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: ["cf-mitigated": "challenge"])
+        )
+
+        XCTAssertEqual(view.handleResponse(response), .allow)
+        view.webView(view, didFinish: nil)
+
+        withExtendedLifetime(preload) {
+            XCTAssertEqual(states, [.loading])
+        }
+        XCTAssertTrue(CheckoutWebView.preloadCache.contains(view))
+    }
+
+    func testPresentedViewPastItsTTLIsStillCachedUntilDismissed() {
+        var now = Date(timeIntervalSince1970: 1000)
+        let cache = PreloadCache(now: { now })
+        defer { cache.invalidate() }
+        let key = PreloadKey(url: url, entryPoint: nil)
+        let view = CheckoutWebView(entryPoint: nil)
+        XCTAssertTrue(cache.store(view, for: key))
+        XCTAssertTrue(cache.view(for: key) === view)
+        view.isPresented = true
+
+        now.addTimeInterval(10 * 60)
+
+        XCTAssertTrue(cache.contains(view))
+        view.isPresented = false
+        XCTAssertFalse(cache.contains(view))
+    }
+
+    private static let readyBody = #"{"jsonrpc":"2.0","method":"ec.ready","id":"r1","params":{"delegate":[]}}"#
+
+    private func acceptMessagesFromCheckout(_ view: CheckoutWebView) {
+        view.messageIsMainFrame = { _ in true }
+        view.messageRequestURL = { _ in nil }
+        view.messageOrigin = { _ in MessageOrigin(scheme: "https", host: "shopify1.shopify.com", port: nil) }
+    }
+
+    func testRepeatEcReadyDoesNotReNotifyReadyState() {
         let preload = ShopifyCheckout.preload(checkout: url)
         var states: [PreloadState] = []
         preload?.onStateChange = { states.append($0) }
 
         let view = CheckoutWebView(entryPoint: nil)
+        acceptMessagesFromCheckout(view)
         _ = CheckoutWebView.preloadCache.store(view, for: PreloadKey(url: url, entryPoint: nil))
 
-        view.webView(view, didFinish: nil)
-        view.webView(view, didFinish: nil)
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
+        view.userContentController(WKUserContentController(), didReceive: MockScriptMessage(body: Self.readyBody))
 
         withExtendedLifetime(preload) {
             XCTAssertEqual(states, [.loading, .ready])
@@ -549,4 +760,18 @@ struct NoOpTestTelemetryRecorder: CheckoutTelemetryRecording {
     func recordNavigationRetry(_: TelemetryNavigationRetryMetric) {}
     func recordNavigationDuration(_: TelemetryNavigationDurationMetric) {}
     func recordReadyDuration(_: TelemetryReadyDurationMetric) {}
+}
+
+/// Keeps a preload handle alive and records its states.
+@MainActor
+private final class StateLog {
+    var values: [PreloadState] = []
+    var preload: CheckoutPreload?
+}
+
+/// Stands in for an app's sheet that hosts checkout as a child, as SwiftUI's `.sheet` does.
+private final class DismissingViewController: UIViewController {
+    override var isBeingDismissed: Bool {
+        true
+    }
 }

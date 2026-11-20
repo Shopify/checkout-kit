@@ -61,6 +61,8 @@ class EmbeddedCheckoutProtocolBridgeTest {
             webMessageTransport,
             protocolMessageExecutor = directExecutor,
         )
+        // Most tests model a presented checkout; tests of hidden views dismiss it explicitly.
+        viewSpy.markPresented()
         ecp.setPresentationListener(mockListener)
     }
 
@@ -492,6 +494,55 @@ class EmbeddedCheckoutProtocolBridgeTest {
         assertIgnoredByBridge(windowOpenRequest(id = "1.5", url = "https://example.com"))
     }
 
+    @Test
+    fun `window open received while checkout is not presented is rejected without launching`() {
+        registerFakeBrowserFor("https://example.com")
+        viewSpy.markDismissed()
+        ecp.invalidateEventAdapter()
+
+        val response = captureSentMessage {
+            ecp.receiveMessage(windowOpenRequest(id = "\"hidden\"", url = "https://example.com"))
+        }
+
+        assertThat(response).contains("window_open_rejected_error", "checkout is not presented")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+        verify(mockListener, Mockito.never()).onCheckoutLinkClicked(any())
+    }
+
+    @Test
+    fun `window open received while hidden stays rejected when checkout is presented before processing`() {
+        registerFakeBrowserFor("https://example.com")
+        var queuedCommand: Runnable? = null
+        val asyncBridge = EmbeddedCheckoutProtocolBridge(
+            viewSpy,
+            webMessageTransport,
+            protocolMessageExecutor = { command -> queuedCommand = command },
+        )
+        viewSpy.markDismissed()
+
+        asyncBridge.receiveMessage(windowOpenRequest(id = "\"queued\"", url = "https://example.com"))
+        viewSpy.markPresented()
+        asyncBridge.setPresentationListener(mockListener)
+        val response = captureSentMessage { queuedCommand!!.run() }
+
+        assertThat(response).contains("checkout is not presented")
+        assertThat(shadowOf(activity).nextStartedActivity).isNull()
+        verify(mockListener, Mockito.never()).onCheckoutLinkClicked(any())
+    }
+
+    @Test
+    fun `ec ready is answered while checkout is not presented`() {
+        viewSpy.markDismissed()
+        ecp.invalidateEventAdapter()
+
+        val response = captureSentMessage {
+            ecp.receiveMessage(ecReadyMessage())
+        }
+
+        assertThat(response).contains("\"status\":\"success\"")
+        assertThat(response).doesNotContain("\"error\"")
+    }
+
     // endregion
 
     // region ec.start
@@ -677,6 +728,23 @@ class EmbeddedCheckoutProtocolBridgeTest {
         } finally {
             executor.shutdownNow()
         }
+    }
+
+    @Test
+    fun `terminal ec error of retained post-presentation checkout evicts it and invalidates consumed preload handle`() {
+        val preload = CheckoutWebView.preload("https://shopify.dev/cart/123", activity, webMessageTransport)!!
+        shadowOf(Looper.getMainLooper()).idle()
+        val view = CheckoutWebView.checkoutViewFor("https://shopify.dev/cart/123", activity, webMessageTransport)
+        view.markPresented()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
+        val bridge = EmbeddedCheckoutProtocolBridge(view, webMessageTransport, protocolMessageExecutor = directExecutor)
+
+        bridge.receiveMessage(ecErrorMessage(severity = "unrecoverable"))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        assertThat(shadowOf(view).wasDestroyCalled()).isTrue()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
     }
 
     @Test

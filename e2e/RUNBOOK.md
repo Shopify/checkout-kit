@@ -18,8 +18,10 @@ enforce the same result checks, but do not post to GitHub.
 Each target exports JUnit into its **Tests** tab, including on test failure, and
 uploads a compressed Maestro diagnostics artifact. Export failures also fail the
 workflow. The sticky comment links these test results and the workflow logs.
-Tophat install links use the retained `e2e-build-*` workflows, which can produce
-signed device artifacts on demand.
+Tophat install links use each recipe's `pull_request_workflow`, the target's
+`e2e-maestro-*` workflow. It uploads the app it tests, and the signed device IPA
+for iOS. Tophat installs only successful builds, so a target whose tests fail
+keeps linking to the branch's last passing build.
 
 ## Retry behavior
 
@@ -40,17 +42,83 @@ step's timeout; retries do not extend its wall-clock budget.
 1. Open the failing target's **Tests** tab from the PR comment or pipeline.
 2. If no tests were exported, inspect the build log for setup, build, install,
    or runner errors.
-3. Download `tests.zip` from **Artifacts**. Raw attempts are under
-   `maestro-attempts-*/attempt-*`; Maestro's screenshots, command JSON, and logs
-   are in hidden `.maestro/tests/` directories within each attempt.
-4. Inspect the screenshot and command hierarchy before changing a selector or
-   adding retries. A successful tap can leave another input focused if the
-   keyboard covers the intended field.
+3. Download `tests.zip` from **Artifacts**. Preserve the first failed attempt,
+   including when a later retry passed. Raw attempts are under
+   `maestro-attempts-*/attempt-*`; Maestro's diagnostics are in hidden
+   `.maestro/tests/` directories within each attempt.
+4. Use the failed flow's command JSON, screenshot, and hierarchy to identify the
+   failing action and its timestamp. A missing checkout field or preload marker
+   is a symptom; inspect the device logs for the first underlying error before
+   changing selectors, adding retries, or attributing the failure to a crash.
+5. Correlate device, app, and driver messages around that action. Record the
+   underlying error, affected process, app commit, Maestro version, device/runtime,
+   and attempt number. Diagnose local and CI runs independently: matching assertion
+   text alone does not establish a shared cause.
 
 A failed planner can skip every target. Check its log for changed-file retrieval,
 matrix validation, or missing branch workflows. Rebase a stale branch when its
 pipeline lacks a target selected by the merged matrix. The report intentionally
 fails when the planner or its metadata is missing.
+
+### Find the diagnostic files
+
+With Maestro 2.12.1, flow bundles are under
+`attempt-*/.maestro/tests/<timestamp>/<flow>/`. Use `manifest.json` as the index
+of captured artifacts. Older Maestro versions and BrowserStack can have different
+layouts, and available files depend on the platform and failure.
+
+| File or artifact | What to inspect |
+|---|---|
+| `attempt-*/junit.xml` and the flow's `commands.json` | Failed command, assertion, timing, and per-attempt outcome. The merged JUnit report can show a later successful retry. |
+| Flow `manifest.json`, `screenshots/`, and `screen-hierarchy/` | Visible app state and artifact locations. A successful tap can leave another input focused if the keyboard covers the intended field. |
+| Flow `logs/device-simulator.log` | iOS app, WebKit, networking, and process messages. Filter by the sample app process and the time of the failing action. |
+| Flow `logs/device-xctest.log` and run-level `xctest_runner_*.log` | XCTest driver startup and automation errors. Identify whether a message concerns the app, WebKit, or the test driver. |
+| Flow `logs/maestro.log` and run-level `maestro.log` | Maestro command execution, driver communication, and exception details. |
+| Crash or ANR artifacts listed in the manifest | Process termination, exception, and backtrace evidence. A process can terminate without producing a crash report, so inspect device logs too. |
+
+Inspect runtime logs even when the final error is an assertion timeout. For
+example, checkout fields can be absent because the SDK already dismissed a
+checkout that failed to load. A preload-ready timeout can have the same network
+failure underneath it.
+
+### Certificate failures can look like checkout failures
+
+`Provisional navigation failed - domain:NSURLErrorDomain code:-1202` means iOS
+rejected the server certificate. This can prevent preload from becoming ready
+and cause the SDK to dismiss checkout, leaving the app on the cart screen. The
+resulting missing-field assertion alone does not identify this cause.
+
+Check the server certificate chain, simulator trust setup, and any local TLS
+proxy configuration. Resolve the trust failure and rerun the affected flow before
+using that run to assess a Maestro upgrade or compare local and CI behavior.
+
+For `App crashed or stopped`, inspect process termination and crash evidence as
+well as the Maestro/XCTest logs. Describe a passing retry as an intermittent
+failure that recovered, and retain the original evidence while its cause remains
+unresolved.
+
+### Retain diagnostics for a local reproduction
+
+From the repository root, after provisioning and booting the target simulator,
+set `E2E_JUNIT_REPORT` to retain a fresh attempt directory even with zero retries:
+
+```bash
+shadowenv exec -- env \
+  E2E_JUNIT_REPORT="${TMPDIR:-/tmp}/checkout-kit-e2e/junit.xml" \
+  E2E_MAESTRO_TEST_RETRIES=0 \
+  /opt/dev/bin/dev swift e2e tests/shared/checkout-present-and-close.yaml
+```
+
+The report is saved at the requested path, with raw attempts beside it. Locate
+files inside the hidden directories with:
+
+```bash
+shadowenv exec -- rg --hidden --files "${TMPDIR:-/tmp}/checkout-kit-e2e" \
+  -g 'manifest.json' -g 'commands.json' -g '*.log'
+```
+
+Preserve the report and its attempt directory before rerunning. Redact environment
+values, checkout identifiers, and customer data before sharing log excerpts.
 
 ## Reruns
 

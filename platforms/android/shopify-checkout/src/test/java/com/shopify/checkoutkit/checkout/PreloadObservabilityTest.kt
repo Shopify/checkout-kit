@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.checkout
 import android.net.Uri
 import android.os.Looper
+import android.view.ContextThemeWrapper
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -27,6 +28,7 @@ import org.robolectric.shadows.ShadowLooper
 import java.lang.ref.WeakReference
 
 @RunWith(RobolectricTestRunner::class)
+@Suppress("LargeClass")
 class PreloadObservabilityTest {
 
     private lateinit var activity: ComponentActivity
@@ -137,7 +139,8 @@ class PreloadObservabilityTest {
         val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
         ShadowLooper.shadowMainLooper().idle()
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
-        shadowOf(view).webViewClient.onPageFinished(view, url)
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
         val states = mutableListOf<PreloadState>()
 
         preload.listener = PreloadStateListener { states.add(it) }
@@ -171,7 +174,8 @@ class PreloadObservabilityTest {
 
         assertThat(handleReference.get()).isNotNull()
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
-        shadowOf(view).webViewClient.onPageFinished(view, url)
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
         assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
     }
 
@@ -195,41 +199,165 @@ class PreloadObservabilityTest {
     }
 
     @Test
-    fun `consuming preload releases observer`() {
+    fun `consumed preload keeps observing the presented checkout`() {
         val states = mutableListOf<PreloadState>()
         CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
         ShadowLooper.shadowMainLooper().idle()
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
-        shadowOf(view).webViewClient.onPageFinished(view, url)
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
 
         CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
         ShopifyCheckout.clearPreload()
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(states).containsExactly(
+            PreloadState.Loading,
+            PreloadState.Ready,
+            PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+        )
+    }
+
+    @Test
+    fun `preload presented while loading reports ready when checkout sends ec ready`() {
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+
+        view.onEmbeddedCheckoutReady()
+        view.onEmbeddedCheckoutReady()
         ShadowLooper.shadowMainLooper().idle()
 
         assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
     }
 
     @Test
-    fun `page finished transitions cached preload to ready`() {
+    fun `presented preload does not report ready when a page without checkout finishes`() {
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        val request = mock<WebResourceRequest> {
+            whenever(it.isForMainFrame).thenReturn(true)
+            whenever(it.url).thenReturn(Uri.parse(url))
+        }
+        val response = mock<WebResourceResponse> {
+            whenever(it.statusCode).thenReturn(403)
+            whenever(it.reasonPhrase).thenReturn("Forbidden")
+            whenever(it.responseHeaders).thenReturn(mapOf("cf-mitigated" to "challenge"))
+        }
+
+        shadowOf(view).webViewClient.onReceivedHttpError(view, request, response)
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
+        assertThat(states).containsExactly(PreloadState.Loading)
+    }
+
+    @Test
+    fun `checkout kept past its ttl reports expired when dismissed`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun elapsedRealtime(): Long = now
+        }
+        val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+        CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport).markPresented()
+
+        now += 5 * 60 * 1000L
+
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Expired))
+    }
+
+    @Test
+    fun `checkout view reuses a preload when its context wraps the preloading activity`() {
+        CheckoutService.preload(url, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val wrappedContext = ContextThemeWrapper(activity, android.R.style.Theme_DeviceDefault)
+
+        val view = CheckoutWebView.checkoutViewFor(url, wrappedContext, webMessageTransport)
+
+        assertThat(view).isSameAs(cachedView)
+    }
+
+    @Test
+    fun `checkout view for a different activity gets a new view and invalidates the preload`() {
+        val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val otherActivity = Robolectric.buildActivity(ComponentActivity::class.java).get()
+
+        val view = CheckoutWebView.checkoutViewFor(url, otherActivity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(view).isNotSameAs(cachedView)
+        assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+    }
+
+    @Test
+    fun `page finished alone does not report ready`() {
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(states).containsExactly(PreloadState.Loading)
+    }
+
+    @Test
+    fun `ec ready before presentation is kept when the page finishes after presentation`() {
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val cachedView = CheckoutWebView.cachedPreloadViewForTesting()!!
+
+        cachedView.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        shadowOf(view).webViewClient.onPageFinished(view, url)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(view).isSameAs(cachedView)
+        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
+    }
+
+    @Test
+    fun `ec ready transitions cached preload to ready`() {
         val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
         ShadowLooper.shadowMainLooper().idle()
 
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
-        shadowOf(view).webViewClient.onPageFinished(view, url)
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
 
         assertThat(preload.state).isEqualTo(PreloadState.Ready)
     }
 
     @Test
-    fun `repeat page finished does not re-notify ready`() {
+    fun `repeat ec ready does not re-notify ready`() {
         val states = mutableListOf<PreloadState>()
 
         CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
         ShadowLooper.shadowMainLooper().idle()
 
         val view = CheckoutWebView.cachedPreloadViewForTesting()!!
-        shadowOf(view).webViewClient.onPageFinished(view, url)
-        shadowOf(view).webViewClient.onPageFinished(view, url)
+        view.onEmbeddedCheckoutReady()
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
 
         assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
     }
@@ -323,6 +451,55 @@ class PreloadObservabilityTest {
                 PreloadState.FailureReason.WebContentUnavailable,
                 "Web content process terminated.",
             ),
+        )
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination of retained post-presentation checkout invalidates consumed preload handle`() {
+        val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isTrue()
+        assertThat(view.isPreloadRequest).isFalse()
+        val detail = mock<RenderProcessGoneDetail> {
+            whenever(it.didCrash()).thenReturn(false)
+        }
+
+        shadowOf(view).webViewClient.onRenderProcessGone(view, detail)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+    }
+
+    @Config(sdk = [26])
+    @Test
+    fun `renderer termination of a presented checkout past its ttl invalidates rather than expires the preload`() {
+        var now = 1_000L
+        CheckoutWebView.cacheClock = object : PreloadCache.Clock() {
+            override fun elapsedRealtime(): Long = now
+        }
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        now += 10 * 60 * 1000L
+        val detail = mock<RenderProcessGoneDetail> {
+            whenever(it.didCrash()).thenReturn(false)
+        }
+
+        shadowOf(view).webViewClient.onRenderProcessGone(view, detail)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(states).containsExactly(PreloadState.Loading)
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(states).containsExactly(
+            PreloadState.Loading,
+            PreloadState.Idle(PreloadState.IdleReason.Invalidated),
         )
     }
 
@@ -477,7 +654,8 @@ class PreloadObservabilityTest {
 
         val replacementView = CheckoutWebView.cachedPreloadViewForTesting()
         assertThat(replacementView).isNotNull().isNotSameAs(failedView)
-        shadowOf(replacementView!!).webViewClient.onPageFinished(replacementView, url)
+        replacementView!!.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
         assertThat(replacementStates).containsExactly(PreloadState.Loading, PreloadState.Ready)
     }
 
@@ -505,6 +683,92 @@ class PreloadObservabilityTest {
                     "Navigation failed (error code: -1).",
                 ),
             )
+    }
+
+    @Test
+    fun `navigation error after presentation reports invalidated at dismissal instead of failing it`() {
+        val preload = CheckoutService.preload(url, activity, webMessageTransport)!!
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+
+        val request = mock<WebResourceRequest> {
+            whenever(it.isForMainFrame).thenReturn(true)
+            whenever(it.url).thenReturn(Uri.parse(url))
+        }
+        val error = mock<WebResourceError> {
+            whenever(it.errorCode).thenReturn(-1)
+            whenever(it.description).thenReturn("net error")
+        }
+        shadowOf(view).webViewClient.onReceivedError(view, request, error)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(preload.state).isEqualTo(PreloadState.Loading)
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(preload.state).isEqualTo(PreloadState.Idle(PreloadState.IdleReason.Invalidated))
+    }
+
+    @Test
+    fun `completion while presented reports invalidated at dismissal`() {
+        val states = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { states.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        view.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
+
+        CheckoutWebView.evictForCompletion(view)
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isFalse()
+        assertThat(states).containsExactly(PreloadState.Loading, PreloadState.Ready)
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(states).containsExactly(
+            PreloadState.Loading,
+            PreloadState.Ready,
+            PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+        )
+    }
+
+    @Test
+    fun `preloading again while presented drops the state held for the previous checkout`() {
+        val firstStates = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { firstStates.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+        CheckoutWebView.evictForCompletion(view)
+        ShadowLooper.shadowMainLooper().idle()
+
+        val secondStates = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { secondStates.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+
+        assertThat(firstStates).containsExactly(PreloadState.Loading)
+        assertThat(secondStates).containsExactly(PreloadState.Loading)
+        assertThat(CheckoutWebView.hasCacheEntryForTesting()).isTrue()
+    }
+
+    @Test
+    fun `invalid preload while another is presented reports its failure immediately`() {
+        val firstStates = mutableListOf<PreloadState>()
+        CheckoutService.preload(url, activity, webMessageTransport) { firstStates.add(it) }
+        ShadowLooper.shadowMainLooper().idle()
+        val view = CheckoutWebView.checkoutViewFor(url, activity, webMessageTransport)
+        view.markPresented()
+
+        val secondStates = mutableListOf<PreloadState>()
+        CheckoutService.preload("http://shopify.com/checkouts/cn/123", activity, webMessageTransport) {
+            secondStates.add(it)
+        }
+        ShadowLooper.shadowMainLooper().idle()
+
+        assertThat(secondStates).singleElement().isInstanceOf(PreloadState.Failed::class.java)
+        assertThat(CheckoutWebView.retainAfterPresentation(view)).isFalse()
+        assertThat(firstStates).containsExactly(PreloadState.Loading)
+        assertThat(secondStates).hasSize(1)
     }
 
     @Test
@@ -542,7 +806,8 @@ class PreloadObservabilityTest {
         assertThat(replacement).isNotNull()
         val replacementView = CheckoutWebView.cachedPreloadViewForTesting()
         assertThat(replacementView).isNotNull().isNotSameAs(failedView)
-        shadowOf(replacementView!!).webViewClient.onPageFinished(replacementView, url)
+        replacementView!!.onEmbeddedCheckoutReady()
+        ShadowLooper.shadowMainLooper().idle()
         assertThat(replacementStates).containsExactly(PreloadState.Loading, PreloadState.Ready)
     }
 

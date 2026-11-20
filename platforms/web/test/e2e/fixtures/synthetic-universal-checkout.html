@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Synthetic Universal Checkout</title>
+  </head>
+  <body>
+    <script>
+      // Sends the batched wire shape Kit expects from Universal Checkout:
+      // every message is an array with one member per shop it covers.
+      class SyntheticUniversalCheckout {
+        constructor() {
+          const params = new URL(location.href).searchParams;
+          this.hostOrigin = params.get("host_origin");
+          this.sessionId = "uc_session_test_1";
+          this.revision = 0;
+          this.shops = Array.from({ length: Number(params.get("shops")) }, (_, index) => ({
+            shopId: `gid://shopify/Shop/${index + 1}`,
+            checkoutId: `checkout_shop_${index + 1}`,
+            orderId: `order_shop_${index + 1}`,
+          }));
+          if (this.shops.length === 0) throw new Error("Missing shops parameter");
+
+          this.readyIds = this.shops.map((_, index) => `ready-${index + 1}`);
+          this.readyResponse = new Promise((resolve) => {
+            window.addEventListener("message", (event) => {
+              if (event.source !== window.opener || event.origin !== this.hostOrigin) return;
+              const responses = event.data;
+              if (!Array.isArray(responses) || responses.length !== this.readyIds.length) return;
+              const succeeded = responses.filter(
+                (response) =>
+                  response?.jsonrpc === "2.0" &&
+                  this.readyIds.includes(response.id) &&
+                  response.result?.ucp?.status === "success",
+              );
+              const succeededIds = new Set(succeeded.map((response) => response.id));
+              if (succeededIds.size !== this.readyIds.length) return;
+              this.protocolVersion = succeeded[0].result.ucp.version;
+              resolve();
+            });
+          });
+          // Like Shop sign-in, a signed-out session sends no protocol messages until sign-in.
+          this.signedIn = false;
+          if (!params.has("signed_out")) this.signIn();
+        }
+
+        signIn() {
+          if (this.signedIn) throw new Error("The synthetic checkout is already signed in.");
+          this.signedIn = true;
+          this.post(
+            this.readyIds.map((id) => ({
+              jsonrpc: "2.0",
+              id,
+              method: "ec.ready",
+              params: { delegate: ["window.open"] },
+            })),
+          );
+        }
+
+        post(batch) {
+          window.opener.postMessage(batch, this.hostOrigin);
+        }
+
+        // Each batch is one revision of the session.
+        notify(method, entries) {
+          this.revision += 1;
+          this.post(
+            entries.map(({ shop, status, checkout, error }) => ({
+              jsonrpc: "2.0",
+              method,
+              params: {
+                context: {
+                  session_id: this.sessionId,
+                  revision: this.revision,
+                  shop_id: shop.shopId,
+                  status,
+                },
+                checkout,
+                ...(error && { error }),
+              },
+            })),
+          );
+        }
+
+        // Use the negotiated version so the wire fixture survives SDK releases.
+        checkoutResource(shop, status = "incomplete") {
+          return {
+            ucp: { version: this.protocolVersion, payment_handlers: {} },
+            id: shop.checkoutId,
+            currency: "USD",
+            status,
+            line_items: [
+              {
+                id: "li_1",
+                item: { id: "variant_1", title: "Test Product", price: 2000 },
+                quantity: 1,
+                totals: [{ type: "total", amount: 2000 }],
+              },
+            ],
+            totals: [{ type: "total", amount: 2000 }],
+            links: [],
+          };
+        }
+
+        start() {
+          this.notify(
+            "ec.start",
+            this.shops.map((shop) => ({
+              shop,
+              status: "active",
+              checkout: this.checkoutResource(shop),
+            })),
+          );
+        }
+
+        shop(shopId) {
+          const shop = this.shops.find((candidate) => candidate.shopId === shopId);
+          if (!shop) throw new Error(`Unknown shop ${shopId}`);
+          return shop;
+        }
+
+        update(shopId) {
+          const shop = this.shop(shopId);
+          this.notify("ec.update", [
+            { shop, status: "active", checkout: this.checkoutResource(shop, "ready_for_complete") },
+          ]);
+        }
+
+        eject(shopId) {
+          const shop = this.shop(shopId);
+          this.notify("ec.error", [
+            {
+              shop,
+              status: "ejected",
+              checkout: this.checkoutResource(shop),
+              error: {
+                ucp: { version: this.protocolVersion, status: "error" },
+                messages: [
+                  {
+                    type: "error",
+                    code: "currency_mismatch",
+                    content: "The checkout's currency doesn't match the other checkouts.",
+                    content_type: "plain",
+                    severity: "unrecoverable",
+                  },
+                ],
+              },
+            },
+          ]);
+        }
+
+        complete(shopId) {
+          const shop = this.shop(shopId);
+          this.notify("ec.complete", [
+            {
+              shop,
+              status: "completed",
+              checkout: {
+                ...this.checkoutResource(shop, "completed"),
+                order: {
+                  id: shop.orderId,
+                  permalink_url: `https://checkout.example.test/orders/${shop.orderId}`,
+                },
+              },
+            },
+          ]);
+        }
+      }
+
+      window.syntheticUniversalCheckout = new SyntheticUniversalCheckout();
+    </script>
+  </body>
+</html>

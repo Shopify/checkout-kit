@@ -57,7 +57,7 @@ class ClientTest {
             """{"jsonrpc":"2.0","id":"1","method":"ec.test.echo","params":{"value":"hi"}}""",
         )
 
-        assertThat(response).contains("\"result\"").contains("\"ok\":true")
+        assertThat(response).contains("\"id\":\"1\"").contains("\"result\"").contains("\"ok\":true")
     }
 
     @Test
@@ -90,7 +90,7 @@ class ClientTest {
 
         assertThat(captured?.first).isEqualTo("ec.test.echo")
         assertThat(captured?.second).isInstanceOf(SerializationException::class.java)
-        assertThat(response).contains("-32602")
+        assertThat(response).contains("\"id\":\"1\"").contains("-32602")
     }
 
     @Test

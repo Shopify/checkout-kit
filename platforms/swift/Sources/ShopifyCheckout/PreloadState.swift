@@ -67,8 +67,9 @@ public enum PreloadState: Equatable {
 /// Returned by `preload(checkout:)` to expose the current preload state.
 ///
 /// Retain the returned instance for as long as you want to observe state changes; the cache holds
-/// it weakly. When presentation reuses a cached preload, this handle stops receiving updates and
-/// retains its last observed state, which may be `.loading`.
+/// it weakly. When presentation reuses a cached preload, this handle keeps receiving updates for
+/// the checkout, including `.ready` when a preload presented while loading finishes. A failure
+/// after presentation reports `.idle(reason: .invalidated)`.
 @MainActor
 public final class CheckoutPreload: ObservableObject {
     /// The latest observed preload state.

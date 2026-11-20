@@ -146,7 +146,7 @@ test("a skipped title-edit run republishes the latest measurement", async () => 
     prNumber: 1,
     loadArtifact: async (_github, _repo, runId) => {
       loaded.push(runId);
-      return { report, packageComment: "" };
+      return { report };
     },
   });
   assert.deepEqual(loaded, [10]);
@@ -154,4 +154,23 @@ test("a skipped title-edit run republishes the latest measurement", async () => 
     checks.map((check) => check.conclusion),
     ["success"],
   );
+});
+
+test("validates reports with named npm and CDN budgets", () => {
+  const { report } = fixture();
+  report.budgets.web.javascript.name = "Web (NPM)";
+  report.budgets.web.cdn = {
+    name: "Web (CDN)",
+    measurement: "cdn",
+    softKiB: 132,
+    hardKiB: 150,
+  };
+  report.head["Web\tCDN JavaScript"] = 130 * 1024;
+  report.head["Web\tJavaScript"] = 34 * 1024;
+  publisher.validateReport(
+    report,
+    { number: 1, head: { sha: "head" }, base: { sha: "base" } },
+    { head_sha: "head" },
+  );
+  assert.equal(policy.conclusion(policy.evaluate(report)), "success");
 });

@@ -120,6 +120,14 @@ public struct ShopifyCheckout: UIViewControllerRepresentable, CheckoutConfigurab
         configureWebViewController(uiViewController)
     }
 
+    public static func dismantleUIViewController(_ uiViewController: CheckoutViewController, coordinator _: Void) {
+        // SwiftUI can remove app-hosted content without dismissing a modal. End presentation
+        // ownership without reporting a buyer dismissal; UIKit may already have cleaned up.
+        for controller in uiViewController.viewControllers {
+            (controller as? CheckoutWebViewController)?.cleanUpCheckoutView()
+        }
+    }
+
     private func configureWebViewController(_ navigationController: CheckoutViewController) {
         guard
             let webViewController = navigationController

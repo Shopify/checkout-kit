@@ -14,7 +14,7 @@
     "./checkout": "./src/checkout.ts"
   },
   "dependencies": {
-    "@shopify/checkout-kit-protocol": "workspace:*"
+    "@shopify/embedded-checkout-protocol": "workspace:*"
   },
   "peerDependencies": {
     "react": "*",

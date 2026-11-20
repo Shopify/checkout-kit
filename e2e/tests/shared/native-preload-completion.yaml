@@ -1,0 +1,63 @@
+appId: ${E2E_APP_ID}
+name: Native preload stays ready until a completed checkout is dismissed
+tags:
+  - preload
+  # This test submits a real order, so it belongs to the expensive tier.
+  - full
+
+env:
+  # Preload caches a checkout per buyer, so the identity is pinned rather than left to
+  # whatever the sample was last configured with. A guest cart also has the fewest fields.
+  E2E_CART_PARAMS: "productIndex=0&quantity=1&buyerIdentityMode=guest"
+
+  # Checkout contact fixture.
+  EMAIL: "maestro.e2e@shopify.com"
+  FIRST_NAME: "Maestro"
+  LAST_NAME: "Shopify"
+
+  # Checkout delivery fixture. The shop opens on its own country, so this address picks a
+  # different one and makes the flow use the country picker. The two field labels follow
+  # the country: the United States names them State and ZIP code.
+  COUNTRY_LABEL: "United States"
+  ADDRESS_LINE1: "700 S Flower St"
+  CITY: "Los Angeles"
+  STATE_FIELD_LABEL: "State"
+  STATE_LABEL: "California"
+  POSTAL_FIELD_LABEL: "ZIP code"
+  POSTAL_CODE: "90017"
+  # The shop requires a phone number on the delivery address. 555-01xx is the number range
+  # reserved for fiction, so this value reaches nobody.
+  PHONE: "213 555 0142"
+
+  # Checkout payment fixture. The shop runs its credit card gateway in test mode, which
+  # accepts this number only. Checkout groups the digits, so the flow needs both forms.
+  CARD_NUMBER: "1"
+  CARD_NUMBER_DISPLAY: "1"
+  CARD_SECURITY_CODE: "123"
+  CARD_HOLDER_NAME: "Maestro Shopify"
+
+  # Accepted successful checkout states for this smoke test.
+  POST_SUBMIT_RESULT_PATTERN: ".*(Thank you|Your order|Order confirmed|confirmation).*"
+---
+- runFlow: ../../flows/app/bootstrap-cart-from-link.yaml
+- extendedWaitUntil:
+    visible:
+      id: preload-state-ready
+    timeout: 60000
+- runFlow: ../../flows/checkout/present.yaml
+- runFlow: ../../flows/checkout/fill-contact.yaml
+- runFlow: ../../flows/checkout/fill-shipping-address.yaml
+- runFlow: ../../flows/checkout/fill-payment-card.yaml
+- runFlow: ../../flows/checkout/use-shipping-address-as-billing-address.yaml
+- runFlow: ../../flows/checkout/submit.yaml
+- runFlow: ../../flows/checkout/assert-complete.yaml
+- runFlow: ../../flows/checkout/assert-returned-to-empty-cart.yaml
+
+# Each sample reads the preload state when the SDK logs that it held a state for the presented
+# checkout, and shows it with the current state. The handle was still ready then, and went idle
+# once checkout was dismissed. A handle that went idle during checkout reads not-ready first;
+# one that never held a state reads none, and a diagnostic read only after dismissal reads late.
+- extendedWaitUntil:
+    visible:
+      id: preload-when-held-ready-now-not-ready
+    timeout: 10000

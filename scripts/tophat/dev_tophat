@@ -73,7 +73,7 @@ def latest_installable(client, builds, artifact_names)
 end
 
 def evaluate_option(client, option, pr)
-  recipes_for_option(option).group_by { |recipe| recipe.fetch("workflow") }.map do |workflow, recipes|
+  recipes_for_option(option).group_by { |recipe| recipe.fetch("pull_request_workflow") }.map do |workflow, recipes|
     artifact_names = recipes.map { |recipe| recipe.fetch("artifact_name") }
     builds = client.builds(branch: pr.fetch("branch"), workflow: workflow, limit: 20)
     head = TophatBuildState.head_build(builds, pr.fetch("sha"))
@@ -124,7 +124,7 @@ def menu_label(choice, evaluations, summary)
     number = running && running["build_number"]
     number ? "Wait for the in-progress build ##{number}" : "Wait for the in-progress HEAD build"
   when :trigger_head
-    "Trigger HEAD build + wait (~6 min)"
+    "Trigger HEAD build + wait"
   when :install_current
     "Install the last successful build now (#{summary})"
   when :cancel
@@ -154,7 +154,7 @@ def format_elapsed(seconds)
 end
 
 def trigger_head_builds(client, option, pr)
-  workflows = recipes_for_option(option).map { |recipe| recipe.fetch("workflow") }.uniq
+  workflows = recipes_for_option(option).map { |recipe| recipe.fetch("pull_request_workflow") }.uniq
   workflows.map do |workflow|
     response = client.trigger_build(branch: pr.fetch("branch"), commit_hash: pr.fetch("sha"), workflow: workflow)
     slug = response.fetch("build_slug")
@@ -418,7 +418,7 @@ def print_help(manifest)
 
     After you pick a target, dev tophat checks that its newest Bitrise build was
     built at the PR's HEAD commit. If it was not, it shows what CI currently has
-    and lets you trigger a HEAD build and wait (~6 min), wait for a HEAD build
+    and lets you trigger a HEAD build and wait, wait for a HEAD build
     that is already running, or knowingly install the current (older) build.
 
     Arguments:

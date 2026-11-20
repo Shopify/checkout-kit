@@ -1,5 +1,20 @@
 # Checkout Kit for Android changelog
 
+## 4.1.0
+
+### Minor Changes
+
+- Keep reporting preload state after checkout reuses a preload, matching iOS. The handle returned by `preload` used to stop receiving updates once `present` reused its preload. It now reports `Expired` when a checkout kept after dismissal reaches its time-to-live, and `Invalidated` when the checkout is removed, for example after completion or a failure. While checkout is presented, the handle doesn't go idle: a checkout removed during presentation reports `Invalidated` when it's dismissed. A failure after presentation reports `Invalidated` rather than `Failed`.
+
+### Patch Changes
+
+- Stop checkout from opening links while it isn't presented. A preloaded checkout that hasn't been shown yet, or that the buyer dismissed, now ignores links, including navigations to app, email and phone links, instead of opening them in a browser or another app.
+- Report `Ready` for a preload that `present` reuses before it finishes loading. Its handle used to stay `Loading`, even after the checkout loaded and was kept for the next presentation. `Ready` now comes from checkout's ready signal instead of the page finishing loading, so a page that isn't checkout, such as a bot challenge, doesn't count. A background preload can report `Ready` slightly later than before.
+- Fix reopening checkout after the buyer dismisses it. Both the SDK-managed sheet and app-hosted `ShopifyCheckout` views now reuse the preloaded checkout until it expires, matching iOS, instead of loading checkout again.
+- Only reuse a preloaded checkout in the activity that preloaded it. A preload's WebView keeps the context it was created with, and its cache lifetime follows that activity, so reusing it in another activity opened native pickers, such as a country dropdown, behind the visible screen, and could keep the preloading activity alive or open links through it. Presenting from a different activity, or from a context without an activity, now loads checkout normally and reports `Idle(Invalidated)` for the preload. A context that wraps the preloading activity, such as a `ContextThemeWrapper`, still reuses it.
+- Keep the checkout sheet clear of side system bars and display cutouts. In landscape with three-button navigation, a sheet that filled the window width placed its close button under the navigation bar, where taps opened the navigation buttons instead. A sheet that already fits beside the insets keeps its centered position.
+- Offsite pages opened inside checkout now respect their `<meta name="viewport">` tag, as in Chrome. Before this change, the checkout WebView always laid pages out at its own width, so payment pages built for a fixed design width (for example `width=750`) or scaled by `devicePixelRatio` rendered 2–3× too large and ran off screen. Shopify checkout pages declare `width=device-width` and are unaffected. Pages without a viewport tag now load zoomed out to fit the screen, as in Chrome.
+
 ## 4.0.0
 
 ### Major Changes

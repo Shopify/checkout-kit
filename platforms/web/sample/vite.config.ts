@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     define: {
       CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
       "import.meta.env.VITE_CK_TELEMETRY": JSON.stringify(
-        process.env.VITE_CK_TELEMETRY === "production" ? "production" : "",
+        process.env.VITE_CK_TELEMETRY === "production" ? "production" : "console",
       ),
     },
     // Treat `sample/` as the project root so Vite serves `index.html` from here.

@@ -27,12 +27,12 @@ export class CheckoutHostPage {
     this.buyButton = page.getByRole("button", { name: "Buy", exact: true });
   }
 
-  async goto(): Promise<void> {
+  async goto() {
     await this.page.goto("/");
     await this.page.evaluate(() => customElements.whenDefined("shopify-checkout"));
   }
 
-  async configure(options: ConfigureOptions): Promise<void> {
+  async configure(options: ConfigureOptions) {
     await this.component.evaluate((checkout: CheckoutElement, { src, target, logLevel }) => {
       if (src !== undefined) checkout.src = src;
       if (target !== undefined) checkout.target = target;
@@ -40,11 +40,11 @@ export class CheckoutHostPage {
     }, options);
   }
 
-  async close(): Promise<void> {
+  async close() {
     await this.component.evaluate((checkout: CheckoutElement) => checkout.close());
   }
 
-  async clickBuy(): Promise<void> {
+  async clickBuy() {
     await this.buyButton.click();
   }
 
@@ -93,7 +93,7 @@ export class CheckoutHostPage {
     return this.component.evaluate((checkout: CheckoutElement) => checkout.error);
   }
 
-  async expectEvent(type: CheckoutEventRecord["type"]): Promise<void> {
+  async expectEvent(type: CheckoutEventRecord["type"]) {
     await expect.poll(() => this.eventTypes()).toContain(type);
   }
 }
