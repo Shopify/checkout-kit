@@ -9,6 +9,8 @@ const platforms = {
     measurements: {
       bundle: "JavaScript",
       bundleGzip: "JavaScript (gzip)",
+      cdn: "CDN JavaScript",
+      cdnGzip: "CDN JavaScript (gzip)",
       package: "npm tarball",
     },
   },
@@ -45,8 +47,16 @@ function validateBudgets(budgets) {
       )
         throw new Error(`Unknown measurement for ${platform}.${metric}`);
       if (
+        Object.hasOwn(budget, "name") &&
+        (typeof budget.name !== "string" ||
+          !budget.name.trim() ||
+          budget.name.length > 100 ||
+          /[\x00-\x1f\x7f]/.test(budget.name))
+      )
+        throw new Error(`Invalid display name for ${platform}.${metric}`);
+      if (
         Object.hasOwn(budget, "file") &&
-        (budget.measurement !== "package" ||
+        (!["package", "cdn"].includes(budget.measurement) ||
           typeof budget.file !== "string" ||
           !budget.file ||
           /[\\\t\r\n*?[\]{}]/.test(budget.file) ||
@@ -55,7 +65,7 @@ function validateBudgets(budgets) {
         throw new Error(`File must be an exact package-relative path for ${platform}.${metric}`);
       if (
         Object.keys(budget).some(
-          (key) => !["measurement", "file", "softKiB", "hardKiB"].includes(key),
+          (key) => !["name", "measurement", "file", "softKiB", "hardKiB"].includes(key),
         ) ||
         !Number.isFinite(budget.softKiB) ||
         !Number.isFinite(budget.hardKiB) ||
@@ -230,6 +240,8 @@ function render(rows, state, packageComment, notes = []) {
       : {
           bundle: "JavaScript (uncompressed)",
           bundleGzip: "JavaScript (gzip)",
+          cdn: "CDN JavaScript (uncompressed)",
+          cdnGzip: "CDN JavaScript (gzip)",
           package: platforms[row.platform].packageLabel,
         }[row.measurement];
     const named = rows.some(
@@ -239,7 +251,9 @@ function render(rows, state, packageComment, notes = []) {
         other.file === row.file &&
         other.metric !== row.metric,
     );
-    const budget = `${platforms[row.platform].label} ${scope}${named ? ` / ${escape(row.metric)}` : ""}`;
+    const budget = row.name
+      ? escape(row.name)
+      : `${platforms[row.platform].label} ${scope}${named ? ` / ${escape(row.metric)}` : ""}`;
     lines.push(
       `| ${budget} | ${size} | ${row.softKiB} KiB soft / ${row.hardKiB} KiB hard | ${status} |`,
     );
