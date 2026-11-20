@@ -27,7 +27,7 @@ app:
 tools:
   # "3.4:installed" tells each pinned stack to use its own preinstalled 3.4.x
   # (no ~3-min source compile). Local dev and GitHub Actions pin the exact patch
-  # via the repo-root .ruby-version (3.4.8). The patch level and the interpreter
+  # via the repo-root .ruby-version. The patch level and the interpreter
   # path a stack serves both move when its image is refreshed, so nothing may
   # assume a fixed Ruby here — see install-ruby-gems for why the gem cache is
   # keyed on the interpreter.
