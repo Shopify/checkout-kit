@@ -1,5 +1,11 @@
 # Checkout Kit for React Native changelog
 
+## 4.0.2
+
+### Patch Changes
+
+- Update Checkout Kit for Swift to 4.2.0 and Android to 4.1.0. Both SDKs continue to report preload state when checkout opens before loading finishes. On iOS, clearing a preload while checkout is open reports `idle` with reason `invalidated` after dismissal. On Android, reopening a dismissed checkout in the same activity can reuse its preload until it expires.
+
 ## 4.0.1
 
 ### Patch Changes

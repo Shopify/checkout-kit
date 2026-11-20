@@ -542,6 +542,27 @@ private final class DismissTrackingViewController: UIViewController {
 
 extension ShopifyCheckoutKitTests {
     @MainActor
+    func testClearingAPresentedPreloadReportsInvalidationAfterDismissal() async throws {
+        let module = PreloadEventRecorder()
+        let url = try XCTUnwrap(URL(string: "https://example.test/checkouts/cn/preload"))
+        let requestId = "presented-preload"
+        module.preload(url.absoluteString, requestId: requestId)
+        await flushPresentationQueue()
+
+        let sheet = DismissingContainer()
+        let checkout = CheckoutViewController(checkout: url)
+        sheet.addChild(checkout)
+        let content = try XCTUnwrap(checkout.topViewController)
+        module.clearPreload()
+        await flushPresentationQueue()
+
+        let loading = ["requestId": requestId, "type": "loading"]
+        XCTAssertEqual(module.events, [loading])
+        content.viewDidDisappear(false)
+        XCTAssertEqual(module.events, [loading, ["requestId": requestId, "type": "idle", "reason": "invalidated"]])
+    }
+
+    @MainActor
     func testPresentDuringProgrammaticDismissIsIgnored() async {
         let module = PresentationTrackingModule()
         module.attemptPresentation("https://example.test/first")
@@ -641,6 +662,25 @@ extension ShopifyCheckoutKitTests {
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
         }
+    }
+}
+
+private final class PreloadEventRecorder: RCTShopifyCheckoutKit {
+    var events: [[String: String]] = []
+
+    @objc(emitOnPreloadStateChangeFromSwift:)
+    func recordPreloadEvent(_ json: String) {
+        do {
+            try events.append(JSONDecoder().decode([String: String].self, from: Data(json.utf8)))
+        } catch {
+            XCTFail("Invalid preload event: \(error)")
+        }
+    }
+}
+
+private final class DismissingContainer: UIViewController {
+    override var isBeingDismissed: Bool {
+        true
     }
 }
 
