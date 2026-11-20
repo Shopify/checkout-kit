@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+import { EmbeddedCheckoutProtocol } from "@shopify/embedded-checkout-protocol";
 
 import "./register";
 import { DEFAULT_POPUP_WIDTH, DEFAULT_POPUP_HEIGHT } from "./shopify-checkout";

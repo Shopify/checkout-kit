@@ -11,9 +11,9 @@ pages build with `dev web sample build`. To use the published CDN instead of loc
 source, run `dev web sample cdn`; there is no local fallback if that release does
 not yet contain the page's element.
 
-Checkout telemetry stays in the browser console during source development. To
-opt in to production reporting, run `VITE_CK_TELEMETRY=production dev web sample`.
-Built packages and sample builds retain production telemetry.
+Checkout telemetry stays in the browser console during source development and in
+sample builds. To opt in to production reporting, run
+`VITE_CK_TELEMETRY=production dev web sample`. Built packages report to production.
 
 ## What the demo shows
 

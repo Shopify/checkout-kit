@@ -9,6 +9,7 @@
       class SyntheticCheckout {
         constructor() {
           this.hostOrigin = new URL(location.href).searchParams.get("host_origin");
+          this.openRequestCount = 0;
           this.readyResponse = new Promise((resolve) => {
             window.addEventListener("message", (event) => {
               if (event.source !== window.opener || event.origin !== this.hostOrigin) return;
@@ -96,8 +97,24 @@
           });
         }
 
+        // Resolves with the host's `ucp.status` for this request.
         openRequest(url) {
-          this.request("ec.window.open_request", { url }, "open-request-1");
+          const id = `open-request-${++this.openRequestCount}`;
+          const status = this.responseStatus(id);
+          this.request("ec.window.open_request", { url }, id);
+          return status;
+        }
+
+        responseStatus(id) {
+          return new Promise((resolve) => {
+            const onMessage = (event) => {
+              if (event.source !== window.opener || event.origin !== this.hostOrigin) return;
+              if (event.data?.jsonrpc !== "2.0" || event.data.id !== id) return;
+              window.removeEventListener("message", onMessage);
+              resolve(event.data.result?.ucp?.status);
+            };
+            window.addEventListener("message", onMessage);
+          });
         }
 
         error() {

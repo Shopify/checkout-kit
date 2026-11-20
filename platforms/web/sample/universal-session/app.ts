@@ -165,7 +165,7 @@ export function startSessionSample(page: SamplePage): void {
     });
   }
 
-  async function loadConfiguration(): Promise<void> {
+  async function loadConfiguration() {
     try {
       const configuration = await loadSampleConfiguration();
       store.setState({
@@ -227,7 +227,7 @@ export function startSessionSample(page: SamplePage): void {
   }
 
   /** Load products for a specific store. */
-  async function loadStoreProducts(domain: string): Promise<void> {
+  async function loadStoreProducts(domain: string) {
     const startDomain = domain;
 
     try {
@@ -266,7 +266,7 @@ export function startSessionSample(page: SamplePage): void {
     }
   }
 
-  async function prepareSession(): Promise<void> {
+  async function prepareSession() {
     const state = store.getState();
     if (!selectCanPrepare(state)) return;
 

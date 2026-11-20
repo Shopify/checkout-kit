@@ -9,7 +9,7 @@ case "$target" in
     export E2E_DEVICE_ID="${BITRISE_EMULATOR_SERIAL:?Android emulator must be booted}"
     adb -s "$E2E_DEVICE_ID" install -r "$app_path"
     ;;
-  react-native-ios)
+  swift-ios|react-native-ios)
     export E2E_DEVICE_ID="${CURRENT_SIMULATOR_UUID:?iOS simulator must be booted}"
     xcrun simctl install "$E2E_DEVICE_ID" "$app_path"
     ;;

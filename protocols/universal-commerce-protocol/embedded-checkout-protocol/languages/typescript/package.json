@@ -1,12 +1,30 @@
 {
-  "name": "@shopify/checkout-kit-protocol",
+  "name": "@shopify/embedded-checkout-protocol",
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Generated TypeScript models for the Shopify Checkout Kit protocol.",
+  "description": "Generated TypeScript models for the Shopify Embedded Checkout Protocol.",
   "main": "src/index.ts",
   "react-native": "src/index.ts",
   "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./notifications": {
+      "types": "./src/generated/ProtocolNotifications.d.ts",
+      "import": "./src/generated/ProtocolNotifications.ts",
+      "default": "./src/generated/ProtocolNotifications.ts"
+    },
+    "./url": {
+      "types": "./src/url.d.ts",
+      "import": "./src/url.ts",
+      "default": "./src/url.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "codegen": "../../scripts/generate_models.sh --lang typescript",
     "typecheck": "tsc --noEmit"

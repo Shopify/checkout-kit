@@ -4,19 +4,19 @@
 
 ```ts
 
-import { Buyer } from '@shopify/checkout-kit-protocol';
-import { CheckoutDiscounts } from '@shopify/checkout-kit-protocol';
-import { CheckoutFulfillment } from '@shopify/checkout-kit-protocol';
-import { CheckoutStatus } from '@shopify/checkout-kit-protocol';
-import { CheckoutTotal } from '@shopify/checkout-kit-protocol';
-import { Context as Context_2 } from '@shopify/checkout-kit-protocol';
+import { Buyer } from '@shopify/embedded-checkout-protocol';
+import { CheckoutDiscounts } from '@shopify/embedded-checkout-protocol';
+import { CheckoutFulfillment } from '@shopify/embedded-checkout-protocol';
+import { CheckoutStatus } from '@shopify/embedded-checkout-protocol';
+import { CheckoutTotal } from '@shopify/embedded-checkout-protocol';
+import { Context as Context_2 } from '@shopify/embedded-checkout-protocol';
 import { default as default_2 } from 'react';
-import { LineItem } from '@shopify/checkout-kit-protocol';
-import { Link } from '@shopify/checkout-kit-protocol';
-import { Message } from '@shopify/checkout-kit-protocol';
-import { OrderConfirmation } from '@shopify/checkout-kit-protocol';
-import { Payment } from '@shopify/checkout-kit-protocol';
-import { Policy } from '@shopify/checkout-kit-protocol';
+import { LineItem } from '@shopify/embedded-checkout-protocol';
+import { Link } from '@shopify/embedded-checkout-protocol';
+import { Message } from '@shopify/embedded-checkout-protocol';
+import { OrderConfirmation } from '@shopify/embedded-checkout-protocol';
+import { Payment } from '@shopify/embedded-checkout-protocol';
+import { Policy } from '@shopify/embedded-checkout-protocol';
 import { PropsWithChildren } from 'react';
 
 // @public (undocumented)

@@ -49,7 +49,7 @@ export function createProductLoader(deps: ProductLoaderDeps): ProductLoader {
     requestId += 1;
   }
 
-  async function load(domain: string, id: number): Promise<void> {
+  async function load(domain: string, id: number) {
     if (id !== requestId) return;
 
     setDomainInputValue(domain);

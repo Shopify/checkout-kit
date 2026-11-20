@@ -6,6 +6,11 @@ require_relative "../lib/bitrise_e2e_run_plan"
 require_relative "../lib/bitrise_e2e_reporter"
 require_relative "../lib/github_token"
 
+# --in-progress posts the sticky PR comment right after planning, before any
+# target has run. It never posts a check run; the final report does.
+in_progress = !ARGV.delete("--in-progress").nil?
+abort "Unknown arguments: #{ARGV.join(" ")}" unless ARGV.empty?
+
 plan = BitriseE2ERunPlan.load(File.expand_path("../config/matrix.yml", __dir__))
 plan.ensure_valid!
 selected_ids = begin
@@ -46,8 +51,15 @@ reporter = BitriseE2EReporter.new(
   app_slug: manifest.fetch("app_slug"),
   targets: manifest.fetch("targets"),
   stages: BitrisePipelineStages.from_json(ENV["BITRISEIO_FINISHED_WORKFLOWS"], app_slug: manifest.fetch("app_slug")),
-  pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"]
+  pipeline_url: ENV["BITRISEIO_PIPELINE_BUILD_URL"],
+  in_progress: in_progress
 )
+if in_progress
+  # Without a PR there is nowhere to post; with nothing selected the final report
+  # posts "not needed" moments later.
+  reporter.publish! if has_pr && selected_ids.is_a?(Array) && !selected_ids.empty?
+  exit 0
+end
 reporter.publish! if has_pr
 puts reporter.markdown_summary
 exit(reporter.conclusion == "success" ? 0 : 1)

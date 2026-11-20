@@ -1,15 +1,20 @@
 import { test as base, expect } from "@playwright/test";
 import { CheckoutHostPage } from "./checkout-host-page";
 import { stubEmbeddedCheckout, type CheckoutStubMode } from "./embedded-checkout-stub";
+import { UniversalCheckoutHostPage } from "./universal-checkout-host-page";
 
 export const test = base.extend<{
   checkoutStub: CheckoutStubMode;
   host: CheckoutHostPage;
+  universalHost: UniversalCheckoutHostPage;
   networkGuard: void;
 }>({
   checkoutStub: ["handshake", { option: true }],
   host: async ({ page }, use) => {
     await use(new CheckoutHostPage(page));
+  },
+  universalHost: async ({ page }, use) => {
+    await use(new UniversalCheckoutHostPage(page));
   },
   networkGuard: [
     async ({ context, baseURL, checkoutStub }, use) => {

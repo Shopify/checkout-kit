@@ -195,8 +195,13 @@ final class MessageOriginValidatorTests: XCTestCase {
     // MARK: - MessageOrigin
 
     func testMessageOriginFromURLDropsDefaultPort() throws {
-        let origin = try MessageOrigin(url: XCTUnwrap(URL(string: "https://example.com/path?x=1")))
-        XCTAssertEqual(origin?.description, "https://example.com")
+        for (scheme, defaultPort) in [("https", 443), ("http", 80)] {
+            let url = try XCTUnwrap(URL(string: "\(scheme)://example.com:\(defaultPort)/path?x=1"))
+            let origin = try XCTUnwrap(MessageOrigin(url: url))
+
+            XCTAssertNil(origin.port, "\(scheme) must normalize its default port")
+            XCTAssertEqual(origin.description, "\(scheme)://example.com")
+        }
     }
 
     func testMessageOriginFromURLKeepsExplicitPort() throws {

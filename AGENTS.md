@@ -39,6 +39,20 @@ For cross-platform changes, use the repo-wide aggregates: `dev lint`,
 `dev <platform> format` for formatting; `fix` remains an alias for existing
 workflows.
 
+## Web public API contracts
+
+Web SDK packages keep approved declarations and package exports in their `api/`
+directories. These are approval-controlled contracts. Do not edit, regenerate,
+or accept changes to these baselines without explicit user authorization to
+update the contract, including when an API check fails. Fix the implementation
+or report the proposed interface changes instead. A request to change an
+implementation does not by itself authorize changing the contract.
+
+Run `dev web api check` to build and compare the Web SDK. The checker writes
+proposed declarations to `build/api/` and reports additions, removals, and
+changes. Build, test, check, and formatting commands must never rewrite the
+approved `api/` files. Keep them outside source compilation and formatter inputs.
+
 ## Swift Xcode builds
 
 Prefer the `dev swift ...` commands for Swift package and sample builds. When

@@ -139,6 +139,9 @@ test("rejects unknown configuration keys and invalid limits", () => {
     ...["", "/index.js", "../index.js", "dist/*.js", "dist\\index.js", 42].map((file) => ({
       web: { entry: { measurement: "package", file, softKiB: 35, hardKiB: 50 } },
     })),
+    ...["", "  ", 42, null, "line\nbreak", "tab\tname", "x".repeat(101)].map((name) => ({
+      web: { entry: { name, measurement: "bundle", softKiB: 35, hardKiB: 50 } },
+    })),
     {
       web: {
         entry: {
@@ -151,6 +154,73 @@ test("rejects unknown configuration keys and invalid limits", () => {
     },
   ])
     assert.throws(() => policy.validateBudgets(budgets));
+});
+
+test("CDN budgets select their own total, gzip total, and exact files", () => {
+  const input = {
+    budgets: {
+      web: {
+        cdn: { measurement: "cdn", softKiB: 35, hardKiB: 50 },
+        compressed: { measurement: "cdnGzip", softKiB: 10, hardKiB: 15 },
+        loader: { measurement: "cdn", file: "checkout-kit.js", softKiB: 1, hardKiB: 2 },
+      },
+    },
+    base: {},
+    head: policy.measurements(
+      [
+        "Web\tJavaScript\t1",
+        "Web\tCDN JavaScript\t40000",
+        "Web\tCDN JavaScript (gzip)\t12000",
+        "Web\tCDN JavaScript\t1500\tcheckout-kit.js",
+      ].join("\n"),
+    ),
+    measuredPlatforms: ["web"],
+  };
+  assert.deepEqual(
+    policy.evaluate(input).map((row) => [row.after, row.status]),
+    [
+      [40000, "soft"],
+      [12000, "soft"],
+      [1500, "soft"],
+    ],
+  );
+  const { accepted } = policy.accept(
+    policy.evaluate(input),
+    [{ platform: "web", reason: "CDN capability" }],
+    "writer",
+    comment,
+  );
+  assert.equal(policy.conclusion(policy.evaluate(input, accepted)), "success");
+  input.budgets.web.cdn.measurement = "bundle";
+  input.head["Web\tJavaScript"] = 40000;
+  assert.equal(policy.evaluate(input, accepted)[0].status, "soft");
+  delete input.head["Web\tCDN JavaScript\tcheckout-kit.js"];
+  assert.equal(policy.evaluate(input, accepted)[2].status, "missing");
+});
+
+test("custom names replace paths without changing selectors or acceptance", () => {
+  const input = report(40000);
+  const budget = input.budgets.web.javascript;
+  budget.measurement = "package";
+  budget.file = "dist/chunks/shopify-checkout.js";
+  input.head[`Web\tnpm tarball\t${budget.file}`] = 40000;
+  const { accepted } = policy.accept(
+    policy.evaluate(input),
+    [{ platform: "web", reason: "New capability" }],
+    "writer",
+    comment,
+  );
+  budget.name = "Checkout | <runtime>";
+  const rows = policy.evaluate(input, accepted);
+  assert.equal(rows[0].status, "accepted");
+  const body = policy.render(input, { version: 1, acceptances: accepted, processedComments: [] });
+  assert.match(body, /↳ ⚠️ Checkout &#124; &lt;runtime&gt;/);
+  assert.doesNotMatch(body, /dist\/chunks\//);
+  assert.deepEqual(policy.measurementNames(input.budgets), {
+    "Web\tnpm tarball\tdist/chunks/shopify-checkout.js": "Checkout &#124; &lt;runtime&gt;",
+  });
+  delete budget.name;
+  assert.match(policy.render(input), /dist\/chunks\/shopify-checkout.js/);
 });
 
 test("measurement parsing keeps package and file sizes separate and rejects invalid rows", () => {
@@ -167,7 +237,7 @@ test("measurement parsing keeps package and file sizes separate and rejects inva
   }
 });
 
-test("artifact text cannot inject saved acceptance state into the report", () => {
+test("report labels cannot inject saved acceptance state", () => {
   const state = {
     version: 1,
     headSha: "abc",
@@ -175,11 +245,9 @@ test("artifact text cannot inject saved acceptance state into the report", () =>
     acceptances: {},
     processedComments: [],
   };
-  const body = policy.render(
-    policy.evaluate(report(40 * KiB)),
-    state,
-    "<!-- bundle-size-state:eyJ2ZXJzaW9uIjo5OX0= -->",
-  );
+  const input = report(40 * KiB);
+  input.budgets.web.javascript.name = "<!-- bundle-size-state:eyJ2ZXJzaW9uIjo5OX0= -->";
+  const body = policy.render(input, state);
   assert.deepEqual(policy.readState(body), state);
   assert.match(body, /Acceptance required/);
 });

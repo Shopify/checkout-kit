@@ -1,8 +1,8 @@
 # Web browser tests
 
 Playwright loads the built npm and CDN distributions in Chromium and exercises
-the real custom element, popup, native module retries, and cross-origin `postMessage` exchange. A routed
-HTTPS checkout fixture supplies synthetic protocol messages; telemetry is disabled
+the real custom element, popup, native module retries, and cross-origin `postMessage` exchange. Routed
+HTTPS checkout fixtures supply synthetic protocol messages; telemetry is disabled
 and unexpected external requests are blocked and fail the test. No storefront,
 tokens, or `.env` values are needed to run the suite.
 
@@ -38,21 +38,38 @@ Failures retain traces and screenshots in `test-results/`; the HTML report is in
 The presentation specs cover component registration, checkout URL negotiation,
 invalid URLs, popup presentation, and host/overlay closing. The protocol specs
 cover the `ec.ready` handshake, public `start`/`update`/`complete` events and
-snapshots, window delegation, and terminal errors. They test the built SDK's
-browser integration; they do not place a real order or exercise checkout-web.
+snapshots, window delegation (including `mailto:`/`tel:` links and rejected schemes),
+and terminal errors. The Universal Checkout protocol
+spec checks that Kit answers every batched `ec.ready` request and covers per-shop
+`start`/`update`/`complete` entries, an ejected shop's `error` alongside a sibling's
+completion, and host-owned closing. The Universal Checkout presentation spec covers
+checkout URL negotiation and invalid URLs, retrying a blocked popup from the overlay,
+opening checkout with the default `auto` target, closing when the buyer closes the popup
+or presses Escape, and reopening checkout after the buyer closes it during Shop sign-in.
+All of these specs test the built SDK's browser integration; they do not place a real
+order or exercise checkout-web.
 The CDN retry spec returns one temporary HTTP 503 per requested module URL,
 including any shared dependency, and loads every component again on the same
 page. This catches dependency failures that remain cached even when a component
 entry is retried with a fresh query string.
 
 - `server.mjs` serves the host pages and built npm/CDN JavaScript.
-- `fixtures/` contains the host page and synthetic checkout.
-- `support/fixtures.ts` provides a host page object and installs the network guard.
+- `fixtures/` contains the host pages and synthetic checkouts.
+- `support/fixtures.ts` provides the host page objects and installs the network guard.
 - `support/checkout-host-page.ts` owns host controls and typed public event/state reads.
 - `support/shopify-checkout-popup.ts` drives the synthetic checkout's protocol actions.
-- `support/embedded-checkout-stub.ts` routes checkout requests to a blank popup or
-  the synthetic protocol fixture, selected with `test.use({ checkoutStub: "blank" })`.
+- `support/universal-checkout-host-page.ts` and `support/shopify-universal-checkout-popup.ts`
+  do the same for `<shopify-universal-checkout>`.
+- `support/embedded-checkout-stub.ts` routes checkout requests to a blank popup, the
+  synthetic protocol fixture, or the batched Universal Checkout fixture, selected with
+  `test.use({ checkoutStub: "blank" })` or `"universal"`.
 - `support/checkout-fixture.ts` contains synthetic URLs and expected public checkout data.
+- `support/universal-checkout-fixture.ts` contains the Universal Checkout URL, shops, and
+  expected public checkout data.
 - `tests/synthetic/presentation.spec.ts` uses blank popups to isolate presentation behavior.
 - `tests/synthetic/protocol.spec.ts` exercises cross-origin protocol exchanges and public events.
+- `tests/synthetic/universal-checkout-protocol.spec.ts` exercises the batched Universal Checkout
+  protocol and its public events.
+- `tests/synthetic/universal-checkout-presentation.spec.ts` covers how Universal Checkout
+  opens, retries, and closes checkout.
 - `tests/synthetic/cdn-retry.spec.ts` exercises transient module failures through the built CDN loader.

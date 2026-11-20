@@ -42,6 +42,21 @@ function runWithBrowser(script: string): unknown {
 }
 
 describe("built distributions", () => {
+  it("exports exactly the approved runtime entry points", () => {
+    const entries = ["shopify-checkout", "shopify-universal-checkout", "shop-pay"].map(
+      (name) => pathToFileURL(join(distDir, `${name}.js`)).href,
+    );
+    const result = runWithBrowser(`
+      const root = await import(${JSON.stringify(pathToFileURL(join(distDir, "index.js")).href)});
+      const registrations = await Promise.all(${JSON.stringify(entries)}.map((entry) => import(entry)));
+      return { root: Object.keys(root).sort(), registrations: registrations.map((entry) => Object.keys(entry)) };
+    `);
+    expect(result).toEqual({
+      root: ["ShopPay", "ShopifyCheckout", "ShopifyUniversalCheckout"],
+      registrations: [[], [], []],
+    });
+  });
+
   const fixtures: string[] = [];
 
   afterEach(async () => {
@@ -72,7 +87,8 @@ describe("built distributions", () => {
     // output or another CDN channel would fail.
     const loaderUrl = pathToFileURL(join(channelDir, "checkout-kit.js")).href;
     const result = runWithBrowser(`
-      const { loadComponents, version } = await import(${JSON.stringify(loaderUrl)});
+      const api = await import(${JSON.stringify(loaderUrl)});
+      const { loadComponents, version } = api;
       const name = ${JSON.stringify(component)};
       const registeredBefore = customElements.get(name) !== undefined;
       await loadComponents([name]);
@@ -80,13 +96,14 @@ describe("built distributions", () => {
       const open = typeof customElements.get(name)?.prototype.open;
       const siblings = ${JSON.stringify(cdnComponents)}.filter((sibling) => sibling !== name);
       const siblingRegistered = siblings.some((sibling) => customElements.get(sibling) !== undefined);
-      return { version, registeredBefore, open, siblingRegistered };
+      return { version, registeredBefore, open, siblingRegistered, exports: Object.keys(api).sort() };
     `);
     expect(result).toEqual({
       version: expect.stringMatching(/^\d+\.\d+\.\d+/),
       registeredBefore: false,
       open: "function",
       siblingRegistered: false,
+      exports: ["loadComponents", "supportedComponents", "version"],
     });
   });
 

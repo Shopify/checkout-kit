@@ -1,7 +1,7 @@
 {
   "name": "@shopify/checkout-kit-react-native",
   "description": "A React Native library for Shopify's Checkout Kit.",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/Shopify/checkout-kit.git",
@@ -86,7 +86,7 @@
     "@react-native/jest-preset": "0.88.0",
     "@react-native/metro-config": "0.88.0",
     "@react-native/typescript-config": "0.88.0",
-    "@shopify/checkout-kit-protocol": "workspace:*",
+    "@shopify/embedded-checkout-protocol": "workspace:*",
     "@testing-library/react-native": "^13.3.1",
     "@tsconfig/react-native": "^3.0.6",
     "@types/jest": "^29.5.13",
@@ -174,7 +174,7 @@
   },
   "dependencies": {},
   "bundledDependencies": [
-    "@shopify/checkout-kit-protocol"
+    "@shopify/embedded-checkout-protocol"
   ],
   "codegenConfig": {
     "name": "RNShopifyCheckoutKitSpec",

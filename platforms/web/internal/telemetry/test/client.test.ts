@@ -2,6 +2,39 @@ import {describe, expect, it, vi} from 'vitest';
 
 import {createCheckoutKitTelemetryForTesting} from '../src/client';
 
+interface ExportedPayload {
+  resourceMetrics: {
+    scopeMetrics: {
+      metrics: {
+        sum?: {dataPoints: {attributes: {key: string; value: {stringValue?: string}}[]}[]};
+      }[];
+    }[];
+  }[];
+}
+
+function deferredResponse() {
+  let resolve!: (response: {ok: boolean}) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<{ok: boolean}>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return {promise, resolve, reject};
+}
+
+function exportedRetryReasons(
+  fetch: ReturnType<typeof vi.fn>,
+  call: number,
+): (string | undefined)[] {
+  const init = fetch.mock.calls[call]![1] as RequestInit;
+  const payload = JSON.parse(init.body as string) as ExportedPayload;
+  return payload.resourceMetrics[0]!.scopeMetrics[0]!.metrics.flatMap((metric) =>
+    (metric.sum?.dataPoints ?? []).map(
+      (point) => point.attributes.find(({key}) => key === 'reason')?.value.stringValue,
+    ),
+  );
+}
+
 describe('CheckoutKitTelemetry', () => {
   it('aggregates matching counters into an OTLP delta sum', async () => {
     const fetch = vi.fn().mockResolvedValue({ok: true});
@@ -339,6 +372,187 @@ describe('CheckoutKitTelemetry', () => {
 
     resolveFirstFetch?.({ok: true});
     await expect(ordinaryFlush).resolves.toBe(true);
+  });
+
+  it.each([{}, {keepalive: true}])(
+    'shutdown(%o) sends pending measurements without waiting for an export in flight',
+    async (options) => {
+      const ordinaryExport = deferredResponse();
+      const fetch = vi
+        .fn()
+        .mockImplementationOnce(() => ordinaryExport.promise)
+        .mockResolvedValue({ok: true});
+      const telemetry = createCheckoutKitTelemetryForTesting({
+        sdkVersion: '1.2.3',
+        fetch,
+        now: () => BigInt(1),
+      });
+
+      telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+      const ordinaryFlush = telemetry.flush();
+      telemetry.recordNavigationRetry({reason: 'dns', result: 'failed'});
+      const shutdown = telemetry.shutdown(options);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch.mock.calls[1]![1].keepalive).toBe(options.keepalive ?? false);
+      expect(exportedRetryReasons(fetch, 1)).toEqual(['dns']);
+      let completed = false;
+      void shutdown.then(() => (completed = true));
+      await Promise.resolve();
+      expect(completed).toBe(false);
+
+      ordinaryExport.resolve({ok: true});
+      await expect(ordinaryFlush).resolves.toBe(true);
+      await expect(shutdown).resolves.toBe(true);
+      expect(fetch).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('does not restore or resend an export that fails after shutdown', async () => {
+    const ordinaryExport = deferredResponse();
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(() => ordinaryExport.promise)
+      .mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+    const ordinaryFlush = telemetry.flush();
+    telemetry.recordNavigationRetry({reason: 'dns', result: 'failed'});
+    const shutdown = telemetry.shutdown({keepalive: true});
+    ordinaryExport.reject(new Error('network unavailable'));
+
+    await expect(ordinaryFlush).resolves.toBe(false);
+    await expect(shutdown).resolves.toBe(false);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    await expect(telemetry.shutdown({keepalive: true})).resolves.toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(exportedRetryReasons(fetch, 0)).toEqual(['timeout']);
+    expect(exportedRetryReasons(fetch, 1)).toEqual(['dns']);
+  });
+
+  it('backs off ordinary flushes after a keepalive export fails', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    const fetch = vi.fn().mockResolvedValueOnce({ok: false}).mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      exportIntervalMs: 1_000,
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    await expect(telemetry.flush()).resolves.toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(2_000);
+    await expect(telemetry.flush()).resolves.toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(exportedRetryReasons(fetch, 1)).toEqual(['timeout']);
+    vi.useRealTimers();
+  });
+
+  it('lets one keepalive flush skip the backoff until the backoff ends', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ok: false})
+      .mockResolvedValueOnce({ok: false})
+      .mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      exportIntervalMs: 1_000,
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+    await expect(telemetry.flush()).resolves.toBe(false);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    telemetry.recordNavigationRetry({reason: 'dns', result: 'failed'});
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[1]![1].keepalive).toBe(true);
+
+    // The failed keepalive export extended the backoff to 2 intervals.
+    vi.setSystemTime(2_999);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.setSystemTime(3_000);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(exportedRetryReasons(fetch, 2)).toEqual(['timeout', 'dns']);
+    vi.useRealTimers();
+  });
+
+  it('lets one keepalive flush skip the backoff while an ordinary export is in flight', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    const ordinaryExport = deferredResponse();
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(() => ordinaryExport.promise)
+      .mockResolvedValue({ok: false});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      exportIntervalMs: 1_000,
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+    const ordinaryFlush = telemetry.flush();
+    telemetry.recordNavigationRetry({reason: 'dns', result: 'failed'});
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(exportedRetryReasons(fetch, 2)).toEqual(['dns']);
+    ordinaryExport.resolve({ok: true});
+    await expect(ordinaryFlush).resolves.toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('lets a keepalive flush skip a backoff that starts after an export succeeds', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    const ordinaryExport = deferredResponse();
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(() => ordinaryExport.promise)
+      .mockResolvedValueOnce({ok: false})
+      .mockResolvedValue({ok: true});
+    const telemetry = createCheckoutKitTelemetryForTesting({
+      sdkVersion: '1.2.3',
+      exportIntervalMs: 1_000,
+      fetch,
+      now: () => BigInt(1),
+    });
+
+    telemetry.recordNavigationRetry({reason: 'timeout', result: 'started'});
+    const ordinaryFlush = telemetry.flush();
+    telemetry.recordNavigationRetry({reason: 'dns', result: 'failed'});
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(false);
+    // This keepalive flush skips the backoff, and its export ends the backoff.
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(true);
+    ordinaryExport.resolve({ok: false});
+    await expect(ordinaryFlush).resolves.toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(3);
+
+    // The failed ordinary export starts a new backoff, and nothing skipped it yet.
+    await expect(telemetry.flush({keepalive: true})).resolves.toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(exportedRetryReasons(fetch, 3)).toEqual(['timeout']);
+    vi.useRealTimers();
   });
 
   it('records finite non-negative navigation durations only', async () => {

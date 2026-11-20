@@ -3,6 +3,7 @@ import {deepStrictEqual} from 'node:assert';
 import fc from 'fast-check';
 import {describe, expect, test} from 'vitest';
 
+import {decodeCheckoutSnapshot} from '../src';
 import {Convert} from '../src/generated/Models';
 import {SPEC_VERSION} from '../src/generated/ProtocolNotifications';
 import {
@@ -84,6 +85,105 @@ describe('codec runtime properties', () => {
       expect(Object.getPrototypeOf(decoded.ucp.paymentHandlers)).toBe(Object.prototype);
       // Node compares own `constructor` keys as data. Vitest's strict matcher
       // also treats them as type information, which misidentifies JSON objects.
+      deepStrictEqual(encodeProtocolObject(decoded, 'Checkout'), wire);
+      deepStrictEqual(wire, before);
+    }), propertyOptions());
+  });
+
+  test('normalizes legacy fulfillment descriptions without changing structured descriptions or the input', () => {
+    fc.assert(fc.property(checkout, text, extensions, (base, description, extra) => {
+      const option = {
+        ...extra,
+        id: 'option-1',
+        title: 'Delivery',
+        earliest_fulfillment_time: '2026-09-25T12:00:00Z',
+        totals: [],
+      };
+      const withOption = (value: Record<string, unknown>) => ({
+        ...base,
+        fulfillment: {
+          methods: [{
+            id: 'method-1',
+            type: 'shipping',
+            line_item_ids: [],
+            groups: [{id: 'group-1', options: [value]}],
+          }],
+        },
+      });
+      const legacy = withOption({...option, description});
+      const canonical = withOption({...option, description: {plain: description}});
+      const before = structuredClone(legacy);
+      const decoded = decodeProtocolObject(legacy, 'Checkout');
+
+      // Assert the output independently: a paired decoder/encoder error must
+      // not disappear behind a round-trip assertion.
+      expect(decoded.fulfillment).toMatchObject({
+        methods: [{groups: [{options: [{
+          description: {plain: description},
+          earliestFulfillmentTime: option.earliest_fulfillment_time,
+        }]}]}],
+      });
+      deepStrictEqual(decoded, decodeProtocolObject(canonical, 'Checkout'));
+      deepStrictEqual(encodeProtocolObject(decoded, 'Checkout'), canonical);
+      deepStrictEqual(legacy, before);
+    }), propertyOptions());
+  });
+
+  test('preserves fulfillment options with absent and structured descriptions', () => {
+    fc.assert(fc.property(text, extensions, (description, extra) => {
+      for (const option of [
+        {id: 'option-1', title: 'Delivery', ...extra},
+        {id: 'option-1', title: 'Delivery', ...extra, description: {plain: description}},
+      ]) {
+        const before = structuredClone(option);
+        const decoded = decodeProtocolObject(option, 'FulfillmentOption');
+
+        deepStrictEqual(decoded, option);
+        deepStrictEqual(encodeProtocolObject(decoded, 'FulfillmentOption'), option);
+        deepStrictEqual(option, before);
+      }
+    }), propertyOptions());
+  });
+
+  test('rejects each missing required snapshot field independently', () => {
+    fc.assert(fc.property(
+      checkout,
+      fc.constantFrom('id', 'currency', 'status', 'line_items', 'links', 'totals'),
+      fc.boolean(),
+      (wire, field, explicitlyUndefined) => {
+        const malformed: Record<string, unknown> = {...wire};
+        if (explicitlyUndefined) malformed[field] = undefined;
+        else delete malformed[field];
+
+        expect(() => decodeCheckoutSnapshot(malformed)).toThrowError(
+          expect.objectContaining({
+            name: 'ProtocolValidationError',
+            modelPath: `Checkout.${field}`,
+            reason: 'missing_required',
+          }),
+        );
+      },
+    ), propertyOptions());
+  });
+
+  test('preserves item descriptions and opaque extensions during checkout decoding and encoding', () => {
+    fc.assert(fc.property(checkout, text, (base, description) => {
+      const wire = {
+        ...base,
+        line_items: [{
+          id: 'line-1', quantity: 1, totals: [],
+          item: {id: 'item-1', title: 'Example item', price: 100, description},
+        }],
+        'com.example.extension': {description},
+      };
+      const before = structuredClone(wire);
+      const decoded = decodeProtocolObject(wire, 'Checkout');
+
+      expect(decoded.lineItems).toEqual([{
+        id: 'line-1', quantity: 1, totals: [],
+        item: {id: 'item-1', title: 'Example item', price: 100, description},
+      }]);
+      expect(decoded['com.example.extension']).toEqual({description});
       deepStrictEqual(encodeProtocolObject(decoded, 'Checkout'), wire);
       deepStrictEqual(wire, before);
     }), propertyOptions());

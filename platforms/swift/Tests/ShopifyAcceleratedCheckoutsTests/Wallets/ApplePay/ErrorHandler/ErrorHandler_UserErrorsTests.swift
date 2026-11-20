@@ -276,11 +276,15 @@ class ErrorHandler_UserErrorsTest: XCTestCase {
 
             case let (.showError(.nameInvalid), .showError(errors)):
                 XCTAssertEqual(errors.count, 1, "Test failed: \(testCase.testDescription)")
-                XCTAssertNotNil(errors.first, "Test failed: \(testCase.testDescription)")
+                let nsError = errors.first as? NSError
+                XCTAssertEqual(nsError?.userInfo[PKPaymentErrorKey.contactFieldUserInfoKey.rawValue] as? PKContactField, .name, "Test failed: \(testCase.testDescription)")
+                XCTAssertEqual(nsError?.localizedDescription, testCase.expectedMessageKey?.localizedString, "Test failed: \(testCase.testDescription)")
 
             case let (.showError(.deliveryAddressInvalid), .showError(errors)):
                 XCTAssertEqual(errors.count, 1, "Test failed: \(testCase.testDescription)")
-                XCTAssertNotNil(errors.first, "Test failed: \(testCase.testDescription)")
+                let nsError = errors.first as? NSError
+                XCTAssertEqual(nsError?.userInfo[PKPaymentErrorKey.postalAddressUserInfoKey.rawValue] as? String, testCase.expectedField, "Test failed: \(testCase.testDescription)")
+                XCTAssertEqual(nsError?.localizedDescription, testCase.expectedMessageKey?.localizedString, "Test failed: \(testCase.testDescription)")
 
             case let (.showError(.addressUnserviceableError), .showError(errors)):
                 XCTAssertEqual(errors.count, 1, "Test failed: \(testCase.testDescription)")

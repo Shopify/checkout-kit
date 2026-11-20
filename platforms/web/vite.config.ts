@@ -10,84 +10,94 @@ import packageJson from './package.json' with {type: 'json'};
 const root = fileURLToPath(new URL('.', import.meta.url));
 const fromRoot = (...parts: string[]) => resolve(root, ...parts);
 
-export default defineConfig({
-  // Generated declarations must not go through the JS transform.
-  oxc: {exclude: [/\.js$/, /\.d\.[cm]?ts$/]},
-  define: {
-    CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
-  },
-  plugins: [
-    // Bundles declarations with Rolldown. Unlike API Extractor it keeps
-    // `declare global` augmentations (microsoft/rushstack#1709), so each
-    // component's HTMLElementTagNameMap entry ships as written in its types
-    // module. Default options; `apply: 'build'` because Vitest shares this
-    // config and the plugin needs Rolldown build input.
-    ...dts().map((plugin) => ({...plugin, apply: 'build' as const})),
-  ],
-  build: {
-    target: browserslistToEsbuild(),
-    sourcemap: true,
-    minify: true,
-    emptyOutDir: true,
-    outDir: fromRoot('dist'),
-    lib: {
-      entry: {
-        index: fromRoot('src/index.ts'),
-        'shopify-checkout': fromRoot('src/shopify-checkout.ts'),
-        'shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
-        'shop-pay': fromRoot('src/shop-pay.ts'),
-      },
-      formats: ['es'],
-      fileName: (_, entryName) => `${entryName}.js`,
+export default defineConfig(({mode}) => ({
+    // Generated declarations must not go through the JS transform.
+    oxc: {exclude: [/\.js$/, /\.d\.[cm]?ts$/]},
+    define: {
+      CHECKOUT_KIT_PACKAGE_VERSION: JSON.stringify(packageJson.version),
+      // `pnpm dev` (`--mode watch`) is an internal build: it logs telemetry to the console, or
+      // reports when the person who starts it sets VITE_CK_TELEMETRY=production. Release builds
+      // define nothing here.
+      ...(mode === 'watch'
+        ? {
+            'import.meta.env.VITE_CK_TELEMETRY': JSON.stringify(
+              process.env.VITE_CK_TELEMETRY === 'production' ? 'production' : 'console',
+            ),
+          }
+        : {}),
     },
-    rollupOptions: {
-      // Zero runtime dependencies — bundle the npm entries and their dependencies.
-      external: [],
-      output: {
-        chunkFileNames: 'chunks/[name].js',
-        minify: {
-          compress: true,
-          mangle: true,
-          codegen: true,
-        },
-      },
-    },
-  },
-  test: {
-    alias: {
-      '@shopify/checkout-kit/shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
-      '@shopify/checkout-kit/shop-pay': fromRoot('src/shop-pay.ts'),
-    },
-    environment: 'happy-dom',
-    environmentOptions: {
-      happyDOM: {
-        // Prevent checkout URLs from being fetched in unit tests.
-        settings: {
-          disableIframePageLoading: true,
-          disableErrorCapturing: true,
-        },
-      },
-    },
-    globals: true,
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.ts', 'components/*/src/**/*.test.ts', 'internal/**/src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
-    // Package tests run against the build via pnpm verify.
-    exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
-    projects: [
-      {extends: true, test: {name: 'web'}},
-      './internal/telemetry/vitest.config.ts',
+    plugins: [
+      // Bundles declarations with Rolldown. Unlike API Extractor it keeps
+      // `declare global` augmentations (microsoft/rushstack#1709), so each
+      // component's HTMLElementTagNameMap entry ships as written in its types
+      // module. Default options; `apply: 'build'` because Vitest shares this
+      // config and the plugin needs Rolldown build input.
+      ...dts().map((plugin) => ({...plugin, apply: 'build' as const})),
     ],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json-summary', 'html', 'lcov'],
-      include: ['src/**/*.ts', 'components/*/src/**/*.ts', 'internal/**/src/**/*.ts'],
-      exclude: ['sample/**', '**/*.test.ts', '**/*.test-helpers.ts', '**/*.d.ts'],
-      thresholds: {
-        statements: 85,
-        branches: 85,
-        functions: 85,
-        lines: 85,
+    build: {
+      target: browserslistToEsbuild(),
+      sourcemap: true,
+      minify: true,
+      emptyOutDir: true,
+      outDir: fromRoot('dist'),
+      lib: {
+        entry: {
+          index: fromRoot('src/index.ts'),
+          'shopify-checkout': fromRoot('src/shopify-checkout.ts'),
+          'shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
+          'shop-pay': fromRoot('src/shop-pay.ts'),
+        },
+        formats: ['es'],
+        fileName: (_, entryName) => `${entryName}.js`,
+      },
+      rollupOptions: {
+        // Zero runtime dependencies — bundle the npm entries and their dependencies.
+        external: [],
+        output: {
+          chunkFileNames: 'chunks/[name].js',
+          minify: {
+            compress: true,
+            mangle: true,
+            codegen: true,
+          },
+        },
       },
     },
-  },
-});
+    test: {
+      alias: {
+        '@shopify/checkout-kit/shopify-universal-checkout': fromRoot('src/shopify-universal-checkout.ts'),
+        '@shopify/checkout-kit/shop-pay': fromRoot('src/shop-pay.ts'),
+      },
+      environment: 'happy-dom',
+      environmentOptions: {
+        happyDOM: {
+          // Prevent checkout URLs from being fetched in unit tests.
+          settings: {
+            disableIframePageLoading: true,
+            disableErrorCapturing: true,
+          },
+        },
+      },
+      globals: true,
+      setupFiles: ['./vitest.setup.ts'],
+      include: ['src/**/*.test.ts', 'components/*/src/**/*.test.ts', 'internal/**/src/**/*.test.ts', 'sample/**/*.test.ts', 'scripts/**/*.test.ts'],
+      // Package tests run against the build via pnpm verify.
+      exclude: ['**/node_modules/**', 'scripts/*package.test.ts'],
+      projects: [
+        {extends: true, test: {name: 'web'}},
+        './internal/telemetry/vitest.config.ts',
+      ],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json-summary', 'html', 'lcov'],
+        include: ['src/**/*.ts', 'components/*/src/**/*.ts', 'internal/**/src/**/*.ts'],
+        exclude: ['sample/**', '**/*.test.ts', '**/*.test-helpers.ts', '**/*.d.ts'],
+        thresholds: {
+          statements: 85,
+          branches: 85,
+          functions: 85,
+          lines: 85,
+        },
+      },
+    },
+}));

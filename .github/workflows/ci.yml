@@ -62,6 +62,7 @@ jobs:
               - '.github/workflows/ci.yml'
             swift:
               - 'Package.swift'
+              - 'scripts/check-swift-dependencies.mjs'
               - 'Package.resolved'
               - '.github/workflows/swift-lint.yml'
               - '.github/workflows/breaking-changes.yml'
@@ -113,11 +114,14 @@ jobs:
               - '.ci/changed-file-filters.yml'
               - '.github/workflows/ci.yml'
             scripts:
+              - '.github/scripts/web-api-report*'
+              - '.github/workflows/web-api-report.yml'
               - '.github/scripts/*coverage*'
               - '.github/workflows/coverage-report.yml'
               - '.github/actions/report-coverage/**'
               - 'scripts/report_coverage'
               - 'scripts/check-sdk-packages*'
+              - 'scripts/check-swift-dependencies*'
               - 'scripts/release/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -130,7 +134,6 @@ jobs:
               - '.github/workflows/bundle-size-budgets.yml'
               - '.ci/bundle-size-budgets.json'
               - 'platforms/swift/Scripts/api'
-              - 'platforms/swift/Scripts/normalize-api.jq'
               - 'scripts/lib/**'
               - 'scripts/test_ruby'
               - 'scripts/test/**'
@@ -224,8 +227,8 @@ jobs:
       - uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
         with:
           ruby-version: .ruby-version
-      - run: node --test .github/scripts/*bundle-size*.test.cjs .github/scripts/*coverage*.test.cjs
-      - run: node --test scripts/check-sdk-packages.test.mjs
+      - run: node --test .github/scripts/*bundle-size*.test.cjs .github/scripts/*coverage*.test.cjs .github/scripts/web-api-report.test.cjs
+      - run: node --test scripts/check-sdk-packages.test.mjs scripts/check-swift-dependencies.test.mjs
       - run: node --test scripts/release/release.test.mjs
       - run: node scripts/check-sdk-packages.mjs
       - run: ./scripts/test_ruby

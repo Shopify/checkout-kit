@@ -13,19 +13,22 @@
         {
           "platform": "ios",
           "destination": "device",
-          "workflow": "e2e-build-react-native-ios",
+          "default_branch_workflow": "e2e-build-react-native-ios",
+          "pull_request_workflow": "e2e-maestro-react-native-ios",
           "artifact_name": "CheckoutKitReactNativeDemo-Provisioned.ipa"
         },
         {
           "platform": "ios",
           "destination": "simulator",
-          "workflow": "e2e-build-react-native-ios",
+          "default_branch_workflow": "e2e-build-react-native-ios",
+          "pull_request_workflow": "e2e-maestro-react-native-ios",
           "artifact_name": "CheckoutKitReactNativeDemo-Simulator.zip"
         },
         {
           "platform": "android",
           "destination": "any",
-          "workflow": "e2e-build-react-native-android",
+          "default_branch_workflow": "e2e-build-react-native-android",
+          "pull_request_workflow": "e2e-maestro-react-native-android",
           "artifact_name": "app-e2e.apk"
         }
       ]
@@ -40,13 +43,15 @@
         {
           "platform": "ios",
           "destination": "device",
-          "workflow": "e2e-build-swift-ios",
+          "default_branch_workflow": "e2e-build-swift-ios",
+          "pull_request_workflow": "e2e-maestro-swift-ios",
           "artifact_name": "CheckoutKitSwiftDemo-Provisioned.ipa"
         },
         {
           "platform": "ios",
           "destination": "simulator",
-          "workflow": "e2e-build-swift-ios",
+          "default_branch_workflow": "e2e-build-swift-ios",
+          "pull_request_workflow": "e2e-maestro-swift-ios",
           "artifact_name": "CheckoutKitSwiftDemo-Simulator.zip"
         }
       ]
@@ -61,7 +66,8 @@
         {
           "platform": "android",
           "destination": "any",
-          "workflow": "e2e-build-kotlin-android",
+          "default_branch_workflow": "e2e-build-kotlin-android",
+          "pull_request_workflow": "e2e-maestro-kotlin-android",
           "artifact_name": "app-debug.apk"
         }
       ]

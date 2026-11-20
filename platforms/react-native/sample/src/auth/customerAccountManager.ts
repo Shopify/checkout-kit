@@ -70,7 +70,7 @@ export class CustomerAccountManager {
     return `${CustomerAccountManager.authorizationEndpoint}?${params.toString()}`;
   }
 
-  async handleAuthCallback(code: string, state: string): Promise<void> {
+  async handleAuthCallback(code: string, state: string) {
     this.store.set(this.isLoadingAtom, true);
     try {
       const tokens = await this.exchangeCodeForTokens(code, state);
@@ -109,7 +109,7 @@ export class CustomerAccountManager {
     return tokens.accessToken;
   }
 
-  async logout(): Promise<void> {
+  async logout() {
     const tokens = await tokenStorage.getTokens();
     await tokenStorage.clearTokens();
 
@@ -278,7 +278,7 @@ export class CustomerAccountManager {
     return tokens;
   }
 
-  private async restoreSession(): Promise<void> {
+  private async restoreSession() {
     try {
       const tokens = await tokenStorage.getTokens();
       const email = await tokenStorage.getEmail();

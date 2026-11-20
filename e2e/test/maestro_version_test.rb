@@ -5,14 +5,7 @@ require "minitest/autorun"
 class MaestroVersionTest < Minitest::Test
   E2E_ROOT = File.expand_path("..", __dir__)
   VERSION_FILE = File.join(E2E_ROOT, ".maestro-version")
-
-  # One file holds the version, so the local CLI and the BrowserStack run cannot drift apart.
-  # They did drift: a local 1.x passed every iOS test against a simulator while CI failed
-  # every one of them against a real device.
-  #
-  # BrowserStack builds the suite with its own Maestro, and it offers these versions only.
-  # Maestro itself ships far newer releases, so BrowserStack sets the ceiling on the pin.
-  # https://www.browserstack.com/docs/app-automate/maestro/set-up-test-env/configure-tests/set-maestro-version
+  BROWSERSTACK_VERSION_FILE = File.join(E2E_ROOT, ".browserstack-maestro-version")
   BROWSERSTACK_VERSIONS = ["1.39.13", "2.0.7", "2.4.0"].freeze
 
   # Maestro added iOS openLink in 2.0.7. Every earlier release runs it through
@@ -32,20 +25,22 @@ class MaestroVersionTest < Minitest::Test
     )
   end
 
-  def test_browserstack_offers_the_pinned_version
+  def test_browserstack_offers_its_pinned_version
     assert_includes(
       BROWSERSTACK_VERSIONS,
-      pinned_version,
-      "BrowserStack rejects every other version, so CI would not run this pin"
+      File.read(BROWSERSTACK_VERSION_FILE).strip,
+      "The optional BrowserStack pipeline must use a supported Maestro version"
     )
   end
 
-  def test_the_pinned_version_carries_ios_open_link
-    assert_operator(
-      Gem::Version.new(pinned_version),
-      :>=,
-      Gem::Version.new(IOS_OPEN_LINK_VERSION),
-      "iOS tests that open the control link fail on a real device below #{IOS_OPEN_LINK_VERSION}"
-    )
+  def test_the_pinned_versions_carry_ios_open_link
+    [VERSION_FILE, BROWSERSTACK_VERSION_FILE].each do |version_file|
+      assert_operator(
+        Gem::Version.new(File.read(version_file).strip),
+        :>=,
+        Gem::Version.new(IOS_OPEN_LINK_VERSION),
+        "#{version_file} must support iOS openLink from #{IOS_OPEN_LINK_VERSION}"
+      )
+    end
   end
 end

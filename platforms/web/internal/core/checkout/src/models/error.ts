@@ -1,4 +1,4 @@
-import type { ErrorResponse } from "@shopify/checkout-kit-protocol";
+import type { ErrorResponse } from "@shopify/embedded-checkout-protocol";
 
 /** Stable checkout error reasons applications can use to choose recovery. */
 export type CheckoutErrorCode =

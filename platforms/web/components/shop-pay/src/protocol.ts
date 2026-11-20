@@ -8,7 +8,7 @@ import {
   type ErrorResponse,
   type JSONRPCID,
   type WindowOpenRequest,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import type {
   ShopPayContext,
@@ -116,12 +116,6 @@ const CHECKOUT_STATUSES = new Set([
   "completed",
   "canceled",
 ]);
-
-/** Universal Checkout continuation URLs have a `/checkouts/uc/` path. */
-export function isUniversalCheckoutUrl(url: URL): boolean {
-  const segments = url.pathname.split("/");
-  return segments.some((segment, index) => segment === "checkouts" && segments[index + 1] === "uc");
-}
 
 /**
  * Parse a structured-clone JSON-RPC batch one member at a time. A bad member

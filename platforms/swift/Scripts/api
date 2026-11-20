@@ -1,12 +1,12 @@
 #!/bin/bash
 set -eo pipefail
 
-# Validate the public Swift API surface against committed baselines.
+# Validate the public Swift API surface against committed .swiftinterface baselines.
 #
 # Usage:
 #   ./Scripts/api check             # diff committed baselines vs current sources (CI gate)
 #   ./Scripts/api dump              # regenerate committed baselines from current sources
-#   ./Scripts/api diagnose [<ref>]  # summarize baseline changes since <ref> (default origin/main)
+#   ./Scripts/api diagnose [<ref>]  # diff baselines since <ref> without building (default origin/main)
 
 SUBCOMMAND="${1:-}"
 if [[ "$SUBCOMMAND" != "check" && "$SUBCOMMAND" != "dump" && "$SUBCOMMAND" != "diagnose" ]]; then
@@ -19,17 +19,22 @@ SWIFT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PACKAGE_ROOT="$(cd "$SWIFT_ROOT/../.." && pwd)"
 BASELINE_DIR="$SWIFT_ROOT/api"
 MODULES=(EmbeddedCheckoutProtocol ShopifyCheckoutKit ShopifyAcceleratedCheckouts)
-TARGET="arm64-apple-ios15.0-simulator"
 
 if [[ ! -f "$PACKAGE_ROOT/Package.swift" ]]; then
     echo "Error: Package.swift not found at $PACKAGE_ROOT" >&2
     exit 1
 fi
 
-DERIVED_DATA="$(mktemp -d)"
-trap 'rm -rf "$DERIVED_DATA"' EXIT
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
+DERIVED_DATA="$WORK_DIR/DerivedData"
 
-build_for_digester() {
+# This build only produces API snapshots; distributed artifacts keep their normal
+# settings. Pin the architecture so local and CI interfaces describe the same API.
+# Interface verification is disabled because EmbeddedCheckoutProtocol's public enum
+# shadows its module (swiftlang/swift#56573). Library evolution also warns about this,
+# so warnings are not errors in this build. Normal builds still enforce them.
+build_interfaces() {
     local cmd=(
         xcodebuild
         -scheme ShopifyCheckoutKit-Package
@@ -39,7 +44,10 @@ build_for_digester() {
         -skipPackagePluginValidation
         -disableAutomaticPackageResolution
         build
-        SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+        ARCHS=arm64
+        BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+        SWIFT_TREAT_WARNINGS_AS_ERRORS=NO
+        'OTHER_SWIFT_FLAGS=$(inherited) -no-verify-emitted-module-interface'
     )
 
     local xcbeautify_args=""
@@ -58,144 +66,88 @@ build_for_digester() {
 dump_module() {
     local module="$1"
     local out_path="$2"
-    local products_dir="$DERIVED_DATA/Build/Products/Debug-iphonesimulator"
+    # Use the installed public interface, never .private or .package variants or
+    # intermediate copies. The build always starts with fresh DerivedData.
+    local interface="$DERIVED_DATA/Build/Products/Debug-iphonesimulator/$module.swiftmodule/arm64-apple-ios-simulator.swiftinterface"
+    if [[ ! -s "$interface" ]]; then
+        echo "Error: no public .swiftinterface emitted for $module at $interface" >&2
+        return 1
+    fi
 
-    xcrun swift-api-digester \
-        -dump-sdk \
-        -module "$module" \
-        -I "$products_dir" \
-        -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
-        -target "$TARGET" \
-        -abort-on-module-fail \
-        -avoid-location \
-        -avoid-tool-args \
-        -o "$DERIVED_DATA/$module.raw.json"
-
-    normalize_module "$DERIVED_DATA/$module.raw.json" "$out_path"
+    # Keep the format version and every declaration (including attributes,
+    # conditional compilation and @inlinable bodies). Only build metadata is noise.
+    sed -E '/^\/\/ swift-compiler-version:/d; /^\/\/ swift-module-flags(-ignorable)?:/d' "$interface" > "$out_path"
 }
 
-normalize_module() {
-    # dump and check use the same canonical representation, including nested types.
-    jq -f "$SCRIPT_DIR/normalize-api.jq" "$1" > "$2"
+# A diff exit status of 1 means API drift; higher statuses are operational errors.
+diff_interfaces() {
+    local baseline="$1" current="$2" old_label="$3" new_label="$4"
+    local status=0
+    diff -u --label "$old_label" --label "$new_label" "$baseline" "$current" || status=$?
+    if (( status > 1 )); then
+        echo "Error: could not compare $old_label and $new_label" >&2
+        exit "$status"
+    fi
+    return "$status"
 }
 
-diagnose_module() {
-    local module="$1"
-    local baseline_path="$2"
-    local new_path="$3"
-    local products_dir="$DERIVED_DATA/Build/Products/Debug-iphonesimulator"
-
-    xcrun swift-api-digester \
-        -diagnose-sdk \
-        -module "$module" \
-        -baseline-path "$baseline_path" \
-        -input-paths "$new_path" \
-        -I "$products_dir" \
-        -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
-        -target "$TARGET" \
-        2>&1 || true
-}
-
-# Compares committed baselines with those at <ref>, without building. swift-api-digester reads
-# both dumps and reports declarations that were removed, moved, renamed or changed type; an empty
-# report means the baselines only gained declarations.
 diagnose_baselines() {
     local ref="$1"
-    local workdir
-    workdir="$(mktemp -d)"
-    local status=0
-
+    git -C "$SWIFT_ROOT" rev-parse --verify "$ref^{commit}" > /dev/null
     for module in "${MODULES[@]}"; do
-        local relative="api/$module.json"
-        local previous="$workdir/$module.previous.json"
-        local report="$workdir/$module.report.txt"
-
-        if ! git -C "$SWIFT_ROOT" show "$ref:./$relative" > "$previous" 2>/dev/null; then
-            echo "$module: no baseline at $ref"
+        local filename="$module.swiftinterface"
+        local previous="$WORK_DIR/$filename"
+        if ! git -C "$SWIFT_ROOT" show "$ref:./api/$filename" > "$previous" 2>/dev/null; then
+            echo "$module: no .swiftinterface baseline at $ref"
             continue
         fi
-        if cmp -s "$previous" "$BASELINE_DIR/$module.json"; then
+        if diff_interfaces "$previous" "$BASELINE_DIR/$filename" "$ref/$filename" "approved/$filename"; then
             echo "$module: unchanged since $ref"
-            continue
         fi
-
-        xcrun swift-api-digester -diagnose-sdk \
-            -input-paths "$previous" \
-            -input-paths "$BASELINE_DIR/$module.json" \
-            -o "$report" > /dev/null 2>&1 || status=1
-
-        # Keep only the report sections that have entries.
-        local findings
-        findings="$(awk '/^\/\*/ { section = $0; next } NF { if (section != printed) { print section; printed = section } print "  " $0 }' "$report")"
-        if [[ -z "$findings" ]]; then
-            echo "$module: additions only since $ref"
-        else
-            echo "$module: changes since $ref"
-            echo "$findings"
-        fi
-        echo ""
     done
-
-    rm -rf "$workdir"
-    return "$status"
 }
 
 if [[ "$SUBCOMMAND" == "diagnose" ]]; then
     diagnose_baselines "${2:-origin/main}"
-    exit $?
+    exit 0
 fi
 
-echo "Building $PACKAGE_ROOT to produce .swiftmodule files for swift-api-digester..."
-build_for_digester
+echo "Building public Swift interfaces..."
+build_interfaces
+
+# Extract all modules before updating any approved baseline.
+for module in "${MODULES[@]}"; do
+    dump_module "$module" "$WORK_DIR/$module.swiftinterface"
+done
 
 case "$SUBCOMMAND" in
     dump)
         mkdir -p "$BASELINE_DIR"
         for module in "${MODULES[@]}"; do
-            local_out="$BASELINE_DIR/$module.json"
-            echo "Dumping $module → $local_out"
-            dump_module "$module" "$local_out"
+            cp "$WORK_DIR/$module.swiftinterface" "$BASELINE_DIR/$module.swiftinterface"
+            echo "Updated api/$module.swiftinterface"
         done
-        echo "Baselines regenerated under $BASELINE_DIR"
         ;;
 
     check)
-        TMP_OUT="$(mktemp -d)"
-        trap 'rm -rf "$DERIVED_DATA" "$TMP_OUT"' EXIT
-
         failed_modules=()
         for module in "${MODULES[@]}"; do
-            committed="$BASELINE_DIR/$module.json"
-            current="$TMP_OUT/$module.json"
-
+            filename="$module.swiftinterface"
+            committed="$BASELINE_DIR/$filename"
+            current="$WORK_DIR/$filename"
             if [[ ! -f "$committed" ]]; then
                 echo "Error: missing committed baseline at $committed" >&2
-                echo "Run \`dev swift api dump\` to generate it." >&2
                 failed_modules+=("$module")
-                continue
-            fi
-
-            dump_module "$module" "$current"
-
-            normalized_committed="$TMP_OUT/$module.committed.normalized.json"
-            normalize_module "$committed" "$normalized_committed"
-
-            if ! diff -u "$normalized_committed" "$current"; then
+            elif ! diff_interfaces "$committed" "$current" "approved/$filename" "proposed/$filename"; then
                 failed_modules+=("$module")
-                echo ""
-                echo "── swift-api-digester -diagnose-sdk ($module) ──"
-                diagnose_module "$module" "$committed" "$current"
-                echo "────────────────────────────────────────────────"
             fi
         done
 
         if (( ${#failed_modules[@]} > 0 )); then
-            echo ""
             echo "Public Swift API drift detected in: ${failed_modules[*]}" >&2
-            echo "Run \`dev swift api dump\` to update the baseline if this change is intentional." >&2
+            echo 'Run `dev swift api dump` to update the baseline if this change is intentional.' >&2
             exit 1
         fi
-
         echo "Public Swift API matches committed baselines for: ${MODULES[*]}"
         ;;
 esac

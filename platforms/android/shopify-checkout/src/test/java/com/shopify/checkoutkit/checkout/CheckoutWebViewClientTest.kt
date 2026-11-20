@@ -152,6 +152,21 @@ class CheckoutWebViewClientTest {
     }
 
     @Test
+    fun `blocks deep and contact links without asking the listener while checkout is not presented`() {
+        listOf("myapp://path", "mailto:buyer@example.com", "tel:0123456789").forEach { link ->
+            val uri = Uri.parse(link)
+            registerResolverFor(uri)
+            val view = viewWithProcessor(activity, presented = false)
+
+            val overridden = view.CheckoutWebViewClient().shouldOverrideUrlLoading(view, mockWebRequest(uri))
+
+            assertThat(overridden).describedAs(link).isTrue
+            assertThat(shadowOf(activity).nextStartedActivity).describedAs(link).isNull()
+        }
+        verify(mockListener, never()).onCheckoutLinkClicked(any())
+    }
+
+    @Test
     fun `overrides url loading for unresolvable deep link but launches no intent`() {
         val mockRequest = mockWebRequest(Uri.parse("myapp://path"))
 
@@ -573,9 +588,12 @@ class CheckoutWebViewClientTest {
     private fun viewWithProcessor(
         activity: ComponentActivity,
         listener: CheckoutWebViewListener = checkoutWebViewListener,
+        presented: Boolean = true,
     ): CheckoutWebView {
         val view = CheckoutWebView(activity, webMessageTransport)
         view.setListener(listener)
+        // Model a presented checkout, the only state in which links leave the WebView.
+        if (presented) view.markPresented()
         return view
     }
 

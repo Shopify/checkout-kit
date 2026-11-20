@@ -6,12 +6,23 @@ require_relative "e2e_github_reporter"
 # A selected workflow must finish successfully, including its JUnit export.
 # Missing selection metadata or a skipped selected workflow must never pass.
 class BitriseE2EReporter < E2EGitHubReporter
-  def initialize(applications:, selected_ids:, plan_ready:, results: {}, **options)
+  def initialize(applications:, selected_ids:, plan_ready:, results: {}, in_progress: false, **options)
     super([], **options)
     @applications = applications
     @selected_ids = selected_ids
     @plan_ready = plan_ready
     @maestro_results = results
+    @in_progress = in_progress
+  end
+
+  # Posts the sticky comment as soon as the plan selects targets, so install
+  # links are available while Maestro runs. The final report replaces it and
+  # owns the check run.
+  def publish!
+    return super unless @in_progress
+
+    load_pipeline_urls
+    sync_comment
   end
 
   def conclusion
@@ -34,7 +45,8 @@ class BitriseE2EReporter < E2EGitHubReporter
 
   def markdown_summary
     lines = ["**#{result_heading}**", ""]
-    errors = plan_errors + problem_stages.map { |stage| "`#{stage.name}` #{stage_outcome(stage)}." }
+    errors = plan_errors
+    errors += problem_stages.map { |stage| "`#{stage.name}` #{stage_outcome(stage)}." } unless @in_progress
     unless errors.empty?
       lines.concat(["> [!CAUTION]", *errors.map { |error| "> #{error}" }, ""])
     end
@@ -51,6 +63,9 @@ class BitriseE2EReporter < E2EGitHubReporter
     end
     if @applications.any? { |application| application_install_link(application) != "—" }
       lines.concat(["", "To install, open Tophat on your Mac, select a device or simulator, then use the corresponding link."])
+      if @in_progress
+        lines.concat(["", "Tophat installs a branch's newest passing build, so until a target passes, its link installs an earlier commit's build."])
+      end
     end
     links = pipeline_links
     lines.concat(["", "**Bitrise:** #{links.join(" · ")}"]) unless links.empty?
@@ -64,6 +79,7 @@ class BitriseE2EReporter < E2EGitHubReporter
     if @selected_ids.empty?
       return conclusion == "success" ? "✅ E2E not needed" : "❌ E2E failed · no targets selected"
     end
+    return "⏳ E2E running · #{@selected_ids.length} targets" if @in_progress
 
     passed = @selected_ids.count { |id| stage_outcome(@stages.stage("e2e-maestro-#{id}")) == "passed" }
     count = "#{passed}/#{@selected_ids.length} targets"
@@ -104,6 +120,7 @@ class BitriseE2EReporter < E2EGitHubReporter
   def application_outcome(application)
     return "⚠️ Selection unavailable" unless plan_errors.empty?
     return "⏭️ Skipped · not needed for this change" unless selected?(application)
+    return "⏳ Running" if @in_progress
 
     stage = application_stage(application)
     case stage_outcome(stage)
@@ -148,6 +165,11 @@ class BitriseE2EReporter < E2EGitHubReporter
     return "—" if stage.nil? || blank?(stage.build_url)
 
     "[Tests](#{stage.build_url}?tab=tests) · [Build](#{stage.build_url})"
+  end
+
+  # Each e2e-maestro-* workflow uploads the app it tests.
+  def tophat_workflow(recipe)
+    recipe.fetch("pull_request_workflow")
   end
 
   # Tophat starts the retained artifact workflows on demand for this branch.

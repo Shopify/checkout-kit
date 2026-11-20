@@ -7,8 +7,6 @@ require "rexml/document"
 require "tmpdir"
 require "yaml"
 
-# Maestro 2.4 has no CLI retry flag. Run the selected suite once, then rerun only
-# failed flows. Keep raw attempts separate from the final Bitrise JUnit report.
 class MaestroRetryRunner
   def initialize(command:, files:, report:, retries:, execute: ->(*args) { system(*args) },
     clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) })

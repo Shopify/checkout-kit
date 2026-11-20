@@ -56,7 +56,7 @@ class ShopifyCheckoutTest {
     }
 
     @Test
-    fun `destroy discards matching preloaded checkout`() {
+    fun `destroy keeps matching preloaded checkout for the next presentation`() {
         CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
         ShadowLooper.shadowMainLooper().idle()
         val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
@@ -67,6 +67,25 @@ class ShopifyCheckoutTest {
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
 
         view.destroy()
+        assertThat(shadowOf(preloadedWebView).wasDestroyCalled()).isFalse()
+        assertThat(preloadedWebView.parent).isNull()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isSameAs(preloadedWebView)
+
+        val nextView = shopifyCheckout()
+        assertThat(nextView.currentWebView()).isSameAs(preloadedWebView)
+        nextView.destroy()
+    }
+
+    @Test
+    fun `host lifecycle destruction destroys a preloaded checkout instead of keeping it`() {
+        CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        val preloadedWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+        val view = shopifyCheckout()
+        activity.setContentView(view)
+
+        activityController.destroy()
+
         assertThat(shadowOf(preloadedWebView).wasDestroyCalled()).isTrue()
         assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
     }
@@ -279,6 +298,25 @@ class ShopifyCheckoutTest {
     }
 
     @Test
+    fun `destroy stops a retained preloaded checkout from reporting a later failure`() {
+        CheckoutWebView.preload(CHECKOUT_URL, activity, webMessageTransport)
+        ShadowLooper.shadowMainLooper().idle()
+        var receivedError: CheckoutException? = null
+        val view = shopifyCheckout(onFailure = { receivedError = it })
+
+        view.destroy()
+        assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNotNull
+
+        webMessageTransport.dispatchMessage(terminalErrorMessage())
+        await().pollInSameThread().atMost(2, TimeUnit.SECONDS).untilAsserted {
+            shadowOf(Looper.getMainLooper()).idle()
+            assertThat(CheckoutWebView.cachedPreloadViewForTesting()).isNull()
+        }
+
+        assertThat(receivedError).isNull()
+    }
+
+    @Test
     fun `attach and detach resume and pause WebView`() {
         val view = shopifyCheckout()
         val webView = view.currentWebView()
@@ -361,6 +399,11 @@ class ShopifyCheckoutTest {
     private fun checkoutMessage(method: String, id: String): String =
         """{"jsonrpc":"2.0","method":"$method","params":{"checkout":{"id":"$id","currency":"USD","status":"incomplete",""" +
             """"line_items":[],"totals":[],"links":[],"ucp":{"payment_handlers":{},"version":"1.0"}}}}"""
+
+    private fun terminalErrorMessage(): String =
+        """{"jsonrpc":"2.0","method":"ec.error","params":{"error":{"ucp":{"version":"${CheckoutProtocol.SPEC_VERSION}",""" +
+            """"status":"error"},"messages":[{"type":"error","code":"session_failed","content":"Session failed",""" +
+            """"severity":"unrecoverable"}]}}}"""
 
     private companion object {
         private const val CHECKOUT_URL = "https://shopify.com/checkouts/c/abc"

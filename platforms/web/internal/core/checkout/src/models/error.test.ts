@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { EmbeddedCheckoutProtocol, type ErrorResponse } from "@shopify/checkout-kit-protocol";
+import { EmbeddedCheckoutProtocol, type ErrorResponse } from "@shopify/embedded-checkout-protocol";
 
 import { toCheckoutError, type CheckoutError, type CheckoutErrorCode } from "./error";
 
@@ -29,6 +29,18 @@ describe("toCheckoutError", () => {
       protocolError([
         { type: "warning", severity: "unrecoverable", code: "invalid_cart", content: "Warning" },
         { type: "error", severity: "recoverable", code: "invalid_cart", content: "Earlier error" },
+        {
+          type: "error",
+          severity: "requires_buyer_input",
+          code: "customer_account_required",
+          content: "Buyer input",
+        },
+        {
+          type: "error",
+          severity: "requires_buyer_review",
+          code: "invalid_cart",
+          content: "Buyer review",
+        },
         {
           type: "error",
           severity: "unrecoverable",

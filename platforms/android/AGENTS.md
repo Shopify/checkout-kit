@@ -49,6 +49,7 @@ The library and sample resolve the pinned protocol artifact from Maven Central b
 - Drain immediate main-thread work with `shadowOf(Looper.getMainLooper()).idle()`. It does not advance delayed tasks. Use `idleFor(...)` when a test deliberately needs delayed work to run, such as preload expiry. Avoid `runToEndOfTasks()` in preload tests: it advances the scheduler through delayed work and fires the five-minute expiry timer.
 - Assertion library is **AssertJ**; mocking is **Mockito** + **Mockito-Kotlin**. Mockito is on 5.x because the library targets JVM 11. Don't introduce new assertion/mocking libraries without discussion.
 - Tests live in the same package as the class under test (file name: `ClassNameTest.kt`).
+- **Mutation testing:** Use `dev android test mutation` (or `./gradlew :shopify-checkout:mutationTest -PmutationTest=true`) when modifying or adding sensitive boundary policies and pure Kotlin admission rules (like `OriginAllowlist` or `CheckoutMessageIngressPolicy`). It executes PIT over plain JUnit tests in ~2 seconds. Do not attempt to run it across Robolectric tests or the entire SDK. See `documentation/mutation-testing.md`.
 
 ## Conventions
 
@@ -81,6 +82,7 @@ If `apiCheck` fails and you did *not* intend to change public API, the diff tell
 
 - Published protocol resolution: `./gradlew :shopify-checkout:verifyPublishedProtocol`. Unit tests and remote publication run this automatically to require the catalog-pinned external module on release and unit-test classpaths. Explicit local mode skips it; remote publication still rejects local mode.
 - Tests: `./gradlew test` (or `dev android test`)
+- Mutation testing: `dev android test mutation` (or `./gradlew :shopify-checkout:mutationTest -PmutationTest=true`). Runs opt-in PIT mutation testing on pure JUnit message-admission targets.
 - API surface: `./gradlew apiCheck` / `./gradlew apiDump` for every Checkout Kit feature, `./gradlew :embedded-checkout-protocol:apiCheck` / `./gradlew :embedded-checkout-protocol:apiDump` from `protocols/universal-commerce-protocol/embedded-checkout-protocol/languages/kotlin` for protocol, or `dev android api check` / `dev android api dump` for both.
 - Publication and sibling-feature integration: `./scripts/check_publication` (checks a temporary second feature, then rebuilds the normal SDK and tests Gradle-metadata and POM-only consumers).
 - Lint: `./gradlew detekt lintRelease` (or `dev android lint`); read-only. Formatting opts into corrections explicitly.

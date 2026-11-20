@@ -53,6 +53,7 @@ import com.shopify.checkoutkit.androiddemo.common.components.ProgressIndicator
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.horizontalPadding
 import com.shopify.checkoutkit.androiddemo.common.ui.theme.verticalPadding
 import com.shopify.checkoutkit.androiddemo.settings.data.CheckoutPresentationMode
+import com.shopify.checkoutkit.checkout.PreloadState
 
 @Composable
 fun CartView(
@@ -63,8 +64,11 @@ fun CartView(
     val state = cartViewModel.cartState.collectAsState().value
     val loading = cartViewModel.loadingState.collectAsState().value
     val checkoutPresentationMode = cartViewModel.checkoutPresentationMode.collectAsState().value
+    val checkoutPreloadingEnabled = cartViewModel.checkoutPreloadingEnabled.collectAsState().value
+    val preloadState = cartViewModel.preloadState.collectAsState().value
     val preloadStateTestId = cartViewModel.preloadStateTestId.collectAsState().value
     val preloadCacheHitTestId = cartViewModel.preloadCacheHitTestId.collectAsState().value
+    val preloadHeldStateTestId = cartViewModel.preloadHeldStateTestId.collectAsState().value
 
     val activity = LocalActivity.current as ComponentActivity
     var mutableQuantity by remember { mutableStateOf<Map<String, Int>>(mutableMapOf()) }
@@ -81,7 +85,7 @@ fun CartView(
     ) {
         when (state) {
             is CartState.Empty -> {
-                EmptyCartMessage(Modifier.fillMaxSize())
+                EmptyCartMessage(Modifier.fillMaxSize(), preloadHeldStateTestId)
             }
 
             is CartState.Cart -> {
@@ -124,6 +128,8 @@ fun CartView(
                         },
                         totalAmount = state.cartTotals.totalAmount,
                         totalAmountEstimated = state.cartTotals.totalAmountEstimated,
+                        checkoutPreloadingEnabled = checkoutPreloadingEnabled,
+                        preloadState = preloadState,
                         modifier = Modifier.weight(1f, false),
                     )
                 }
@@ -141,6 +147,8 @@ private fun CartLines(
     continueShopping: () -> Unit,
     modifyLineItem: (ID, Int?) -> Unit,
     checkout: () -> Unit,
+    checkoutPreloadingEnabled: Boolean,
+    preloadState: PreloadState,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier) {
@@ -242,8 +250,30 @@ private fun CartLines(
                     onClick = { checkout() },
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                if (checkoutPreloadingEnabled) {
+                    Text(
+                        text = stringResource(R.string.cart_checkout_preload, formatPreloadState(preloadState)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
+    }
+}
+
+private fun formatPreloadState(state: PreloadState): String = when (state) {
+    is PreloadState.Idle -> state.reason?.let { "Idle: ${it.rawValue}" } ?: "Idle"
+    PreloadState.Loading -> "Loading"
+    PreloadState.Ready -> "Ready"
+    is PreloadState.Failed -> when (val reason = state.reason) {
+        is PreloadState.FailureReason.HttpError -> "Failed: httpError (${reason.statusCode})"
+        PreloadState.FailureReason.NavigationFailed -> "Failed: navigationFailed"
+        PreloadState.FailureReason.WebContentUnavailable -> "Failed: webContentUnavailable"
+        PreloadState.FailureReason.ProtocolError -> "Failed: protocolError"
     }
 }
 
@@ -281,11 +311,19 @@ private fun CheckoutButton(
 @Composable
 private fun EmptyCartMessage(
     modifier: Modifier,
+    preloadHeldStateTestId: String,
 ) {
     Box(
         modifier,
         contentAlignment = Alignment.Center,
     ) {
+        // Reports the preload state the SDK held for a presented checkout to diagnostic tooling.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(1.dp)
+                .testTag(preloadHeldStateTestId)
+        )
         Column(
             modifier = Modifier.fillMaxWidth(.7f),
             verticalArrangement = Arrangement.spacedBy(10.dp),

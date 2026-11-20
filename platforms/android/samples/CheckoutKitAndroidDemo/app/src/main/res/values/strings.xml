@@ -16,6 +16,7 @@
 
     <string name="settings_account_details" translatable="false">Account details</string>
     <string name="checkout_preloading" translatable="false">Checkout preloading</string>
+    <string name="cart_checkout_preload" translatable="false">Checkout preload: %1$s</string>
     <string name="checkout_drag_to_dismiss" translatable="false">Drag to dismiss checkout</string>
     <string name="checkout_tap_away_to_dismiss" translatable="false">Tap outside to dismiss</string>
 

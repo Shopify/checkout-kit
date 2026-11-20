@@ -15,8 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 class PreloadCacheHitMarkerTest {
     @Test
     fun `marker ids match the maestro flow assertions`() {
-        assertThat(PreloadCacheHitMarker.testId(observed = true)).isEqualTo("preload-cache-hit-observed")
-        assertThat(PreloadCacheHitMarker.testId(observed = false)).isEqualTo("preload-cache-hit-none")
+        assertThat(PreloadCacheHitMarker.testId(hits = 0)).isEqualTo("preload-cache-hit-0")
+        assertThat(PreloadCacheHitMarker.testId(hits = 1)).isEqualTo("preload-cache-hit-1")
+        assertThat(PreloadCacheHitMarker.testId(hits = 2)).isEqualTo("preload-cache-hit-2")
     }
 
     @Test
@@ -28,7 +29,7 @@ class PreloadCacheHitMarkerTest {
 
         log.record(CACHE_HIT_LINE)
 
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
     }
 
     @Test
@@ -41,7 +42,7 @@ class PreloadCacheHitMarkerTest {
         log.record(boundaryLine(OLD_BOUNDARY))
         log.record(CACHE_HIT_LINE)
 
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
     }
 
     @Test
@@ -52,11 +53,25 @@ class PreloadCacheHitMarkerTest {
         )
 
         log.record(boundaryLine(CURRENT_BOUNDARY))
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
 
         log.record(CACHE_HIT_LINE)
 
-        assertThat(log.observed.value).isTrue()
+        assertThat(log.hits.value).isEqualTo(1)
+    }
+
+    @Test
+    fun `counts each ready cache hit after the current boundary`() {
+        val log = PreloadCacheHitLog(
+            observationBoundary = CURRENT_BOUNDARY,
+            isPreloadReady = { true },
+        )
+        log.record(boundaryLine(CURRENT_BOUNDARY))
+
+        log.record(CACHE_HIT_LINE)
+        log.record(CACHE_HIT_LINE)
+
+        assertThat(log.hits.value).isEqualTo(2)
     }
 
     @Test
@@ -70,14 +85,31 @@ class PreloadCacheHitMarkerTest {
 
         log.record(CACHE_HIT_LINE)
 
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
 
         ready = true
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
 
         log.record(CACHE_HIT_LINE)
 
-        assertThat(log.observed.value).isTrue()
+        assertThat(log.hits.value).isEqualTo(1)
+    }
+
+    @Test
+    fun `reports the held-state diagnostic after the current boundary`() {
+        var held = 0
+        val log = PreloadCacheHitLog(
+            observationBoundary = CURRENT_BOUNDARY,
+            onStateHeld = { held += 1 },
+        )
+
+        log.record("D PreloadCache: ${PreloadCacheHitLog.HELD_STATE_DIAGNOSTIC}")
+        assertThat(held).isZero()
+        log.record(boundaryLine(CURRENT_BOUNDARY))
+        log.record("D PreloadCache: ${PreloadCacheHitLog.HELD_STATE_DIAGNOSTIC}")
+
+        assertThat(held).isEqualTo(1)
+        assertThat(log.hits.value).isZero()
     }
 
     @Test
@@ -91,7 +123,7 @@ class PreloadCacheHitMarkerTest {
         log.record("D PreloadCache: Preloading checkout")
         log.record("I Timber: Preload state changed to Ready")
 
-        assertThat(log.observed.value).isFalse()
+        assertThat(log.hits.value).isZero()
     }
 
     @Test
@@ -119,7 +151,7 @@ class PreloadCacheHitMarkerTest {
             log.start(this, Dispatchers.Unconfined).join()
 
             assertThat(writtenBoundary).isEqualTo(CURRENT_BOUNDARY)
-            assertThat(log.observed.value).isTrue()
+            assertThat(log.hits.value).isEqualTo(1)
             assertThat(streamClosed.get()).isTrue()
         }
     }

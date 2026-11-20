@@ -1,1 +1,7 @@
 * @Shopify/checkout-kit-maintainers
+
+# Runtime dependency policy and its allowed list. See .github/ARCHITECTURE.md#runtime-dependencies.
+/.github/ARCHITECTURE.md @Shopify/checkout-kit-maintainers
+/scripts/check-sdk-packages.mjs @Shopify/checkout-kit-maintainers
+/scripts/check-swift-dependencies.mjs @Shopify/checkout-kit-maintainers
+/platforms/android/gradle/runtime-dependencies.txt @Shopify/checkout-kit-maintainers

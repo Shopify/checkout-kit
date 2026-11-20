@@ -10,3 +10,5 @@ export type {
   TelemetryProtocolMethod,
 } from './types';
 export {toProtocolMethod} from './protocol-method';
+export {createBuildTelemetry, telemetryDestination} from './build';
+export type {TelemetryDestination} from './build';

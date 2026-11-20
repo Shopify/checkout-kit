@@ -42,7 +42,12 @@ describe("checkout telemetry factory", () => {
     ]);
   });
 
-  it.each([undefined, "console"])("keeps dev telemetry local with mode %s", async (mode) => {
+  it.each([
+    [true, undefined],
+    [true, "console"],
+    [false, "console"],
+  ] as const)("keeps telemetry local with DEV=%s and mode=%s", async (dev, mode) => {
+    vi.stubEnv("DEV", dev);
     vi.stubEnv("VITE_CK_TELEMETRY", mode);
     const { createTelemetry } = await import("./telemetry");
     const client = createTelemetry();
@@ -61,7 +66,6 @@ describe("checkout telemetry factory", () => {
   it.each([
     [true, "production"],
     [false, undefined],
-    [false, "console"],
     [false, "production"],
   ] as const)("reports to production with DEV=%s and mode=%s", async (dev, telemetryMode) => {
     vi.stubEnv("DEV", dev);

@@ -5,9 +5,9 @@ appId: ${E2E_APP_ID}
       id: preload-state-ready
     timeout: 60000
 
-# Pins the starting value, so a marker stuck on "observed" cannot pass the assertion below.
+# Pins the starting count, so a hit left over from earlier cannot pass the assertion below.
 - assertVisible:
-    id: preload-cache-hit-none
+    id: preload-cache-hit-0
 
 - runFlow: present.yaml
 - runFlow: close.yaml
@@ -18,5 +18,5 @@ appId: ${E2E_APP_ID}
 # both platforms.
 - extendedWaitUntil:
     visible:
-      id: preload-cache-hit-observed
+      id: preload-cache-hit-1
     timeout: 30000

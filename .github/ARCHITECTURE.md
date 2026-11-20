@@ -25,8 +25,10 @@ the same ownership rules:
   through those facades.
 - JS component/internal packages are private build inputs. Bundle them into the
   platform SDK; do not add them to the published runtime dependency graph.
-  `scripts/check-sdk-packages.mjs` checks manifest boundaries, and each JS
-  platform's dependency-cruiser configuration checks source dependencies.
+  `scripts/check-sdk-packages.mjs` checks manifest boundaries and
+  [runtime dependencies](#runtime-dependencies), and each JS platform's
+  dependency-cruiser configuration checks source dependencies. The Web build
+  runs the manifest check before producing npm output.
 - Protocol schemas and bindings live under
   `protocols/universal-commerce-protocol/embedded-checkout-protocol/`. Keep wire
   contracts separate from feature presentation and merchant-facing behavior.
@@ -38,6 +40,107 @@ component does not change those release boundaries. React Native continues to
 consume published native SDKs by default; see its
 [local SDK development guide](../platforms/react-native/CONTRIBUTING.md#local-sdk-development---local)
 for the narrow unreleased-API workflow.
+
+## Runtime dependencies
+
+### Minimize dependencies
+
+Every runtime dependency is a liability for Checkout Kit and for every app that
+embeds it. A dependency, and everything it depends on in turn, can:
+
+- conflict with a version the host app already uses, which we cannot resolve
+  on the app's behalf;
+- add size to every merchant's app or page;
+- add bugs and vulnerabilities we must track, patch, and ship releases for;
+- expose consumers to supply-chain compromise of its maintainers or registry;
+- constrain our supported OS, browser, and toolchain versions.
+
+These principles apply to all platforms (following
+[JLBP-1](https://jlbp.dev/JLBP-1)):
+
+- Prefer platform and standard-library APIs, even at some cost in development
+  time.
+- Do not add a dependency to save a few lines of code. If the functionality is
+  small, implement it in the SDK.
+- A dependency can be justified for difficult or security-sensitive work, such
+  as cryptography, where a maintained library is safer than our own
+  implementation.
+- Count transitive dependencies as part of the cost. Before adding one, review
+  its dependency tree (`pnpm why`, `./gradlew dependencies`, or the resolved
+  Swift package graph), and prefer an alternative that pulls in less.
+- Pick one library for each job. Do not add a second library that duplicates
+  one already in the dependency graph.
+- Keep dependencies as narrowly scoped as possible: test and build tooling stays
+  in development or test scope and must never ship to consumers.
+
+### Ownership and allowed dependencies
+
+A runtime dependency is one that ships to SDK consumers: anything declared in a
+published or bundled JS package's `dependencies`, `optionalDependencies`, or
+`peerDependencies`; a Gradle `api`, `implementation`, or `runtimeOnly`
+dependency of a bundled Android feature; or an external Swift package used by a
+shipped target or podspec. The platform owns these as part of the product, not
+the component that first needs one. Test and build tooling is owned by the
+package that uses it and stays in development or test scope: `devDependencies`,
+Gradle test configurations, or Swift test targets.
+
+The platforms allow these third-party runtime dependencies. Checkout Kit's own
+published packages, such as the Embedded Checkout Protocol, are not third-party.
+
+| Platform | Allowed | Why | Enforced by |
+| --- | --- | --- | --- |
+| Web | None | npm and CDN artifacts bundle only Checkout Kit source. | `scripts/check-sdk-packages.mjs` |
+| React Native | `react` and `react-native`, as `peerDependencies` only | The host app provides the single copy React Native requires. | `scripts/check-sdk-packages.mjs` |
+| Android | The modules listed in `platforms/android/gradle/runtime-dependencies.txt` | AndroidX and Kotlin libraries the SDK builds on. | `verifyRuntimeDependencies`, which runs before publication |
+| Swift | None | SwiftPM and CocoaPods products use only Checkout Kit targets. | `scripts/check-swift-dependencies.mjs` |
+
+The React Native native wrappers (`platforms/react-native/ios` and `android`)
+are not yet covered by a check.
+
+The Android check approves module identities, not versions. SDK versions are
+managed in `gradle/libs.versions.toml`; sample apps may use separate aliases
+and versions for the same module.
+
+For JS dependencies, versions are coordinated across each platform:
+
+- A bundled dependency (`dependencies` or `optionalDependencies`) is declared
+  once in the platform's `pnpm-workspace.yaml` catalog, and every package
+  references it as `catalog:`. Dependabot updates the catalog entry, so each
+  version bump changes one place and applies to every package that uses it.
+- A host peer (`peerDependencies`) uses the same range in every package.
+
+The JS package check enforces both the allowed dependencies and their version rules.
+
+Web runtime code must work when more than one copy of it is loaded on a page.
+The CDN bundles shared runtime code into each component, and pages may load
+the npm and CDN builds together. Registration must be idempotent, and state
+shared across components must not depend on a single module instance. This
+applies to Checkout Kit's own internal packages as well as to any future
+third-party dependency.
+
+### Adding a runtime dependency
+
+Do not add a third-party runtime dependency to a component or internal package
+by itself. Open an issue proposing it first, covering:
+
+- why it must ship to consumers rather than being a development dependency;
+- why the functionality cannot reasonably be implemented in the SDK or with
+  platform APIs, and which alternatives were considered;
+- the transitive dependencies it adds;
+- the initial version range for the catalog;
+- delivery for each distribution: for Web, bundled into npm output and into
+  each CDN component that uses it, or a new shared CDN runtime design;
+- why it is safe to load more than once, or why the host must provide it;
+- license and supply-chain review;
+- bundle-size impact against the existing budgets.
+
+A Checkout Kit code owner approves the proposal. Then, in one change, add the
+dependency, update the policy, and add integration tests for the supported
+loading combinations. The policy update means the table above and the
+platform's allowed list: `scripts/check-sdk-packages.mjs`,
+`platforms/android/gradle/runtime-dependencies.txt`, or
+`scripts/check-swift-dependencies.mjs`. CODEOWNERS requires a code owner to
+review each of them.
 
 ## Dependency checks
 

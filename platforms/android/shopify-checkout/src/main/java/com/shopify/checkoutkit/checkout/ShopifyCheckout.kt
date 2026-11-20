@@ -103,6 +103,7 @@ public class ShopifyCheckout @MainThread internal constructor(
     private var dismissNotified = false
     private var destroyed = false
     private var webViewResumed = false
+
     internal var initializationError: CheckoutException? = null
         private set
 
@@ -163,7 +164,10 @@ public class ShopifyCheckout @MainThread internal constructor(
     }
 
     /**
-     * Permanently releases this checkout and its underlying WebView.
+     * Permanently releases this checkout.
+     *
+     * A WebView that came from a matching preload stays cached until that preload expires, so a
+     * later presentation of the same checkout can reuse it. Any other WebView is destroyed.
      *
      * This method is idempotent and does not report dismissal or failure.
      */
@@ -182,9 +186,13 @@ public class ShopifyCheckout @MainThread internal constructor(
             chrome.detachWebView()
             pauseWebView()
             webView.removeFromParent()
-            CheckoutWebView.discardAfterPresentation(webView)
-            log.d(LOG_TAG, "Destroying checkout WebView.")
-            webView.destroy()
+            if (CheckoutWebView.retainAfterPresentation(webView)) {
+                log.d(LOG_TAG, "Retaining preloaded checkout WebView after dismissal.")
+            } else {
+                CheckoutWebView.discardAfterPresentation(webView)
+                log.d(LOG_TAG, "Destroying checkout WebView.")
+                webView.destroy()
+            }
         }
         checkoutWebView = null
     }

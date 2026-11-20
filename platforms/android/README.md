@@ -78,7 +78,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 ## Install
 
-Install Checkout Kit for Android `4.0.0`:
+Install Checkout Kit for Android `4.1.0`:
 
 The checkout event API in `4.0.0-alpha.7` replaces the protocol-client API in `4.0.0-alpha.6`;
 see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) when upgrading.
@@ -87,7 +87,7 @@ see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) wh
 
 ```groovy
 dependencies {
-    implementation "com.shopify:checkout-kit:4.0.0"
+    implementation "com.shopify:checkout-kit:4.1.0"
 }
 ```
 
@@ -97,7 +97,7 @@ dependencies {
 <dependency>
   <groupId>com.shopify</groupId>
   <artifactId>checkout-kit</artifactId>
-  <version>4.0.0</version>
+  <version>4.1.0</version>
 </dependency>
 ```
 
@@ -274,9 +274,11 @@ if (preload == null) {
 }
 ```
 
-The listener runs on the main thread and receives the current state immediately, followed by state changes. You can also set `preload?.listener` after creation. The preload cache has one observer, so a later `preload` call replaces the listener associated with an earlier handle. That earlier handle retains its last observed state but receives no further updates; retain the latest handle when observing state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `Loading`.
+The listener runs on the main thread and receives the current state immediately, followed by state changes. You can also set `preload?.listener` after creation. The preload cache has one observer, so a later `preload` call replaces the listener associated with an earlier handle. That earlier handle retains its last observed state but receives no further updates; retain the latest handle when observing state. When `present` reuses a preload, its handle keeps receiving updates for that checkout. A preload presented while `Loading` reports `Ready` once it finishes loading. While checkout is presented, the handle doesn't go idle. If the checkout is removed during presentation, for example after completion, a failure, or `ShopifyCheckout.clearPreload()`, the handle reports `Invalidated` when checkout is dismissed or you call `destroy()` on an app-hosted `ShopifyCheckout`, just before `onDismiss` runs. A failure after presentation reports `Invalidated` rather than `Failed`. If the checkout is kept after dismissal, the handle reports `Expired` when the kept checkout reaches its time-to-live, and `Invalidated` if it's removed later.
 
-A successful background preload normally transitions from `Loading` to `Ready`. `Idle()` is the initial state. An idle state with an `Invalidated` or `Expired` reason means a cached preload became unavailable through that expected lifecycle transition. `Invalidated` includes explicit invalidation, configuration changes, activity destruction, a checkout URL mismatch, checkout completion, or unusable presented content. `Failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+A successful background preload normally transitions from `Loading` to `Ready`. `Idle()` is the initial state. An idle state with an `Invalidated` or `Expired` reason means a cached preload became unavailable through that expected lifecycle transition. `Invalidated` includes explicit invalidation, configuration changes, activity destruction, a checkout URL mismatch, presentation from a different activity, checkout completion, or unusable presented content. `Failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
+
+Don't make presentation wait for `Ready` alone. A preload can end in `Failed` or `Idle` instead, for example when a bot challenge interrupts it, and `present` still loads checkout normally. If your app waits for `Ready` before presenting, also present on `Failed` or `Idle`, or after a timeout. A preload reports `Ready` when checkout has loaded and signals that it's ready, whether or not it has been presented yet. A page that isn't checkout, such as a bot challenge, doesn't count.
 
 Calling `invalidate()` when no checkout is cached preserves its last state and reason without notifying observers. `IdleReason` is an extensible string-backed value. Compare its known constants or include an `else` branch when switching over reasons; treat unfamiliar reasons as an unavailable preload. Its `rawValue` preserves unknown values, allowing new reasons without requiring consumer source changes.
 
@@ -293,7 +295,7 @@ When migrating, replace `PreloadState.Idle` values with `PreloadState.Idle()`, u
 
 `preload` returns `null` when preloading is disabled, the activity is finishing or destroyed, or the installed WebView does not support the required WebMessageListener API.
 
-Checkout Kit can reuse a matching preloaded checkout when `present` is called later:
+Checkout Kit can reuse a matching preloaded checkout when `present` is called later from the same activity:
 
 ```kotlin
 ShopifyCheckout.present(checkoutUrl, activity) {
@@ -302,11 +304,11 @@ ShopifyCheckout.present(checkoutUrl, activity) {
 }
 ```
 
-Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, or for a different checkout URL, checkout loads normally during presentation. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
+Preloading is a best-effort performance hint, not a guarantee. If the preload is unavailable, incomplete, for a different checkout URL, or presented from a different activity, checkout loads normally during presentation. A preload is only reused by the activity that created it, so preload from the activity that will present checkout. A context that wraps that activity, such as a `ContextThemeWrapper`, still reuses it. A preloaded checkout reflects the cart state when `preload` was called, so call `preload` again after cart changes even when the checkout URL remains the same.
 
-When the SDK-managed bottom sheet is dismissed, its WebView is destroyed, even if preloading is enabled and that WebView came from a valid preload. Checkout Kit does not reuse the dismissed WebView because reattaching it can crash some Android System WebView versions.
+When the buyer dismisses the SDK-managed bottom sheet, or you call `destroy()` on an app-hosted `ShopifyCheckout`, Checkout Kit keeps a WebView that came from a matching preload until that preload expires. Presenting the same checkout URL again, from either entry point, reuses it. A kept checkout is released when the activity that preloaded it is destroyed.
 
-Presenting the same checkout URL again loads a fresh checkout unless a new matching preload is available. If buyer intent warrants another preload, call `ShopifyCheckout.preload` again before the next presentation. Use `ShopifyCheckout.clearPreload()` when cached checkout work should no longer be reused.
+To present a fresh checkout instead, call `ShopifyCheckout.preload` again, for example after cart changes, or call `ShopifyCheckout.clearPreload()`.
 
 Checkout events received during preload, before presentation callbacks are bound, are not replayed when checkout is
 presented. In particular, `onStart` only observes start events received during its presentation; it is not guaranteed
@@ -821,6 +823,10 @@ development, use an Android command's `--local` flag (for example, `dev android 
 Changes spanning the protocol, Android SDK, and React Native follow the
 [ECP → Android → RN release sequence](../../.github/CONTRIBUTING.md#coordinating-ecp-android-and-react-native-releases),
 with normal CI against each published dependency before releasing its consumer.
+
+For opt-in Kotlin mutation testing, see the
+[mutation testing guide](documentation/mutation-testing.md). It is separate from normal tests
+and CI checks.
 
 Useful checks before opening an Android change:
 

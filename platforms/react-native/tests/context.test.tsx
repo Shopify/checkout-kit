@@ -187,6 +187,37 @@ describe('ShopifyCheckoutProvider', () => {
     ]);
   });
 
+  it('applies the initial configuration object again after a change', () => {
+    const newConfig: Configuration = {
+      appearance: {
+        type: CheckoutAppearanceType.app,
+        colorScheme: CheckoutColorScheme.dark,
+      },
+    };
+    const {rerender} = render(
+      <ShopifyCheckoutProvider configuration={config}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+
+    rerender(
+      <ShopifyCheckoutProvider configuration={newConfig}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+    rerender(
+      <ShopifyCheckoutProvider configuration={config}>
+        <MockChild />
+      </ShopifyCheckoutProvider>,
+    );
+
+    expect(NativeModules.ShopifyCheckoutKit.setConfig.mock.calls).toEqual([
+      [config],
+      [newConfig],
+      [config],
+    ]);
+  });
+
   it('logs a rejected initial configuration without an unhandled rejection', async () => {
     const errorSpy = jest.spyOn(console, 'error').mockImplementation();
     const error = new Error('native failure');
@@ -234,6 +265,57 @@ describe('ShopifyCheckoutProvider', () => {
       error,
     );
     errorSpy.mockRestore();
+  });
+
+  describe('acceleratedCheckoutsAvailable', () => {
+    const configWithAccelerated: Configuration = {
+      ...config,
+      acceleratedCheckouts: {
+        storefrontDomain: 'test-shop.myshopify.com',
+        storefrontAccessToken: 'shpat_test_token',
+      },
+    };
+    let hookValue: {acceleratedCheckoutsAvailable: boolean} | undefined;
+    const renderProvider = () =>
+      render(
+        <ShopifyCheckoutProvider configuration={configWithAccelerated}>
+          <HookTestComponent onHookValue={value => (hookValue = value)} />
+        </ShopifyCheckoutProvider>,
+      );
+
+    beforeEach(() => {
+      Platform.OS = 'ios';
+      Object.defineProperty(Platform, 'Version', {
+        configurable: true,
+        value: '17.0',
+      });
+      NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts.mockReturnValue(
+        true,
+      );
+    });
+
+    it('becomes true once the initial configuration applies', async () => {
+      renderProvider();
+      await act(() => new Promise(resolve => setImmediate(resolve)));
+
+      expect(hookValue?.acceleratedCheckoutsAvailable).toBe(true);
+    });
+
+    it('stays false when native rejects the initial configuration', async () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+      NativeModules.ShopifyCheckoutKit.setConfig.mockRejectedValueOnce(
+        new Error('unreadable'),
+      );
+
+      renderProvider();
+      await act(() => new Promise(resolve => setImmediate(resolve)));
+
+      expect(
+        NativeModules.ShopifyCheckoutKit.configureAcceleratedCheckouts,
+      ).not.toHaveBeenCalled();
+      expect(hookValue?.acceleratedCheckoutsAvailable).toBe(false);
+      errorSpy.mockRestore();
+    });
   });
 });
 

@@ -13,8 +13,8 @@
 > [!IMPORTANT]
 >
 > - [ ] I've added tests to support my implementation
-> - [ ] I have read and agree with the [Contribution Guidelines](./CONTRIBUTING.md)
-> - [ ] I have read and agree with the [Code of Conduct](./CODE_OF_CONDUCT.md)
+> - [ ] I have read and agree with the [Contribution Guidelines](https://github.com/Shopify/checkout-kit/blob/main/.github/CONTRIBUTING.md)
+> - [ ] I have read and agree with the [Code of Conduct](https://github.com/Shopify/checkout-kit/blob/main/.github/CODE_OF_CONDUCT.md)
 > - [ ] I've updated the relevant platform README (`platforms/swift/README.md` and/or `platforms/android/README.md`)
 > - [ ] I've added a changeset (`pnpm changeset <platform>`) for each affected platform, or an empty one (`--empty`) if no release note is needed
 
@@ -48,5 +48,5 @@
 </details>
 
 > [!TIP]
-> See the [Contributing documentation](./CONTRIBUTING.md) for the full release process per platform.
-> Changes spanning ECP, Android, and RN follow the [dependency release sequence](./CONTRIBUTING.md#coordinating-ecp-android-and-react-native-releases).
+> See the [Contributing documentation](https://github.com/Shopify/checkout-kit/blob/main/.github/CONTRIBUTING.md) for the full release process per platform.
+> Changes spanning ECP, Android, and RN follow the [dependency release sequence](https://github.com/Shopify/checkout-kit/blob/main/.github/CONTRIBUTING.md#coordinating-ecp-android-and-react-native-releases).

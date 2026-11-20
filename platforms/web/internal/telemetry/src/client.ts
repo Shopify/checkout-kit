@@ -46,6 +46,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
   #flushInProgress: Promise<boolean> | undefined;
   #consecutiveExportFailures = 0;
   #nextExportAllowedAtMs = 0;
+  #keepaliveSkippedBackoff = false;
   #activeRequest: AbortController | undefined;
   #stopped = false;
 
@@ -139,7 +140,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     });
   }
 
-  flush(options: FlushOptions = {}, ignoreBackoff = false): Promise<boolean> {
+  flush(options: FlushOptions = {}): Promise<boolean> {
     if (this.#stopped) return Promise.resolve(false);
     const inFlight = this.#flushInProgress;
     if (inFlight) {
@@ -148,23 +149,21 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
       // may be torn down before that request settles. Start it right away
       // alongside the ordinary export.
       if (options.keepalive === true) {
+        if (this.#heldByBackoff(options)) return Promise.resolve(false);
         const measurements = this.#measurements;
         this.#measurements = [];
         return this.#send(measurements, options);
       }
       return inFlight.then(async (inFlightSucceeded) => {
         if (this.#stopped) return false;
-        const queuedSucceeded = await this.flush(options, ignoreBackoff);
+        const queuedSucceeded = await this.flush(options);
         return inFlightSucceeded && queuedSucceeded;
       });
     }
     if (this.#measurements.length === 0) {
       return Promise.resolve(true);
     }
-    // A keepalive flush is a page-terminal moment (pagehide/unload): skipping
-    // it because of backoff would silently drop the buffered measurements.
-    const bypassBackoff = ignoreBackoff || options.keepalive === true;
-    if (!bypassBackoff && Date.now() < this.#nextExportAllowedAtMs) {
+    if (this.#heldByBackoff(options)) {
       return Promise.resolve(false);
     }
     const measurements = this.#measurements;
@@ -190,11 +189,33 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
       return true;
     }
 
+    // Send now, beside any export in flight: the page can be gone before that
+    // export settles. The client then sends nothing more and restores no export
+    // that fails, so a component can drop it at once and a later opt-out has
+    // nothing left to discard.
     const inFlight = this.#flushInProgress;
-    const inFlightSucceeded = inFlight ? await inFlight : true;
-    const flushed = await this.flush(options, true);
+    const measurements = this.#measurements;
+    this.#measurements = [];
     this.#stopped = true;
+    const [inFlightSucceeded, flushed] = await Promise.all([
+      inFlight ?? true,
+      measurements.length > 0 ? this.#send(measurements, options) : true,
+    ]);
     return inFlightSucceeded && flushed;
+  }
+
+  // A keepalive flush runs when the page may not come back (pagehide, or the
+  // page becoming hidden), so one of them in each backoff skips it. The rest
+  // wait until it ends: a page becomes hidden on every tab switch, and a
+  // failing endpoint must not get a request for each one.
+  #heldByBackoff(options: FlushOptions): boolean {
+    if (Date.now() >= this.#nextExportAllowedAtMs) {
+      this.#keepaliveSkippedBackoff = false;
+      return false;
+    }
+    if (options.keepalive !== true || this.#keepaliveSkippedBackoff) return true;
+    this.#keepaliveSkippedBackoff = true;
+    return false;
   }
 
   #recordCounter(name: string, attributes: Attributes): void {
@@ -270,6 +291,7 @@ class DefaultCheckoutKitTelemetry implements CheckoutKitTelemetryClient {
     if (succeeded) {
       this.#consecutiveExportFailures = 0;
       this.#nextExportAllowedAtMs = 0;
+      this.#keepaliveSkippedBackoff = false;
       return;
     }
     this.#consecutiveExportFailures += 1;

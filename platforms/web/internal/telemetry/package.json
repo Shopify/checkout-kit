@@ -14,11 +14,11 @@
     "lint": "oxlint --report-unused-disable-directives --max-warnings 0 src test"
   },
   "dependencies": {
-    "@shopify/checkout-kit-protocol": "workspace:*"
+    "@shopify/embedded-checkout-protocol": "workspace:*"
   },
   "devDependencies": {
     "oxlint": "^1.62.0",
     "typescript": "5.9.3",
-    "vitest": "^4.1.0"
+    "vitest": "^5.1.0"
   }
 }

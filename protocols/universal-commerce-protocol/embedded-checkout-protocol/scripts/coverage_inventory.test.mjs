@@ -43,8 +43,13 @@ describe('coverage inventory', () => {
     ]);
   });
 
-  test('reads protocol types from Swift printed names, including nested namespaces', () => {
-    const baseline = {children: [{printedName: '[EmbeddedCheckoutProtocol.Message]?'}, {printedName: 'EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout'}]};
+  test('reads protocol types from Swift interfaces, including nested namespaces', () => {
+    const baseline = [
+      'public var messages: [EmbeddedCheckoutProtocol.Message]?',
+      'public var checkout: EmbeddedCheckoutProtocol.EmbeddedCheckoutProtocol.Checkout',
+      '// EmbeddedCheckoutProtocol.Comment',
+      'public func example(value: Swift.String = "EmbeddedCheckoutProtocol.StringLiteral")',
+    ].join('\n');
 
     expect([...swiftExposedRoots([baseline])].sort()).toEqual(['Checkout', 'Message']);
   });
@@ -97,24 +102,52 @@ describe('coverage inventory', () => {
   });
 
   test('follows generic constraints and signatures in the Swift baseline', () => {
-    const baseline = {
-      kind: 'Root',
-      children: [
-        {
-          kind: 'TypeDecl',
-          name: 'RequestDescriptor',
-          genericSig: '<Payload where Payload : EmbeddedCheckoutProtocol.EventPayload>',
-          children: [
-            {kind: 'Var', name: 'method', children: [{kind: 'TypeNominal', printedName: 'Swift.String'}]},
-            {kind: 'Constructor', printedName: 'init(handler:)', genericSig: '<Handler == EmbeddedCheckoutProtocol.RequestMessage<Payload>>'},
-          ],
-        },
-      ],
-    };
+    const baseline = [
+      'public struct RequestDescriptor<Payload> where Payload : EmbeddedCheckoutProtocol.EventPayload {',
+      '  public let method: Swift.String',
+      '}',
+      'extension EmbeddedCheckoutProtocol.RequestDescriptor where Handler == EmbeddedCheckoutProtocol.RequestMessage<Payload> {',
+      '  public init(handler: Handler)',
+      '}',
+    ].join('\n');
     const {graph, members} = swiftBaselineGraph(baseline);
 
     expect([...graph.get('RequestDescriptor')].sort()).toEqual(['EventPayload', 'RequestMessage']);
     expect(members.get('RequestDescriptor')).toEqual(['method']);
+  });
+
+  test('merges extensions and separates nested Swift types, aliases and instance members', () => {
+    const baseline = [
+      'extension EmbeddedCheckoutProtocol.Outer : EmbeddedCheckoutProtocol.EventPayload {',
+      '  public var computed: EmbeddedCheckoutProtocol.Result {',
+      '    get',
+      '  }',
+      '}',
+      'public enum Outer {',
+      '  public static let shared: EmbeddedCheckoutProtocol.Shared',
+      '  public struct Nested {',
+      '    public var value: EmbeddedCheckoutProtocol.Value',
+      '    public init(configure: () -> Swift.Void = { _ in })',
+      '  }',
+      '  public typealias Alias = EmbeddedCheckoutProtocol.Target',
+      '}',
+      '@_hasMissingDesignatedInitializers final public class Box {',
+      '  public let value: Swift.Any',
+      '}',
+      'public protocol Payload {',
+      '  var item: EmbeddedCheckoutProtocol.Item { get }',
+      '}',
+    ].join('\n');
+    const {graph, members} = swiftBaselineGraph(baseline);
+
+    expect([...graph.get('Outer')].sort()).toEqual(['EventPayload', 'Result', 'Shared']);
+    expect([...graph.get('Nested')]).toEqual(['Value']);
+    expect([...graph.get('Alias')]).toEqual(['Target']);
+    expect([...graph.get('Payload')]).toEqual(['Item']);
+    expect(members.get('Outer')).toEqual(['computed']);
+    expect(members.get('Nested')).toEqual(['value']);
+    expect(members.get('Box')).toEqual(['value']);
+    expect(members.get('Payload')).toEqual(['item']);
   });
 
   test('attributes Kotlin nested helper classes to their owner', () => {

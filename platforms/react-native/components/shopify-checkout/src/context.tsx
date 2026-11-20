@@ -42,12 +42,25 @@ export function ShopifyCheckoutProvider({
   const [acceleratedCheckoutsAvailable, setAcceleratedCheckoutsAvailable] =
     useState(false);
   const instance = useRef<ShopifyCheckout | null>(null);
+  // Settles when the latest configuration applied. Accelerated checkout
+  // readiness is known only then.
+  const appliedConfiguration = useRef<Promise<unknown> | undefined>(undefined);
 
   if (!instance.current) {
-    instance.current = new ShopifyCheckout(configuration, features);
+    instance.current = new ShopifyCheckout(undefined, features);
+    // Apply the initial configuration before children mount, so a preload
+    // started by a child on mount is not invalidated.
+    appliedConfiguration.current =
+      configuration &&
+      instance.current.setConfig(configuration).catch(error => {
+        // eslint-disable-next-line no-console
+        console.error(
+          '[ShopifyCheckoutKit] Failed to apply the initial configuration with',
+          error,
+        );
+      });
   }
   const checkout = instance.current;
-  // The constructor already applied the initial configuration.
   const lastAppliedConfiguration = useRef(configuration);
 
   useEffect(() => {
@@ -56,17 +69,27 @@ export function ShopifyCheckoutProvider({
     }
 
     if (configuration !== lastAppliedConfiguration.current) {
-      checkout.setConfig(configuration).catch(error => {
-        // eslint-disable-next-line no-console
-        console.error(
-          '[ShopifyCheckoutKit] Failed to apply the configuration prop with',
-          error,
-        );
-      });
+      appliedConfiguration.current = checkout
+        .setConfig(configuration)
+        .catch(error => {
+          // eslint-disable-next-line no-console
+          console.error(
+            '[ShopifyCheckoutKit] Failed to apply the configuration prop with',
+            error,
+          );
+        });
       lastAppliedConfiguration.current = configuration;
     }
 
-    setAcceleratedCheckoutsAvailable(checkout.acceleratedCheckoutsReady);
+    let current = true;
+    appliedConfiguration.current?.then(() => {
+      if (current) {
+        setAcceleratedCheckoutsAvailable(checkout.acceleratedCheckoutsReady);
+      }
+    });
+    return () => {
+      current = false;
+    };
   }, [checkout, configuration]);
 
   const present = useCallback(

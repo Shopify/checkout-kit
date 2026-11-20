@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { fileURLToPath } from "node:url";
-import { createServer, type ViteDevServer } from "vite";
+import { createServer, resolveConfig, type ViteDevServer } from "vite";
 import { afterEach, expect, it, vi } from "vitest";
 
+const configFile = fileURLToPath(new URL("./vite.config.ts", import.meta.url));
 const servers: ViteDevServer[] = [];
 
 afterEach(async () => {
@@ -21,7 +22,7 @@ it.each([undefined, "console", "production"])(
     vi.stubGlobal("fetch", fetch);
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     const server = await createServer({
-      configFile: fileURLToPath(new URL("./vite.config.ts", import.meta.url)),
+      configFile,
       server: { middlewareMode: true, hmr: false, watch: null },
       optimizeDeps: { noDiscovery: true, include: [] },
     });
@@ -40,3 +41,16 @@ it.each([undefined, "console", "production"])(
     expect(JSON.stringify(server.config.define)).not.toContain("synthetic-private-value");
   },
 );
+
+// A build of the sample is an internal build, so the shared rule keeps its telemetry local.
+it.each([
+  [undefined, "console"],
+  ["console", "console"],
+  ["production", "production"],
+])("builds the sample with telemetry mode %s as %s", async (mode, expected) => {
+  vi.stubEnv("VITE_CK_TELEMETRY", mode);
+
+  const config = await resolveConfig({ configFile, logLevel: "silent" }, "build");
+
+  expect(config.define?.["import.meta.env.VITE_CK_TELEMETRY"]).toBe(JSON.stringify(expected));
+});

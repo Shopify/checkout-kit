@@ -3,7 +3,7 @@ import {
   windowOpenSuccess,
   type WindowOpenRequest,
   type WindowOpenResult,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import stylesText from "./checkout.css?inline";
 import { supportsShadowDOM } from "./browser-capabilities";
@@ -350,10 +350,14 @@ export function rejectCheckoutMessage(
   logger.warn(reason);
 }
 
+/** Schemes, besides `https:`, that open in a new window: the buyer's mail client or dialer. */
+const CONTACT_LINK_PROTOCOLS: ReadonlySet<string> = new Set(["mailto:", "tel:"]);
+
 /**
- * Handles an `ec.window.open_request` delegation: opens a validated `https:`
- * URL in a new tab and returns a UCP result for the negotiated `version`.
- * Invalid or non-`https:` URLs are rejected (and warned about) rather than opened.
+ * Handles an `ec.window.open_request` delegation and returns a UCP result for
+ * the negotiated `version`. A validated `https:`, `mailto:` or `tel:` URL opens
+ * in a new window, never the host page, which may be framing checkout. Invalid
+ * URLs and other schemes are rejected (and warned about) rather than opened.
  */
 export function handleWindowOpenRequest(
   request: WindowOpenRequest,
@@ -368,9 +372,9 @@ export function handleWindowOpenRequest(
     return windowOpenRejected("url is not a valid URL", version);
   }
 
-  if (targetUrl.protocol !== "https:") {
+  if (targetUrl.protocol !== "https:" && !CONTACT_LINK_PROTOCOLS.has(targetUrl.protocol)) {
     logger.warn(WINDOW_OPEN_INVALID_URL_WARNING);
-    return windowOpenRejected("url must use https scheme", version);
+    return windowOpenRejected("url must use https, mailto, or tel scheme", version);
   }
 
   window.open(targetUrl.href, "_blank", "noopener");

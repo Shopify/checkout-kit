@@ -3,7 +3,7 @@ import {
   decodeProtocolMessage,
   INVALID_PARAMS_CODE,
   type Checkout as ProtocolCheckout,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import { getUnsupportedBrowserCapabilities } from "@shopify/checkout-kit-core/checkout/browser-capabilities";
 import {
@@ -629,7 +629,7 @@ export class ShopifyCheckout
     serialized: string,
     event: MessageEvent,
     presentation: CheckoutPresentation,
-  ): Promise<void> {
+  ) {
     // The source and origin were authenticated before the async protocol handler.
     // A later presentation must never receive this response.
     const source = event.source as WindowProxy;

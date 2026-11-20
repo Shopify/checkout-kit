@@ -60,7 +60,7 @@ async function start(page: SamplePage): Promise<SampleElement> {
   return $<SampleElement>(page.tag);
 }
 
-async function addStoreAndPrepare(): Promise<void> {
+async function addStoreAndPrepare() {
   if (!document.querySelector(`.store-item[data-domain="${DOMAIN}"]`)) {
     $<HTMLInputElement>("#storefront-domain").value = DOMAIN;
     $<HTMLButtonElement>("#add-store-button").click();

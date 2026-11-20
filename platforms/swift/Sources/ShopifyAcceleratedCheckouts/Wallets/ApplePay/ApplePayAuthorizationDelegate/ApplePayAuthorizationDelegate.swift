@@ -120,7 +120,7 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
             try await onReset()
 
         case let .presentingCheckoutKit(url):
-            try await onPresentingCheckoutKit(to: url, previousState: previousState)
+            try await onPresentingCheckoutKit(to: url)
 
         // As a "terminal" state, acts as a decision point to either:
         // - present TYP (redirectUrl)
@@ -142,54 +142,40 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
         try await transition(to: .idle)
     }
 
-    private func onPresentingCheckoutKit(to url: URL?, previousState: ApplePayState) async throws {
-        guard let url else {
-            try await transition(
-                to: .terminalError(
-                    error: ShopifyAcceleratedCheckouts.Error.invariant(expected: "url")
-                )
-            )
-            return
-        }
-
-        switch previousState {
-        case .cartSubmittedForCompletion:
-            break
-        default:
-            let cartID = try pkEncoder.cartID.get()
-            try? await _Concurrency.Task.retrying(clock: clock) { @MainActor in
+    private func prepareCartForRecovery() async throws {
+        let cartID = try pkEncoder.cartID.get()
+        do {
+            try await _Concurrency.Task.retrying(maxRetryCount: 1, clock: clock) { @MainActor in
                 try await self.controller.storefront.cartRemovePersonalData(id: cartID)
             }.value
-
             ShopifyAcceleratedCheckouts.logger.debug("Cleared PII from cart")
-
-            do {
-                // `cartRemovePersonalData` is used to clear PII collected via ApplePay
-                // This removes some data potentially provided externally
-                // e.g. via ShopifyAcceleratedCheckouts.Configuration.Customer
-                // It is safe for us to re-attach this prior to displaying Checkout Kit
-                if let customer = configuration.common.customer,
-                   customer.email != nil || customer.phoneNumber != nil
-                   || customer.customerAccessToken != nil
-                {
-                    try await controller.storefront.cartBuyerIdentityUpdate(
-                        id: cartID,
-                        input: .init(
-                            email: configuration.common.customer?.email,
-                            phoneNumber: configuration.common.customer?.phoneNumber,
-                            customerAccessToken: configuration.common.customer?.customerAccessToken
-                        )
-                    )
-
-                    ShopifyAcceleratedCheckouts.logger.debug("Updated cart with ShopifyAcceleratedCheckouts.Customer")
-                }
-            } catch {
-                // Whilst it would be best to be able to re-attach this, we can still present Checkout Kit
-                // without a successful response on `cartBuyerIdentityUpdate`
-                ShopifyAcceleratedCheckouts.logger.error("Failed to update cart buyer identity: \(error)")
-            }
+        } catch {
+            ShopifyAcceleratedCheckouts.logger.error("Failed to clear personal data from cart; continuing to checkout")
         }
 
+        do {
+            if let customer = configuration.common.customer,
+               customer.email != nil || customer.phoneNumber != nil || customer.customerAccessToken != nil
+            {
+                try await controller.storefront.cartBuyerIdentityUpdate(
+                    id: cartID,
+                    input: .init(
+                        email: customer.email,
+                        phoneNumber: customer.phoneNumber,
+                        customerAccessToken: customer.customerAccessToken
+                    )
+                )
+            }
+        } catch {
+            ShopifyAcceleratedCheckouts.logger.error("Failed to update cart buyer identity: \(error)")
+        }
+    }
+
+    private func onPresentingCheckoutKit(to url: URL?) async throws {
+        guard let url else {
+            try await transition(to: .terminalError(error: ShopifyAcceleratedCheckouts.Error.invariant(expected: "url")))
+            return
+        }
         try? await controller.present(url: url)
     }
 
@@ -200,7 +186,12 @@ class ApplePayAuthorizationDelegate: NSObject, ObservableObject {
              .unexpectedError,
              .interrupt:
             // These states leave Apple Pay and recover in Checkout Kit, so the experience remains open.
-            try await transition(to: .presentingCheckoutKit(url: createCheckoutKitURL(for: previousState)))
+            guard let url = createCheckoutKitURL(for: previousState) else {
+                try await transition(to: .presentingCheckoutKit(url: nil))
+                return
+            }
+            try await prepareCartForRecovery()
+            try await transition(to: .presentingCheckoutKit(url: url))
 
         case let .cartSubmittedForCompletion(redirectURL):
             // Continue to the thank-you page or checkout fallback, so the experience remains open.

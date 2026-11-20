@@ -1,0 +1,330 @@
+// swift-interface-format-version: 1.0
+import CheckoutKitTelemetry
+import Combine
+import DeveloperToolsSupport
+import EmbeddedCheckoutProtocol
+import Foundation
+import Foundation/*.Bundle*/
+import Foundation/*.ProcessInfo*/
+import Foundation/*.URL*/
+import SafariServices
+import Swift
+import SwiftUI
+import UIKit
+import WebKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+import os.lock
+import os.log
+import os
+public enum CheckoutAppearance : Swift.Equatable, Swift.Sendable {
+  case app(_: ShopifyCheckoutKit.CheckoutColorScheme = .automatic())
+  case storefront(colors: ShopifyCheckoutKit.CheckoutColors = .init())
+  public static func == (a: ShopifyCheckoutKit.CheckoutAppearance, b: ShopifyCheckoutKit.CheckoutAppearance) -> Swift.Bool
+}
+public enum CheckoutColorScheme : Swift.Equatable, Swift.Sendable {
+  case light(colors: ShopifyCheckoutKit.CheckoutColors = .init())
+  case dark(colors: ShopifyCheckoutKit.CheckoutColors = .init())
+  case automatic(lightColors: ShopifyCheckoutKit.CheckoutColors = .init(), darkColors: ShopifyCheckoutKit.CheckoutColors = .init())
+  public var id: Swift.String {
+    get
+  }
+  public func customize(_ customizer: (inout ShopifyCheckoutKit.CheckoutColors) -> Swift.Void) -> ShopifyCheckoutKit.CheckoutColorScheme
+  public func customize(light: (inout ShopifyCheckoutKit.CheckoutColors) -> Swift.Void, dark: (inout ShopifyCheckoutKit.CheckoutColors) -> Swift.Void) -> ShopifyCheckoutKit.CheckoutColorScheme
+  public static func == (a: ShopifyCheckoutKit.CheckoutColorScheme, b: ShopifyCheckoutKit.CheckoutColorScheme) -> Swift.Bool
+}
+public struct CheckoutColors : Swift.Equatable, Swift.Sendable {
+  public var webViewBackgroundColor: UIKit.UIColor
+  public var headerBackgroundColor: UIKit.UIColor
+  public var headerTitleColor: UIKit.UIColor
+  public var progressIndicatorColor: UIKit.UIColor
+  public var closeIcon: UIKit.UIImage?
+  public var closeIconTintColor: UIKit.UIColor?
+  public var headerBorderColor: UIKit.UIColor?
+  public init(webViewBackgroundColor: UIKit.UIColor = .systemBackground, headerBackgroundColor: UIKit.UIColor = .clear, headerTitleColor: UIKit.UIColor = .label, progressIndicatorColor: UIKit.UIColor = CheckoutColors.defaultProgressIndicatorColor, closeIcon: UIKit.UIImage? = nil, closeIconTintColor: UIKit.UIColor? = nil, headerBorderColor: UIKit.UIColor? = nil)
+  public func customize(_ customizer: (inout ShopifyCheckoutKit.CheckoutColors) -> Swift.Void) -> ShopifyCheckoutKit.CheckoutColors
+  @usableFromInline
+  internal static let defaultProgressIndicatorColor: UIKit.UIColor
+  public static func == (a: ShopifyCheckoutKit.CheckoutColors, b: ShopifyCheckoutKit.CheckoutColors) -> Swift.Bool
+}
+@_Concurrency.MainActor public protocol CheckoutDelegate : AnyObject {
+  @_Concurrency.MainActor func checkoutDidStart(_ event: ShopifyCheckoutKit.CheckoutStartEvent)
+  @_Concurrency.MainActor func checkoutDidUpdate(_ event: ShopifyCheckoutKit.CheckoutUpdateEvent)
+  @_Concurrency.MainActor func checkoutDidComplete(_ event: ShopifyCheckoutKit.CheckoutCompleteEvent)
+  @_Concurrency.MainActor func checkoutAction(for link: ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction
+  @_Concurrency.MainActor func checkoutDidDismiss()
+  @_Concurrency.MainActor func checkoutDidFail(_ event: ShopifyCheckoutKit.CheckoutFailureEvent)
+}
+extension ShopifyCheckoutKit.CheckoutDelegate {
+  @_Concurrency.MainActor public func checkoutDidStart(_: ShopifyCheckoutKit.CheckoutStartEvent)
+  @_Concurrency.MainActor public func checkoutDidUpdate(_: ShopifyCheckoutKit.CheckoutUpdateEvent)
+  @_Concurrency.MainActor public func checkoutDidComplete(_: ShopifyCheckoutKit.CheckoutCompleteEvent)
+  @_Concurrency.MainActor public func checkoutAction(for _: ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction
+}
+public enum CheckoutErrorCode : Swift.String, Swift.Codable, Swift.CaseIterable, Swift.Sendable {
+  case storefrontPasswordRequired
+  case customerAccountRequired
+  case cartExpired
+  case cartCompleted
+  case invalidCart
+  case httpError
+  case networkError
+  case webContentProcessTerminated
+  case sdkError
+  case unknown
+  public init?(rawValue: Swift.String)
+  public typealias AllCases = [ShopifyCheckoutKit.CheckoutErrorCode]
+  public typealias RawValue = Swift.String
+  nonisolated public static var allCases: [ShopifyCheckoutKit.CheckoutErrorCode] {
+    get
+  }
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public struct CheckoutError : Foundation.LocalizedError {
+  public let code: ShopifyCheckoutKit.CheckoutErrorCode
+  public let message: Swift.String
+  public let httpStatusCode: Swift.Int?
+  public let underlyingError: (any Swift.Error)?
+  public init(code: ShopifyCheckoutKit.CheckoutErrorCode, message: Swift.String, httpStatusCode: Swift.Int? = nil, underlyingError: (any Swift.Error)? = nil)
+  public var errorDescription: Swift.String? {
+    get
+  }
+}
+public struct CheckoutStartEvent : Swift.Equatable, Swift.Sendable {
+  public let checkout: ShopifyCheckoutKit.Checkout
+  public init(checkout: ShopifyCheckoutKit.Checkout)
+  public static func == (a: ShopifyCheckoutKit.CheckoutStartEvent, b: ShopifyCheckoutKit.CheckoutStartEvent) -> Swift.Bool
+}
+public struct CheckoutUpdateEvent : Swift.Equatable, Swift.Sendable {
+  public let checkout: ShopifyCheckoutKit.Checkout
+  public init(checkout: ShopifyCheckoutKit.Checkout)
+  public static func == (a: ShopifyCheckoutKit.CheckoutUpdateEvent, b: ShopifyCheckoutKit.CheckoutUpdateEvent) -> Swift.Bool
+}
+public struct CheckoutCompleteEvent : Swift.Equatable, Swift.Sendable {
+  public let checkout: ShopifyCheckoutKit.Checkout
+  public init(checkout: ShopifyCheckoutKit.Checkout)
+  public static func == (a: ShopifyCheckoutKit.CheckoutCompleteEvent, b: ShopifyCheckoutKit.CheckoutCompleteEvent) -> Swift.Bool
+}
+public struct CheckoutFailureEvent {
+  public let error: ShopifyCheckoutKit.CheckoutError
+  public init(error: ShopifyCheckoutKit.CheckoutError)
+}
+public struct CheckoutLink : Swift.Equatable, Swift.Sendable {
+  public let url: Foundation.URL
+  public init(url: Foundation.URL)
+  public static func == (a: ShopifyCheckoutKit.CheckoutLink, b: ShopifyCheckoutKit.CheckoutLink) -> Swift.Bool
+}
+public enum CheckoutLinkAction : Swift.Equatable, Swift.Sendable {
+  case cancel
+  case `default`
+  case handled
+  public static func == (a: ShopifyCheckoutKit.CheckoutLinkAction, b: ShopifyCheckoutKit.CheckoutLinkAction) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct CheckoutURL {
+  public let url: Foundation.URL
+  public func isMultipassURL() -> Swift.Bool
+  public func isBlank() -> Swift.Bool
+  public func isDeepLink() -> Swift.Bool
+}
+@objc @_hasMissingDesignatedInitializers @_Concurrency.MainActor public class CheckoutViewController : UIKit.UINavigationController {
+  @_Concurrency.MainActor convenience public init(checkout url: Foundation.URL, delegate: (any ShopifyCheckoutKit.CheckoutDelegate)? = nil)
+  @objc deinit
+}
+@_Concurrency.MainActor @preconcurrency public struct ShopifyCheckout : SwiftUI.UIViewControllerRepresentable, ShopifyCheckoutKit.CheckoutConfigurable {
+  public typealias UIViewControllerType = ShopifyCheckoutKit.CheckoutViewController
+  @_Concurrency.MainActor @preconcurrency public init(checkout url: Foundation.URL)
+  @_Concurrency.MainActor @preconcurrency public func makeUIViewController(context _: ShopifyCheckoutKit.ShopifyCheckout.Context) -> ShopifyCheckoutKit.CheckoutViewController
+  @_Concurrency.MainActor @preconcurrency public func updateUIViewController(_ uiViewController: ShopifyCheckoutKit.CheckoutViewController, context _: ShopifyCheckoutKit.ShopifyCheckout.Context)
+  @_Concurrency.MainActor @preconcurrency public static func dismantleUIViewController(_ uiViewController: ShopifyCheckoutKit.CheckoutViewController, coordinator _: Swift.Void)
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onStart(_ action: @escaping (ShopifyCheckoutKit.CheckoutStartEvent) -> Swift.Void) -> ShopifyCheckoutKit.ShopifyCheckout
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onUpdate(_ action: @escaping (ShopifyCheckoutKit.CheckoutUpdateEvent) -> Swift.Void) -> ShopifyCheckoutKit.ShopifyCheckout
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onComplete(_ action: @escaping (ShopifyCheckoutKit.CheckoutCompleteEvent) -> Swift.Void) -> ShopifyCheckoutKit.ShopifyCheckout
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onLinkClick(_ action: @escaping (ShopifyCheckoutKit.CheckoutLink) -> ShopifyCheckoutKit.CheckoutLinkAction) -> ShopifyCheckoutKit.ShopifyCheckout
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onDismiss(_ action: @escaping () -> Swift.Void) -> ShopifyCheckoutKit.ShopifyCheckout
+  @discardableResult
+  @_Concurrency.MainActor @preconcurrency public func onFail(_ action: @escaping (ShopifyCheckoutKit.CheckoutFailureEvent) -> Swift.Void) -> ShopifyCheckoutKit.ShopifyCheckout
+  public typealias Body = Swift.Never
+  public typealias Coordinator = Swift.Void
+}
+@_Concurrency.MainActor public protocol CheckoutConfigurable {
+  @_Concurrency.MainActor func appearance(_ appearance: ShopifyCheckoutKit.CheckoutAppearance) -> Self
+  @_Concurrency.MainActor func title(_ title: Swift.String) -> Self
+}
+extension ShopifyCheckoutKit.CheckoutConfigurable {
+  @discardableResult
+  @_Concurrency.MainActor public func appearance(_ appearance: ShopifyCheckoutKit.CheckoutAppearance) -> Self
+  @discardableResult
+  @_Concurrency.MainActor public func title(_ title: Swift.String) -> Self
+}
+@available(*, deprecated, renamed: "ShopifyCheckout")
+public typealias CheckoutSheet = ShopifyCheckoutKit.ShopifyCheckout
+public struct Platform : Swift.Equatable, Swift.Sendable {
+  public let identifier: Swift.String
+  public let version: Swift.String?
+  public static let reactNative: ShopifyCheckoutKit.Platform
+  public static func reactNative(version: Swift.String) -> ShopifyCheckoutKit.Platform
+  public static func == (a: ShopifyCheckoutKit.Platform, b: ShopifyCheckoutKit.Platform) -> Swift.Bool
+}
+public struct Configuration : Swift.Sendable {
+  public var appearance: ShopifyCheckoutKit.CheckoutAppearance
+  public var confetti: ShopifyCheckoutKit.Configuration.Confetti
+  public var preloading: ShopifyCheckoutKit.Configuration.Preloading
+  public var telemetry: ShopifyCheckoutKit.Configuration.Telemetry
+  public var logger: any ShopifyCheckoutKit.Logger
+  public var title: Swift.String
+  public var platform: ShopifyCheckoutKit.Platform?
+  public var logLevel: ShopifyCheckoutKit.LogLevel
+  public var allowedMessageOrigins: [Swift.String]
+}
+extension ShopifyCheckoutKit.Configuration {
+  public struct Confetti : Swift.Sendable {
+    public var enabled: Swift.Bool
+    public var particles: [UIKit.UIImage]
+  }
+}
+extension ShopifyCheckoutKit.Configuration {
+  public struct Preloading : Swift.Sendable {
+    public var enabled: Swift.Bool
+  }
+}
+extension ShopifyCheckoutKit.Configuration {
+  public struct Telemetry : Swift.Sendable {
+    public var enabled: Swift.Bool
+  }
+}
+public enum LogLevel : Swift.String, Swift.CaseIterable, Swift.Sendable {
+  case debug
+  case warn
+  case error
+  case none
+  public init?(rawValue: Swift.String)
+  public typealias AllCases = [ShopifyCheckoutKit.LogLevel]
+  public typealias RawValue = Swift.String
+  nonisolated public static var allCases: [ShopifyCheckoutKit.LogLevel] {
+    get
+  }
+  public var rawValue: Swift.String {
+    get
+  }
+}
+@_hasMissingDesignatedInitializers final public class OSLogger : Swift.Sendable {
+  public static var shared: ShopifyCheckoutKit.OSLogger {
+    get
+    set
+  }
+  convenience public init()
+  convenience public init(prefix: Swift.String, logLevel: ShopifyCheckoutKit.LogLevel)
+  final public func debug(_ message: Swift.String)
+  final public func info(_ message: Swift.String)
+  final public func warn(_ message: Swift.String)
+  final public func error(_ message: Swift.String)
+  final public func fault(_ message: Swift.String)
+  @objc deinit
+}
+public protocol Logger : Swift.Sendable {
+  func log(_ message: Swift.String)
+  func clearLogs()
+}
+@_hasMissingDesignatedInitializers final public class NoOpLogger : ShopifyCheckoutKit.Logger {
+  final public func log(_: Swift.String)
+  final public func clearLogs()
+  @objc deinit
+}
+public struct Checkout : Swift.Codable, Swift.Sendable {
+  public var additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]
+  public let actions: [Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]?
+  public let attribution: [Swift.String : Swift.String]?
+  public let buyer: EmbeddedCheckoutProtocol.Buyer?
+  public let context: EmbeddedCheckoutProtocol.Context?
+  public let continueURL: Swift.String?
+  public let currency: Swift.String
+  public let discounts: EmbeddedCheckoutProtocol.CheckoutDiscounts?
+  public let expiresAt: Foundation.Date?
+  public let fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillment?
+  public let id: Swift.String
+  public let lineItems: [EmbeddedCheckoutProtocol.LineItem]
+  public let links: [EmbeddedCheckoutProtocol.Link]
+  public let messages: [EmbeddedCheckoutProtocol.Message]?
+  public let order: EmbeddedCheckoutProtocol.OrderConfirmation?
+  public let payment: EmbeddedCheckoutProtocol.Payment?
+  public let policies: [EmbeddedCheckoutProtocol.Policy]?
+  public let signals: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]?
+  public let status: EmbeddedCheckoutProtocol.CheckoutStatus
+  public let totals: [EmbeddedCheckoutProtocol.CheckoutTotal]
+  public init(id: Swift.String, status: EmbeddedCheckoutProtocol.CheckoutStatus, currency: Swift.String, actions: [Swift.String : [[Swift.String : EmbeddedCheckoutProtocol.JSONAny]]]? = nil, attribution: [Swift.String : Swift.String]? = nil, buyer: EmbeddedCheckoutProtocol.Buyer? = nil, context: EmbeddedCheckoutProtocol.Context? = nil, continueURL: Swift.String? = nil, discounts: EmbeddedCheckoutProtocol.CheckoutDiscounts? = nil, expiresAt: Foundation.Date? = nil, fulfillment: EmbeddedCheckoutProtocol.CheckoutFulfillment? = nil, lineItems: [EmbeddedCheckoutProtocol.LineItem], links: [EmbeddedCheckoutProtocol.Link] = [], messages: [EmbeddedCheckoutProtocol.Message]? = nil, order: EmbeddedCheckoutProtocol.OrderConfirmation? = nil, payment: EmbeddedCheckoutProtocol.Payment? = nil, policies: [EmbeddedCheckoutProtocol.Policy]? = nil, signals: [Swift.String : EmbeddedCheckoutProtocol.JSONAny]? = nil, totals: [EmbeddedCheckoutProtocol.CheckoutTotal], additionalProperties: [Swift.String : EmbeddedCheckoutProtocol.JSONAny] = [:])
+  public init(from decoder: any Swift.Decoder) throws
+  public func encode(to encoder: any Swift.Encoder) throws
+}
+extension ShopifyCheckoutKit.Checkout : Swift.Equatable {
+  public static func == (lhs: ShopifyCheckoutKit.Checkout, rhs: ShopifyCheckoutKit.Checkout) -> Swift.Bool
+}
+public enum PreloadState : Swift.Equatable {
+  case idle(reason: ShopifyCheckoutKit.PreloadState.IdleReason? = nil)
+  case loading
+  case ready
+  case failed(reason: ShopifyCheckoutKit.PreloadState.FailureReason, message: Swift.String)
+  public struct IdleReason : Swift.RawRepresentable, Swift.Hashable, Swift.Sendable {
+    public let rawValue: Swift.String
+    public init(rawValue: Swift.String)
+    public static let invalidated: ShopifyCheckoutKit.PreloadState.IdleReason
+    public static let expired: ShopifyCheckoutKit.PreloadState.IdleReason
+    public typealias RawValue = Swift.String
+  }
+  public enum FailureReason : Swift.Equatable {
+    case httpError(statusCode: Swift.Int)
+    case navigationFailed
+    case webContentUnavailable
+    case protocolError
+    public static func == (a: ShopifyCheckoutKit.PreloadState.FailureReason, b: ShopifyCheckoutKit.PreloadState.FailureReason) -> Swift.Bool
+  }
+  public static func == (a: ShopifyCheckoutKit.PreloadState, b: ShopifyCheckoutKit.PreloadState) -> Swift.Bool
+}
+@_hasMissingDesignatedInitializers @_Concurrency.MainActor final public class CheckoutPreload : Combine.ObservableObject {
+  @Combine.Published<ShopifyCheckoutKit.PreloadState> @_projectedValueProperty($state) @_Concurrency.MainActor final public var state: ShopifyCheckoutKit.PreloadState {
+    get
+  }
+  @_Concurrency.MainActor final public var $state: Combine.Published<ShopifyCheckoutKit.PreloadState>.Publisher {
+    get
+  }
+  @_Concurrency.MainActor final public var onStateChange: ((ShopifyCheckoutKit.PreloadState) -> Swift.Void)? {
+    get
+    set
+  }
+  public typealias ObjectWillChangePublisher = Combine.ObservableObjectPublisher
+  @objc deinit
+}
+extension ShopifyCheckoutKit.ShopifyCheckout {
+  nonisolated public static var configuration: ShopifyCheckoutKit.Configuration {
+    get
+  }
+  @_Concurrency.MainActor public static func configure(_ block: (inout ShopifyCheckoutKit.Configuration) -> Swift.Void)
+  @discardableResult
+  @_Concurrency.MainActor public static func preload(checkout url: Foundation.URL) -> ShopifyCheckoutKit.CheckoutPreload?
+  @_Concurrency.MainActor public static func clearPreload()
+  @discardableResult
+  @_Concurrency.MainActor public static func present(checkout url: Foundation.URL, from: UIKit.UIViewController, delegate: (any ShopifyCheckoutKit.CheckoutDelegate)? = nil) -> ShopifyCheckoutKit.CheckoutViewController
+}
+public let version: Swift.String
+public enum UserAgent {
+}
+extension ShopifyCheckoutKit.CheckoutErrorCode : Swift.Equatable {}
+extension ShopifyCheckoutKit.CheckoutErrorCode : Swift.Hashable {}
+extension ShopifyCheckoutKit.CheckoutErrorCode : Swift.RawRepresentable {}
+extension ShopifyCheckoutKit.CheckoutLinkAction : Swift.Hashable {}
+extension ShopifyCheckoutKit.ShopifyCheckout : Swift.Sendable {}
+extension ShopifyCheckoutKit.LogLevel : Swift.Equatable {}
+extension ShopifyCheckoutKit.LogLevel : Swift.Hashable {}
+extension ShopifyCheckoutKit.LogLevel : Swift.RawRepresentable {}
+extension ShopifyCheckoutKit.CheckoutPreload : Swift.Sendable {}

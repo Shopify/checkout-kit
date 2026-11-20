@@ -1,5 +1,5 @@
 import {expect, test} from 'vitest';
-import {decodeCheckoutSnapshot} from '../src';
+import {decodeCheckoutSnapshot, ProtocolValidationError} from '../src';
 
 const snapshot = {
   id: 'checkout-1',
@@ -48,10 +48,36 @@ test('treats undefined optional fields as absent', () => {
   expect(decoded).not.toHaveProperty('fulfillment');
 });
 
+test.each([null, [], 'checkout', 123])('reports invalid root snapshots through the validation contract', value => {
+  expect(() => decodeCheckoutSnapshot(value)).toThrow(ProtocolValidationError);
+  expect(() => decodeCheckoutSnapshot(value)).toThrow(expect.objectContaining({
+    modelPath: 'Checkout',
+    reason: 'invalid_type',
+  }));
+});
+
+test.each(['id', 'currency', 'status'])('reports invalid snapshot %s through the validation contract', field => {
+  expect(() => decodeCheckoutSnapshot({...snapshot, [field]: 123})).toThrow(
+    expect.objectContaining({
+      name: 'ProtocolValidationError',
+      modelPath: `Checkout.${field}`,
+      reason: 'invalid_type',
+    }),
+  );
+});
+
+test('reports a missing nested order field through the validation contract', () => {
+  expect(() => decodeCheckoutSnapshot({...snapshot, order: {id: 'order-1'}})).toThrow(
+    expect.objectContaining({
+      name: 'ProtocolValidationError',
+      modelPath: 'Checkout.order.permalink_url',
+      reason: 'missing_required',
+    }),
+  );
+});
+
 test.each([
-  null, [], {}, {...snapshot, id: 1}, {...snapshot, status: 2},
-  {...snapshot, line_items: null}, {...snapshot, totals: undefined},
-  {...snapshot, order: {id: 'order-1'}},
+  {}, {...snapshot, line_items: null}, {...snapshot, totals: undefined},
 ])('rejects malformed snapshots', value => {
   expect(() => decodeCheckoutSnapshot(value)).toThrow(TypeError);
 });

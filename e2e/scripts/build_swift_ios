@@ -58,6 +58,8 @@ if [ -z "$simulator_app" ] || [ ! -d "$simulator_app" ]; then
   exit 1
 fi
 
+envman add --key E2E_SWIFT_IOS_SIMULATOR_APP_BUNDLE --value "$simulator_app"
+
 e2e_log "Packaging iOS simulator app"
 rm -f "$simulator_app_zip"
 ditto -c -k --keepParent "$simulator_app" "$simulator_app_zip"

@@ -46,6 +46,7 @@ preloads remain shared across checkout entry points, not scoped to individual vi
   - [Prerequisites](#prerequisites)
   - [Configure accelerated checkouts](#configure-accelerated-checkouts)
   - [Render buttons](#render-buttons)
+    - [Customize button height](#customize-button-height)
 - [Troubleshooting](#troubleshooting)
 - [Samples](#samples)
 - [Contributing](#contributing)
@@ -60,7 +61,7 @@ preloads remain shared across checkout entry points, not scoped to individual vi
 
 ## Install
 
-Install Checkout Kit for Swift `4.0.0`:
+Install Checkout Kit for Swift `4.2.0`:
 
 ### Swift Package Manager
 
@@ -74,7 +75,7 @@ Or add it to `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.0.0")
+  .package(url: "https://github.com/Shopify/checkout-kit", exact: "4.2.0")
 ]
 ```
 
@@ -95,10 +96,10 @@ Then add the products you need to your app target:
 The CocoaPods spec exists so that [Checkout Kit for React Native](../react-native) can consume the native SDK. Native apps should use Swift Package Manager.
 
 ```ruby
-pod "ShopifyCheckoutKit", "4.0.0"
+pod "ShopifyCheckoutKit", "4.2.0"
 
 # Optional: Shop Pay and Apple Pay accelerated checkout buttons.
-pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.0.0"
+pod "ShopifyCheckoutKit/AcceleratedCheckouts", "4.2.0"
 ```
 
 ### Compatibility
@@ -217,11 +218,13 @@ if preload == nil {
 }
 ```
 
-`onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle also stops receiving updates and retains its last observed state, which may be `.loading`.
+`onStateChange` receives the current state immediately, followed by state changes. The preload cache has one weak observer, so a later `preload` call replaces the observer associated with an earlier handle; retain the latest handle for as long as you need to observe state. When `present` reuses a preload, its handle keeps receiving updates for that checkout. A preload presented while `.loading` reports `.ready` once it finishes loading. While checkout is presented, the handle doesn't go idle. If the checkout is removed during presentation, for example after completion, a failure, or `ShopifyCheckout.clearPreload()`, the handle reports `.invalidated` when checkout is dismissed, just before `onDismiss` runs. A failure after presentation reports `.invalidated` rather than `.failed`. If the checkout is kept after dismissal, the handle reports `.expired` when the kept checkout reaches its time-to-live, and `.invalidated` if it's removed later.
 
 A successful background preload normally transitions from `.loading` to `.ready`. `.idle()` is the initial state. An idle state with an `.invalidated` or `.expired` reason means a cached preload became unavailable through that expected lifecycle transition. `.failed` means the SDK could not maintain usable preloaded web content; present still creates checkout normally.
 
-`.invalidated` covers explicit invalidation, configuration changes (including disabling preloading), a checkout URL or entry point mismatch, checkout completion, and clearing unusable content after presentation. `.expired` means the cached preload reached its time-to-live. Calling `invalidate()` when no checkout is cached preserves the last state, including any expiry or failure reason, and does not notify observers.
+Don't make presentation wait for `.ready` alone. A preload can end in `.failed` or `.idle` instead, for example when a bot challenge interrupts it, and `present` still loads checkout normally. If your app waits for `.ready` before presenting, also present on `.failed` or `.idle`, or after a timeout. A preload reports `.ready` when checkout has loaded and signals that it's ready, whether or not it has been presented yet. A page that isn't checkout, such as a bot challenge, doesn't count.
+
+`.invalidated` covers explicit invalidation, configuration changes (including disabling preloading), a checkout URL or entry point mismatch, checkout completion, and clearing unusable content after presentation. `.expired` means the cached preload reached its time-to-live. Calling `ShopifyCheckout.clearPreload()` when no checkout is cached preserves the last state, including any expiry or failure reason, and does not notify observers.
 
 `IdleReason` is an extensible string-backed value, with `.invalidated` and `.expired` constants. New reasons can be added without adding state cases. Compare the constants or include a `default` branch when switching over reasons; treat unfamiliar reasons as an unavailable preload. `rawValue` preserves the reason's stable identifier, including unknown values.
 
@@ -657,18 +660,18 @@ struct YourApp: App {
 }
 ```
 
-Use one customer mode at a time:
+Use `init(customerAccessToken:)` for authenticated buyers and `init(email:phoneNumber:)` for guests. Pass an authenticated buyer's token without separate email or phone overrides, which can conflict with the account's contact information and cause cart completion to fail.
 
 ```swift
-// Authenticated buyer.
-ShopifyAcceleratedCheckouts.Customer(customerAccessToken: customerAccessToken)
+let authenticatedCustomer = ShopifyAcceleratedCheckouts.Customer(customerAccessToken: customerAccessToken)
 
-// Guest or explicit contact override.
-ShopifyAcceleratedCheckouts.Customer(
+let guestCustomer = ShopifyAcceleratedCheckouts.Customer(
   email: "buyer@example.com",
   phoneNumber: "15555555555"
 )
 ```
+
+`init(email:phoneNumber:customerAccessToken:)` is deprecated and remains available for source compatibility. Migrate to the initializer for the buyer's identity mode. If the access token is optional, unwrap it before calling `init(customerAccessToken:)`.
 
 `contactFields` is required by the current Swift API. Include `.email` when the shop requires customer accounts and `.phone` when the shop requires phone numbers for shipping.
 
@@ -695,7 +698,7 @@ ShopifyAcceleratedCheckoutButtons(cartID: cartID)
     // Mark checkout as completed; reset the cart after dismissal.
   }
   .onLinkClick { link in
-    .open
+    .default
   }
   .onFail { error in
     // Handle checkout failure.
@@ -724,7 +727,16 @@ If the cart should use an authenticated buyer's identity, create or update it wi
 
 Return `.failed` when the app has already handled a cart-creation failure; no wallet opens and `onFail` is not called. If the closure throws, including a thrown `CancellationError`, `.onFail` receives the error and no wallet opens.
 
-Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. After completion, clear or refresh the cart when checkout is dismissed so the confirmation page remains visible.
+Use `.onStart`, `.onUpdate`, `.onComplete`, and `.onLinkClick` for Shop Pay and Apple Pay’s web checkout fallback. These callbacks do not require a protocol client. Record success in `.onComplete`, then clear or refresh the cart in `.onDismiss`. Defer navigation or state changes that remove the accelerated checkout buttons until dismissal so the confirmation page remains visible.
+
+#### Customize button height
+
+Use `.buttonHeight(_:)` to size each Shop Pay and Apple Pay button to match your app's other actions. Buttons default to 48pt and accept heights from 30pt to 64pt. Values outside that range are clamped; zero, negative, or non-finite values use the default. Each button sets its own height, so use `.buttonHeight(_:)` rather than `.frame(height:)` to resize them.
+
+```swift
+ShopifyAcceleratedCheckoutButtons(cartID: cartID)
+  .buttonHeight(56)
+```
 
 ## Troubleshooting
 

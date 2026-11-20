@@ -155,7 +155,7 @@ class ShopifyCheckoutLifecycleTest {
     }
 
     @Test
-    fun `present uses a fresh WebView after dismissing a preloaded checkout`() {
+    fun `present reuses a preloaded WebView after dismissal`() {
         Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
             val activity = activityController.get()
             preload(PRELOAD_URL, activity)
@@ -170,8 +170,8 @@ class ShopifyCheckoutLifecycleTest {
             ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
             presentCheckout(activity, PRELOAD_URL)
 
-            assertThat(shadowOf(cachedView).wasDestroyCalled()).isTrue()
-            assertThat(latestSheetCheckoutWebView()).isNotSameAs(cachedView)
+            assertThat(shadowOf(cachedView).wasDestroyCalled()).isFalse()
+            assertThat(latestSheetCheckoutWebView()).isSameAs(cachedView)
         }
     }
 
@@ -195,6 +195,94 @@ class ShopifyCheckoutLifecycleTest {
             activityController.destroy()
 
             assertThat(sheet.isShowing).isFalse()
+            assertThat(shadowOf(checkoutWebView).wasDestroyCalled()).isTrue()
+        }
+    }
+
+    @Test
+    fun `buyer dismissal reports invalidated for a preload completed while presented`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val states = mutableListOf<PreloadState>()
+            CheckoutService.preload(PRELOAD_URL, activity, webMessageTransport) { states.add(it) }
+            ShadowLooper.shadowMainLooper().idle()
+            val handle = presentCheckout(activity, PRELOAD_URL)
+            layoutLatestSheet()
+
+            CheckoutWebView.evictForCompletion(latestSheetCheckoutWebView())
+            ShadowLooper.shadowMainLooper().idle()
+            assertThat(states).containsExactly(PreloadState.Loading)
+
+            handle?.dismiss()
+            ShadowLooper.idleMainLooper(1, TimeUnit.SECONDS)
+
+            assertThat(states).containsExactly(
+                PreloadState.Loading,
+                PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+            )
+        }
+    }
+
+    @Test
+    fun `activity destroy reports invalidated for a preload completed while presented`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val states = mutableListOf<PreloadState>()
+            CheckoutService.preload(PRELOAD_URL, activity, webMessageTransport) { states.add(it) }
+            ShadowLooper.shadowMainLooper().idle()
+            presentCheckout(activity, PRELOAD_URL)
+            layoutLatestSheet()
+            val checkoutWebView = latestSheetCheckoutWebView()
+
+            CheckoutWebView.evictForCompletion(checkoutWebView)
+            ShadowLooper.shadowMainLooper().idle()
+            assertThat(states).containsExactly(PreloadState.Loading)
+
+            activityController.destroy()
+            ShadowLooper.shadowMainLooper().idle()
+
+            assertThat(states).containsExactly(
+                PreloadState.Loading,
+                PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+            )
+            assertThat(shadowOf(checkoutWebView).wasDestroyCalled()).isTrue()
+        }
+    }
+
+    @Test
+    fun `activity destroy reports invalidated for an app-hosted checkout completed while presented`() {
+        Robolectric.buildActivity(ComponentActivity::class.java).setup().use { activityController ->
+            val activity = activityController.get()
+            val states = mutableListOf<PreloadState>()
+            CheckoutService.preload(PRELOAD_URL, activity, webMessageTransport) { states.add(it) }
+            ShadowLooper.shadowMainLooper().idle()
+            val checkoutWebView = CheckoutWebView.cachedPreloadViewForTesting()!!
+            val view = ShopifyCheckout(
+                checkoutUrl = PRELOAD_URL,
+                context = activity,
+                webMessageTransport = webMessageTransport,
+                hostConfiguration = CheckoutHostConfiguration(
+                    listener = noopDefaultCheckoutListener(),
+                    protocolClient = null,
+                    onDismissRequest = {},
+                    onFailure = {},
+                    reportInitializationFailure = false,
+                ),
+            )
+            activity.setContentView(view)
+            ShadowLooper.shadowMainLooper().idle()
+
+            CheckoutWebView.evictForCompletion(checkoutWebView)
+            ShadowLooper.shadowMainLooper().idle()
+            assertThat(states).containsExactly(PreloadState.Loading)
+
+            activityController.destroy()
+            ShadowLooper.shadowMainLooper().idle()
+
+            assertThat(states).containsExactly(
+                PreloadState.Loading,
+                PreloadState.Idle(PreloadState.IdleReason.Invalidated),
+            )
             assertThat(shadowOf(checkoutWebView).wasDestroyCalled()).isTrue()
         }
     }

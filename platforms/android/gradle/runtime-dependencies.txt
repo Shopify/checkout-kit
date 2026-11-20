@@ -1,0 +1,7 @@
+# Third-party runtime dependencies that the Android SDK's bundled features may declare.
+# One group:module per line. This policy checks modules, not versions.
+# Adding an entry needs an approved proposal: see .github/ARCHITECTURE.md#runtime-dependencies.
+androidx.appcompat:appcompat
+androidx.webkit:webkit
+org.jetbrains.kotlin:kotlin-stdlib
+org.jetbrains.kotlinx:kotlinx-serialization-json

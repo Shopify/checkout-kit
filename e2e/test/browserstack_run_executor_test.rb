@@ -49,11 +49,12 @@ class BrowserStackRunExecutorTest < Minitest::Test
     end
   end
 
-  # The local CLI resolves through e2e/scripts/maestro_bin, which reads this same file. One
-  # file means the version BrowserStack runs and the version a laptop runs cannot diverge.
-  def test_the_default_pin_file_is_the_one_the_local_cli_reads
+  def test_the_default_pin_file_is_specific_to_browserstack
+    version_file = File.join(E2E_ROOT, ".browserstack-maestro-version")
+
+    assert_equal version_file, BrowserStackRunExecutor::MAESTRO_VERSION_FILE
     assert_equal(
-      File.read(File.join(E2E_ROOT, ".maestro-version")).strip,
+      File.read(version_file).strip,
       BrowserStackRunExecutor.resolve_maestro_version({})
     )
   end

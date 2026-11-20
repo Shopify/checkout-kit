@@ -192,9 +192,12 @@ class RCTShopifyCheckoutKit: NSObject {
         }
     }
 
-    /// Resolves with the applied configuration, in the `getConfig` shape, after `CheckoutKitConfigurationUpdated` is
-    /// posted on the main queue. Calls from one thread apply and resolve in call order.
-    /// `ShopifyCheckout.configure` cannot throw, so this never rejects.
+    /// Resolves with the applied configuration, in the `getConfig` shape, on the main queue. It reads that result
+    /// before it posts `CheckoutKitConfigurationUpdated`, so an observer that calls `setConfig` cannot change the
+    /// result of this call. The JavaScript Promise settles later than the native resolve, so observers can run
+    /// before it settles. Calls from one thread apply and resolve in call order. `ShopifyCheckout.configure` cannot
+    /// throw, so this never rejects. JavaScript checks the top-level value types before it calls this method. It does
+    /// not check `appearance`: `CheckoutAppearanceConfiguration.update` handles an `appearance` it cannot read.
     @objc func setConfig(
         _ configuration: [AnyHashable: Any],
         resolve: @escaping RCTPromiseResolveBlock,
@@ -227,8 +230,9 @@ class RCTShopifyCheckoutKit: NSObject {
                 }
             }
 
-            NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
+            // Resolve before the post, so an observer that calls `setConfig` cannot change the result of this call.
             resolve(self.getConfig())
+            NotificationCenter.default.post(name: Notification.Name("CheckoutKitConfigurationUpdated"), object: nil)
         }
     }
 

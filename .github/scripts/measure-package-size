@@ -6,6 +6,7 @@ script_repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 repo_root=${PACKAGE_SIZE_REPO_ROOT:-"$script_repo_root"}
 
 measure_web=${MEASURE_WEB:-true}
+measure_web_cdn=${MEASURE_WEB_CDN:-true}
 measure_react_native=${MEASURE_REACT_NATIVE:-true}
 measure_android=${MEASURE_ANDROID:-true}
 
@@ -99,30 +100,54 @@ measure_web_package() {
   )
 
   tarball=$(find "$pack_dir" -name "*.tgz" -type f -print -quit)
-  # Measure every shipped JS chunk, excluding declarations and source maps.
-  # Sum gzip sizes per file, matching separately compressed HTTP responses.
   local js_dir
-  local js_file
-  local javascript_bytes=0
-  local gzip_bytes=0
-  local js_count=0
   js_dir=$(mktemp -d "${TMPDIR:-/tmp}/checkout-kit-web-js.XXXXXX")
   tar -xzf "$tarball" -C "$js_dir"
-  while IFS= read -r js_file; do
-    javascript_bytes=$((javascript_bytes + $(size_bytes "$js_file")))
-    gzip_bytes=$((gzip_bytes + $(gzip -n -9 -c "$js_file" | wc -c)))
-    js_count=$((js_count + 1))
-  done < <(find "$js_dir/package/dist" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) | sort)
-  if [[ "$js_count" -eq 0 ]]; then
-    echo "No shipped web JavaScript found" >&2
-    rm -rf "$js_dir"
-    return 1
-  fi
-  printf "Web\tJavaScript\t%s\n" "$javascript_bytes" >> "$output_file"
-  printf "Web\tJavaScript (gzip)\t%s\n" "$gzip_bytes" >> "$output_file"
+  record_web_javascript "$js_dir/package/dist" "JavaScript"
   rm -rf "$js_dir"
   record_artifact "Web" "npm tarball" "$tarball"
   record_tarball_breakdown "Web" "npm tarball" "$tarball"
+  rm -rf "$pack_dir"
+
+  if [[ "$measure_web_cdn" == "true" ]]; then
+    (
+      cd "$repo_root/platforms/web"
+      pnpm build:cdn
+    )
+    record_web_javascript "$repo_root/platforms/web/dist-cdn" "CDN JavaScript" true
+  fi
+}
+
+record_web_javascript() {
+  local directory=$1
+  local artifact=$2
+  local details=${3:-false}
+  local file
+  local bytes
+  local compressed_bytes
+  local javascript_bytes=0
+  local gzip_bytes=0
+  local js_count=0
+
+  # Sum gzip sizes per file, matching separately compressed HTTP responses.
+  # Declarations and source maps are not runtime JavaScript.
+  while IFS= read -r file; do
+    bytes=$(size_bytes "$file")
+    javascript_bytes=$((javascript_bytes + bytes))
+    compressed_bytes=$(gzip -n -9 -c "$file" | wc -c)
+    gzip_bytes=$((gzip_bytes + compressed_bytes))
+    js_count=$((js_count + 1))
+    if [[ "$details" == "true" ]]; then
+      printf "Web\t%s\t%s\t%s\n" "$artifact" "$bytes" "${file#"$directory/"}" >> "$output_file"
+      printf "Web\t%s (gzip)\t%s\t%s\n" "$artifact" "$((compressed_bytes))" "${file#"$directory/"}" >> "$output_file"
+    fi
+  done < <(find "$directory" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) | sort)
+  if [[ "$js_count" -eq 0 ]]; then
+    echo "No shipped web $artifact found" >&2
+    return 1
+  fi
+  printf "Web\t%s\t%s\n" "$artifact" "$javascript_bytes" >> "$output_file"
+  printf "Web\t%s (gzip)\t%s\n" "$artifact" "$gzip_bytes" >> "$output_file"
 }
 
 measure_react_native_package() {
@@ -185,217 +210,19 @@ render_comment() {
   local base_file=${1:?usage: measure-package-size render <base-file> <head-file> <output-file>}
   local head_file=${2:?usage: measure-package-size render <base-file> <head-file> <output-file>}
   local comment_file=${3:?usage: measure-package-size render <base-file> <head-file> <output-file>}
-
-  awk -F '\t' -v base_path="$base_file" '
-    function human(bytes,   units, value, unit) {
-      if (bytes == "") {
-        return "unavailable";
-      }
-
-      split("B KiB MiB GiB", units, " ");
-      value = bytes + 0;
-      unit = 1;
-      while (value >= 1024 && unit < 4) {
-        value = value / 1024;
-        unit++;
-      }
-
-      if (unit == 1) {
-        return sprintf("%d %s", value, units[unit]);
-      }
-
-      return sprintf("%.1f %s", value, units[unit]);
-    }
-
-    function cell(bytes) {
-      return (bytes == "") ? "—" : human(bytes);
-    }
-
-    function measurement(artifact) {
-      if (artifact == "JavaScript" || artifact == "JavaScript (gzip)") {
-        return "JavaScript bundle";
-      }
-      if (artifact == "npm tarball") {
-        return "npm package (`.tgz`)";
-      }
-      if (artifact == "release AAR") {
-        return "Library package (`.aar`)";
-      }
-      return artifact;
-    }
-
-    function compression(artifact) {
-      if (artifact == "JavaScript") return "Uncompressed";
-      if (artifact == "JavaScript (gzip)" || artifact == "npm tarball") return "gzip";
-      if (artifact == "release AAR") return "ZIP";
-      return "Unspecified";
-    }
-
-    function delta(head, base,   diff) {
-      if (head == "" || base == "") {
-        return "unavailable";
-      }
-
-      diff = (head + 0) - (base + 0);
-      if (diff > 0) {
-        return "+" human(diff);
-      }
-      if (diff < 0) {
-        return "-" human(-diff);
-      }
-
-      return "0 B";
-    }
-
-    # File-level delta: a file missing on one side is an add/remove, not
-    # "unavailable", so treat the absent side as zero.
-    function file_delta(head, base,   h, b, diff) {
-      h = (head == "") ? 0 : head + 0;
-      b = (base == "") ? 0 : base + 0;
-      diff = h - b;
-      if (diff > 0) {
-        return "+" human(diff);
-      }
-      if (diff < 0) {
-        return "-" human(-diff);
-      }
-
-      return "0 B";
-    }
-
-    function remember(platform, artifact,   key) {
-      key = platform SUBSEP artifact;
-      if (!(key in seen)) {
-        seen[key] = 1;
-        order[++order_count] = key;
-        platforms[key] = platform;
-        artifacts[key] = artifact;
-      }
-      return key;
-    }
-
-    function remember_detail(platform, path,   key) {
-      key = platform SUBSEP path;
-      if (!(key in detail_seen)) {
-        detail_seen[key] = 1;
-        detail_paths[platform, ++detail_n[platform]] = path;
-        if (!(platform in dplat_seen)) {
-          dplat_seen[platform] = 1;
-          dplat_order[++dplat_count] = platform;
-        }
-      }
-      return key;
-    }
-
-    FILENAME == base_path {
-      if (NF >= 4 && $4 != "") {
-        remember_detail($1, $4);
-        detail_base[$1, $4] = $3;
-      } else if (NF >= 3) {
-        key = remember($1, $2);
-        base_bytes[key] = $3;
-      }
-      next;
-    }
-
-    NF >= 4 && $4 != "" {
-      remember_detail($1, $4);
-      detail_head[$1, $4] = $3;
-      next;
-    }
-
-    NF >= 3 {
-      key = remember($1, $2);
-      head_bytes[key] = $3;
-      next;
-    }
-
-    END {
-      cap = 20;
-
-      print "<!-- checkout-kit-package-size -->";
-      print "## Bundle and package size";
-      print "";
-      print "Web bundle sizes cover shipped runtime JavaScript. Package sizes cover the full published archive, including any source maps, declarations, and documentation it contains.";
-      print "";
-      print "| Platform | Measurement | Compression | Base | Head | Delta |";
-      print "| --- | --- | --- | ---: | ---: | ---: |";
-
-      if (order_count == 0) {
-        print "| - | - | - | - | - | - |";
-      } else {
-        for (i = 1; i <= order_count; i++) {
-          key = order[i];
-          printf "| %s | %s | %s | %s | %s | %s |\n",
-            platforms[key],
-            measurement(artifacts[key]),
-            compression(artifacts[key]),
-            human(base_bytes[key]),
-            human(head_bytes[key]),
-            delta(head_bytes[key], base_bytes[key]);
-        }
-      }
-
-      for (p = 1; p <= dplat_count; p++) {
-        platform = dplat_order[p];
-        n = detail_n[platform];
-        if (n == 0) {
-          continue;
-        }
-
-        for (i = 1; i <= n; i++) {
-          idx[i] = detail_paths[platform, i];
-          b = detail_base[platform, idx[i]] + 0;
-          h = detail_head[platform, idx[i]] + 0;
-          sortval[i] = (h > b) ? h : b;
-        }
-
-        for (i = 1; i <= n; i++) {
-          maxpos = i;
-          for (j = i + 1; j <= n; j++) {
-            if (sortval[j] > sortval[maxpos]) {
-              maxpos = j;
-            }
-          }
-          if (maxpos != i) {
-            tmpv = sortval[i]; sortval[i] = sortval[maxpos]; sortval[maxpos] = tmpv;
-            tmps = idx[i]; idx[i] = idx[maxpos]; idx[maxpos] = tmps;
-          }
-        }
-
-        print "";
-        print "<details><summary>" platform " package files (uncompressed)</summary>";
-        print "";
-        print "These are uncompressed file sizes; they do not sum to the compressed package size above.";
-        print "";
-        print "| File | Base | Head | Delta |";
-        print "| --- | ---: | ---: | ---: |";
-
-        shown = (n > cap) ? cap : n;
-        for (i = 1; i <= shown; i++) {
-          path = idx[i];
-          printf "| `%s` | %s | %s | %s |\n",
-            path,
-            cell(detail_base[platform, path]),
-            cell(detail_head[platform, path]),
-            file_delta(detail_head[platform, path], detail_base[platform, path]);
-        }
-        if (n > cap) {
-          printf "| _…and %d smaller files_ | | | |\n", n - cap;
-        }
-
-        print "";
-        print "</details>";
-      }
-
-      print "";
-      print "<details><summary>How sizes are measured</summary>";
-      print "";
-      print "_Measured from the PR base SHA and PR head SHA. Web bundle rows sum shipped `.js`, `.mjs`, and `.cjs` files under `dist/`, excluding source maps and declarations. The gzip bundle size sums files compressed individually with `gzip -n -9`. npm package sizes are gzip-compressed `.tgz` archives; Android AAR sizes are ZIP archives. Package sizes are not final app binary sizes._";
-      print "";
-      print "</details>";
-    }
-  ' "$base_file" "$head_file" > "$comment_file"
+  local budgets_file=${4:-"$script_repo_root/.ci/bundle-size-budgets.json"}
+  node - "$script_repo_root" "$budgets_file" "$base_file" "$head_file" "$comment_file" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const policy = require(path.join(process.argv[2], ".github/scripts/bundle-size-budgets.cjs"));
+const budgets = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+const base = policy.measurements(fs.readFileSync(process.argv[4], "utf8"));
+const head = policy.measurements(fs.readFileSync(process.argv[5], "utf8"));
+const measuredPlatforms = Object.keys(policy.platforms).filter((platform) =>
+  [...Object.keys(base), ...Object.keys(head)].some((key) => key.startsWith(`${policy.platforms[platform].label}\t`)),
+);
+fs.writeFileSync(process.argv[6], policy.render({budgets, base, head, measuredPlatforms}));
+NODE
 }
 
 command=${1:-comment}
@@ -405,7 +232,7 @@ case "$command" in
     collect_measurements "$2"
     ;;
   render)
-    render_comment "$2" "$3" "$4"
+    render_comment "$2" "$3" "$4" "${5:-}"
     ;;
   comment)
     output_file=${2:-"$repo_root/package-size-comment.md"}
@@ -415,7 +242,7 @@ case "$command" in
     render_comment /dev/null "$rows_file" "$output_file"
     ;;
   *)
-    echo "Usage: measure-package-size {collect <output-file>|render <base-file> <head-file> <comment-file>|comment [comment-file]}" >&2
+    echo "Usage: measure-package-size {collect <output-file>|render <base-file> <head-file> <comment-file> [budgets-file]|comment [comment-file]}" >&2
     exit 1
     ;;
 esac

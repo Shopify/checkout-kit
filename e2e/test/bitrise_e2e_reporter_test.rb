@@ -34,7 +34,7 @@ class BitriseE2EReporterTest < Minitest::Test
     assert_includes reporter.markdown_summary, "Skipped · not needed"
     refute_includes reporter.markdown_summary, "BrowserStack"
     assert_includes reporter.comment_body, E2EGitHubReporter::COMMENT_MARKER
-    assert_includes reporter.comment_body, "workflow=e2e-build-swift-ios"
+    assert_includes reporter.comment_body, "workflow=e2e-maestro-swift-ios"
     assert_equal "Checkout Kit E2E", reporter.check_run_payload.fetch(:name)
     assert_equal "abc123", reporter.check_run_payload.fetch(:head_sha)
   end
@@ -170,7 +170,7 @@ class BitriseE2EReporterTest < Minitest::Test
     assert_includes ios_pairs, ["artifact_name", "CheckoutKitReactNativeDemo-Provisioned.ipa"]
     assert_includes ios_pairs, ["artifact_name", "CheckoutKitReactNativeDemo-Simulator.zip"]
     assert_equal ["android"], android_pairs.select { |key, _| key == "platform" }.map(&:last)
-    assert_includes android_pairs, ["workflow", "e2e-build-react-native-android"]
+    assert_includes android_pairs, ["workflow", "e2e-maestro-react-native-android"]
     assert_includes android_pairs, ["artifact_name", "app-e2e.apk"]
     assert_includes android_pairs, ["branch", "branch"]
     assert_equal original_targets, manifest_targets
@@ -200,6 +200,43 @@ class BitriseE2EReporterTest < Minitest::Test
     end
 
     report(client: client).publish!
+    client.verify
+  end
+
+  def test_in_progress_comment_lists_selected_targets_as_running_with_install_links
+    body = BitriseE2EReporter.new(
+      applications: [{"id" => "swift-ios", "target" => "swift", "platform" => "ios"}, {"id" => "kotlin-android", "target" => "kotlin", "platform" => "android"}],
+      selected_ids: ["swift-ios"], plan_ready: "true", in_progress: true,
+      repository: "example/repo", sha: "abc123", pr_number: 1,
+      stages: BitrisePipelineStages.new([], app_slug: "app-slug"),
+      targets: targets, app_slug: "app-slug", branch: "branch", pipeline_url: "https://example.com/pipeline"
+    ).comment_body
+
+    assert_match(/\A#{Regexp.escape(E2EGitHubReporter::COMMENT_MARKER)}\n\n\*\*⏳ E2E running · 1 targets\*\*\n\n\| Target/, body)
+    assert_match(/^\| Swift · iOS \| ⏳ Running \| — \| — \| \[Tophat\]\(.*workflow=e2e-maestro-swift-ios.*\) \|$/, body)
+    assert_includes body, "| Kotlin · Android | ⏭️ Skipped · not needed for this change | — | — | — |"
+    refute_includes body, "[!CAUTION]"
+  end
+
+  def test_publishing_in_progress_creates_the_sticky_comment_without_a_check_run
+    client = Minitest::Mock.new
+    client.expect(:get, {"check_runs" => []},
+      ["/repos/example/repo/commits/abc123/check-runs?check_name=ci%2Fbitrise%2Fci-ios%2Fpr&filter=latest&per_page=100"])
+    client.expect(:get, [], ["/repos/example/repo/issues/1/comments?per_page=100&page=1"])
+    client.expect(:post_json, {}) do |path, payload|
+      assert_equal "/repos/example/repo/issues/1/comments", path
+      assert_includes payload[:body], "⏳ Running"
+      true
+    end
+
+    BitriseE2EReporter.new(
+      applications: [{"id" => "swift-ios", "target" => "swift", "platform" => "ios"}],
+      selected_ids: ["swift-ios"], plan_ready: "true", in_progress: true,
+      repository: "example/repo", sha: "abc123", pr_number: 1,
+      stages: BitrisePipelineStages.new([], app_slug: "app-slug"),
+      targets: targets, app_slug: "app-slug", branch: "branch", pipeline_url: "https://example.com/pipeline",
+      client: client
+    ).publish!
     client.verify
   end
 

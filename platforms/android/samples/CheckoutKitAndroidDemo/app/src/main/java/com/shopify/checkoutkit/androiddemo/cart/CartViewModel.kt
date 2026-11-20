@@ -19,6 +19,7 @@ import com.shopify.checkoutkit.androiddemo.common.logs.Logger
 import com.shopify.checkoutkit.androiddemo.common.navigation.Screen
 import com.shopify.checkoutkit.androiddemo.e2e.PreloadCacheHitLog
 import com.shopify.checkoutkit.androiddemo.e2e.PreloadCacheHitMarker
+import com.shopify.checkoutkit.androiddemo.e2e.PreloadHeldStateMarker
 import com.shopify.checkoutkit.androiddemo.e2e.PreloadStateMarker
 import com.shopify.checkoutkit.androiddemo.settings.PreferencesManager
 import com.shopify.checkoutkit.androiddemo.settings.authentication.data.AuthenticationState
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
@@ -66,27 +68,49 @@ class CartViewModel(
     val checkoutPresentationMode: StateFlow<CheckoutPresentationMode> = _checkoutPresentationMode.asStateFlow()
 
     private val _preloadState = MutableStateFlow<PreloadState>(PreloadState.Idle())
+    val preloadState: StateFlow<PreloadState> = _preloadState.asStateFlow()
     private val _preloadStateTestId = MutableStateFlow(PreloadStateMarker.testId(PreloadState.Idle()))
     val preloadStateTestId: StateFlow<String> = _preloadStateTestId.asStateFlow()
+
+    // Logcat delivers the SDK's held-state diagnostic after the fact. One that arrives once
+    // checkout is dismissed cannot show what the handle reported during checkout.
+    @Volatile private var checkoutDismissed = false
+    private val stateWhenHeld = MutableStateFlow(PreloadHeldStateMarker.NONE)
+    val preloadHeldStateTestId: StateFlow<String> = combine(stateWhenHeld, _preloadState) { whenHeld, now ->
+        PreloadHeldStateMarker.testId(whenHeld, now)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        PreloadHeldStateMarker.testId(PreloadHeldStateMarker.NONE, PreloadState.Idle()),
+    )
+
+    private val _checkoutPreloadingEnabled = MutableStateFlow(true)
+    val checkoutPreloadingEnabled: StateFlow<Boolean> = _checkoutPreloadingEnabled.asStateFlow()
 
     // The SDK's log sink is internal, so the cache hit is observed from this process's own
     // Logcat and republished as an identifier. Gate the hit when the log arrives so an entry
     // consumed while still loading cannot later count as a ready cache hit.
     private val preloadCacheHitLog = PreloadCacheHitLog(
-        isPreloadReady = { _preloadState.value is PreloadState.Ready }
+        isPreloadReady = { _preloadState.value is PreloadState.Ready },
+        onStateHeld = {
+            stateWhenHeld.value = if (checkoutDismissed) {
+                PreloadHeldStateMarker.LATE
+            } else {
+                PreloadHeldStateMarker.value(_preloadState.value)
+            }
+        },
     ).also {
         if (BuildConfig.DEBUG) it.start(viewModelScope)
     }
-    val preloadCacheHitTestId: StateFlow<String> = preloadCacheHitLog.observed
+    val preloadCacheHitTestId: StateFlow<String> = preloadCacheHitLog.hits
         .map { PreloadCacheHitMarker.testId(it) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            PreloadCacheHitMarker.testId(false)
+            PreloadCacheHitMarker.testId(0)
         )
 
     private var demoBuyerIdentityEnabled = false
-    private var checkoutPreloadingEnabled = true
     private var windowOpenHandler = WindowOpenHandler.Default
 
     init {
@@ -97,7 +121,7 @@ class CartViewModel(
                     clearCart()
                     demoBuyerIdentityEnabled = it.buyerIdentityDemoEnabled
                 }
-                checkoutPreloadingEnabled = it.checkoutPreloadingEnabled
+                _checkoutPreloadingEnabled.value = it.checkoutPreloadingEnabled
                 _checkoutPresentationMode.value = it.checkoutPresentationMode
                 windowOpenHandler = it.windowOpenHandler
             }
@@ -176,6 +200,8 @@ class CartViewModel(
     ): Unit = with(presentation) {
         val sampleActivity = activity as? MainActivity
         val linkHandler = windowOpenHandler
+        checkoutDismissed = false
+        stateWhenHeld.value = PreloadHeldStateMarker.NONE
         onStart { event ->
             recordSdkEvent("Checkout started", event.checkout)
         }
@@ -191,6 +217,7 @@ class CartViewModel(
             handleCheckoutFailed(event.error)
         }
         onDismiss {
+            checkoutDismissed = true
             dismissPresentation()
             handleCheckoutDismissed()
         }
@@ -211,18 +238,23 @@ class CartViewModel(
     }
 
     fun checkoutDismissedByHost() {
+        checkoutDismissed = true
         handleCheckoutDismissed()
     }
 
     fun preloadCheckout(url: String, activity: ComponentActivity) {
-        if (!checkoutPreloadingEnabled) return
+        if (!_checkoutPreloadingEnabled.value) return
 
         Timber.i("Preloading checkout")
         ShopifyCheckout.preload(url, activity) { state ->
             Timber.i("Preload state changed to $state")
-            _preloadState.value = state
-            _preloadStateTestId.value = PreloadStateMarker.testId(state)
+            updatePreloadState(state)
         }
+    }
+
+    private fun updatePreloadState(state: PreloadState) {
+        _preloadState.value = state
+        _preloadStateTestId.value = PreloadStateMarker.testId(state)
     }
 
     override fun onCleared() {
@@ -235,7 +267,9 @@ class CartViewModel(
     }
 
     private fun handleCheckoutCompleted(navController: NavController) {
-        clearCart()
+        // The SDK evicts a completed checkout itself; clearing only local cart state here lets
+        // preload observability see the SDK's completion eviction rather than clearPreload().
+        _cartState.value = CartState.Empty
         viewModelScope.launch(Dispatchers.Main.immediate) {
             navController.popBackStack(Screen.Product.route, false)
         }

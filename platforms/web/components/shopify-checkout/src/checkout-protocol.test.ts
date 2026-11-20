@@ -3,7 +3,7 @@ import {
   EmbeddedCheckoutProtocol,
   type ErrorResponse,
   type Message,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import type { CheckoutProtocolMessageMap } from "@shopify/checkout-kit-core/checkout/types";
 import "./register";
@@ -1164,6 +1164,63 @@ describe("<shopify-checkout>", () => {
           "noopener",
         );
       });
+
+      it.each(["mailto:help@example.com?subject=Order", "tel:+15555550123"])(
+        "opens %s in a new window, not the host page",
+        async (url) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
+          const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null);
+          const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.window.open_request",
+            { url },
+            { id: "open-contact", source: mockCheckoutWindow },
+          );
+          await flushProtocolDispatch();
+
+          expect(windowOpenSpy).toHaveBeenLastCalledWith(url, "_blank", "noopener");
+          expect(windowOpenSpy).not.toHaveBeenCalledWith(url, "_self");
+          expect(consoleWarnSpy).not.toHaveBeenCalled();
+          expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+            {
+              jsonrpc: "2.0",
+              id: "open-contact",
+              result: { ucp: { status: "success", version: EMBED_PROTOCOL_VERSION } },
+            },
+            new URL(checkout.src).origin,
+          );
+        },
+      );
+
+      it.each(["javascript:alert(1)", "data:text/html,hi", "sms:+15555550123"])(
+        "rejects the %s scheme",
+        async (url) => {
+          const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });
+          const windowOpenSpy = vi.spyOn(window, "open");
+          vi.spyOn(console, "warn").mockImplementation(() => {});
+
+          simulateProtocolMessageEvent(
+            checkout,
+            "ec.window.open_request",
+            { url },
+            { id: "open-scheme", source: mockCheckoutWindow },
+          );
+          await flushProtocolDispatch();
+
+          expect(windowOpenSpy.mock.calls.some(([opened]) => opened === url)).toBe(false);
+          expect(mockCheckoutWindow.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({
+              id: "open-scheme",
+              result: expect.objectContaining({
+                ucp: { status: "error", version: EMBED_PROTOCOL_VERSION },
+              }),
+            }),
+            new URL(checkout.src).origin,
+          );
+        },
+      );
 
       it("does not warn about an invalid url when the handler throws internally", async () => {
         const { checkout, mockCheckoutWindow } = openPopupCheckout({ "log-level": "warn" });

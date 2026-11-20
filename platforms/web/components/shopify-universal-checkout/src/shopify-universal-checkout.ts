@@ -1,6 +1,6 @@
 import { getUnsupportedBrowserCapabilities } from "@shopify/checkout-kit-core/checkout/browser-capabilities";
 
-import { EmbeddedCheckoutProtocol } from "@shopify/checkout-kit-protocol";
+import { EmbeddedCheckoutProtocol } from "@shopify/embedded-checkout-protocol";
 
 import type {
   CheckoutBlockedDetail,
@@ -29,7 +29,7 @@ import {
   telemetryProtocolMethod,
   type CheckoutKitTelemetry,
 } from "@shopify/checkout-kit-core/checkout/telemetry";
-import { isUniversalCheckoutUrl, UNIVERSAL_CHECKOUT_PROTOCOL_VERSION } from "./protocol";
+import { UNIVERSAL_CHECKOUT_PROTOCOL_VERSION } from "./protocol";
 import {
   UniversalCheckoutSession,
   type ShopifyUniversalCheckoutCompleteEvent,
@@ -188,7 +188,6 @@ export class ShopifyUniversalCheckout extends HTMLElementBase implements Checkou
       return;
     }
 
-    this.#warnOnNonUniversalSource();
     // Opening from the blocked overlay replaces its presentation without a `close`.
     const isRetry = this.#presentation?.isActive() === true && !this.#presentation.checkoutWindow;
     if (isRetry) this.#presentation?.close("retry");
@@ -422,18 +421,6 @@ export class ShopifyUniversalCheckout extends HTMLElementBase implements Checkou
       presentation?.close();
     }
   };
-
-  #warnOnNonUniversalSource(): void {
-    let url: URL;
-    try {
-      url = new URL(this.src);
-    } catch {
-      return;
-    }
-    if (!isUniversalCheckoutUrl(url)) {
-      this.#logger.warn("expected a Universal Checkout continuation URL");
-    }
-  }
 }
 
 /** Public lifecycle events dispatched by the element. */

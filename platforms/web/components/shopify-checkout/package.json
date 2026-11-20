@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@shopify/checkout-kit-core": "workspace:*",
-    "@shopify/checkout-kit-protocol": "workspace:*",
-    "@shopify/checkout-kit-telemetry": "workspace:*"
+    "@shopify/checkout-kit-telemetry": "workspace:*",
+    "@shopify/embedded-checkout-protocol": "workspace:*"
   }
 }

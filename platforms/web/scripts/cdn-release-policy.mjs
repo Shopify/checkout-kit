@@ -9,8 +9,7 @@ if (parsed === null) {
 }
 const isPrerelease = parsed.prerelease.length > 0;
 // npm channel overrides must not promote prereleases to the evergreen CDN URL.
-const stable =
-  !isPrerelease && process.env.PRERELEASE !== "true" && process.env.DIST_TAG === "latest";
+const stable = !isPrerelease && process.env.DIST_TAG === "latest";
 const channel = stable ? "stable" : "unstable";
 const prefix = stable ? `v${parsed.major}` : `v${parsed.major}/unstable`;
 

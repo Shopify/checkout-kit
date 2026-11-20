@@ -170,6 +170,30 @@ class CheckoutAppearanceConfigurationTest {
     }
 
     @Test
+    fun `automatic palettes without optional colors keep the shared colors`() {
+        val appearance = update(
+            makeConfiguration(
+                "automatic",
+                JavaOnlyMap.of(
+                    "closeIconTintColor", "#FF0000",
+                    "headerBorderColor", "#FF0000",
+                    "dragHandleColor", "#FF0000",
+                    "light", JavaOnlyMap.of("webViewBackgroundColor", "#FFFFFF"),
+                )
+            )
+        )
+
+        assertThat(colorsOf(appearance, isDark = false)).isEqualTo(
+            ColorScheme.Light().colors.copy(
+                webViewBackgroundColor = Color.SRGB(0xFFFFFFFF.toInt()),
+                closeIconTintColor = Color.SRGB(0xFFFF0000.toInt()),
+                headerBorderColor = Color.SRGB(0xFFFF0000.toInt()),
+                dragHandleColor = Color.SRGB(0xFFFF0000.toInt()),
+            )
+        )
+    }
+
+    @Test
     fun `configuration without an appearance keeps the current appearance`() {
         listOf(
             JavaOnlyMap(),

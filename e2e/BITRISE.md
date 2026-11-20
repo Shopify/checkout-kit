@@ -27,12 +27,15 @@ If a direct URL does not resolve in the current Bitrise UI, open the app overvie
 The `e2e-maestro-swift-ios` workflow builds the Swift sample in Release for the
 Bitrise iOS simulator and runs every flow enabled for `swift-ios` in
 `e2e/config/matrix.yml` using the pinned Maestro CLI and existing local E2E
-runner. This covers launch, checkout presentation and dismissal, guest checkout,
+runner on the prebuilt app. This covers launch, checkout presentation and dismissal, guest checkout,
 buyer identity checkout, and native preload reuse.
 
 It uses the existing encrypted E2E storefront configuration and requires the
-`EJSON_PRIVATE_KEY` Bitrise secret. Signing and BrowserStack credentials are not
-needed. The checkout flows submit test orders using the E2E store's test gateway.
+`EJSON_PRIVATE_KEY` Bitrise secret. It builds with `build_swift_ios`, which also
+exports the signed development IPA for Tophat, so the Apple Development
+certificate and `bitrise-checkout-kit-e2e-swift` profile must be installed.
+BrowserStack credentials are not needed. The checkout flows submit test orders
+using the E2E store's test gateway.
 
 The workflow sets `E2E_JUNIT_REPORT` to generate a JUnit report, exports its
 results to Bitrise's **Tests** tab, and uploads the Maestro output directory as
@@ -66,16 +69,17 @@ avoid rebuilding the app or starting Metro for a packaged React Native app.
 The `e2e-maestro-react-native-android` workflow uses the same Android API
 35 emulator and reporting as Kotlin, running the four shared checkout/launch
 flows enabled for React Native. It builds `assembleE2e` with bundled JavaScript
-and x86_64 native libraries, so no Metro server is needed. Published native SDKs
-remain the default. Physical-device APK builds still default to arm64-v8a.
+and arm64-v8a and x86_64 native libraries, so no Metro server is needed and the
+same APK installs on the emulator and on devices. Published native SDKs remain
+the default.
 
 ## Direct Maestro React Native iOS workflow
 
 The `e2e-maestro-react-native-ios` workflow runs all four enabled React
 Native flows on the same iOS simulator as Swift. It reuses the Node, Ruby, and
 CocoaPods caches and builds the Release simulator app with bundled JavaScript.
-`E2E_IOS_SIMULATOR_ONLY=1` skips the device IPA archive and signing; existing
-BrowserStack and distribution builds retain their device build behavior.
+It also archives the signed development IPA for Tophat device installs, using
+the Apple Development certificate and `bitrise-checkout-kit-e2e` profile.
 
 ## Pipeline
 
@@ -309,6 +313,9 @@ waiting for them to finish. If a check has not appeared or the lookup fails, the
 comment still publishes with the available links.
 
 Every run maintains a single sticky PR comment (create-or-update via a marker).
+`e2e-plan` posts it as soon as it selects targets, listing each as **⏳ Running**
+with its install links. A failed early post is logged and does not fail the plan. `e2e-report`
+then replaces the comment with the results and posts the check run.
 The comment starts with the overall result and the number of selected targets
 that passed, followed by one table with readable target names, outcomes, test runtime, **Tests**
 and build links, and platform-specific Tophat links under **Install from branch**.
@@ -323,11 +330,18 @@ app build time. Each target shares its own summary with the report workflow;
 missing timing is shown as `—`. Workflow failures always take precedence over
 test recovery, including failures while exporting results.
 
-The existing `e2e-build-*` workflows remain available for Tophat to build signed
-device artifacts on demand; direct simulator runs do not produce signed IPAs.
-Install links resolve the branch rather than a fixed tested build. iOS rows
-offer both device and simulator recipes, while Android rows offer only Android
-recipes. The install links and Quick Launch entries are driven by
+Each Tophat recipe names a `default_branch_workflow`, used by Quick Launch, and a
+`pull_request_workflow`, used by the PR comment's install links and `dev tophat`.
+Pull request recipes use the `e2e-maestro-*` workflows: each uploads the app it
+tests, plus the signed device IPA for iOS, so a branch's E2E run supplies its
+install links without another build. Tophat's `bitrise-branch` provider installs
+the newest *successful* build of the workflow on the branch, so a link installs
+a commit's build only after that target passes; until then, or after a failure,
+it installs the branch's last passing build. Quick Launch keeps the
+`e2e-build-*` workflows, which the scheduled BrowserStack pipeline builds on
+`main`, and BrowserStack reports link to those same workflows. iOS
+rows offer both device and simulator recipes, while Android rows offer only
+Android recipes. The install links and Quick Launch entries are driven by
 `scripts/tophat/targets.json`; see the Tophat section in `.github/CONTRIBUTING.md`.
 
 ## Caching

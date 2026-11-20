@@ -84,7 +84,9 @@ and the call rejects if any component fails to load. The
 loader resolves each component to a self-contained implementation chunk under the
 same major-version directory and registers that element. Shared runtime code is
 bundled into each component, not fetched through a shared chunk: cache-busting a
-component entry must retry its whole dependency graph. Repeating a request for
+component entry must retry its whole dependency graph. A page can therefore
+load more than one copy of that code, so it must tolerate duplicates; see
+[Runtime dependencies](../../.github/ARCHITECTURE.md#runtime-dependencies). Repeating a request for
 the same component is safe, and concurrent requests share one load.
 
 Browsers remember a failed dynamic import for that URL for the rest of the
@@ -116,22 +118,41 @@ through `ShopifyCheckout.register()`. The npm root import registers nothing.
 New components get their own npm subpaths and loader entries. To promote a
 component into the CDN, first give it a public npm subpath, then add its custom
 element tag to `supportedComponents` and a static registration import to the
-CDN loader manifest. Add its standalone build entry in `vite.cdn.config.ts`
-and run that build mode before the loader in `build:cdn`, so the component
-keeps its dependency graph self-contained. The shared URL-injection helper
-wires its hashed retry chunk under `assets/<tag>/`; those paths remain
+CDN loader manifest, and add it to `cdn-components.json` with its registration
+module and the channels it ships on (see [Component channels](#component-channels)).
+`build:cdn` builds each listed component on its own before the loader, so the
+component keeps its dependency graph self-contained. The shared URL-injection
+helper wires its hashed retry chunk under `assets/<tag>/`; those paths remain
 deployment details.
 Component implementation and registration live together, with no separate CDN
 component source tree.
 
 - `pnpm build:npm` uses `vite.config.ts` to produce the npm package in `dist/`.
-- `pnpm build:cdn` uses `vite.cdn.config.ts` to build each component independently,
-  followed by the loader. The `shopify-checkout` build mode cleans `dist-cdn/`;
-  `shopify-universal-checkout`, `shop-pay`, and the loader append their outputs. Component
-  bundles use `codeSplitting: false`, and the loader imports their hashed paths.
-  `dist-cdn/` is excluded from the npm package.
+- `pnpm build:cdn` (`scripts/build-cdn.mjs`) uses `vite.cdn.config.ts` to build each
+  component in `cdn-components.json` that ships on the build's channel, followed by the
+  loader. The first component's build cleans `dist-cdn/`; the others and the loader append
+  their outputs. Component bundles use `codeSplitting: false`, and the loader imports their
+  hashed paths. `dist-cdn/` is excluded from the npm package.
 - `pnpm build` runs both; `pnpm verify` checks both distributions, including
   loading them together on the same page.
+
+### Component channels
+
+Each entry in `cdn-components.json` lists the CDN channels the component ships
+on: `stable`, `unstable`, or both. A CDN build is for one channel, set by
+`CHECKOUT_KIT_CDN_CHANNEL`; unset, it builds for `stable`. The CDN deploy sets it
+from the same release policy that selects the upload destination, and refuses to
+upload a build made for another channel. Local builds, pull request checks, and
+the npm publish workflow therefore build for `stable`.
+
+A component on `unstable` only is left out of stable builds entirely: no chunk
+and no loader entry. That lets maintainers test a component through the real CDN
+before it becomes part of the public loader. Making it public is a reviewed
+change that adds `stable` to its channels. Every `stable` component is also on
+`unstable`, so the testing channel is never behind.
+
+A component's loader entry must exist only in builds that include it: the build
+fails if the loader imports a component its channel doesn't build.
 
 Each build cleans only its own output directory. The CDN build does not depend
 on npm output or a published npm release. `pnpm pack` builds only the npm
@@ -148,25 +169,27 @@ review; a breaking change requires a new CDN major URL.
 
 npm and the CDN are published in two steps:
 
-1. **`Web — Publish to npm`** in this repository runs on a `web/X.Y.Z` GitHub
-   Release. It builds and verifies both the npm package (`dist/`) and the CDN
-   output (`dist-cdn/`), then publishes to npm. It does not upload to the CDN.
-2. **The CDN deploy** runs from Shopify's internal release tooling, which
-   maintainers trigger with the same release tag once npm publication has
-   succeeded. It checks out that tag of this repository, rebuilds `dist-cdn/`,
-   confirms the version is on npm (the CDN never ships a version npm does not
-   have), reads the npm dist-tag back, runs `scripts/cdn-release-policy.mjs`
-   from the tag to select the channel, verifies the deploy identity's bucket
-   permissions, and uploads content-hashed chunks before the loader. A dry run
-   stops before uploading.
+1. **`Web — Publish to npm`** in this repository builds and verifies both the
+   npm package (`dist/`) and the CDN output (`dist-cdn/`), then publishes to npm.
+   It can run from a `web/X.Y.Z` GitHub Release or from a manual dispatch on
+   `main`. It does not upload to the CDN.
+2. **The CDN deploy** runs from Shopify's internal release tooling. After npm
+   publication, maintainers push a matching `web/X.Y.Z` tag and trigger the
+   deploy with that tag. It checks out the tag, rebuilds `dist-cdn/`, confirms
+   the version is on npm and that npm's publishing commit matches the tag (the
+   CDN never ships a version npm did not publish), reads the npm dist-tag back,
+   runs `scripts/cdn-release-policy.mjs` from the tag to select the channel,
+   verifies the deploy identity's bucket permissions, and uploads content-hashed
+   chunks before the loader. A GitHub Release is optional release-note metadata;
+   a dry run stops before uploading.
 
 The channel policy is this repository's own script, so it is the same wherever
 it runs:
 
 | Release | CDN loader |
 | --- | --- |
-| Stable package version, not marked as a GitHub prerelease, npm tag `latest` | `v<major>/checkout-kit.js` |
-| SemVer prerelease or marked as a GitHub prerelease, with any npm tag | `v<major>/unstable/checkout-kit.js` |
+| Stable package version with npm tag `latest` | `v<major>/checkout-kit.js` |
+| SemVer prerelease, with any npm tag | `v<major>/unstable/checkout-kit.js` |
 | Stable package version on any other npm tag, including `next`, `beta`, or `experimental` | `v<major>/unstable/checkout-kit.js` |
 
 A manual `latest` override cannot promote a prerelease to the stable CDN URL.

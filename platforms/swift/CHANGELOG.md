@@ -1,5 +1,26 @@
 # Checkout Kit for Swift changelog
 
+## 4.2.0
+
+### Minor Changes
+
+- Restore separate ShopifyAcceleratedCheckouts.Customer initializers for authenticated buyers and guest contacts. The initializer that accepts both contact details and a customer access token is deprecated; use init(customerAccessToken:) or init(email:phoneNumber:) to avoid conflicting buyer identities.
+
+### Patch Changes
+
+- Correct the documented accelerated wallet defaults and use the current error render state in the executable callback example.
+- Skip personal-data removal after Apple Pay submits a cart successfully. When recovering in web checkout, wait for removal with at most one retry, then open checkout even if removal fails.
+- Clean up app-hosted checkout when SwiftUI removes its backing view controller, even without a modal dismissal. Removal now delivers any held preload invalidation, or retains a still-valid preload and restarts its remaining expiry timer. This cleanup does not emit `onDismiss` and is safe when modal dismissal has already performed cleanup.
+- Report `.idle(reason: .invalidated)` rather than `.idle(reason: .expired)` when a reused preload fails or completes after being presented past its time-to-live. An app that preloads again after expiry could then preload a checkout that had already completed.
+- Report a presented preload's idle state when checkout is dismissed. A handle whose checkout was removed during presentation, for example after completion, a failure, or `ShopifyCheckout.clearPreload()`, used to report `.idle(reason: .invalidated)` while checkout was still on screen. It now stays as it was until checkout is dismissed, and reports `.invalidated` just before `onDismiss` runs.
+- Report `.ready` for a preload that `present` reuses before it finishes loading. Its handle used to stay `.loading`, even after the checkout loaded and was kept for the next presentation. `.ready` now comes from checkout's ready signal instead of the page finishing loading, so a page that isn't checkout, such as a bot challenge, doesn't count. A background preload can report `.ready` slightly later than before.
+
+## 4.1.0
+
+### Minor Changes
+
+- Add an opt-in `.buttonHeight(_:)` modifier for Shop Pay and Apple Pay accelerated checkout buttons. Buttons default to 48pt and accept heights from 30pt to 64pt. Values outside that range are clamped; zero, negative, or non-finite values use the default. Read the applied height from `resolvedButtonHeight`.
+
 ## 4.0.0
 
 ### Major Changes

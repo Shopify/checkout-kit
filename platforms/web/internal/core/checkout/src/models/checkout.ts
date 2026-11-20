@@ -11,10 +11,12 @@ import type {
   Message,
   OrderConfirmation,
   Payment,
-} from "@shopify/checkout-kit-protocol";
+  Policy,
+} from "@shopify/embedded-checkout-protocol";
 
 /** A checkout snapshot containing checkout data without protocol metadata. */
 export interface Checkout {
+  actions?: Record<string, Record<string, unknown>[]>;
   attribution?: Record<string, string>;
   buyer?: Buyer;
   context?: Context;
@@ -29,6 +31,7 @@ export interface Checkout {
   messages?: Message[];
   order?: OrderConfirmation;
   payment?: Payment;
+  policies?: Policy[];
   signals?: Record<string, unknown>;
   status: CheckoutStatus;
   totals: CheckoutTotal[];

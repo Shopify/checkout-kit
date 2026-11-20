@@ -13,13 +13,15 @@ Vite serves at `http://localhost:5173`.
 
 ### Telemetry during development
 
-With `pnpm sample`, checkout telemetry is logged to the browser console instead of
-sent to production. To opt in to production reporting during development, run
+`pnpm sample`, `pnpm sample:build` and `pnpm dev` (`vite build --watch --mode watch`) log checkout
+telemetry to the browser console instead of sending it to production. To opt in to
+production reporting, run the command with `VITE_CK_TELEMETRY=production`, for example
 `VITE_CK_TELEMETRY=production pnpm sample`.
 
-Built output, including `pnpm dev` (`vite build --watch`) and `pnpm sample:build`,
-keeps production telemetry. The published CDN also keeps production telemetry.
-Set `telemetry="false"` on the checkout element to disable telemetry entirely.
+The release builds, `pnpm build` and the published CDN, report to production, and so does
+`pnpm sample:cdn`, which loads the published CDN. Set `telemetry="false"` on the checkout
+element to disable telemetry entirely. The rule is in
+[the telemetry package](../internal/telemetry/README.md#where-a-build-sends-telemetry).
 
 ### Run against the published CDN
 

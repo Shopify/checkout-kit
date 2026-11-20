@@ -6,7 +6,7 @@ import type {
   Checkout as ProtocolCheckout,
   ReadyRequest,
   ErrorResponse,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";
 
 import type { LogLevel } from "./logger";
 
@@ -197,4 +197,4 @@ export type {
   OrderConfirmation,
   CheckoutTotal,
   ErrorResponse,
-} from "@shopify/checkout-kit-protocol";
+} from "@shopify/embedded-checkout-protocol";

@@ -46,11 +46,18 @@ class E2EGitHubReporter
         ["destination", recipe.fetch("destination")],
         ["app_slug", @app_slug],
         ["branch", @branch],
-        ["workflow", recipe.fetch("workflow")],
+        ["workflow", tophat_workflow(recipe)],
         ["artifact_name", recipe.fetch("artifact_name")]
       ]
     end
     "#{TOPHAT_INSTALL_BASE}?#{URI.encode_www_form(pairs)}"
+  end
+
+  # BrowserStack tests the artifacts built by the e2e-build-* workflows, which
+  # are each recipe's default-branch workflow. BitriseE2EReporter overrides this
+  # for the Maestro workflows that build pull request apps.
+  def tophat_workflow(recipe)
+    recipe.fetch("default_branch_workflow")
   end
 
   def comment_body

@@ -1,0 +1,49 @@
+// Opt-in PIT mutation testing over production Kotlin bytecode and existing plain-JUnit tests.
+// Kept separate from check/test: this is not a coverage or mutation-score gate.
+configurations {
+    pitest {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    pitest libs.pitest.command.line
+}
+
+tasks.register('mutationTest', JavaExec) {
+    group = 'verification'
+    description = 'Run PIT mutation testing for checkout message admission.'
+    dependsOn 'compileDebugUnitTestSources', 'verifyPublishedProtocol'
+    classpath = configurations.pitest
+    mainClass = 'org.pitest.mutationtest.commandline.MutationCoverageReport'
+
+    // PIT performs its own unmutated test run before mutation analysis. Limit
+    // discovery to plain JUnit tests; this does not claim Robolectric support.
+    doFirst {
+        def unitTests = tasks.named('testDebugUnitTest', Test).get()
+        def productionClasses = files(
+            tasks.named('compileDebugKotlin').get().destinationDirectory,
+            tasks.named('compileDebugJavaWithJavac').get().destinationDirectory,
+        )
+        setArgs([
+            '--reportDir', layout.buildDirectory.dir('reports/pitest').get().asFile.absolutePath,
+            '--sourceDirs', file('src/main/java').absolutePath,
+            '--classPath', (productionClasses + unitTests.classpath + unitTests.testClassesDirs).files.collect { it.absolutePath }.join(','),
+            '--mutableCodePaths', productionClasses.files.collect { it.absolutePath }.join(','),
+            '--targetClasses', [
+                'com.shopify.checkoutkit.internal.protocol.CheckoutMessageIngressPolicy',
+                'com.shopify.checkoutkit.internal.web.OriginAllowlist',
+            ].join(','),
+            '--targetTests', [
+                'com.shopify.checkoutkit.checkout.CheckoutMessageIngressPolicyTest',
+                'com.shopify.checkoutkit.checkout.OriginAllowlistTest',
+            ].join(','),
+            '--mutators', 'DEFAULTS',
+            '--outputFormats', 'HTML,XML',
+            '--timestampedReports', 'false',
+            '--threads', '2',
+            '--mutationThreshold', '0',
+        ])
+    }
+}

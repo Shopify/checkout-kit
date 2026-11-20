@@ -63,7 +63,7 @@ experiences.
 
 - **React Native** - Minimum version `0.77` (v4+) / `0.70` (v3 and earlier)
 - **iOS** - Minimum version iOS 15
-- **Android** - Minimum Java 11, Android SDK version `24`, and Kotlin `2.0+`
+- **Android** - Minimum JDK 17, Android SDK version `24`, and Kotlin `2.0+`
 
 ## Version Compatibility
 
@@ -88,22 +88,22 @@ application:
 
 ### 1. Installation
 
-Install Shopify Checkout Kit `4.0.0`:
+Install Shopify Checkout Kit `4.0.1`:
 
 ```sh
-pnpm add @shopify/checkout-kit-react-native@4.0.0
+pnpm add @shopify/checkout-kit-react-native@4.0.1
 
 # or using yarn
-yarn add @shopify/checkout-kit-react-native@4.0.0
+yarn add @shopify/checkout-kit-react-native@4.0.1
 
 # or using npm
-npm install @shopify/checkout-kit-react-native@4.0.0
+npm install @shopify/checkout-kit-react-native@4.0.1
 ```
 
 ### 2. Minimum Android requirements
 
 Check the `minSdkVersion` property in your `android/build.gradle` file is at
-least `24`.
+least `24`, and run Gradle with JDK 17 or later.
 
 The Android package also requires Kotlin `2.0+`. React Native `0.77+` templates
 use compatible Kotlin defaults (`2.0.21` for React Native `0.77`–`0.79`, and
@@ -218,12 +218,14 @@ You can use any GraphQL client to accomplish this - but as an example, our
 Here's an example of how to get started with Apollo:
 
 ```tsx
-import {ApolloClient, gql, ApolloProvider} from '@apollo/client';
+import {ApolloClient, gql, ApolloProvider, InMemoryCache} from '@apollo/client';
+import {ShopifyCheckoutProvider} from '@shopify/checkout-kit-react-native';
 import {API_VERSION, STOREFRONT_DOMAIN, STOREFRONT_ACCESS_TOKEN} from '@env';
 
 // Create a new instance of the ApolloClient
 const client = new ApolloClient({
   uri: `https://${STOREFRONT_DOMAIN}/api/${API_VERSION}/graphql.json`,
+  cache: new InMemoryCache(),
   headers: {
     'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
   },
@@ -256,25 +258,11 @@ const addToCartMutation = gql`
 function YourReactNativeApp() {
   return (
     <ApolloProvider client={client}>
-      <App />
+      <ShopifyCheckoutProvider>
+        <App />
+      </ShopifyCheckoutProvider>
     </ApolloProvider>
   );
-}
-```
-
-The `checkoutUrl` object is a standard web checkout URL that can be opened in
-any browser. To present a native checkout sheet in your application, provide the
-`checkoutUrl` alongside optional runtime configuration settings to the
-`present(checkoutUrl)` function provided by the SDK:
-
-```tsx
-function App() {
-  const [createCart] = useMutation(createCartMutation)
-  const [addToCart] = useMutation(addToCartMutation)
-
-  return (
-    // React native app code
-  )
 }
 ```
 
@@ -283,51 +271,57 @@ browser. To present a native checkout sheet in your application, provide the
 `checkoutUrl` to the `present(checkoutUrl)` function provided by the SDK:
 
 ```tsx
+import {useCallback, useRef} from 'react';
+import {Button} from 'react-native';
+import {useMutation} from '@apollo/client';
+import {useShopifyCheckout} from '@shopify/checkout-kit-react-native';
+
 function App() {
-  const shopifyCheckout = useShopifyCheckout()
-  const checkoutUrl = useRef<string>(null)
-  const [createCart] = useMutation(createCartMutation)
-  const [addToCart] = useMutation(addToCartMutation)
+  const shopifyCheckout = useShopifyCheckout();
+  const checkoutUrl = useRef<string | null>(null);
+  const [createCart] = useMutation(createCartMutation);
+  const [addToCart] = useMutation(addToCartMutation);
 
-  const handleAddToCart = useCallback((merchandiseId) => {
-    // Create a cart
-    const {data: cartCreateResponse} = await createCart()
-    // Add an item to the cart
-    const {data: addToCartResponse} = await addToCart({
-      variables: {
-        cartId: cartCreateResponse.cartCreate.cart.id,
-        lines: [{quantity: 1, merchandiseId}]
-      }
-    })
-    // Retrieve checkoutUrl from the Storefront response
-    checkoutUrl.current = addToCartResponse.cartLinesAdd.cart.checkoutUrl
-
-    // Preload the checkout in the background for faster presentation
-    shopifyCheckout.preload(checkoutUrl.current)
-  }, []);
+  const handleAddToCart = useCallback(
+    async (merchandiseId: string) => {
+      // Create a cart
+      const {data: cartCreateResponse} = await createCart();
+      // Add an item to the cart
+      const {data: addToCartResponse} = await addToCart({
+        variables: {
+          cartId: cartCreateResponse.cartCreate.cart.id,
+          lines: [{quantity: 1, merchandiseId}],
+        },
+      });
+      // Retrieve checkoutUrl from the Storefront response
+      checkoutUrl.current = addToCartResponse.cartLinesAdd.cart.checkoutUrl;
+    },
+    [createCart, addToCart],
+  );
 
   const handleCheckout = useCallback(() => {
-    if (checkoutURL.current) {
+    if (checkoutUrl.current) {
       // Present the checkout to the buyer
-      shopifyCheckout.present(checkoutURL.current)
+      shopifyCheckout.present(checkoutUrl.current);
     }
-  }, [])
+  }, [shopifyCheckout]);
 
   return (
     <Catalog>
       <Product onAddToCart={handleAddToCart} />
-      <Button onPress={handleCheckout}>
-        <Text>Checkout</Text>
-      </Button>
-    <Catalog>
-  )
+      <Button title="Checkout" onPress={handleCheckout} />
+    </Catalog>
+  );
 }
 ```
+
+`Catalog` and `Product` represent your app's components. Handle cart mutation
+errors in your app and only offer checkout after the cart has a valid URL.
 
 > [!TIP]
 > To help optimize and deliver the best experience the SDK also provides
 > a [preloading API](#preloading) that can be used to initialize the checkout
-> session in the background and ahead of time.
+> session when the buyer is likely to check out, such as when they open the cart.
 
 ## Configuration
 
@@ -408,10 +402,14 @@ const applied = await shopifyCheckout.setConfig({logLevel: LogLevel.debug});
 applied.logLevel; // 'debug'
 ```
 
-The Promise rejects only when the native module cannot read the configuration,
-for example when a value has the wrong type. A rejected call changes nothing.
+The Promise rejects with `code: 'set_config_failed'` when `title`, `preloading`,
+`telemetry`, `allowedMessageOrigins` or `logLevel` has the wrong type or is
+`null`. It also rejects, without that code, when React Native cannot send a
+value to the native SDK, such as a Symbol or a BigInt in `appearance`. A
+rejected call changes nothing.
 Input that the SDK ignores, such as an unknown `logLevel`, still resolves, and
-the resolved configuration keeps the current value.
+the resolved configuration keeps the current value. An `appearance` that the
+SDK cannot read also resolves. See [Updates](#updates).
 `useShopifyCheckout().setConfig` returns the same result. The
 `ShopifyCheckout` constructor and the `ShopifyCheckoutProvider`
 `configuration` prop apply the configuration for you and log a rejection with
@@ -558,8 +556,11 @@ earlier appearance.
 | No `appearance` key, for example only `title`, `logLevel` or `preloading` | Keeps the current appearance and its colors. |
 | A valid `appearance` without `colors` | Uses the native default colors of that appearance. |
 | A valid `appearance` with `colors` | Uses the native default colors of that appearance, then applies the given colors. |
-| A valid `appearance` with `colors: null`, `colors: {}`, or colors only for the other platform | Uses the native default colors of that appearance. |
-| `appearance: null`, a missing or unknown `type`, or an unknown `colorScheme` | Keeps the current appearance. |
+| A valid `appearance` with `colors: null`, `colors: {}`, `colors` that is not an object, or colors only for the other platform | Uses the native default colors of that appearance. |
+| `appearance: null` or another value that is not an object, a missing or unknown `type`, or `type: 'app'` with an unknown `colorScheme` | Keeps the current appearance. |
+
+An `appearance` that the SDK cannot read does not reject the call. The other
+settings in the call still apply.
 
 On iOS and Android, every `setConfig` call clears the preloaded checkout,
 including title-only updates. Call `preload` again after changing the

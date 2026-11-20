@@ -48,7 +48,7 @@ struct CartView: View {
                     .accessibilityElement()
                     .accessibilityHidden(!preloadObservabilityEnabled)
                     .accessibilityIdentifier(
-                        PreloadCacheHitMarker.testId(observed: preloadCacheHitLog.observed)
+                        PreloadCacheHitMarker.testId(hits: preloadCacheHitLog.hits)
                     )
 
                 VStack(spacing: DesignSystem.buttonSpacing) {
@@ -56,6 +56,7 @@ struct CartView: View {
                         if #available(iOS 16, *) {
                             ShopifyAcceleratedCheckoutButtons(cartID: cartID)
                                 .applePayButtonStyle(applePayStyle.style)
+                                .buttonHeight(56)
                                 .onStart { event in
                                     print("[AcceleratedCheckout] Started: \(event.checkout.id)")
                                 }
@@ -158,6 +159,7 @@ struct CartView: View {
         checkoutPreload = ShopifyCheckout.preload(checkout: url)
         checkoutPreload?.onStateChange = { state in
             preloadStateTestId = PreloadStateMarker.testId(for: state)
+            PreloadHeldStateLog.shared.record(state)
             print("[Preload] state changed to \(state)")
             ShopifyCheckout.configuration.logger.log("Preload state changed to \(state)")
         }
@@ -165,8 +167,20 @@ struct CartView: View {
 }
 
 struct EmptyState: View {
+    @ObservedObject private var preloadHeldStateLog: PreloadHeldStateLog = .shared
+
+    @AppStorage(AppStorageKeys.preloadObservabilityEnabled.rawValue)
+    private var preloadObservabilityEnabled = false
+
     var body: some View {
         VStack(alignment: .center) {
+            // Reports the preload state the SDK held for a presented checkout to diagnostic tooling.
+            Color.clear
+                .frame(width: 1, height: 1)
+                .allowsHitTesting(false)
+                .accessibilityElement()
+                .accessibilityHidden(!preloadObservabilityEnabled)
+                .accessibilityIdentifier(preloadHeldStateLog.testId)
             SwiftUI.Image(systemName: "cart")
                 .resizable()
                 .frame(width: 30, height: 30)

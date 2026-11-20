@@ -1,21 +1,30 @@
 {
   "web": {
     "javascript": {
+      "name": "Web (NPM)",
       "measurement": "bundle",
       "softKiB": 72,
       "hardKiB": 85
     },
     "universalCheckout": {
+      "name": "shopify-universal-checkout",
       "measurement": "package",
       "file": "dist/chunks/shopify-universal-checkout.js",
       "softKiB": 15,
       "hardKiB": 20
     },
     "shopPay": {
+      "name": "shop-pay",
       "measurement": "package",
       "file": "dist/chunks/shop-pay.js",
       "softKiB": 19,
       "hardKiB": 24
+    },
+    "cdn": {
+      "name": "Web (CDN)",
+      "measurement": "cdn",
+      "softKiB": 132,
+      "hardKiB": 150
     }
   },
   "react-native": {

@@ -47,6 +47,17 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Check approved public API
+        run: node scripts/check-api.mjs
+
+      - name: Upload public API comparison
+        if: ${{ !cancelled() && hashFiles('platforms/web/build/api-report.json') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-api-checkout-kit-${{ github.run_attempt }}
+          path: platforms/web/build/api-report.json
+          retention-days: 7
+
       - name: Typecheck web E2E tests
         run: pnpm --dir test/e2e typecheck
 

@@ -1,4 +1,4 @@
-import type { Checkout as ProtocolCheckout } from "@shopify/checkout-kit-protocol";
+import type { Checkout as ProtocolCheckout } from "@shopify/embedded-checkout-protocol";
 
 import { describe, expectTypeOf, it } from "vitest";
 

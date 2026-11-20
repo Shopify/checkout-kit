@@ -2007,37 +2007,18 @@ describe("@shopify/checkout-kit-shop-pay/register", () => {
     expect(startSpy).not.toHaveBeenCalled();
   });
 
-  describe("source validation", () => {
-    it("warns at warn log level when src is not a uc checkout URL", () => {
-      const checkout = renderShopPay({ src: CN_SRC, "log-level": "warn" });
-      vi.spyOn(window, "open").mockReturnValue(createMockWindow());
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  describe("source URLs", () => {
+    it.each([UC_SRC, "https://shop.example.com/checkouts/r/synthetic-message", CN_SRC])(
+      "opens %s without a path warning",
+      (src) => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const { windowOpenSpy } = openPopupShopPay({ src, "log-level": "warn" });
 
-      checkout.open();
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("expected a Universal session URL"),
-      );
-    });
-
-    it("does not warn when src is a uc checkout URL", () => {
-      const checkout = renderShopPay({ "log-level": "warn" });
-      vi.spyOn(window, "open").mockReturnValue(createMockWindow());
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      checkout.open();
-
-      expect(warnSpy).not.toHaveBeenCalled();
-    });
-
-    it("does not warn about source at the default error log level", () => {
-      const checkout = renderShopPay({ src: CN_SRC });
-      vi.spyOn(window, "open").mockReturnValue(createMockWindow());
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      checkout.open();
-
-      expect(warnSpy).not.toHaveBeenCalled();
-    });
+        expect(windowOpenSpy).toHaveBeenCalledOnce();
+        const openedUrl = new URL(windowOpenSpy.mock.calls[0]![0] as string);
+        expect(openedUrl.pathname).toBe(new URL(src).pathname);
+        expect(warnSpy).not.toHaveBeenCalled();
+      },
+    );
   });
 });

@@ -1,7 +1,7 @@
 import type {
   CheckoutProtocolCatalogMethod,
   CheckoutProtocolRequestMethod,
-} from '@shopify/checkout-kit-protocol';
+} from '@shopify/embedded-checkout-protocol';
 
 import type {RecordingMeasurement, UnreservedMeasurement} from './recording';
 

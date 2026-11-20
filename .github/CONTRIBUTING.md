@@ -21,7 +21,7 @@ This project and everyone participating in it are governed by the [Code of Condu
 
 ## Things we won't merge
 
-- Additional dependencies that limit SDK use (e.g. unnecessary Swift or Android dependencies)
+- Additional dependencies that limit SDK use (e.g. unnecessary Swift or Android dependencies). New JS runtime dependencies need an approved proposal first; see [Runtime dependencies](ARCHITECTURE.md#runtime-dependencies).
 - Any changes that break existing tests
 - Any changes without sufficient tests
 
@@ -183,8 +183,9 @@ There are three ways to install a build:
    newest build for the branch, so this guards against silently installing an
    older commit's artifact. When the newest build already matches HEAD it
    installs straight away. Otherwise it shows the current CI state and offers to:
-   - trigger a HEAD build and wait (~6 min), or, when a HEAD build is already
-     running, wait for that one instead of starting a duplicate;
+   - trigger a HEAD build and wait, or, when a HEAD build is already running,
+     wait for that one instead of starting a duplicate. The build is the
+     target's `e2e-maestro-*` workflow, which also runs its Maestro suite;
    - install the current (older) build, showing its short SHA, commit title,
      how many commits it is behind HEAD, and its age; or
    - cancel.
@@ -200,9 +201,11 @@ There are three ways to install a build:
    verification and install whatever the branch provider resolves.
 
 **Adding a new SDK target.** Add an entry to `scripts/tophat/targets.json` with
-an `id`, `label`, and `recipes` (each a `platform`, `destination`, Bitrise
-`workflow`, and `artifact_name`). It automatically flows into the Quick Launch
-entries, the per-PR comment table, and `dev tophat`.
+an `id`, `label`, and `recipes`. Each recipe has a `platform`, `destination`,
+`artifact_name`, and two Bitrise workflows: `default_branch_workflow` for Quick
+Launch on `main`, and `pull_request_workflow` for the per-PR comment table and
+`dev tophat`. Both workflows must upload `artifact_name`. The entry
+automatically flows into all three.
 
 Sample app storefront configuration is generated from the repo-root `.env` and, when
 it exists, `.env.local`. See [Dev tooling](#dev-tooling) for how each audience gets
@@ -362,15 +365,19 @@ cd platforms/swift && ./Scripts/lint fix
 
 ### Public API surface
 
-The library's public API is tracked via committed baselines under `platforms/swift/api/`, one JSON file per module (`EmbeddedCheckoutProtocol.json`, `ShopifyCheckoutKit.json`, `ShopifyAcceleratedCheckouts.json`). They are produced by `xcrun swift-api-digester -dump-sdk` against the built `.swiftmodule` files. The unified `Breaking Changes` CI workflow runs `dev swift api check` on every PR that touches Swift sources and fails if the digester output for any module diverges from its committed baseline.
+The library's public API is tracked as Swift declarations under `platforms/swift/api/`, one `.swiftinterface` file per module (`EmbeddedCheckoutProtocol`, `ShopifyCheckoutKit`, `ShopifyAcceleratedCheckouts`). The unified `Breaking Changes` CI workflow runs `dev swift api check` and fails if any public interface differs from its committed baseline. Failures show a unified declaration diff with stable `approved/` and `proposed/` labels; checking never updates the baselines.
 
 If your change intentionally modifies the public API:
 
 1. Run `dev swift api dump` from the repo root to regenerate the baselines.
-2. Review the diff in `platforms/swift/api/*.json` alongside your code changes.
-3. Commit the updated JSON files in the same PR.
+2. Review the diff in `platforms/swift/api/*.swiftinterface` alongside your code changes.
+3. Commit the updated interface files in the same PR.
 
-When `dev swift api check` fails, it prints both the unified diff and a `swift-api-digester -diagnose-sdk` summary categorizing the changes (removed, renamed, type/protocol/inheritance changes). Use the diagnose summary to decide whether the diff is intentional.
+`dev swift api diagnose [<ref>]` compares the checked-in interfaces with a Git ref (default `origin/main`) without building. It shows declaration diffs, not semantic breaking-change classifications. Refs from before the interface migration are reported as having no interface baseline.
+
+Generate baselines on macOS with the Xcode version pinned in the Breaking Changes workflow. The snapshot build enables library evolution and fixes the target to the arm64 iOS simulator; normal SDK builds retain their existing settings. Only the public interface is recorded, excluding private and package interfaces. Compiler-version and build-flag headers are removed; attributes, conditional declarations, declaration order and `@inlinable` bodies are preserved, so compiler upgrades can still require a reviewed baseline refresh.
+
+This snapshot build disables interface verification and treats warnings as warnings because the public `EmbeddedCheckoutProtocol` enum shadows its module name ([Swift issue #56573](https://github.com/swiftlang/swift/issues/56573)). These interfaces are review artifacts, not distributable modules.
 
 ### Releasing a new Swift version
 
