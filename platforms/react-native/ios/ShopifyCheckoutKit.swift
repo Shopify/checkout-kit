@@ -122,8 +122,8 @@ class RCTShopifyCheckoutKit: NSObject {
 
     @objc func clearPreload() {
         DispatchQueue.main.async {
+            // A presented preload reports invalidation only when checkout is dismissed.
             ShopifyCheckout.clearPreload()
-            self.checkoutPreload = nil
         }
     }
 
@@ -187,7 +187,14 @@ class RCTShopifyCheckoutKit: NSObject {
 
             self.checkoutPreload = checkoutPreload
             checkoutPreload.onStateChange = { [weak self] state in
-                self?.emitPreloadStateChange(requestId: requestId, state: state)
+                guard let self else { return }
+                switch state {
+                case .idle, .failed:
+                    self.checkoutPreload = nil
+                case .loading, .ready:
+                    break
+                }
+                self.emitPreloadStateChange(requestId: requestId, state: state)
             }
         }
     }

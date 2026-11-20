@@ -88,16 +88,16 @@ application:
 
 ### 1. Installation
 
-Install Shopify Checkout Kit `4.0.1`:
+Install Shopify Checkout Kit `4.0.2`:
 
 ```sh
-pnpm add @shopify/checkout-kit-react-native@4.0.1
+pnpm add @shopify/checkout-kit-react-native@4.0.2
 
 # or using yarn
-yarn add @shopify/checkout-kit-react-native@4.0.1
+yarn add @shopify/checkout-kit-react-native@4.0.2
 
 # or using npm
-npm install @shopify/checkout-kit-react-native@4.0.1
+npm install @shopify/checkout-kit-react-native@4.0.2
 ```
 
 ### 2. Minimum Android requirements
