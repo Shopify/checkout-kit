@@ -1,5 +1,11 @@
 # Checkout Kit for React Native changelog
 
+## 4.0.3
+
+### Patch Changes
+
+- Remove the React Native Android wrapper's runtime dependency on Jackson Databind.
+
 ## 4.0.2
 
 ### Patch Changes

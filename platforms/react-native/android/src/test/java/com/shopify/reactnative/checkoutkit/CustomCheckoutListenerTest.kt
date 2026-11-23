@@ -5,7 +5,7 @@ import com.shopify.checkoutkit.checkout.CheckoutFailureEvent
 import com.shopify.checkoutkit.checkout.CheckoutException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.assertj.core.api.Assertions.assertThat
@@ -21,14 +21,15 @@ class CustomCheckoutListenerTest {
         val captured = mutableListOf<String>()
         val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
 
-        listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.CART_EXPIRED, "expired")))
+        val message = "Cart \"expired\".\nPlease try again."
+        listener.onCheckoutFailed(CheckoutFailureEvent(CheckoutException(CheckoutErrorCode.CART_EXPIRED, message)))
 
         val envelope = Json.parseToJsonElement(captured.single()).jsonObject
         assertThat(envelope["type"]?.jsonPrimitive?.content).isEqualTo("fail")
 
         val payload = payloadOf(envelope)
         assertThat(payload["code"]?.jsonPrimitive?.content).isEqualTo("cart_expired")
-        assertThat(payload["message"]?.jsonPrimitive?.content).isEqualTo("expired")
+        assertThat(payload["message"]?.jsonPrimitive?.content).isEqualTo(message)
         assertThat(payload).doesNotContainKey("__typename")
         assertThat(payload).doesNotContainKey("statusCode")
     }
@@ -44,7 +45,7 @@ class CustomCheckoutListenerTest {
 
         val payload = payloadOf(Json.parseToJsonElement(captured.single()).jsonObject)
         assertThat(payload["code"]?.jsonPrimitive?.content).isEqualTo("http_error")
-        assertThat(payload["statusCode"]?.jsonPrimitive?.int).isEqualTo(422)
+        assertThat(payload["statusCode"]).isEqualTo(JsonPrimitive(422))
     }
 
     @Test
@@ -101,6 +102,18 @@ class CustomCheckoutListenerTest {
         assertThat(terminalCount).isEqualTo(1)
         assertThat(captured.map { Json.parseToJsonElement(it).jsonObject["type"]?.jsonPrimitive?.content })
             .containsExactly("fail", "dismiss")
+    }
+
+    @Test
+    fun `geolocation request carries its origin in the payload`() {
+        val captured = mutableListOf<String>()
+        val listener = CustomCheckoutListener(DispatchCallback { json -> captured.add(json) })
+
+        listener.onGeolocationPermissionsShowPrompt("https://example.test") { _, _, _ -> }
+
+        assertThat(Json.parseToJsonElement(captured.single())).isEqualTo(
+            Json.parseToJsonElement("""{"type":"geolocationRequest","payload":{"origin":"https://example.test"}}"""),
+        )
     }
 
     @Test
