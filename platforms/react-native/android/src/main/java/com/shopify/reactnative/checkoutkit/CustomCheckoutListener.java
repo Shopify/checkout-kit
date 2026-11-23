@@ -4,20 +4,11 @@ import android.util.Log;
 import android.webkit.GeolocationPermissions;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.shopify.checkoutkit.checkout.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 public class CustomCheckoutListener extends DefaultCheckoutListener {
   private static final String TAG = "ShopifyCheckoutKit";
-
-  private final ObjectMapper mapper = new ObjectMapper();
 
   private final DispatchHandle dispatch;
   private CheckoutLinkAction linkAction = CheckoutLinkAction.Default;
@@ -88,13 +79,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     this.geolocationCallback = callback;
     this.geolocationOrigin = origin;
 
-    try {
-      Map<String, Object> payload = new HashMap<>();
-      payload.put("origin", origin);
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.GEOLOCATION_REQUEST, payload));
-    } catch (IOException e) {
-      Log.e(TAG, "Error emitting \"geolocationRequest\" event", e);
-    }
+    dispatch.invoke(CheckoutEventSerialization.geolocationRequest(origin));
   }
 
   @Override
@@ -114,13 +99,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     if (dispatch.isReleased()) {
       return;
     }
-    try {
-      Map<String, Object> payload = new HashMap<>();
-      payload.put("error", populateErrorDetails(event.getError()));
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.FAIL, payload));
-    } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout failed event", e);
-    }
+    dispatch.invoke(CheckoutEventSerialization.fail(event.getError()));
   }
 
   @Override
@@ -130,9 +109,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     }
     try {
       onTerminal.run();
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.DISMISS, null));
-    } catch (IOException e) {
-      Log.e(TAG, "Error processing checkout dismissed event", e);
+      dispatch.invoke(CheckoutEventSerialization.dismiss());
     } finally {
       release();
     }
@@ -156,13 +133,7 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
   @Override
   public CheckoutLinkAction onCheckoutLinkClicked(CheckoutLink link) {
     if (dispatch.isReleased()) return CheckoutLinkAction.Cancel;
-    try {
-      Map<String, Object> payload = new HashMap<>();
-      payload.put("url", link.getUrl().toString());
-      dispatch.invoke(buildEnvelope(DispatchEventTypes.LINK_CLICK, payload));
-    } catch (IOException e) {
-      Log.e(TAG, "Error emitting link click event", e);
-    }
+    dispatch.invoke(CheckoutEventSerialization.linkClick(link.getUrl().toString()));
     return linkAction;
   }
 
@@ -173,30 +144,6 @@ public class CustomCheckoutListener extends DefaultCheckoutListener {
     } catch (Exception e) {
       Log.e(TAG, "Error serializing checkout event");
     }
-  }
-
-  // Private
-
-  private String buildEnvelope(String type, @Nullable Object payload) throws IOException {
-    ObjectNode envelope = mapper.createObjectNode();
-    envelope.put("type", type);
-    if (payload != null) {
-      envelope.set("payload", mapper.valueToTree(payload));
-    }
-    return mapper.writeValueAsString(envelope);
-  }
-
-  private Map<String, Object> populateErrorDetails(CheckoutException checkoutError) {
-    Map<String, Object> errorMap = new HashMap<>();
-    errorMap.put("message", checkoutError.getMessage());
-    errorMap.put("code", checkoutError.getCode().name().toLowerCase(Locale.ROOT));
-
-    Integer httpStatusCode = checkoutError.getHttpStatusCode();
-    if (httpStatusCode != null) {
-      errorMap.put("statusCode", httpStatusCode);
-    }
-
-    return errorMap;
   }
 
 }

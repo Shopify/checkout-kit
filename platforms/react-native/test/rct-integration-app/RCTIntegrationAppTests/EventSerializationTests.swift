@@ -60,9 +60,7 @@ class EventSerializationTests: XCTestCase {
         XCTAssertEqual(serialized["statusCode"] as? Int, 404)
     }
 
-    /// Locks the wire format shared with Android's
-    /// `CustomCheckoutListener.populateErrorDetails`, which sends the
-    /// lower-snake-case enum constant name. Every code listed here must
+    /// Android sends the lower-snake-case enum constant name. Every code listed here must
     /// match a `CheckoutErrorCode` member on the JS side.
     func testCheckoutErrorSerialization_everyCodeUsesTheSharedWireName() {
         let expectedWireNames: [CheckoutErrorCode: String] = [

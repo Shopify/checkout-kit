@@ -57,10 +57,7 @@ function getCheckoutErrorCode(code: string | undefined): CheckoutErrorCode {
 }
 
 /**
- * The raw `fail` envelope payload emitted by both native SDKs.
- *
- * Produced by `CustomCheckoutListener.populateErrorDetails` on Android and
- * `ShopifyEventSerialization.serialize(checkoutError:)` on iOS.
+ * The `payload.error` object in the `fail` envelope emitted by both native SDKs.
  */
 export type CheckoutNativeError = {
   code: CheckoutErrorCode;

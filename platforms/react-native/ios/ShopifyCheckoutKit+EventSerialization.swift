@@ -13,9 +13,7 @@ internal enum ShopifyEventSerialization {
     /**
      * Converts a CheckoutError to a React Native compatible dictionary.
      *
-     * Field names match Android's
-     * `CustomCheckoutListener.populateErrorDetails`, so the JS-side
-     * `parseCheckoutError` behaves identically on both platforms.
+     * Both platforms use the same field names for the JS-side `parseCheckoutError`.
      * `statusCode` is present only when an HTTP response caused the failure.
      */
     static func serialize(checkoutError error: CheckoutError) -> [String: Any] {

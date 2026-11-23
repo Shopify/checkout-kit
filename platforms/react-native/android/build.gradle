@@ -130,7 +130,6 @@ dependencies {
   //  implementation("com.facebook.react:react-android:+")
 
   implementation(shopifySdkArtifact)
-  implementation("com.fasterxml.jackson.core:jackson-databind:2.12.5")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
   debugImplementation(shopifySdkArtifact)
 
