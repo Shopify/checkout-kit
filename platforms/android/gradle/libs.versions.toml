@@ -1,5 +1,5 @@
 [versions]
-checkoutKitAndroid = "4.1.0"
+checkoutKitAndroid = "4.1.1"
 # Version to publish for the standalone Embedded Checkout Protocol artifact.
 # Bump this first; it may be newer than Checkout Kit's dependency below.
 embeddedCheckoutProtocolAndroidRelease = "2026.08.25.1"

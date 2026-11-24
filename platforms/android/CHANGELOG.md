@@ -1,5 +1,11 @@
 # Checkout Kit for Android changelog
 
+## 4.1.1
+
+### Patch Changes
+
+- Checkout WebView console messages now respect `logLevel` in debuggable apps, with URL queries redacted from the message and source. In non-debuggable apps, Checkout Kit suppresses WebView console messages.
+
 ## 4.1.0
 
 ### Minor Changes

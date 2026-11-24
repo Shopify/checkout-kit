@@ -1,6 +1,7 @@
 package com.shopify.checkoutkit.internal.web
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Color.TRANSPARENT
 import android.net.Uri
@@ -14,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.webkit.ConsoleMessage
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
@@ -789,6 +791,14 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
     }
 
     webChromeClient = object : WebChromeClient() {
+        override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+            if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                logConsoleMessage(message)
+            }
+            // Consume filtered messages too so WebView cannot mirror the raw text to logcat.
+            return true
+        }
+
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)
             log.d(LOG_TAG, "On progress change called. New progress $newProgress.")
@@ -823,6 +833,23 @@ private fun WebView.configureWebView(listener: () -> CheckoutWebViewListener) {
     setBackgroundColor(TRANSPARENT)
     layoutParams = LayoutParams(MATCH_PARENT, MATCH_PARENT)
     id = View.generateViewId()
+}
+
+// Console text can contain multiple URLs, including relative URLs. Drop the entire query
+// through the next whitespace boundary so quoting and unknown parameter names cannot expose a value.
+private val CONSOLE_URL_QUERY = Regex("""\?\S+""")
+
+private fun String.redactConsoleQueries(): String = CONSOLE_URL_QUERY.replace(this, "?[REDACTED]")
+
+private fun logConsoleMessage(message: ConsoleMessage) {
+    val text = message.message().redactConsoleQueries()
+    val source = message.sourceId()?.redactConsoleQueries()
+    val entry = if (source.isNullOrEmpty()) text else "$text ($source:${message.lineNumber()})"
+    when (message.messageLevel()) {
+        ConsoleMessage.MessageLevel.ERROR -> log.e(LOG_TAG, entry)
+        ConsoleMessage.MessageLevel.WARNING -> log.w(LOG_TAG, entry)
+        else -> log.d(LOG_TAG, entry)
+    }
 }
 
 private fun checkoutUserAgentSuffix(): String {

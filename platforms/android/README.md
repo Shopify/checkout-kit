@@ -78,7 +78,7 @@ To add another feature, apply `shopify.android-feature`, set its unique Android 
 
 ## Install
 
-Install Checkout Kit for Android `4.1.0`:
+Install Checkout Kit for Android `4.1.1`:
 
 The checkout event API in `4.0.0-alpha.7` replaces the protocol-client API in `4.0.0-alpha.6`;
 see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) when upgrading.
@@ -87,7 +87,7 @@ see [the migration guide](#migrating-from-the-protocol-client-prerelease-api) wh
 
 ```groovy
 dependencies {
-    implementation "com.shopify:checkout-kit:4.1.0"
+    implementation "com.shopify:checkout-kit:4.1.1"
 }
 ```
 
@@ -97,7 +97,7 @@ dependencies {
 <dependency>
   <groupId>com.shopify</groupId>
   <artifactId>checkout-kit</artifactId>
-  <version>4.1.0</version>
+  <version>4.1.1</version>
 </dependency>
 ```
 
@@ -356,7 +356,7 @@ ShopifyCheckout.configure {
 | --- | --- | --- |
 | `appearance` | `CheckoutAppearance.Storefront()` | Use the storefront's web checkout branding, or use the Checkout Kit style with `App(Automatic)`, `App(Light)`, or `App(Dark)`. |
 | `sheet` | `CheckoutSheetOptions()` | Customize native sheet presentation such as snap points, dismissal behavior, corner radius, title alignment, toolbar elevation, close icon styling, and the optional drag handle. |
-| `logLevel` | `LogLevel.WARN` | SDK logging verbosity. Use `LogLevel.DEBUG` during integration. |
+| `logLevel` | `LogLevel.WARN` | SDK logging verbosity. In debuggable apps this also controls checkout WebView console output. Use `DEBUG` for all console levels or `NONE` to silence them. |
 | `preloading` | `Preloading()` | Enables best-effort checkout preloading before presentation. |
 | `title` | `null` | Runtime override for the checkout sheet header title. When `null`, the SDK uses the localized `checkout_web_view_title` string resource. |
 | `allowedMessageOrigins` | `emptySet()` | Extra origins allowed to send checkout protocol messages. |
