@@ -1,5 +1,11 @@
 # Checkout Kit for React Native changelog
 
+## 4.0.4
+
+### Patch Changes
+
+- Update Checkout Kit for Android to 4.1.1. In debuggable Android apps, checkout WebView console messages follow the existing `logLevel` setting and redact URL queries from messages and their sources. Non-debuggable Android apps suppress these console messages.
+
 ## 4.0.3
 
 ### Patch Changes

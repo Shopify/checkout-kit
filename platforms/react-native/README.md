@@ -88,16 +88,16 @@ application:
 
 ### 1. Installation
 
-Install Shopify Checkout Kit `4.0.3`:
+Install Shopify Checkout Kit `4.0.4`:
 
 ```sh
-pnpm add @shopify/checkout-kit-react-native@4.0.3
+pnpm add @shopify/checkout-kit-react-native@4.0.4
 
 # or using yarn
-yarn add @shopify/checkout-kit-react-native@4.0.3
+yarn add @shopify/checkout-kit-react-native@4.0.4
 
 # or using npm
-npm install @shopify/checkout-kit-react-native@4.0.3
+npm install @shopify/checkout-kit-react-native@4.0.4
 ```
 
 ### 2. Minimum Android requirements
@@ -337,6 +337,9 @@ instance of the `ShopifyCheckout` class.
 | `telemetry`   |          | `true`      | Sends anonymous diagnostic metrics to Shopify on iOS and Android. Set to `false` to opt out.                                                                   |
 | `logLevel`    |          | `error`     | Sets the log level for the native SDK. Use `LogLevel.debug` for verbose logging during development, or `LogLevel.error` for production.                        |
 | `allowedMessageOrigins` |          | `[]`        | Extra origins trusted to send incoming checkout messages. See [Incoming message origin validation](#incoming-message-origin-validation).                       |
+
+On Android, `logLevel` also filters checkout WebView console messages in debuggable apps.
+Checkout Kit redacts URL queries from those messages and their sources. Non-debuggable Android apps suppress the messages at every log level.
 
 Checkout Kit reports limited, anonymous diagnostic metrics, including checkout
 errors, protocol decoding failures, navigation retries, and checkout navigation
