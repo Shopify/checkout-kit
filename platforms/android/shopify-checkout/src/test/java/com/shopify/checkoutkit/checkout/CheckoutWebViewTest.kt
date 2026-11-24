@@ -1,12 +1,15 @@
 package com.shopify.checkoutkit.checkout
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.graphics.Color
 import android.net.Uri
 import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View.VISIBLE
+import android.webkit.ConsoleMessage
+import android.webkit.ConsoleMessage.MessageLevel
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
@@ -225,6 +228,71 @@ class CheckoutWebViewTest {
 
         shadow.webChromeClient?.onProgressChanged(view, 50)
         verify(webViewListener).updateProgressBar(50)
+    }
+
+    @Test
+    fun `redacts queries in the console text and source before logging`() {
+        activity.applicationInfo.flags = activity.applicationInfo.flags or ApplicationInfo.FLAG_DEBUGGABLE
+        ShopifyCheckout.configure { it.logLevel = LogLevel.DEBUG }
+        val client = shadowOf(checkoutWebView(activity)).webChromeClient
+        val message = ConsoleMessage(
+            "Clear-Site-Data header on 'https://shop.example/cart/c/id?key=cart-secret' redirect /pay?token=other-secret",
+            "https://shop.example/script.js?version=source-secret",
+            12,
+            MessageLevel.LOG,
+        )
+
+        ShadowLog.clear()
+        assertThat(client.onConsoleMessage(message)).isTrue()
+        val entry = ShadowLog.getLogs().single()
+        assertThat(entry.type).isEqualTo(Log.DEBUG)
+        assertThat(entry.msg)
+            .contains(
+                "Clear-Site-Data header on",
+                "/cart/c/id?[REDACTED]",
+                "/pay?[REDACTED]",
+                "script.js?[REDACTED]:12",
+            )
+            .doesNotContain("cart-secret", "other-secret", "source-secret")
+    }
+
+    @Test
+    fun `handles every console message and applies the configured log level in debuggable apps`() {
+        activity.applicationInfo.flags = activity.applicationInfo.flags or ApplicationInfo.FLAG_DEBUGGABLE
+        val client = shadowOf(checkoutWebView(activity)).webChromeClient
+        val messages = listOf(
+            MessageLevel.TIP,
+            MessageLevel.LOG,
+            MessageLevel.DEBUG,
+            MessageLevel.WARNING,
+            MessageLevel.ERROR,
+        )
+        val expectedPriorities = mapOf(
+            LogLevel.DEBUG to listOf(Log.DEBUG, Log.DEBUG, Log.DEBUG, Log.WARN, Log.ERROR),
+            LogLevel.WARN to listOf(Log.WARN, Log.ERROR),
+            LogLevel.ERROR to listOf(Log.ERROR),
+            LogLevel.NONE to emptyList(),
+        )
+
+        for ((level, priorities) in expectedPriorities) {
+            ShopifyCheckout.configure { it.logLevel = level }
+            ShadowLog.clear()
+            for (severity in messages) {
+                assertThat(client.onConsoleMessage(ConsoleMessage(severity.name, "", 0, severity))).isTrue()
+            }
+            assertThat(ShadowLog.getLogs().map { it.type }).describedAs(level.name).isEqualTo(priorities)
+        }
+    }
+
+    @Test
+    fun `consumes console messages without writing to logcat in non-debuggable apps`() {
+        activity.applicationInfo.flags = activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE.inv()
+        ShopifyCheckout.configure { it.logLevel = LogLevel.DEBUG }
+        val client = shadowOf(checkoutWebView(activity)).webChromeClient
+
+        ShadowLog.clear()
+        assertThat(client.onConsoleMessage(ConsoleMessage("page error", "", 0, MessageLevel.ERROR))).isTrue()
+        assertThat(ShadowLog.getLogs()).isEmpty()
     }
 
     @Test
