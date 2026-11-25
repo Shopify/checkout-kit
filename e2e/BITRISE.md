@@ -238,12 +238,17 @@ cannot hold two private keys. To change a value, run `dev secrets edit demo` or
 
 ## BrowserStack secrets
 
-The `e2e-execute-browserstack-run` workflow authenticates with BrowserStack using these secrets, configured in Bitrise.io:
+The `e2e-execute-browserstack-run` workflow authenticates with BrowserStack using these shared Bitrise workspace secrets:
 
-| Secret                    | Purpose                      |
-| ------------------------- | ---------------------------- |
-| `BROWSERSTACK_USERNAME`   | BrowserStack API username.   |
-| `BROWSERSTACK_ACCESS_KEY` | BrowserStack API access key. |
+| Secret                                | Purpose                     |
+| ------------------------------------- | --------------------------- |
+| `BROWSERSTACK_APP_AUTOMATE_USERNAME`   | BrowserStack API username.   |
+| `BROWSERSTACK_APP_AUTOMATE_ACCESS_KEY` | BrowserStack API access key. |
+
+Both shared secrets are required. The workflow passes them to the runner as
+`BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY`, overriding any inherited
+values for those legacy names. Local runner invocations continue to use
+`BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY`.
 
 BrowserStack artifact links in GitHub reports require access to BrowserStack App Automate. Sign in to [BrowserStack App Automate](https://app-automate.browserstack.com/dashboard/v2/builds) before opening build, video, screenshot, or log links.
 

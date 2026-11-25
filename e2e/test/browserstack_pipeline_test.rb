@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "fileutils"
 require "json"
 require "open3"
 require "tmpdir"
@@ -63,6 +64,25 @@ class BrowserStackPipelineTest < Minitest::Test
     assert_includes stderr, "no 'e2e-build-"
   end
 
+  def test_execution_uses_shared_credentials_instead_of_inherited_legacy_values
+    stdout, stderr, status, invoked = execute_browserstack_step
+
+    assert status.success?, stdout + stderr
+    assert invoked
+  end
+
+  def test_execution_rejects_missing_shared_credentials_even_with_legacy_values
+    %w[BROWSERSTACK_APP_AUTOMATE_USERNAME BROWSERSTACK_APP_AUTOMATE_ACCESS_KEY].each do |key|
+      [nil, ""].each do |value|
+        _stdout, stderr, status, invoked = execute_browserstack_step(key => value)
+
+        refute status.success?
+        refute invoked
+        assert_includes stderr, "#{key} is required"
+      end
+    end
+  end
+
   def test_manual_report_succeeds_without_pr_or_credentials
     stdout, stderr, status = report(results: [{"passed" => true}], expected: "1")
     assert status.success?, stderr
@@ -93,6 +113,48 @@ class BrowserStackPipelineTest < Minitest::Test
   end
 
   private
+
+  def execute_browserstack_step(overrides = {})
+    credentials = {
+      "BROWSERSTACK_APP_AUTOMATE_USERNAME" => "synthetic-workspace-user",
+      "BROWSERSTACK_APP_AUTOMATE_ACCESS_KEY" => "synthetic-workspace-key",
+      "BROWSERSTACK_USERNAME" => "synthetic-legacy-user",
+      "BROWSERSTACK_ACCESS_KEY" => "synthetic-legacy-key"
+    }.merge(overrides)
+    step = config.dig("workflows", "e2e-execute-browserstack-run", "steps")
+      .find { |entry| entry.key?("script@1") }.fetch("script@1")
+    script = step.fetch("inputs").find { |input| input.key?("content") }.fetch("content")
+
+    Dir.mktmpdir("browserstack-credentials-test") do |dir|
+      scripts = File.join(dir, "e2e/scripts")
+      FileUtils.mkdir_p(scripts)
+      FileUtils.cp(File.join(ROOT, "e2e/scripts/bitrise_ci_helpers"), scripts)
+      runner = File.join(scripts, "execute_browserstack_run")
+      File.write(runner, <<~BASH)
+        #!/usr/bin/env bash
+        set -euo pipefail
+        touch runner-invoked
+        test "$BROWSERSTACK_USERNAME" = "$BROWSERSTACK_APP_AUTOMATE_USERNAME"
+        test "$BROWSERSTACK_ACCESS_KEY" = "$BROWSERSTACK_APP_AUTOMATE_ACCESS_KEY"
+      BASH
+      File.chmod(0o755, runner)
+      plan = File.join(dir, "run-plan.json")
+      File.write(plan, JSON.generate([{artifact_env: "E2E_TEST_APP"}]))
+      env = credentials.merge(
+        "BITRISE_IO_PARALLEL_INDEX" => "0",
+        "BITRISE_DEPLOY_DIR" => File.join(dir, "deploy"),
+        "E2E_TESTS_ZIP" => "synthetic-tests.zip",
+        "E2E_BROWSERSTACK_RUN_PLAN_JSON" => plan,
+        "E2E_TEST_APP" => "synthetic-app.apk"
+      )
+      stdout, stderr, status = Open3.capture3(env, "bash", "-c",
+        "envman() { :; }\n#{script}", chdir: dir)
+      credentials.values.compact.reject(&:empty?).each do |value|
+        refute_includes stdout + stderr, value
+      end
+      [stdout, stderr, status, File.exist?(File.join(dir, "runner-invoked"))]
+    end
+  end
 
   def report(results:, expected:, pr: nil)
     Dir.mktmpdir("browserstack-report-test") do |dir|
